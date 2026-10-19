@@ -1,4 +1,5 @@
 import { Score } from '../types/music';
+import { containsProfanity } from './profanityFilter';
 
 export interface PublicStudentInfo {
   id: string;
@@ -130,6 +131,9 @@ function executeLocalFallback(payload: Record<string, any>): any {
     if (!firstName || !pin) {
       throw new Error('Please enter your first name and PIN.');
     }
+    if (containsProfanity(firstName)) {
+      throw new Error('Please use a school-appropriate student name.');
+    }
     const found = db.students.find(
       (s) => normalizeStudentName(s.firstName) === normalizeStudentName(firstName)
     );
@@ -216,6 +220,10 @@ function executeLocalFallback(payload: Record<string, any>): any {
 
     if (!title || title.toLowerCase() === 'my composition' || title.toLowerCase() === 'untitled') {
       return { ok: false, skipped: true, reason: 'Default untitled song is not auto-saved.' };
+    }
+
+    if (containsProfanity(title)) {
+      throw new Error('Please choose a school-appropriate song title.');
     }
 
     let authorized = false;
@@ -329,6 +337,10 @@ function executeLocalFallback(payload: Record<string, any>): any {
       throw new Error('First name and PIN are required.');
     }
 
+    if (containsProfanity(firstName) || containsProfanity(classGroup)) {
+      throw new Error('Please use school-appropriate student and class names.');
+    }
+
     if (id) {
       db.students = db.students.map((s) =>
         s.id === id ? { ...s, firstName, pin, classGroup } : s
@@ -357,6 +369,9 @@ function executeLocalFallback(payload: Record<string, any>): any {
       const p = String(entry.pin || '').trim() || String(Math.floor(1000 + Math.random() * 9000));
       const cg = String(entry.classGroup || '').trim();
       if (!fn) continue;
+      if (containsProfanity(fn) || containsProfanity(cg)) {
+        throw new Error('Roster entries must use school-appropriate names.');
+      }
       db.students.push({
         id: 'stu_' + Math.random().toString(36).slice(2, 10),
         firstName: fn,
@@ -386,6 +401,9 @@ function executeLocalFallback(payload: Record<string, any>): any {
     const projectId = String(payload.projectId || '');
     const newTitle = String(payload.newTitle || '').trim();
     if (!newTitle) throw new Error('New title cannot be empty.');
+    if (containsProfanity(newTitle)) {
+      throw new Error('Please choose a school-appropriate song title.');
+    }
     db.projects = db.projects.map((p) => {
       if (p.id !== projectId) return p;
       const updatedScore = { ...p.score, title: newTitle };

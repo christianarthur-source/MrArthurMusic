@@ -14,6 +14,7 @@ import {
 } from '../types';
 import { getTempoDescription } from './Header';
 import confetti from 'canvas-confetti';
+import { containsProfanity } from '../utils/profanityFilter';
 
 interface SheetMusicModalProps {
   isOpen: boolean;
@@ -134,6 +135,7 @@ export const SheetMusicModal: React.FC<SheetMusicModalProps> = ({
   const [studentName, setStudentName] = useState<string>('Young Composer');
   // Requirement 2: Default song title is "My Song"
   const [songTitle, setSongTitle] = useState<string>('My Song');
+  const [profanityWarning, setProfanityWarning] = useState<string | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
 
   if (!isOpen) return null;
@@ -476,6 +478,23 @@ export const SheetMusicModal: React.FC<SheetMusicModalProps> = ({
           </button>
         </div>
 
+        {/* Profanity Warning Alert */}
+        {profanityWarning && (
+          <div className="bg-rose-600 text-white px-4 py-2 text-xs font-bold flex items-center justify-between gap-2 shadow-lg z-20">
+            <div className="flex items-center gap-2">
+              <span>⚠️</span>
+              <span>{profanityWarning}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setProfanityWarning(null)}
+              className="px-2 py-0.5 rounded bg-rose-800/80 hover:bg-rose-800 text-[11px] cursor-pointer"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+
         {/* Modal Toolbar */}
         <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-850 p-4 border-b border-slate-800 text-xs sm:text-sm">
           {/* Editable Song Title & Composer Name */}
@@ -485,7 +504,15 @@ export const SheetMusicModal: React.FC<SheetMusicModalProps> = ({
               <input
                 type="text"
                 value={songTitle}
-                onChange={(e) => setSongTitle(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (containsProfanity(val)) {
+                    setProfanityWarning('⚠️ Inappropriate language detected in song title. Please use classroom-friendly words.');
+                    return;
+                  }
+                  setProfanityWarning(null);
+                  setSongTitle(val);
+                }}
                 className="bg-transparent font-black text-amber-300 focus:outline-none w-48 sm:w-56"
                 placeholder="Song Title"
               />
@@ -496,7 +523,15 @@ export const SheetMusicModal: React.FC<SheetMusicModalProps> = ({
               <input
                 type="text"
                 value={studentName}
-                onChange={(e) => setStudentName(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (containsProfanity(val)) {
+                    setProfanityWarning('⚠️ Inappropriate language detected in composer name. Please use classroom-friendly words.');
+                    return;
+                  }
+                  setProfanityWarning(null);
+                  setStudentName(val);
+                }}
                 className="bg-transparent font-black text-cyan-300 focus:outline-none w-36 sm:w-44"
                 placeholder="Student Name"
               />

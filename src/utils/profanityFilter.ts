@@ -645,3 +645,15 @@ export function validateClassroomText(
   }
   return { isClean: true, value: input };
 }
+
+export const PROFANITY_WARNING_MESSAGE =
+  '⚠️ Inappropriate language detected! Please choose a fun, school-friendly title or name.';
+
+export function cleanProfanity(text: string | null | undefined, fallback: string = "Mr. Arthur's Music"): string {
+  if (!text) return fallback;
+  if (containsProfanity(text)) return fallback;
+  return text;
+}
+
+export const containsInappropriateLanguage = containsProfanity;
+

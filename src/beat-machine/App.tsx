@@ -32,7 +32,7 @@ import {
 import confetti from 'canvas-confetti';
 import { Sparkles, Grid3X3, Compass, Radio, Music2, Layers, Activity, Save, X } from 'lucide-react';
 import { extractSongFromLocation } from './utils/songSharing';
-import { cleanProfanity } from './utils/profanityFilter';
+import { cleanProfanity, containsProfanity } from './utils/profanityFilter';
 import { StudentSession, saveStudentProject } from '../utils/classroomApi';
 
 type AppMode = 'both' | 'grid' | 'melody' | 'bass' | 'explorer' | 'pads' | 'xylophone';
@@ -1089,6 +1089,11 @@ export default function BeatMachineApp({
     if (!studentSession) return;
     const cleanTitle = (beatTitleInput || '').trim();
     if (!cleanTitle) return;
+    if (containsProfanity(cleanTitle)) {
+      setNotification('⚠️ Inappropriate language detected. Please choose a school-friendly beat title.');
+      setTimeout(() => setNotification(null), 4000);
+      return;
+    }
     setIsSavingBeat(true);
     try {
       const res = await saveStudentProject({
@@ -1600,7 +1605,15 @@ export default function BeatMachineApp({
                 <input
                   type="text"
                   value={beatTitleInput}
-                  onChange={(e) => setBeatTitleInput(e.target.value)}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (containsProfanity(val)) {
+                      setNotification('⚠️ Inappropriate language detected. Please use classroom-friendly words.');
+                      setTimeout(() => setNotification(null), 4000);
+                      return;
+                    }
+                    setBeatTitleInput(val);
+                  }}
                   placeholder="e.g. Space Robot Funk, Lunchtime Jam..."
                   className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-700 focus:border-amber-400 text-sm font-bold text-white focus:outline-hidden"
                   autoFocus

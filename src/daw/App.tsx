@@ -572,7 +572,8 @@ export const DawApp: React.FC<DawAppProps> = ({
       const { buffer, waveform, durationBeats } = await decodeUploadedAudio(file, audioCtx);
 
       const targetTrack = project.tracks.find((t) => t.type === 'audio') || project.tracks[0];
-      const clipName = file.name.replace(/\.[^/.]+$/, '');
+      const rawName = file.name.replace(/\.[^/.]+$/, '');
+      const clipName = containsProfanity(rawName) ? 'Audio Sample' : rawName;
 
       const newClip: DawClip = {
         id: `clip_${Date.now()}`,
@@ -790,6 +791,11 @@ export const DawApp: React.FC<DawAppProps> = ({
   };
 
   const handleChangeTrackName = (trackId: string, name: string) => {
+    if (containsProfanity(name)) {
+      setNotification('⚠️ Inappropriate language detected. Please use classroom-friendly names.');
+      setTimeout(() => setNotification(null), 4000);
+      return;
+    }
     setProject((prev) => ({
       ...prev,
       tracks: prev.tracks.map((t) => (t.id === trackId ? { ...t, name } : t)),
@@ -958,6 +964,11 @@ export const DawApp: React.FC<DawAppProps> = ({
               value={project.title}
               onChange={(e) => {
                 const newTitle = e.target.value;
+                if (containsProfanity(newTitle)) {
+                  setNotification('⚠️ Inappropriate language detected. Please choose a classroom-friendly title.');
+                  setTimeout(() => setNotification(null), 4000);
+                  return;
+                }
                 setProject((prev) => ({ ...prev, title: newTitle }));
                 setSaveTitleInput(newTitle);
               }}
@@ -1186,7 +1197,15 @@ export const DawApp: React.FC<DawAppProps> = ({
               <input
                 type="text"
                 value={saveTitleInput}
-                onChange={(e) => setSaveTitleInput(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (containsProfanity(val)) {
+                    setNotification('⚠️ Inappropriate language detected. Please choose a classroom-friendly title.');
+                    setTimeout(() => setNotification(null), 4000);
+                    return;
+                  }
+                  setSaveTitleInput(val);
+                }}
                 placeholder="Give your song a cool title..."
                 className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white font-bold text-sm focus:outline-none focus:border-emerald-400"
               />
