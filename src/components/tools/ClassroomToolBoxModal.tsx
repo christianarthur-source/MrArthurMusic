@@ -4,6 +4,7 @@ import { TempoTapper } from './TempoTapper';
 import { SolfegeTrainer } from './SolfegeTrainer';
 import { InstrumentZoo } from './InstrumentZoo';
 import { DynamicEars } from './DynamicEars';
+import { StaffWarsReprise } from './StaffWarsReprise';
 
 export type ToolId =
   | 'tempo-tapper'
@@ -31,6 +32,14 @@ interface ToolTabMeta {
 }
 
 const TOOL_TABS: ToolTabMeta[] = [
+  {
+    id: 'staff-wars',
+    title: 'Staff Wars Reprise!',
+    emoji: '⚔️',
+    subtitle: 'Arcade & Live Mic Defense',
+    accentColor: 'from-cyan-400 to-blue-500',
+    badgeBg: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40',
+  },
   {
     id: 'tempo-tapper',
     title: 'Tempo Tapper',
@@ -148,6 +157,7 @@ export const ClassroomToolBoxModal: React.FC<ClassroomToolBoxModalProps> = ({
 
         {/* Modal Scrollable Body */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+          {activeTool === 'staff-wars' && <StaffWarsReprise />}
           {activeTool === 'tempo-tapper' && <TempoTapper />}
           {activeTool === 'solfege-trainer' && <SolfegeTrainer />}
           {activeTool === 'instrument-zoo' && <InstrumentZoo />}
