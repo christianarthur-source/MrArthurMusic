@@ -88,7 +88,2684 @@
         ]
       },
       "createdAt": "2026-10-19T16:59:34.321Z",
-      "updatedAt": "2026-10-19T16:59:45.771Z"
+      "updatedAt": "2026-10-19T23:05:07.601Z",
+      "appType": "staff-composer"
+    },
+    {
+      "id": "proj_90b96p02uaw",
+      "studentId": "stu_n6muydvdq2y",
+      "studentName": "Alex M",
+      "title": "String Orchestra Piece",
+      "score": {
+        "id": "score_ens_1792451153560",
+        "title": "String Orchestra Piece",
+        "composer": "Alex M",
+        "tempo": 100,
+        "timeSignature": [
+          4,
+          4
+        ],
+        "keySignature": "C",
+        "tracks": [
+          {
+            "id": "track_1792451153560_0_jfd9",
+            "name": "Violin I",
+            "instrumentId": "violin",
+            "clef": "treble",
+            "volume": 0.85,
+            "pan": -0.8,
+            "muted": false,
+            "soloed": false,
+            "measures": [
+              {
+                "id": "m_xppdu62",
+                "items": [
+                  {
+                    "id": "n_d9klayp",
+                    "type": "note",
+                    "pitch": {
+                      "step": "A",
+                      "octave": 5,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "A",
+                        "octave": 5,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_erb3jop",
+                    "type": "note",
+                    "pitch": {
+                      "step": "A",
+                      "octave": 5,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "A",
+                        "octave": 5,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_nmi6c3c",
+                    "type": "note",
+                    "pitch": {
+                      "step": "A",
+                      "octave": 5,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "A",
+                        "octave": 5,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_32htrpv",
+                    "type": "note",
+                    "pitch": {
+                      "step": "A",
+                      "octave": 5,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "A",
+                        "octave": 5,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  }
+                ],
+                "repeatStart": true
+              },
+              {
+                "id": "m_2db7n6r",
+                "items": [
+                  {
+                    "id": "n_d9klayp",
+                    "type": "note",
+                    "pitch": {
+                      "step": "A",
+                      "octave": 5,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "A",
+                        "octave": 5,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_erb3jop",
+                    "type": "note",
+                    "pitch": {
+                      "step": "A",
+                      "octave": 5,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "A",
+                        "octave": 5,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_nmi6c3c",
+                    "type": "note",
+                    "pitch": {
+                      "step": "A",
+                      "octave": 5,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "A",
+                        "octave": 5,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_32htrpv",
+                    "type": "note",
+                    "pitch": {
+                      "step": "A",
+                      "octave": 5,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "A",
+                        "octave": 5,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  }
+                ]
+              },
+              {
+                "id": "m_w48zmj6",
+                "items": [
+                  {
+                    "id": "n_t7z4be5",
+                    "type": "note",
+                    "pitch": {
+                      "step": "E",
+                      "octave": 5,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "E",
+                        "octave": 5,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.125,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_rpo6l2h",
+                    "type": "note",
+                    "pitch": {
+                      "step": "A",
+                      "octave": 5,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "A",
+                        "octave": 5,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.125,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_64dcv52",
+                    "type": "note",
+                    "pitch": {
+                      "step": "E",
+                      "octave": 5,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "E",
+                        "octave": 5,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.125,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_ezvwor4",
+                    "type": "note",
+                    "pitch": {
+                      "step": "A",
+                      "octave": 5,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "A",
+                        "octave": 5,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.125,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_bzl7xog",
+                    "type": "note",
+                    "pitch": {
+                      "step": "G",
+                      "octave": 5,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "G",
+                        "octave": 5,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.125,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_wqmptqw",
+                    "type": "note",
+                    "pitch": {
+                      "step": "D",
+                      "octave": 5,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "D",
+                        "octave": 5,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.125,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_7laac8n",
+                    "type": "note",
+                    "pitch": {
+                      "step": "G",
+                      "octave": 5,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "G",
+                        "octave": 5,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.125,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_l25t5y2",
+                    "type": "note",
+                    "pitch": {
+                      "step": "D",
+                      "octave": 5,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "D",
+                        "octave": 5,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.125,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  }
+                ]
+              },
+              {
+                "id": "m_r5zzcjn",
+                "items": [
+                  {
+                    "id": "n_whuv0md",
+                    "type": "note",
+                    "pitch": {
+                      "step": "E",
+                      "octave": 5,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "E",
+                        "octave": 5,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.125,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_j0pdx13",
+                    "type": "note",
+                    "pitch": {
+                      "step": "C",
+                      "octave": 5,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "C",
+                        "octave": 5,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.125,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_kvcjm73",
+                    "type": "note",
+                    "pitch": {
+                      "step": "E",
+                      "octave": 5,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "E",
+                        "octave": 5,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.125,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_rhi7t0q",
+                    "type": "note",
+                    "pitch": {
+                      "step": "C",
+                      "octave": 5,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "C",
+                        "octave": 5,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.125,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_8l6v8k6",
+                    "type": "note",
+                    "pitch": {
+                      "step": "D",
+                      "octave": 5,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "D",
+                        "octave": 5,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.125,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_r0c2r8j",
+                    "type": "note",
+                    "pitch": {
+                      "step": "B",
+                      "octave": 4,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "B",
+                        "octave": 4,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.125,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_ilp1myi",
+                    "type": "note",
+                    "pitch": {
+                      "step": "C",
+                      "octave": 5,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "C",
+                        "octave": 5,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.125,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "rest_pxenwba",
+                    "type": "rest",
+                    "duration": 0.125
+                  }
+                ],
+                "repeatEnd": true
+              }
+            ],
+            "fx": {
+              "reverb": 0.8,
+              "delay": 0,
+              "chorus": 0,
+              "eqBass": 0,
+              "eqTreble": 0,
+              "drive": 0
+            }
+          },
+          {
+            "id": "track_1792451153560_1_ehmw",
+            "name": "Violin II",
+            "instrumentId": "violin",
+            "clef": "treble",
+            "volume": 0.82,
+            "pan": 0.9,
+            "muted": false,
+            "soloed": false,
+            "measures": [
+              {
+                "id": "m_byu0764",
+                "items": [
+                  {
+                    "id": "n_t8u5jg3",
+                    "type": "note",
+                    "pitch": {
+                      "step": "E",
+                      "octave": 5,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "E",
+                        "octave": 5,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_52feh8r",
+                    "type": "note",
+                    "pitch": {
+                      "step": "E",
+                      "octave": 5,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "E",
+                        "octave": 5,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_rmnjd1r",
+                    "type": "note",
+                    "pitch": {
+                      "step": "F",
+                      "octave": 5,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "F",
+                        "octave": 5,
+                        "accidental": null
+                      },
+                      {
+                        "step": "A",
+                        "octave": 4,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_igh26ot",
+                    "type": "note",
+                    "pitch": {
+                      "step": "F",
+                      "octave": 5,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "F",
+                        "octave": 5,
+                        "accidental": null
+                      },
+                      {
+                        "step": "A",
+                        "octave": 4,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  }
+                ],
+                "repeatStart": true
+              },
+              {
+                "id": "m_7gbplsf",
+                "items": [
+                  {
+                    "id": "n_t8u5jg3",
+                    "type": "note",
+                    "pitch": {
+                      "step": "E",
+                      "octave": 5,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "E",
+                        "octave": 5,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_52feh8r",
+                    "type": "note",
+                    "pitch": {
+                      "step": "E",
+                      "octave": 5,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "E",
+                        "octave": 5,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_rmnjd1r",
+                    "type": "note",
+                    "pitch": {
+                      "step": "F",
+                      "octave": 5,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "F",
+                        "octave": 5,
+                        "accidental": null
+                      },
+                      {
+                        "step": "A",
+                        "octave": 4,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_igh26ot",
+                    "type": "note",
+                    "pitch": {
+                      "step": "F",
+                      "octave": 5,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "F",
+                        "octave": 5,
+                        "accidental": null
+                      },
+                      {
+                        "step": "A",
+                        "octave": 4,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  }
+                ]
+              },
+              {
+                "id": "m_8fh4bmk",
+                "items": [
+                  {
+                    "id": "n_r3pddid",
+                    "type": "note",
+                    "pitch": {
+                      "step": "C",
+                      "octave": 5,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "C",
+                        "octave": 5,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.125,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_jdneoum",
+                    "type": "note",
+                    "pitch": {
+                      "step": "E",
+                      "octave": 5,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "E",
+                        "octave": 5,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.125,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_gqac02p",
+                    "type": "note",
+                    "pitch": {
+                      "step": "C",
+                      "octave": 5,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "C",
+                        "octave": 5,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.125,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_ufp9ril",
+                    "type": "note",
+                    "pitch": {
+                      "step": "E",
+                      "octave": 5,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "E",
+                        "octave": 5,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.125,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_0hurnf3",
+                    "type": "note",
+                    "pitch": {
+                      "step": "A",
+                      "octave": 4,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "A",
+                        "octave": 4,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.125,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_0uui5of",
+                    "type": "note",
+                    "pitch": {
+                      "step": "D",
+                      "octave": 5,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "D",
+                        "octave": 5,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.125,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_szvhl7v",
+                    "type": "note",
+                    "pitch": {
+                      "step": "A",
+                      "octave": 4,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "A",
+                        "octave": 4,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.125,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_7b8nzrg",
+                    "type": "note",
+                    "pitch": {
+                      "step": "D",
+                      "octave": 5,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "D",
+                        "octave": 5,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.125,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  }
+                ]
+              },
+              {
+                "id": "m_7cuo7fo",
+                "items": [
+                  {
+                    "id": "n_z0n5qg9",
+                    "type": "note",
+                    "pitch": {
+                      "step": "C",
+                      "octave": 5,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "C",
+                        "octave": 5,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.125,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_fyymilb",
+                    "type": "note",
+                    "pitch": {
+                      "step": "A",
+                      "octave": 4,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "A",
+                        "octave": 4,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.125,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_y5el34z",
+                    "type": "note",
+                    "pitch": {
+                      "step": "C",
+                      "octave": 5,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "C",
+                        "octave": 5,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.125,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_o51dt3q",
+                    "type": "note",
+                    "pitch": {
+                      "step": "A",
+                      "octave": 4,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "A",
+                        "octave": 4,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.125,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_zha8akp",
+                    "type": "note",
+                    "pitch": {
+                      "step": "B",
+                      "octave": 4,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "B",
+                        "octave": 4,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.125,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_xg7z1fu",
+                    "type": "note",
+                    "pitch": {
+                      "step": "G",
+                      "octave": 4,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "G",
+                        "octave": 4,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.125,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_5qc2lfy",
+                    "type": "note",
+                    "pitch": {
+                      "step": "A",
+                      "octave": 4,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "A",
+                        "octave": 4,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.125,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "rest_8fy9n1y",
+                    "type": "rest",
+                    "duration": 0.125
+                  }
+                ],
+                "repeatEnd": true
+              }
+            ],
+            "fx": {
+              "reverb": 0.9,
+              "delay": 0,
+              "chorus": 0,
+              "eqBass": 0,
+              "eqTreble": 0,
+              "drive": 0
+            }
+          },
+          {
+            "id": "track_1792451153560_2_g2by",
+            "name": "Viola",
+            "instrumentId": "viola",
+            "clef": "treble",
+            "volume": 0.8,
+            "pan": -0.6,
+            "muted": false,
+            "soloed": false,
+            "measures": [
+              {
+                "id": "m_rxy875p",
+                "items": [
+                  {
+                    "id": "n_vfea1vh",
+                    "type": "note",
+                    "pitch": {
+                      "step": "B",
+                      "octave": 4,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "B",
+                        "octave": 4,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_slqhnog",
+                    "type": "note",
+                    "pitch": {
+                      "step": "B",
+                      "octave": 4,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "B",
+                        "octave": 4,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_28gg13e",
+                    "type": "note",
+                    "pitch": {
+                      "step": "A",
+                      "octave": 4,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "A",
+                        "octave": 4,
+                        "accidental": null
+                      },
+                      {
+                        "step": "F",
+                        "octave": 4,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_high619",
+                    "type": "note",
+                    "pitch": {
+                      "step": "A",
+                      "octave": 4,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "A",
+                        "octave": 4,
+                        "accidental": null
+                      },
+                      {
+                        "step": "F",
+                        "octave": 4,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  }
+                ],
+                "repeatStart": true
+              },
+              {
+                "id": "m_0fojefr",
+                "items": [
+                  {
+                    "id": "n_vfea1vh",
+                    "type": "note",
+                    "pitch": {
+                      "step": "B",
+                      "octave": 4,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "B",
+                        "octave": 4,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_slqhnog",
+                    "type": "note",
+                    "pitch": {
+                      "step": "B",
+                      "octave": 4,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "B",
+                        "octave": 4,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_28gg13e",
+                    "type": "note",
+                    "pitch": {
+                      "step": "A",
+                      "octave": 4,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "A",
+                        "octave": 4,
+                        "accidental": null
+                      },
+                      {
+                        "step": "F",
+                        "octave": 4,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_high619",
+                    "type": "note",
+                    "pitch": {
+                      "step": "A",
+                      "octave": 4,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "A",
+                        "octave": 4,
+                        "accidental": null
+                      },
+                      {
+                        "step": "F",
+                        "octave": 4,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  }
+                ]
+              },
+              {
+                "id": "m_sd65lku",
+                "items": [
+                  {
+                    "id": "n_yzomjil",
+                    "type": "note",
+                    "pitch": {
+                      "step": "A",
+                      "octave": 4,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "A",
+                        "octave": 4,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_460trfb",
+                    "type": "note",
+                    "pitch": {
+                      "step": "A",
+                      "octave": 4,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "A",
+                        "octave": 4,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_0idckpg",
+                    "type": "note",
+                    "pitch": {
+                      "step": "A",
+                      "octave": 4,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "A",
+                        "octave": 4,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_6t7n7pa",
+                    "type": "note",
+                    "pitch": {
+                      "step": "A",
+                      "octave": 4,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "A",
+                        "octave": 4,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  }
+                ]
+              },
+              {
+                "id": "m_osr539j",
+                "items": [
+                  {
+                    "id": "n_bn0dbja",
+                    "type": "note",
+                    "pitch": {
+                      "step": "A",
+                      "octave": 4,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "A",
+                        "octave": 4,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_w4otpvn",
+                    "type": "note",
+                    "pitch": {
+                      "step": "A",
+                      "octave": 4,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "A",
+                        "octave": 4,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_i0iv1ca",
+                    "type": "note",
+                    "pitch": {
+                      "step": "A",
+                      "octave": 4,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "A",
+                        "octave": 4,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_47qzrai",
+                    "type": "note",
+                    "pitch": {
+                      "step": "A",
+                      "octave": 4,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "A",
+                        "octave": 4,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  }
+                ],
+                "repeatEnd": true
+              }
+            ],
+            "fx": {
+              "reverb": 0.8,
+              "delay": 0,
+              "chorus": 0,
+              "eqBass": 0,
+              "eqTreble": 0,
+              "drive": 0
+            }
+          },
+          {
+            "id": "track_1792451153560_3_nhdy",
+            "name": "Violoncello",
+            "instrumentId": "cello",
+            "clef": "bass",
+            "volume": 0.85,
+            "pan": 0.35,
+            "muted": false,
+            "soloed": false,
+            "measures": [
+              {
+                "id": "m_b649br7",
+                "items": [
+                  {
+                    "id": "n_4nmcbb9",
+                    "type": "note",
+                    "pitch": {
+                      "step": "E",
+                      "octave": 3,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "E",
+                        "octave": 3,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_ybbxx5e",
+                    "type": "note",
+                    "pitch": {
+                      "step": "E",
+                      "octave": 3,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "E",
+                        "octave": 3,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_odxlm1x",
+                    "type": "note",
+                    "pitch": {
+                      "step": "D",
+                      "octave": 3,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "D",
+                        "octave": 3,
+                        "accidental": null
+                      },
+                      {
+                        "step": "A",
+                        "octave": 2,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_8pgbbwi",
+                    "type": "note",
+                    "pitch": {
+                      "step": "A",
+                      "octave": 2,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "A",
+                        "octave": 2,
+                        "accidental": null
+                      },
+                      {
+                        "step": "D",
+                        "octave": 3,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  }
+                ],
+                "repeatStart": true
+              },
+              {
+                "id": "m_qzi4v4o",
+                "items": [
+                  {
+                    "id": "n_4nmcbb9",
+                    "type": "note",
+                    "pitch": {
+                      "step": "E",
+                      "octave": 3,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "E",
+                        "octave": 3,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_ybbxx5e",
+                    "type": "note",
+                    "pitch": {
+                      "step": "E",
+                      "octave": 3,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "E",
+                        "octave": 3,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_odxlm1x",
+                    "type": "note",
+                    "pitch": {
+                      "step": "D",
+                      "octave": 3,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "D",
+                        "octave": 3,
+                        "accidental": null
+                      },
+                      {
+                        "step": "A",
+                        "octave": 2,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_8pgbbwi",
+                    "type": "note",
+                    "pitch": {
+                      "step": "A",
+                      "octave": 2,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "A",
+                        "octave": 2,
+                        "accidental": null
+                      },
+                      {
+                        "step": "D",
+                        "octave": 3,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  }
+                ]
+              },
+              {
+                "id": "m_1lh6rdi",
+                "items": [
+                  {
+                    "id": "n_jsxaig4",
+                    "type": "note",
+                    "pitch": {
+                      "step": "E",
+                      "octave": 3,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "E",
+                        "octave": 3,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_ys5pyae",
+                    "type": "note",
+                    "pitch": {
+                      "step": "E",
+                      "octave": 3,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "E",
+                        "octave": 3,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_roe5ei5",
+                    "type": "note",
+                    "pitch": {
+                      "step": "D",
+                      "octave": 3,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "D",
+                        "octave": 3,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_unpn2sk",
+                    "type": "note",
+                    "pitch": {
+                      "step": "D",
+                      "octave": 3,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "D",
+                        "octave": 3,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  }
+                ]
+              },
+              {
+                "id": "m_a3i83p0",
+                "items": [
+                  {
+                    "id": "n_6jkvwzh",
+                    "type": "note",
+                    "pitch": {
+                      "step": "C",
+                      "octave": 3,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "C",
+                        "octave": 3,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_xzjkvgz",
+                    "type": "note",
+                    "pitch": {
+                      "step": "C",
+                      "octave": 3,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "C",
+                        "octave": 3,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_6hv6exe",
+                    "type": "note",
+                    "pitch": {
+                      "step": "B",
+                      "octave": 2,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "B",
+                        "octave": 2,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_x6o74dy",
+                    "type": "note",
+                    "pitch": {
+                      "step": "G",
+                      "octave": 2,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "G",
+                        "octave": 2,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  }
+                ],
+                "repeatEnd": true
+              }
+            ],
+            "fx": {
+              "reverb": 0.85,
+              "delay": 0,
+              "chorus": 0,
+              "eqBass": 0,
+              "eqTreble": 0,
+              "drive": 0
+            }
+          },
+          {
+            "id": "track_1792451153560_4_xcz7",
+            "name": "Double Bass",
+            "instrumentId": "double_bass",
+            "clef": "bass",
+            "volume": 0.9,
+            "pan": 0,
+            "muted": false,
+            "soloed": false,
+            "measures": [
+              {
+                "id": "m_20q1b94",
+                "items": [
+                  {
+                    "id": "n_vhf8clp",
+                    "type": "note",
+                    "pitch": {
+                      "step": "A",
+                      "octave": 2,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "A",
+                        "octave": 2,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_hoyuitx",
+                    "type": "note",
+                    "pitch": {
+                      "step": "A",
+                      "octave": 2,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "A",
+                        "octave": 2,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_f2t9ztx",
+                    "type": "note",
+                    "pitch": {
+                      "step": "A",
+                      "octave": 2,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "A",
+                        "octave": 2,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_89q7p2v",
+                    "type": "note",
+                    "pitch": {
+                      "step": "A",
+                      "octave": 2,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "A",
+                        "octave": 2,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  }
+                ],
+                "repeatStart": true
+              },
+              {
+                "id": "m_ggq9hxs",
+                "items": [
+                  {
+                    "id": "n_vhf8clp",
+                    "type": "note",
+                    "pitch": {
+                      "step": "A",
+                      "octave": 2,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "A",
+                        "octave": 2,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_hoyuitx",
+                    "type": "note",
+                    "pitch": {
+                      "step": "A",
+                      "octave": 2,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "A",
+                        "octave": 2,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_f2t9ztx",
+                    "type": "note",
+                    "pitch": {
+                      "step": "A",
+                      "octave": 2,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "A",
+                        "octave": 2,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_89q7p2v",
+                    "type": "note",
+                    "pitch": {
+                      "step": "A",
+                      "octave": 2,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "A",
+                        "octave": 2,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  }
+                ]
+              },
+              {
+                "id": "m_o2dko1a",
+                "items": [
+                  {
+                    "id": "n_vhf8clp",
+                    "type": "note",
+                    "pitch": {
+                      "step": "A",
+                      "octave": 2,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "A",
+                        "octave": 2,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_hoyuitx",
+                    "type": "note",
+                    "pitch": {
+                      "step": "B",
+                      "octave": 2,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "B",
+                        "octave": 2,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_f2t9ztx",
+                    "type": "note",
+                    "pitch": {
+                      "step": "B",
+                      "octave": 2,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "B",
+                        "octave": 2,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_89q7p2v",
+                    "type": "note",
+                    "pitch": {
+                      "step": "C",
+                      "octave": 3,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "C",
+                        "octave": 3,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  }
+                ]
+              },
+              {
+                "id": "m_zxtgz1o",
+                "items": [
+                  {
+                    "id": "n_vhf8clp",
+                    "type": "note",
+                    "pitch": {
+                      "step": "C",
+                      "octave": 3,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "C",
+                        "octave": 3,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_hoyuitx",
+                    "type": "note",
+                    "pitch": {
+                      "step": "D",
+                      "octave": 3,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "D",
+                        "octave": 3,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_f2t9ztx",
+                    "type": "note",
+                    "pitch": {
+                      "step": "E",
+                      "octave": 3,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "E",
+                        "octave": 3,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_89q7p2v",
+                    "type": "note",
+                    "pitch": {
+                      "step": "G",
+                      "octave": 3,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "G",
+                        "octave": 3,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  }
+                ],
+                "repeatEnd": true
+              }
+            ],
+            "fx": {
+              "reverb": 0.45,
+              "delay": 0,
+              "chorus": 0,
+              "eqBass": 0,
+              "eqTreble": 0,
+              "drive": 0
+            }
+          },
+          {
+            "id": "track_drum_njypfsh",
+            "name": "Drums (Modern Trap & Hip-Hop Beat)",
+            "instrumentId": "drum_kit",
+            "clef": "treble",
+            "volume": 0.85,
+            "muted": false,
+            "soloed": false,
+            "measures": [
+              {
+                "id": "m_dr_74hflb0",
+                "items": [
+                  {
+                    "id": "n_dr_mz8h7ed",
+                    "type": "note",
+                    "pitch": {
+                      "step": "F",
+                      "octave": 4
+                    },
+                    "duration": 0.125
+                  },
+                  {
+                    "id": "n_dr_1buzmf2",
+                    "type": "note",
+                    "pitch": {
+                      "step": "G",
+                      "octave": 5
+                    },
+                    "duration": 0.125
+                  },
+                  {
+                    "id": "n_dr_cfjgjkj",
+                    "type": "rest",
+                    "duration": 0.125
+                  },
+                  {
+                    "id": "n_dr_cvrh4hv",
+                    "type": "note",
+                    "pitch": {
+                      "step": "F",
+                      "octave": 4
+                    },
+                    "duration": 0.125
+                  },
+                  {
+                    "id": "n_dr_hrcv8o6",
+                    "type": "note",
+                    "pitch": {
+                      "step": "C",
+                      "octave": 5
+                    },
+                    "duration": 0.25
+                  },
+                  {
+                    "id": "n_dr_05sl10o",
+                    "type": "note",
+                    "pitch": {
+                      "step": "G",
+                      "octave": 5
+                    },
+                    "duration": 0.0625
+                  },
+                  {
+                    "id": "n_dr_4jdmaeq",
+                    "type": "note",
+                    "pitch": {
+                      "step": "G",
+                      "octave": 5
+                    },
+                    "duration": 0.0625
+                  },
+                  {
+                    "id": "n_dr_2viaul2",
+                    "type": "note",
+                    "pitch": {
+                      "step": "G",
+                      "octave": 5
+                    },
+                    "duration": 0.125
+                  }
+                ],
+                "repeatStart": true
+              },
+              {
+                "id": "m_dr_l9zpuvu",
+                "items": [
+                  {
+                    "id": "n_dr_rf64nzo",
+                    "type": "note",
+                    "pitch": {
+                      "step": "F",
+                      "octave": 4
+                    },
+                    "duration": 0.125
+                  },
+                  {
+                    "id": "n_dr_8jvnn3d",
+                    "type": "note",
+                    "pitch": {
+                      "step": "G",
+                      "octave": 5
+                    },
+                    "duration": 0.125
+                  },
+                  {
+                    "id": "n_dr_0no7jy8",
+                    "type": "rest",
+                    "duration": 0.125
+                  },
+                  {
+                    "id": "n_dr_ouxijni",
+                    "type": "note",
+                    "pitch": {
+                      "step": "F",
+                      "octave": 4
+                    },
+                    "duration": 0.125
+                  },
+                  {
+                    "id": "n_dr_fajgvpk",
+                    "type": "note",
+                    "pitch": {
+                      "step": "C",
+                      "octave": 5
+                    },
+                    "duration": 0.25
+                  },
+                  {
+                    "id": "n_dr_pt9v3hr",
+                    "type": "note",
+                    "pitch": {
+                      "step": "G",
+                      "octave": 5
+                    },
+                    "duration": 0.0625
+                  },
+                  {
+                    "id": "n_dr_llr8hk0",
+                    "type": "note",
+                    "pitch": {
+                      "step": "G",
+                      "octave": 5
+                    },
+                    "duration": 0.0625
+                  },
+                  {
+                    "id": "n_dr_n1znmpg",
+                    "type": "note",
+                    "pitch": {
+                      "step": "G",
+                      "octave": 5
+                    },
+                    "duration": 0.125
+                  }
+                ]
+              },
+              {
+                "id": "m_dr_4f15b8m",
+                "items": [
+                  {
+                    "id": "n_dr_flasrcw",
+                    "type": "note",
+                    "pitch": {
+                      "step": "F",
+                      "octave": 4
+                    },
+                    "duration": 0.125
+                  },
+                  {
+                    "id": "n_dr_24b249f",
+                    "type": "note",
+                    "pitch": {
+                      "step": "G",
+                      "octave": 5
+                    },
+                    "duration": 0.125
+                  },
+                  {
+                    "id": "n_dr_1j073lu",
+                    "type": "rest",
+                    "duration": 0.125
+                  },
+                  {
+                    "id": "n_dr_df3qf56",
+                    "type": "note",
+                    "pitch": {
+                      "step": "F",
+                      "octave": 4
+                    },
+                    "duration": 0.125
+                  },
+                  {
+                    "id": "n_dr_tlb59ju",
+                    "type": "note",
+                    "pitch": {
+                      "step": "C",
+                      "octave": 5
+                    },
+                    "duration": 0.25
+                  },
+                  {
+                    "id": "n_dr_zbs49re",
+                    "type": "note",
+                    "pitch": {
+                      "step": "G",
+                      "octave": 5
+                    },
+                    "duration": 0.0625
+                  },
+                  {
+                    "id": "n_dr_rppsywm",
+                    "type": "note",
+                    "pitch": {
+                      "step": "G",
+                      "octave": 5
+                    },
+                    "duration": 0.0625
+                  },
+                  {
+                    "id": "n_dr_5draq2u",
+                    "type": "note",
+                    "pitch": {
+                      "step": "G",
+                      "octave": 5
+                    },
+                    "duration": 0.125
+                  }
+                ]
+              },
+              {
+                "id": "m_dr_9isacvx",
+                "items": [
+                  {
+                    "id": "n_dr_mowbqwj",
+                    "type": "note",
+                    "pitch": {
+                      "step": "F",
+                      "octave": 4
+                    },
+                    "duration": 0.125
+                  },
+                  {
+                    "id": "n_dr_v32r440",
+                    "type": "note",
+                    "pitch": {
+                      "step": "G",
+                      "octave": 5
+                    },
+                    "duration": 0.125
+                  },
+                  {
+                    "id": "n_dr_e4907ib",
+                    "type": "rest",
+                    "duration": 0.125
+                  },
+                  {
+                    "id": "n_dr_4tkxbon",
+                    "type": "note",
+                    "pitch": {
+                      "step": "F",
+                      "octave": 4
+                    },
+                    "duration": 0.125
+                  },
+                  {
+                    "id": "n_dr_nuxf0aa",
+                    "type": "note",
+                    "pitch": {
+                      "step": "C",
+                      "octave": 5
+                    },
+                    "duration": 0.25
+                  },
+                  {
+                    "id": "n_dr_uv4pob7",
+                    "type": "note",
+                    "pitch": {
+                      "step": "G",
+                      "octave": 5
+                    },
+                    "duration": 0.0625
+                  },
+                  {
+                    "id": "n_dr_mll6189",
+                    "type": "note",
+                    "pitch": {
+                      "step": "G",
+                      "octave": 5
+                    },
+                    "duration": 0.0625
+                  },
+                  {
+                    "id": "n_dr_9b8cvel",
+                    "type": "note",
+                    "pitch": {
+                      "step": "G",
+                      "octave": 5
+                    },
+                    "duration": 0.125
+                  }
+                ],
+                "repeatEnd": true
+              }
+            ]
+          }
+        ]
+      },
+      "appType": "staff-composer",
+      "projectData": null,
+      "createdAt": "2026-10-19T23:12:49.063Z",
+      "updatedAt": "2026-10-19T23:12:49.063Z"
     }
   ]
 }
