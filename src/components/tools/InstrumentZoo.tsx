@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Volume2, Search, Sparkles, Filter, Music } from 'lucide-react';
+import { Volume2, Search, Sparkles, Filter, Music, Loader2 } from 'lucide-react';
 import { soundEngine } from '../../audio/soundEngine';
 import { InstrumentId, Pitch } from '../../types/music';
 
@@ -353,46 +353,104 @@ export const InstrumentZoo: React.FC = () => {
   const [selectedFamily, setSelectedFamily] = useState<FamilyFilter>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [currentlyPlayingId, setCurrentlyPlayingId] = useState<string | null>(null);
+  const [activeArpeggioIdx, setActiveArpeggioIdx] = useState<number | null>(null);
+  const [loadingInstrumentId, setLoadingInstrumentId] = useState<string | null>(null);
 
   const previewTimerRef = useRef<number | null>(null);
 
-  // Play instrument preview arpeggio
-  const playInstrumentPreview = (inst: InstrumentCardInfo) => {
+  // Background preload acoustic samples for all instruments on mount
+  useEffect(() => {
+    let isCancelled = false;
+    const preloadAll = async () => {
+      for (const inst of INSTRUMENT_ZOO_DATA) {
+        if (isCancelled) break;
+        try {
+          await soundEngine.preloadInstrument(inst.id, inst.previewNotes);
+        } catch {
+          // background fail-safe
+        }
+      }
+    };
+    preloadAll();
+    return () => {
+      isCancelled = true;
+      if (previewTimerRef.current !== null) {
+        clearInterval(previewTimerRef.current);
+      }
+    };
+  }, []);
+
+  // Play full instrument preview arpeggio with guaranteed real acoustic samples
+  const playInstrumentPreview = async (inst: InstrumentCardInfo) => {
     if (previewTimerRef.current !== null) {
       clearInterval(previewTimerRef.current);
       previewTimerRef.current = null;
     }
 
+    setLoadingInstrumentId(inst.id);
     setCurrentlyPlayingId(inst.id);
-    let noteIdx = 0;
+    setActiveArpeggioIdx(null);
 
-    previewTimerRef.current = window.setInterval(() => {
+    // Preload & decode samples if not already in memory so real acoustic sound is guaranteed
+    try {
+      await soundEngine.preloadInstrument(inst.id, inst.previewNotes);
+    } catch {
+      // audio fail-safe
+    } finally {
+      setLoadingInstrumentId((curr) => (curr === inst.id ? null : curr));
+    }
+
+    let noteIdx = 0;
+    const playNext = () => {
       if (noteIdx >= inst.previewNotes.length) {
         if (previewTimerRef.current !== null) {
           clearInterval(previewTimerRef.current);
           previewTimerRef.current = null;
         }
         setCurrentlyPlayingId(null);
+        setActiveArpeggioIdx(null);
         return;
       }
 
+      setActiveArpeggioIdx(noteIdx);
       const p = inst.previewNotes[noteIdx];
       try {
-        soundEngine.playNotePreview(p, inst.id, 0.45, 'C');
+        soundEngine.playNotePreview(p, inst.id, 0.55, 'C');
       } catch {
         // audio fail-safe
       }
       noteIdx++;
-    }, 240);
+    };
+
+    // Play first note immediately then step through arpeggio
+    playNext();
+    previewTimerRef.current = window.setInterval(playNext, 280);
   };
 
-  useEffect(() => {
-    return () => {
-      if (previewTimerRef.current !== null) {
-        clearInterval(previewTimerRef.current);
-      }
-    };
-  }, []);
+  // Play a single individual note on this instrument
+  const playSingleNote = async (
+    inst: InstrumentCardInfo,
+    pitch: Pitch,
+    noteIndex: number
+  ) => {
+    if (previewTimerRef.current !== null) {
+      clearInterval(previewTimerRef.current);
+      previewTimerRef.current = null;
+    }
+    setCurrentlyPlayingId(inst.id);
+    setActiveArpeggioIdx(noteIndex);
+
+    try {
+      await soundEngine.playHighQualityNotePreview(pitch, inst.id, 0.85, 'C');
+    } catch {
+      soundEngine.playNotePreview(pitch, inst.id, 0.85, 'C');
+    }
+
+    setTimeout(() => {
+      setActiveArpeggioIdx((curr) => (curr === noteIndex ? null : curr));
+      setCurrentlyPlayingId((curr) => (curr === inst.id ? null : curr));
+    }, 450);
+  };
 
   const filteredInstruments = INSTRUMENT_ZOO_DATA.filter((inst) => {
     const matchesFamily = selectedFamily === 'All' || inst.family === selectedFamily;
@@ -445,10 +503,14 @@ export const InstrumentZoo: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredInstruments.map((inst) => {
           const isPlaying = currentlyPlayingId === inst.id;
+          const isLoading = loadingInstrumentId === inst.id;
 
           return (
             <div
               key={inst.id}
+              onMouseEnter={() => {
+                soundEngine.preloadInstrument(inst.id, inst.previewNotes).catch(() => {});
+              }}
               className={`rounded-2xl p-4 sm:p-5 flex flex-col justify-between border-2 transition-all duration-200 group bg-slate-900/90 shadow-lg ${
                 isPlaying
                   ? 'border-amber-400 shadow-xl shadow-amber-500/20 scale-102 ring-2 ring-amber-400/50'
@@ -463,12 +525,19 @@ export const InstrumentZoo: React.FC = () => {
                       {inst.iconEmoji}
                     </div>
                     <div>
-                      <h4 className="text-base sm:text-lg font-black text-white font-['Fredoka',sans-serif]">
-                        {inst.name}
-                      </h4>
-                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border ${inst.badgeBg}`}>
-                        {inst.family}
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <h4 className="text-base sm:text-lg font-black text-white font-['Fredoka',sans-serif]">
+                          {inst.name}
+                        </h4>
+                      </div>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border ${inst.badgeBg}`}>
+                          {inst.family}
+                        </span>
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                          ✨ Real Sound
+                        </span>
+                      </div>
                     </div>
                   </div>
 
@@ -481,6 +550,38 @@ export const InstrumentZoo: React.FC = () => {
                 <p className="text-xs text-slate-300 leading-relaxed font-normal">
                   {inst.soundDescription}
                 </p>
+
+                {/* Interactive Clickable Preview Notes Bar */}
+                <div className="p-2 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-2">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                    Tap a Note:
+                  </span>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {inst.previewNotes.map((note, nIdx) => {
+                      const isThisNoteActive = isPlaying && activeArpeggioIdx === nIdx;
+                      return (
+                        <button
+                          key={nIdx}
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            playSingleNote(inst, note, nIdx);
+                          }}
+                          className={`px-2 py-0.5 rounded-md text-[11px] font-mono font-bold transition-all cursor-pointer ${
+                            isThisNoteActive
+                              ? 'bg-amber-400 text-slate-950 scale-110 shadow-md font-black ring-2 ring-amber-300'
+                              : 'bg-slate-900 hover:bg-slate-800 text-slate-200 hover:text-white border border-slate-700/80 active:scale-95'
+                          }`}
+                          title={`Click to play ${note.step}${note.octave} on ${inst.name}`}
+                        >
+                          {note.step}
+                          {note.accidental === 'sharp' ? '♯' : note.accidental === 'flat' ? '♭' : ''}
+                          {note.octave}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
 
                 {/* Did You Know / Fun Fact */}
                 <div className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800/80 text-[11px] text-amber-200/90 flex items-start gap-2">
@@ -496,14 +597,29 @@ export const InstrumentZoo: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => playInstrumentPreview(inst)}
+                  disabled={isLoading}
                   className={`w-full py-2.5 px-3 rounded-xl font-black text-xs flex items-center justify-center gap-2 cursor-pointer transition-all font-['Fredoka',sans-serif] ${
                     isPlaying
                       ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-400/30'
                       : 'bg-slate-800 hover:bg-slate-700 text-white border border-slate-700'
                   }`}
                 >
-                  <Volume2 className={`w-4 h-4 ${isPlaying ? 'animate-bounce text-slate-950' : 'text-amber-400'}`} />
-                  <span>{isPlaying ? 'Playing Preview...' : 'Hear Me Play 🔊'}</span>
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-amber-400" />
+                      <span>Tuning up real sound...</span>
+                    </>
+                  ) : isPlaying ? (
+                    <>
+                      <Volume2 className="w-4 h-4 animate-bounce text-slate-950" />
+                      <span>Playing Real Sound... 🎶</span>
+                    </>
+                  ) : (
+                    <>
+                      <Volume2 className="w-4 h-4 text-amber-400" />
+                      <span>Play Full Scale Arpeggio 🔊</span>
+                    </>
+                  )}
                 </button>
               </div>
             </div>

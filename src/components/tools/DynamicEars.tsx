@@ -107,6 +107,13 @@ export const DynamicEars: React.FC = () => {
   const [challengeStars, setChallengeStars] = useState<number>(5);
   const [challengeWarning, setChallengeWarning] = useState<boolean>(false);
 
+  // Preload real acoustic glockenspiel chime on mount
+  useEffect(() => {
+    soundEngine
+      .preloadInstrument('glockenspiel', [{ step: 'C', octave: 5 }])
+      .catch(() => {});
+  }, []);
+
   // Audio Context & Analyser references
   const audioCtxRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);

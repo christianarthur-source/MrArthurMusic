@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Sparkles, Volume2, Trophy, RotateCcw, Play, CheckCircle2, XCircle } from 'lucide-react';
 import { soundEngine } from '../../audio/soundEngine';
-import { Pitch } from '../../types/music';
+import { InstrumentId, Pitch } from '../../types/music';
 
 interface SolfegeNote {
   syllable: string;
@@ -118,10 +118,36 @@ const SOLFEGE_SCALE: SolfegeNote[] = [
 type GameMode = 'free-play' | 'mystery-quiz';
 type QuizDifficulty = 'easy' | 'medium' | 'full';
 
+interface SolfegeInstrumentOption {
+  id: InstrumentId;
+  label: string;
+  icon: string;
+}
+
+const SOLFEGE_INSTRUMENTS: SolfegeInstrumentOption[] = [
+  { id: 'marimba', label: 'Concert Marimba', icon: '🪵' },
+  { id: 'piano_treble', label: 'Grand Piano', icon: '🎹' },
+  { id: 'glockenspiel', label: 'Glockenspiel', icon: '🔔' },
+  { id: 'xylophone', label: 'Xylophone', icon: '🪵' },
+  { id: 'flute', label: 'Concert Flute', icon: '🪈' },
+  { id: 'violin', label: 'Violin', icon: '🎻' },
+];
+
+const SOLFEGE_PITCHES: Pitch[] = SOLFEGE_SCALE.map((s) => ({
+  step: s.step,
+  octave: s.octave,
+}));
+
 export const SolfegeTrainer: React.FC = () => {
   const [activeNoteIdx, setActiveNoteIdx] = useState<number | null>(null);
   const [mode, setMode] = useState<GameMode>('free-play');
   const [difficulty, setDifficulty] = useState<QuizDifficulty>('medium');
+  const [selectedInstrument, setSelectedInstrument] = useState<InstrumentId>('marimba');
+
+  // Preload real acoustic samples whenever instrument changes or mounts
+  useEffect(() => {
+    soundEngine.preloadInstrument(selectedInstrument, SOLFEGE_PITCHES).catch(() => {});
+  }, [selectedInstrument]);
 
   // Quiz game state
   const [targetNoteIdx, setTargetNoteIdx] = useState<number | null>(null);
@@ -136,19 +162,19 @@ export const SolfegeTrainer: React.FC = () => {
 
   const seqTimerRef = useRef<number | null>(null);
 
-  // Play pitch with sound engine
+  // Play pitch with high-quality real acoustic sound
   const playPitch = useCallback((note: SolfegeNote, idx: number) => {
     const pitch: Pitch = { step: note.step, octave: note.octave };
     try {
-      soundEngine.playNotePreview(pitch, 'xylophone', 0.65, 'C');
+      soundEngine.playNotePreview(pitch, selectedInstrument, 0.75, 'C');
     } catch {
       // Audio fallback
     }
     setActiveNoteIdx(idx);
     setTimeout(() => {
       setActiveNoteIdx((curr) => (curr === idx ? null : curr));
-    }, 300);
-  }, []);
+    }, 320);
+  }, [selectedInstrument]);
 
   // Filter notes available for current difficulty
   const getAvailableIndices = useCallback((): number[] => {
@@ -173,12 +199,12 @@ export const SolfegeTrainer: React.FC = () => {
       const note = SOLFEGE_SCALE[randomIdx];
       const pitch: Pitch = { step: note.step, octave: note.octave };
       try {
-        soundEngine.playNotePreview(pitch, 'xylophone', 0.8, 'C');
+        soundEngine.playNotePreview(pitch, selectedInstrument, 0.85, 'C');
       } catch {
         // fallback
       }
     }, 250);
-  }, [getAvailableIndices]);
+  }, [getAvailableIndices, selectedInstrument]);
 
   // Start mystery quiz
   const handleStartQuiz = () => {
@@ -194,7 +220,7 @@ export const SolfegeTrainer: React.FC = () => {
     if (targetNoteIdx === null) return;
     const note = SOLFEGE_SCALE[targetNoteIdx];
     const pitch: Pitch = { step: note.step, octave: note.octave };
-    soundEngine.playNotePreview(pitch, 'xylophone', 0.8, 'C');
+    soundEngine.playNotePreview(pitch, selectedInstrument, 0.85, 'C');
   };
 
   // Student makes a guess in quiz mode
@@ -367,6 +393,35 @@ export const SolfegeTrainer: React.FC = () => {
             </button>
           </div>
         )}
+      </div>
+
+      {/* High-Quality Instrument Sound Selector */}
+      <div className="flex items-center justify-between gap-2 p-3 rounded-2xl bg-slate-900/80 border border-slate-800 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs font-black text-slate-300 font-['Fredoka',sans-serif] flex items-center gap-1.5">
+            <span>✨ Instrument Sound:</span>
+          </span>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {SOLFEGE_INSTRUMENTS.map((inst) => (
+              <button
+                key={inst.id}
+                type="button"
+                onClick={() => setSelectedInstrument(inst.id)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  selectedInstrument === inst.id
+                    ? 'bg-amber-400 text-slate-950 font-black shadow-md'
+                    : 'bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700/80'
+                }`}
+              >
+                <span>{inst.icon}</span>
+                <span>{inst.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+        <span className="text-[10px] text-emerald-400 font-bold px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 hidden md:inline">
+          🎧 Concert SoundFont Audio
+        </span>
       </div>
 
       {/* Quiz Prompt Bar when in challenge mode */}

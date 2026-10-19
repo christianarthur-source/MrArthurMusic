@@ -1,4 +1,4 @@
-import { InstrumentId, Score } from '../types/music';
+import { InstrumentId, Pitch, Score } from '../types/music';
 
 const SOUNDFONT_CDN_BASE = 'https://gleitz.github.io/midi-js-soundfonts/MusyngKite';
 
@@ -198,8 +198,48 @@ export function getAcousticSampleForFreq(
 }
 
 /**
- * Preloads core middle-register anchor samples for a specific instrument so its first notes
- * play with real acoustic samples immediately.
+ * Checks synchronously whether the acoustic sample anchor for this frequency is already cached.
+ */
+export function isAcousticSampleLoaded(
+  instrumentId: InstrumentId,
+  freq: number
+): boolean {
+  const sfName = SOUNDFONT_INSTRUMENT_MAP[instrumentId];
+  if (!sfName) return false;
+  const targetMidi = 69 + 12 * Math.log2(Math.max(20, freq) / 440);
+  const anchorMidi = getNearestAnchorMidi(Math.round(targetMidi));
+  return sampleBufferCache.has(`${sfName}:${anchorMidi}`);
+}
+
+/**
+ * Preloads the exact anchor samples needed for a list of Pitches on an instrument.
+ */
+export async function preloadPitches(
+  ctx: BaseAudioContext,
+  instrumentId: InstrumentId,
+  pitches: Pitch[]
+): Promise<void> {
+  const sfName = SOUNDFONT_INSTRUMENT_MAP[instrumentId];
+  if (!sfName || pitches.length === 0) return;
+
+  const semitoneMap: Record<string, number> = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+  const neededAnchors = new Set<number>();
+
+  for (const p of pitches) {
+    let midi = (p.octave + 1) * 12 + (semitoneMap[p.step] || 0);
+    if (p.accidental === 'sharp') midi += 1;
+    if (p.accidental === 'flat') midi -= 1;
+    neededAnchors.add(getNearestAnchorMidi(midi));
+  }
+
+  await Promise.allSettled(
+    Array.from(neededAnchors).map((anchor) => loadSampleAnchor(ctx, sfName, anchor))
+  );
+}
+
+/**
+ * Preloads register-aware anchor samples for a specific instrument so notes
+ * across its natural playing range play with real acoustic samples immediately.
  */
 export async function preloadInstrumentSamples(
   ctx: BaseAudioContext,
@@ -208,8 +248,33 @@ export async function preloadInstrumentSamples(
   const sfName = SOUNDFONT_INSTRUMENT_MAP[instrumentId];
   if (!sfName) return;
 
-  // Priority anchors across the primary playing range (C3 to A5)
-  const priorityAnchors = [48, 54, 60, 63, 66, 69, 72, 75, 78];
+  const lowInstruments: InstrumentId[] = [
+    'tuba',
+    'cello',
+    'double_bass',
+    'contrabassoon',
+    'bassoon',
+    'electric_bass',
+    'synth_bass',
+    'timpani',
+    'piano_bass',
+  ];
+
+  const highInstruments: InstrumentId[] = [
+    'piccolo',
+    'glockenspiel',
+    'xylophone',
+  ];
+
+  let priorityAnchors: number[];
+  if (lowInstruments.includes(instrumentId)) {
+    priorityAnchors = [36, 39, 42, 45, 48, 51, 54, 57, 60];
+  } else if (highInstruments.includes(instrumentId)) {
+    priorityAnchors = [66, 69, 72, 75, 78, 81, 84, 87, 90];
+  } else {
+    priorityAnchors = [48, 54, 60, 63, 66, 69, 72, 75, 78];
+  }
+
   await Promise.allSettled(priorityAnchors.map((midi) => loadSampleAnchor(ctx, sfName, midi)));
 }
 

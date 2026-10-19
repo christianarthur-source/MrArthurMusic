@@ -5,7 +5,9 @@ import {
   createConcertHallImpulse,
   getAcousticSampleForFreq,
   getHarmonicPeriodicWave,
+  isAcousticSampleLoaded,
   preloadInstrumentSamples,
+  preloadPitches,
   preloadScoreSamples,
 } from './acousticSamples';
 
@@ -377,10 +379,6 @@ class SoundEngine {
     });
   }
 
-  public preloadInstrument(instrumentId: InstrumentId) {
-    const ctx = this.ensureContext();
-    void preloadInstrumentSamples(ctx, instrumentId);
-  }
 
   public preloadScore(score: Score) {
     const ctx = this.ensureContext();
@@ -423,6 +421,53 @@ class SoundEngine {
 
   public getMetronome(): boolean {
     return this.metronomeEnabled;
+  }
+
+  /**
+   * Preloads real acoustic SoundFont samples for an instrument (optionally targeting specific pitches).
+   */
+  public async preloadInstrument(
+    instrumentId: InstrumentId,
+    pitches?: Pitch[]
+  ): Promise<void> {
+    const ctx = this.ensureContext();
+    if (pitches && pitches.length > 0) {
+      await preloadPitches(ctx, instrumentId, pitches);
+    } else {
+      await preloadInstrumentSamples(ctx, instrumentId);
+    }
+  }
+
+  /**
+   * Checks whether acoustic samples for an instrument pitch are already loaded.
+   */
+  public isSampleReady(
+    instrumentId: InstrumentId,
+    pitch: Pitch,
+    keySignature: Score['keySignature'] = 'C'
+  ): boolean {
+    const freq = getPitchFrequency(pitch, keySignature);
+    return isAcousticSampleLoaded(instrumentId, freq);
+  }
+
+  /**
+   * Play a note or chord preview with guaranteed high-quality real acoustic sample playback.
+   * Awaits acoustic sample preloading if not yet cached so students hear authentic orchestral/acoustic instruments.
+   */
+  public async playHighQualityNotePreview(
+    pitch: Pitch | Pitch[],
+    instrumentId: InstrumentId = 'piano_treble',
+    durationSeconds: number = 0.55,
+    keySignature: Score['keySignature'] = 'C'
+  ): Promise<void> {
+    const ctx = this.ensureContext();
+    const pitches = Array.isArray(pitch) ? pitch : [pitch];
+    await preloadPitches(ctx, instrumentId, pitches);
+    const startTime = ctx.currentTime + 0.002;
+    pitches.forEach((p) => {
+      const freq = getPitchFrequency(p, keySignature);
+      this.synthesizeInstrumentNote(freq, startTime, durationSeconds, instrumentId, 0.85, p, ctx);
+    });
   }
 
   // Play a single note or chord preview with instant execution
@@ -1238,12 +1283,17 @@ class SoundEngine {
         'slap_bass',
       ].includes(instrumentId);
 
-      const releaseTail = isPercussiveOrPlucked ? 0.32 : 0.14;
+      const releaseTail = isPercussiveOrPlucked ? Math.max(2.2, duration + 1.2) : 0.22;
       const stopTime = startTime + duration + releaseTail;
 
-      sampleGain.gain.linearRampToValueAtTime(volume * 0.92, startTime + 0.006);
-      sampleGain.gain.setValueAtTime(volume * 0.88, startTime + duration * 0.92);
-      sampleGain.gain.exponentialRampToValueAtTime(0.0001, stopTime);
+      sampleGain.gain.linearRampToValueAtTime(volume * 0.96, startTime + 0.005);
+      if (isPercussiveOrPlucked) {
+        // Allow the natural resonance of harp strings, acoustic guitar, marimba, xylophone, etc. to decay realistically
+        sampleGain.gain.exponentialRampToValueAtTime(0.0001, stopTime);
+      } else {
+        sampleGain.gain.setValueAtTime(volume * 0.90, startTime + duration * 0.92);
+        sampleGain.gain.exponentialRampToValueAtTime(0.0001, stopTime);
+      }
 
       sampleSrc.connect(toneFilter);
       toneFilter.connect(sampleGain);
@@ -1255,19 +1305,21 @@ class SoundEngine {
       sampleSrc.stop(stopTime + 0.02);
       activeNodes.push(sampleSrc);
 
-      // Blend a subtle (16%) Option 3 Fourier harmonic body layer underneath sustained notes
-      // so long whole/tied notes maintain rich acoustic sustain and expressive warmth!
-      const synthBlendVolume = isPercussiveOrPlucked ? volume * 0.12 : volume * 0.2;
-      const bodyHandle = this.synthesizeFourierPhysicalLayer(
-        ctx,
-        freq,
-        startTime,
-        duration,
-        instrumentId,
-        synthBlendVolume,
-        masterGain
-      );
-      activeNodes.push(bodyHandle);
+      // Keep real acoustic instruments 100% pure without synthetic oscillator bleed.
+      // For sustained orchestral winds/strings, only add a subtle (4%) body hint if needed.
+      const synthBlendVolume = isPercussiveOrPlucked ? 0 : volume * 0.04;
+      if (synthBlendVolume > 0) {
+        const bodyHandle = this.synthesizeFourierPhysicalLayer(
+          ctx,
+          freq,
+          startTime,
+          duration,
+          instrumentId,
+          synthBlendVolume,
+          masterGain
+        );
+        activeNodes.push(bodyHandle);
+      }
 
       return {
         stop: () => {
