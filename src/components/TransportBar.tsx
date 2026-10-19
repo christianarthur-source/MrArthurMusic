@@ -25,12 +25,14 @@ import {
   Rows,
   Sliders,
   UserCheck,
+  ArrowLeft,
 } from 'lucide-react';
 import { CountingMode, NoteLabelMode, ViewLayout } from '../types/music';
 import { BOOMWHACKER_COLORS, getTempoDescription } from '../utils/musicMath';
 import { soundEngine } from '../audio/soundEngine';
 
 interface TransportBarProps {
+  onBackToHub?: () => void;
   title: string;
   composer: string;
   onChangeTitle: (title: string) => void;
@@ -89,6 +91,7 @@ interface TransportBarProps {
 }
 
 export const TransportBar: React.FC<TransportBarProps> = ({
+  onBackToHub,
   title,
   composer,
   onChangeTitle,
@@ -166,6 +169,17 @@ export const TransportBar: React.FC<TransportBarProps> = ({
     <header className="bg-slate-900 border-b border-slate-800 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 text-white shadow-xl relative z-40">
       {/* Brand & Score Title */}
       <div className="flex items-center gap-3.5 min-w-[240px]">
+        {onBackToHub && (
+          <button
+            type="button"
+            onClick={onBackToHub}
+            title="Return to Mr. Arthur's Music Lab Hub"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 text-slate-300 hover:text-white border border-slate-700/80 text-xs font-bold transition-all active:scale-95 cursor-pointer shadow-xs"
+          >
+            <ArrowLeft className="w-3.5 h-3.5 text-amber-400" />
+            <span className="hidden sm:inline">Music Lab</span>
+          </button>
+        )}
         <div className="flex items-center gap-2.5 pr-4 border-r border-slate-700/80">
           <button
             type="button"

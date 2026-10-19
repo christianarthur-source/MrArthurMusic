@@ -40,6 +40,8 @@ import { PrintView } from './components/PrintView';
 import { ShareModal } from './components/ShareModal';
 import { ClassroomModal } from './components/ClassroomModal';
 import { EdLawPrivacyModal } from './components/EdLawPrivacyModal';
+import { MusicLabLanding, MusicLabAppId } from './components/MusicLabLanding';
+import RhythmRockStarsApp from './rhythm-rockstars/RhythmRockStarsApp';
 import { ShieldCheck } from 'lucide-react';
 import {
   SavedProjectRecord,
@@ -78,6 +80,23 @@ function sanitizeLoadedScore(raw: Score): Score {
 }
 
 export default function App() {
+  // Current active sub-application in Mr. Arthur's Music Lab
+  const [currentApp, setCurrentApp] = useState<MusicLabAppId>(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const appParam = params.get('app');
+      if (appParam === 'staff-composer' || appParam === 'rhythm-rockstars') {
+        return appParam;
+      }
+      if (params.get('share')) {
+        return 'staff-composer';
+      }
+    } catch {
+      // ignore in SSR / restricted iframe
+    }
+    return 'hub';
+  });
+
   // Score state (ALWAYS default to just a single treble clef staff with NO NOTES)
   const [score, setScore] = useState<Score>(() => JSON.parse(JSON.stringify(DEFAULT_BLANK_SCORE)));
 
@@ -1100,6 +1119,10 @@ export default function App() {
         return;
       }
 
+      if (currentApp !== 'staff-composer') {
+        return;
+      }
+
       // Space -> Toggle Play / Pause
       if (e.code === 'Space' || e.key === ' ' || e.key === 'Spacebar') {
         e.preventDefault();
@@ -1244,6 +1267,7 @@ export default function App() {
     handleUndo,
     isAvatarOpen,
     isFullScreen,
+    currentApp,
     score.tracks,
     selection,
     shiftSelectedPitch,
@@ -1492,6 +1516,154 @@ export default function App() {
     );
   }
 
+  if (currentApp === 'hub') {
+    return (
+      <>
+        <MusicLabLanding
+          onSelectApp={(app) => {
+            soundEngine.playWelcomeChime();
+            setCurrentApp(app);
+          }}
+          studentSession={studentSession}
+          onOpenClassroom={() => {
+            setOpenInTeacherMode(false);
+            setIsClassroomModalOpen(true);
+          }}
+          onOpenEdLaw={() => setIsEdLawModalOpen(true)}
+          onOpenHelp={() => setIsHelpModalOpen(true)}
+          onOpenAvatar={() => {
+            soundEngine.playWelcomeChime();
+            setIsAvatarOpen(true);
+          }}
+        />
+
+        <HelpModal isOpen={isHelpModalOpen} onClose={() => setIsHelpModalOpen(false)} />
+        <EdLawPrivacyModal isOpen={isEdLawModalOpen} onClose={() => setIsEdLawModalOpen(false)} />
+
+        {isAvatarOpen && (
+          <div
+            onClick={() => {
+              setIsAvatarOpen(false);
+              adminKeyBufferRef.current = '';
+            }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-xs animate-in fade-in duration-150 cursor-pointer"
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="relative bg-slate-900 border-2 border-amber-400/60 rounded-3xl p-4 sm:p-5 shadow-2xl max-w-sm w-full flex flex-col items-center gap-3 animate-in zoom-in-95 duration-150"
+            >
+              <div className="w-64 h-64 sm:w-72 sm:h-72 rounded-2xl overflow-hidden bg-black border border-slate-700 shadow-xl ring-2 ring-amber-400/30">
+                <img
+                  src="/mr-arthur-avatar.jpg"
+                  alt="Mr. Arthur"
+                  className="w-full h-full object-contain"
+                />
+              </div>
+
+              <div className="text-center">
+                <div className="text-xs font-extrabold uppercase tracking-wider text-amber-300 font-['Fredoka',sans-serif]">
+                  Welcome to
+                </div>
+                <div className="text-xl font-black bg-gradient-to-r from-amber-300 via-rose-300 to-sky-300 bg-clip-text text-transparent font-['Fredoka',sans-serif]">
+                  Mr. Arthur&apos;s Music Lab
+                </div>
+                <p className="text-xs text-slate-400 mt-1">Tap anywhere to close</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <ClassroomModal
+          isOpen={isClassroomModalOpen}
+          onClose={() => {
+            setIsClassroomModalOpen(false);
+            setOpenInTeacherMode(false);
+          }}
+          openInTeacherMode={openInTeacherMode}
+          studentSession={studentSession}
+          onStudentLoginSuccess={(session, projects) => {
+            setStudentSession(session);
+            saveStudentSession(session);
+            setEditingAsTeacher(null);
+            if (
+              !score.composer.trim() ||
+              score.composer.trim().toLowerCase() === 'student composer'
+            ) {
+              setScore((prev) => ({ ...prev, composer: session.firstName }));
+            }
+            if (projects.length === 0) {
+              setIsClassroomModalOpen(false);
+            }
+          }}
+          onStudentLogout={() => {
+            setStudentSession(null);
+            saveStudentSession(null);
+            setCurrentProjectId(null);
+            setEditingAsTeacher(null);
+            setCloudSaveStatus('idle');
+          }}
+          onStudentUpdateSession={(updatedSession) => {
+            setStudentSession(updatedSession);
+          }}
+          currentScore={score}
+          currentProjectId={currentProjectId}
+          onLoadProject={(proj, asTeacher) => {
+            const clean = sanitizeLoadedScore(proj.score);
+            clean.title = proj.title;
+            setCurrentProjectId(proj.id);
+            if (asTeacher) {
+              setEditingAsTeacher(asTeacher);
+            } else {
+              setEditingAsTeacher(null);
+            }
+            pushScoreState(clean);
+            setSelection({ trackIndex: 0, measureIndex: 0, itemIndex: 0 });
+            setCurrentApp('staff-composer');
+          }}
+          onStartNewSong={() => {
+            handleNewBlankScore();
+            setCurrentApp('staff-composer');
+          }}
+          onManualSaveCurrentSong={async (customTitle) => {
+            if (!studentSession) return;
+            const nextTitle = (customTitle || score.title || '').trim();
+            const nextScore: Score = {
+              ...score,
+              title: nextTitle,
+              composer:
+                !score.composer.trim() ||
+                score.composer.trim().toLowerCase() === 'student composer'
+                  ? studentSession.firstName
+                  : score.composer,
+            };
+            setScore(nextScore);
+            const res = await saveStudentProject({
+              studentId: studentSession.id,
+              pin: studentSession.pin,
+              projectId: currentProjectId,
+              title: nextTitle,
+              score: nextScore,
+            });
+            if (res.saved && res.project) {
+              setCurrentProjectId(res.project.id);
+              setCloudSaveStatus('saved');
+            }
+          }}
+          editingAsTeacher={editingAsTeacher}
+          onExitTeacherEditMode={() => {
+            setEditingAsTeacher(null);
+            setCurrentProjectId(null);
+            setCloudSaveStatus('idle');
+          }}
+        />
+      </>
+    );
+  }
+
+  if (currentApp === 'rhythm-rockstars') {
+    return <RhythmRockStarsApp onBackToHub={() => setCurrentApp('hub')} />;
+  }
+
   return (
     <div
       className={`${
@@ -1522,6 +1694,7 @@ export default function App() {
 
       {!isFullScreen && (
         <TransportBar
+          onBackToHub={() => setCurrentApp('hub')}
           title={score.title}
           composer={score.composer}
           onChangeTitle={(t) => {
