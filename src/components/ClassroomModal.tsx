@@ -194,8 +194,16 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
     setTeacherError(null);
     setTeacherNotice(null);
 
-    if (openInTeacherMode || (editingAsTeacher && editingAsTeacher.teacherPin)) {
-      const pinToTry = editingAsTeacher?.teacherPin || activeTeacherPin || '1234';
+    if (openInTeacherMode) {
+      setTeacherPinInput('');
+      setTeacherError(null);
+      setTeacherNotice(null);
+      setMode('teacher_auth');
+      return;
+    }
+
+    if (editingAsTeacher && editingAsTeacher.teacherPin) {
+      const pinToTry = editingAsTeacher.teacherPin;
       loginTeacher(pinToTry)
         .then((data) => {
           setActiveTeacherPin(pinToTry);
@@ -1169,16 +1177,13 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
               <div className="space-y-2 text-center">
                 <KeyRound className="w-8 h-8 text-amber-300 mx-auto" />
                 <label className="block text-sm font-bold text-white">
-                  Enter Teacher Admin PIN
+                  Enter Admin PIN
                 </label>
-                <p className="text-xs text-slate-400">
-                  Default PIN is <code className="text-amber-300 font-bold">1234</code> (you can change this in Teacher Settings).
-                </p>
                 <input
                   type="password"
                   value={teacherPinInput}
                   onChange={(e) => setTeacherPinInput(e.target.value)}
-                  placeholder="Teacher PIN..."
+                  placeholder="••••"
                   autoFocus
                   className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 focus:border-amber-400 focus:outline-hidden text-center text-lg font-black tracking-widest text-amber-300"
                 />
@@ -1189,7 +1194,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                 disabled={isLoading}
                 className="w-full py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-sm shadow-lg cursor-pointer"
               >
-                {isLoading ? 'Unlocking...' : 'Unlock Teacher Portal'}
+                {isLoading ? 'Unlocking...' : 'Unlock Admin Portal'}
               </button>
             </form>
           )}
@@ -1310,7 +1315,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                           type="text"
                           value={newStuPin}
                           onChange={(e) => setNewStuPin(e.target.value)}
-                          placeholder="1234"
+                          placeholder="4-digit"
                           className="w-full px-2 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs font-mono text-amber-300"
                         />
                         <button

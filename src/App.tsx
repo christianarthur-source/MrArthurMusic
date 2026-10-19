@@ -1545,14 +1545,13 @@ export default function App() {
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-xs animate-in fade-in duration-150 cursor-pointer"
         >
           <div
-            onClick={(e) => e.stopPropagation()}
-            className="relative bg-slate-900 border-2 border-amber-400/60 rounded-3xl p-4 sm:p-5 shadow-2xl max-w-sm w-full flex flex-col items-center gap-3 animate-in zoom-in-95 duration-150"
+            className="relative bg-slate-900 border-2 border-amber-400/60 rounded-3xl p-4 sm:p-5 shadow-2xl max-w-sm w-full flex flex-col items-center gap-3 animate-in zoom-in-95 duration-150 cursor-pointer select-none"
           >
             <div className="w-64 h-64 sm:w-72 sm:h-72 rounded-2xl overflow-hidden bg-black border border-slate-700 shadow-xl ring-2 ring-amber-400/30">
               <img
                 src="/mr-arthur-avatar.jpg"
                 alt="Mr. Arthur"
-                className="w-full h-full object-contain"
+                className="w-full h-full object-contain cursor-pointer"
               />
             </div>
 
@@ -1563,7 +1562,7 @@ export default function App() {
               <div className="text-xl font-black bg-gradient-to-r from-amber-300 via-rose-300 to-sky-300 bg-clip-text text-transparent font-['Fredoka',sans-serif]">
                 Mr. Arthur&apos;s Music Lab
               </div>
-              <p className="text-xs text-slate-400 mt-1">Tap anywhere to close</p>
+              <p className="text-xs text-slate-400 mt-1">Click image or anywhere to close</p>
             </div>
           </div>
         </div>
