@@ -32,6 +32,8 @@ import { TimelineArranger } from './components/TimelineArranger';
 import { LoopBrowser } from './components/LoopBrowser';
 import { PianoRollModal } from './components/PianoRollModal';
 import { MixerModal } from './components/MixerModal';
+import { InstrumentPickerModal, DawInstrumentOption } from './components/InstrumentPickerModal';
+import { VirtualPianoKeyboard } from './components/VirtualPianoKeyboard';
 import {
   saveStudentProject,
   StudentSession,
@@ -138,8 +140,13 @@ export const DawApp: React.FC<DawAppProps> = ({
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [selectedTrackId, setSelectedTrackId] = useState<string | null>(project.tracks[0]?.id || null);
   const [selectedClipId, setSelectedClipId] = useState<string | null>(null);
-  const [activeDrawerTab, setActiveDrawerTab] = useState<'loops' | 'piano-roll' | 'mixer' | null>('loops');
+  const [clipClipboard, setClipClipboard] = useState<DawClip | null>(null);
+  const [activeDrawerTab, setActiveDrawerTab] = useState<'loops' | 'virtual-piano' | 'piano-roll' | 'mixer' | null>('loops');
   const [activePianoRollClipId, setActivePianoRollClipId] = useState<string | null>(null);
+
+  // Virtual Instrument Selection Modal
+  const [isInstrumentPickerOpen, setIsInstrumentPickerOpen] = useState<boolean>(false);
+  const [instrumentPickerTrackId, setInstrumentPickerTrackId] = useState<string | null>(null);
 
   // Cloud Save Modal & Notifications
   const [isCloudSaveOpen, setIsCloudSaveOpen] = useState<boolean>(false);
@@ -193,20 +200,75 @@ export const DawApp: React.FC<DawAppProps> = ({
     dawAudioEngine.syncTracks(project.tracks, project.masterVolume);
   }, [project.tracks, project.masterVolume]);
 
-  // Keyboard shortcut: Spacebar toggles Play/Pause
+  // Keyboard shortcuts: Spacebar, Copy, Cut, Paste, Duplicate, Delete, Split
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
         return;
       }
+
+      // Space: Toggle Play / Pause
       if (e.code === 'Space') {
         e.preventDefault();
         handleTogglePlay();
+        return;
+      }
+
+      // Cmd / Ctrl combinations
+      const isCmdOrCtrl = e.metaKey || e.ctrlKey;
+      if (isCmdOrCtrl) {
+        if (e.key === 'c' || e.key === 'C') {
+          if (selectedClipId) {
+            e.preventDefault();
+            handleCopyClip(selectedClipId);
+          }
+        } else if (e.key === 'x' || e.key === 'X') {
+          if (selectedClipId) {
+            e.preventDefault();
+            handleCutClip(selectedClipId);
+          }
+        } else if (e.key === 'v' || e.key === 'V') {
+          e.preventDefault();
+          handlePasteClip();
+        } else if (e.key === 'd' || e.key === 'D') {
+          if (selectedClipId) {
+            e.preventDefault();
+            handleDuplicateClip(selectedClipId);
+          }
+        }
+        return;
+      }
+
+      // Single key actions on selected clip
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        if (selectedClipId) {
+          e.preventDefault();
+          handleDeleteClip(selectedClipId);
+          setNotification('Deleted clip 🗑️');
+          setTimeout(() => setNotification(null), 2000);
+        }
+      } else if (e.key === 's' || e.key === 'S') {
+        if (selectedClipId) {
+          e.preventDefault();
+          handleSplitClip(selectedClipId, currentBeat);
+        }
       }
     };
+
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isPlaying, project]);
+  }, [
+    currentBeat,
+    handleCopyClip,
+    handleCutClip,
+    handleDuplicateClip,
+    handleDeleteClip,
+    handlePasteClip,
+    handleSplitClip,
+    isPlaying,
+    project,
+    selectedClipId,
+  ]);
 
   // Play / Pause toggle
   const handleTogglePlay = () => {
@@ -311,13 +373,51 @@ export const DawApp: React.FC<DawAppProps> = ({
     }
   };
 
-  // Move clip
-  const handleMoveClip = (clipId: string, newStartBeat: number) => {
-    const nextTracks = project.tracks.map((t) => ({
-      ...t,
-      clips: t.clips.map((c) => (c.id === clipId ? { ...c, startBeat: newStartBeat } : c)),
-    }));
-    setProject((prev) => ({ ...prev, tracks: nextTracks }));
+  // Move clip (beat position and track)
+  const handleMoveClip = (clipId: string, newStartBeat: number, newTrackId?: string) => {
+    let clipToMove: DawClip | null = null;
+    let fromTrackId: string | null = null;
+
+    for (const t of project.tracks) {
+      const found = t.clips.find((c) => c.id === clipId);
+      if (found) {
+        clipToMove = found;
+        fromTrackId = t.id;
+        break;
+      }
+    }
+
+    if (!clipToMove) return;
+    const targetTrackId = newTrackId || fromTrackId;
+
+    if (targetTrackId === fromTrackId) {
+      const nextTracks = project.tracks.map((t) => ({
+        ...t,
+        clips: t.clips.map((c) => (c.id === clipId ? { ...c, startBeat: Math.max(0, newStartBeat) } : c)),
+      }));
+      setProject((prev) => ({ ...prev, tracks: nextTracks }));
+    } else {
+      const targetTrack = project.tracks.find((t) => t.id === targetTrackId);
+      if (!targetTrack) return;
+
+      const updatedClip: DawClip = {
+        ...clipToMove,
+        trackId: targetTrackId,
+        startBeat: Math.max(0, newStartBeat),
+        color: targetTrack.color,
+      };
+
+      const nextTracks = project.tracks.map((t) => {
+        if (t.id === fromTrackId) {
+          return { ...t, clips: t.clips.filter((c) => c.id !== clipId) };
+        }
+        if (t.id === targetTrackId) {
+          return { ...t, clips: [...t.clips, updatedClip] };
+        }
+        return t;
+      });
+      setProject((prev) => ({ ...prev, tracks: nextTracks }));
+    }
   };
 
   // Trim clip
@@ -398,25 +498,199 @@ export const DawApp: React.FC<DawAppProps> = ({
     if (selectedClipId === clipId) setSelectedClipId(null);
   };
 
+  // Copy clip to clipboard
+  const handleCopyClip = useCallback(
+    (clipId: string) => {
+      for (const t of project.tracks) {
+        const c = t.clips.find((clip) => clip.id === clipId);
+        if (c) {
+          setClipClipboard({ ...c });
+          setNotification(`Copied "${c.name}" to clipboard 📋`);
+          setTimeout(() => setNotification(null), 2000);
+          return;
+        }
+      }
+    },
+    [project.tracks]
+  );
+
+  // Cut clip
+  const handleCutClip = useCallback(
+    (clipId: string) => {
+      handleCopyClip(clipId);
+      handleDeleteClip(clipId);
+      setNotification('Cut clip ✂️');
+      setTimeout(() => setNotification(null), 2000);
+    },
+    [handleCopyClip]
+  );
+
+  // Paste clip at current playhead
+  const handlePasteClip = useCallback(() => {
+    if (!clipClipboard) {
+      setNotification('Clipboard is empty! Select a clip to copy first.');
+      setTimeout(() => setNotification(null), 2000);
+      return;
+    }
+
+    let targetTrack = project.tracks.find((t) => t.id === selectedTrackId);
+    if (!targetTrack) {
+      targetTrack = project.tracks.find((t) => t.id === clipClipboard.trackId) || project.tracks[0];
+    }
+
+    const pasteBeat = Math.max(0, Math.round(currentBeat));
+    const pastedClip: DawClip = {
+      ...clipClipboard,
+      id: `clip_${Date.now()}_paste`,
+      trackId: targetTrack.id,
+      startBeat: pasteBeat,
+    };
+
+    const nextTracks = project.tracks.map((t) =>
+      t.id === targetTrack!.id ? { ...t, clips: [...t.clips, pastedClip] } : t
+    );
+
+    pushState({ ...project, tracks: nextTracks });
+    setSelectedClipId(pastedClip.id);
+    setNotification(`Pasted "${pastedClip.name}" at Bar ${Math.floor(pasteBeat / 4) + 1}! 📥`);
+    setTimeout(() => setNotification(null), 2500);
+  }, [clipClipboard, currentBeat, project, pushState, selectedTrackId]);
+
   // Add Track
   const handleAddTrack = (type: 'audio' | 'instrument') => {
+    if (type === 'instrument') {
+      // Prompt instrument selection menu
+      setInstrumentPickerTrackId(null);
+      setIsInstrumentPickerOpen(true);
+      return;
+    }
+
     const color = TRACK_COLOR_PALETTE[project.tracks.length % TRACK_COLOR_PALETTE.length];
     const newTrack: DawTrack = {
       id: `track_${Date.now()}`,
-      name: type === 'audio' ? `Audio Track ${project.tracks.length + 1}` : `Instrument ${project.tracks.length + 1}`,
-      type,
+      name: `Audio Track ${project.tracks.length + 1}`,
+      type: 'audio',
       color,
-      icon: type === 'audio' ? '🎧' : '🎹',
+      icon: '🎧',
       muted: false,
       solo: false,
       armRecord: false,
-      instrumentId: type === 'instrument' ? 'piano_treble' : undefined,
       clips: [],
       fx: { ...DEFAULT_DAW_FX },
     };
 
     pushState({ ...project, tracks: [...project.tracks, newTrack] });
     setSelectedTrackId(newTrack.id);
+  };
+
+  // Confirm instrument selection from modal
+  const handleSelectInstrument = (inst: DawInstrumentOption) => {
+    if (instrumentPickerTrackId) {
+      // Changing instrument on existing track
+      const nextTracks = project.tracks.map((t) =>
+        t.id === instrumentPickerTrackId
+          ? {
+              ...t,
+              instrumentId: inst.id,
+              name: inst.name,
+              icon: inst.icon,
+            }
+          : t
+      );
+      pushState({ ...project, tracks: nextTracks });
+      setNotification(`Changed track sound to ${inst.name}! 🎹`);
+    } else {
+      // Creating a new virtual instrument track
+      const color = TRACK_COLOR_PALETTE[project.tracks.length % TRACK_COLOR_PALETTE.length];
+      const newTrack: DawTrack = {
+        id: `track_${Date.now()}`,
+        name: inst.name,
+        type: 'instrument',
+        color,
+        icon: inst.icon,
+        muted: false,
+        solo: false,
+        armRecord: true,
+        instrumentId: inst.id,
+        clips: [],
+        fx: { ...DEFAULT_DAW_FX },
+      };
+
+      pushState({ ...project, tracks: [...project.tracks, newTrack] });
+      setSelectedTrackId(newTrack.id);
+      setActiveDrawerTab('virtual-piano');
+      setNotification(`Added "${inst.name}" track! You can play it live with your keyboard. 🎹`);
+    }
+
+    setTimeout(() => setNotification(null), 3500);
+    setIsInstrumentPickerOpen(false);
+    setInstrumentPickerTrackId(null);
+  };
+
+  // Live note recording from Virtual Piano Keyboard
+  const handleRecordPianoNote = (noteData: {
+    midi: number;
+    pitch: Pitch;
+    startBeat: number;
+    durationBeats: number;
+  }) => {
+    const armedTrack =
+      project.tracks.find((t) => t.armRecord && t.type === 'instrument') ||
+      project.tracks.find((t) => t.id === selectedTrackId && t.type === 'instrument') ||
+      project.tracks.find((t) => t.type === 'instrument');
+
+    if (!armedTrack) return;
+
+    // Check if an existing MIDI clip covers this beat
+    const targetClip = armedTrack.clips.find(
+      (c) => noteData.startBeat >= c.startBeat && noteData.startBeat < c.startBeat + c.durationBeats
+    );
+
+    if (targetClip) {
+      const newNote: DawMidiNote = {
+        id: `note_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+        midi: noteData.midi,
+        startBeat: Math.max(0, noteData.startBeat - targetClip.startBeat),
+        durationBeats: noteData.durationBeats,
+        velocity: 0.85,
+      };
+
+      const updatedClips = armedTrack.clips.map((c) =>
+        c.id === targetClip.id ? { ...c, midiNotes: [...(c.midiNotes || []), newNote] } : c
+      );
+
+      setProject((prev) => ({
+        ...prev,
+        tracks: prev.tracks.map((t) => (t.id === armedTrack.id ? { ...t, clips: updatedClips } : t)),
+      }));
+    } else {
+      // Create a 4-bar MIDI clip
+      const clipStart = Math.floor(noteData.startBeat / 4) * 4;
+      const newClip: DawClip = {
+        id: `midi_${Date.now()}`,
+        trackId: armedTrack.id,
+        name: `${armedTrack.name} Live Take`,
+        type: 'midi',
+        startBeat: clipStart,
+        durationBeats: 8,
+        color: armedTrack.color,
+        midiNotes: [
+          {
+            id: `note_${Date.now()}`,
+            midi: noteData.midi,
+            startBeat: Math.max(0, noteData.startBeat - clipStart),
+            durationBeats: noteData.durationBeats,
+            velocity: 0.85,
+          },
+        ],
+      };
+
+      const nextTracks = project.tracks.map((t) =>
+        t.id === armedTrack.id ? { ...t, clips: [...t.clips, newClip] } : t
+      );
+      pushState({ ...project, tracks: nextTracks });
+      setSelectedClipId(newClip.id);
+    }
   };
 
   // Delete Track
@@ -733,6 +1007,10 @@ export const DawApp: React.FC<DawAppProps> = ({
           onChangeTrackName={handleChangeTrackName}
           onAddTrack={handleAddTrack}
           onDeleteTrack={handleDeleteTrack}
+          onChangeInstrument={(trackId) => {
+            setInstrumentPickerTrackId(trackId);
+            setIsInstrumentPickerOpen(true);
+          }}
         />
 
         <TimelineArranger
@@ -746,6 +1024,10 @@ export const DawApp: React.FC<DawAppProps> = ({
           onSplitClip={handleSplitClip}
           onDuplicateClip={handleDuplicateClip}
           onDeleteClip={handleDeleteClip}
+          onCopyClip={handleCopyClip}
+          onCutClip={handleCutClip}
+          onPasteClip={handlePasteClip}
+          canPaste={!!clipClipboard}
           onOpenPianoRollForClip={(id) => {
             setActivePianoRollClipId(id);
             setActiveDrawerTab('piano-roll');
@@ -754,7 +1036,7 @@ export const DawApp: React.FC<DawAppProps> = ({
       </div>
 
       {/* ========================================================
-          BOTTOM DOCKABLE DRAWER (Loops / Piano Roll / Mixer)
+          BOTTOM DOCKABLE DRAWER (Loops / Piano Roll / Mixer / Virtual Piano)
           ======================================================== */}
       {activeDrawerTab === 'loops' && (
         <LoopBrowser
@@ -764,6 +1046,29 @@ export const DawApp: React.FC<DawAppProps> = ({
           onClose={() => setActiveDrawerTab(null)}
         />
       )}
+
+      {activeDrawerTab === 'virtual-piano' && (() => {
+        const activeInstrumentTrack =
+          project.tracks.find((t) => t.id === selectedTrackId && t.type === 'instrument') ||
+          project.tracks.find((t) => t.armRecord && t.type === 'instrument') ||
+          project.tracks.find((t) => t.type === 'instrument') ||
+          project.tracks[0];
+
+        return (
+          <VirtualPianoKeyboard
+            currentInstrumentId={activeInstrumentTrack?.instrumentId || 'piano_treble'}
+            trackName={activeInstrumentTrack?.name}
+            isRecording={isRecording}
+            currentBeat={currentBeat}
+            onOpenInstrumentPicker={() => {
+              setInstrumentPickerTrackId(activeInstrumentTrack?.id || null);
+              setIsInstrumentPickerOpen(true);
+            }}
+            onRecordNote={handleRecordPianoNote}
+            onClose={() => setActiveDrawerTab(null)}
+          />
+        );
+      })()}
 
       {activeDrawerTab === 'piano-roll' && (
         <PianoRollModal
@@ -785,6 +1090,23 @@ export const DawApp: React.FC<DawAppProps> = ({
           onUpdateTrackFx={handleUpdateTrackFx}
           onUpdateMasterVolume={(vol) => setProject((prev) => ({ ...prev, masterVolume: vol }))}
           onClose={() => setActiveDrawerTab(null)}
+        />
+      )}
+
+      {/* ========================================================
+          VIRTUAL INSTRUMENT PICKER MODAL
+          ======================================================== */}
+      {isInstrumentPickerOpen && (
+        <InstrumentPickerModal
+          currentInstrumentId={
+            project.tracks.find((t) => t.id === instrumentPickerTrackId)?.instrumentId || 'piano_treble'
+          }
+          onSelect={handleSelectInstrument}
+          onClose={() => {
+            setIsInstrumentPickerOpen(false);
+            setInstrumentPickerTrackId(null);
+          }}
+          title={instrumentPickerTrackId ? 'Change Track Instrument' : 'Add Virtual Instrument Track'}
         />
       )}
 

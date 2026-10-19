@@ -1,5 +1,5 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { Scissors, Copy, Trash2, Repeat, Maximize2 } from 'lucide-react';
+import { Scissors, Copy, Trash2, Repeat, Maximize2, ClipboardCopy, ClipboardPaste, Music } from 'lucide-react';
 import { DawClip, DawProject, DawSnapGrid, DawTrack } from '../types';
 
 interface TimelineArrangerProps {
@@ -13,6 +13,10 @@ interface TimelineArrangerProps {
   onSplitClip: (clipId: string, splitBeat: number) => void;
   onDuplicateClip: (clipId: string) => void;
   onDeleteClip: (clipId: string) => void;
+  onCopyClip?: (clipId: string) => void;
+  onCutClip?: (clipId: string) => void;
+  onPasteClip?: () => void;
+  canPaste?: boolean;
   onOpenPianoRollForClip?: (clipId: string) => void;
 }
 
@@ -27,11 +31,15 @@ export const TimelineArranger: React.FC<TimelineArrangerProps> = ({
   onSplitClip,
   onDuplicateClip,
   onDeleteClip,
+  onCopyClip,
+  onCutClip,
+  onPasteClip,
+  canPaste,
   onOpenPianoRollForClip,
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
 
-  // Pixels per beat (4 beats = 1 measure). 40px per beat = 160px per measure.
+  // Pixels per beat (4 beats = 1 measure). 36px per beat = 144px per measure.
   const pixelsPerBeat = 36;
   const totalMeasures = 32;
   const totalBeats = totalMeasures * 4;
@@ -57,14 +65,16 @@ export const TimelineArranger: React.FC<TimelineArrangerProps> = ({
     [getSnapIncrement, project.snapGrid]
   );
 
-  // Dragging state
+  // Dragging state with 2D coordinates (time + track lane)
   const [dragState, setDragState] = useState<{
     clipId: string;
     mode: 'move' | 'trim-left' | 'trim-right';
     startX: number;
+    startY: number;
     initialStartBeat: number;
     initialDurationBeats: number;
     initialTrackId: string;
+    initialTrackIndex: number;
   } | null>(null);
 
   // Ruler click/scrub handler
@@ -85,7 +95,15 @@ export const TimelineArranger: React.FC<TimelineArrangerProps> = ({
 
       if (dragState.mode === 'move') {
         const newStart = snapToGrid(dragState.initialStartBeat + deltaBeats);
-        onMoveClip(dragState.clipId, newStart);
+        const deltaY = e.clientY - dragState.startY;
+        // Each track lane is 96px high (h-24)
+        const trackDelta = Math.round(deltaY / 96);
+        const targetTrackIndex = Math.max(
+          0,
+          Math.min(project.tracks.length - 1, dragState.initialTrackIndex + trackDelta)
+        );
+        const targetTrack = project.tracks[targetTrackIndex];
+        onMoveClip(dragState.clipId, newStart, targetTrack?.id);
       } else if (dragState.mode === 'trim-right') {
         const newDur = Math.max(
           getSnapIncrement(project.snapGrid),
@@ -111,7 +129,7 @@ export const TimelineArranger: React.FC<TimelineArrangerProps> = ({
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [dragState, getSnapIncrement, onMoveClip, onTrimClip, pixelsPerBeat, project.snapGrid, snapToGrid]);
+  }, [dragState, getSnapIncrement, onMoveClip, onTrimClip, pixelsPerBeat, project.tracks, snapToGrid]);
 
   return (
     <div
@@ -220,13 +238,16 @@ export const TimelineArranger: React.FC<TimelineArrangerProps> = ({
                     onMouseDown={(e) => {
                       // Avoid dragging when clicking trim handles
                       if ((e.target as HTMLElement).dataset.role === 'trim') return;
+                      const trackIdx = project.tracks.findIndex((t) => t.id === track.id);
                       setDragState({
                         clipId: clip.id,
                         mode: 'move',
                         startX: e.clientX,
+                        startY: e.clientY,
                         initialStartBeat: clip.startBeat,
                         initialDurationBeats: clip.durationBeats,
                         initialTrackId: track.id,
+                        initialTrackIndex: trackIdx >= 0 ? trackIdx : 0,
                       });
                     }}
                   >
@@ -235,13 +256,16 @@ export const TimelineArranger: React.FC<TimelineArrangerProps> = ({
                       data-role="trim"
                       onMouseDown={(e) => {
                         e.stopPropagation();
+                        const trackIdx = project.tracks.findIndex((t) => t.id === track.id);
                         setDragState({
                           clipId: clip.id,
                           mode: 'trim-left',
                           startX: e.clientX,
+                          startY: e.clientY,
                           initialStartBeat: clip.startBeat,
                           initialDurationBeats: clip.durationBeats,
                           initialTrackId: track.id,
+                          initialTrackIndex: trackIdx >= 0 ? trackIdx : 0,
                         });
                       }}
                       className="absolute left-0 top-0 bottom-0 w-2 hover:w-3 bg-white/20 hover:bg-amber-400 cursor-ew-resize transition-all z-20"
@@ -349,13 +373,16 @@ export const TimelineArranger: React.FC<TimelineArrangerProps> = ({
                       data-role="trim"
                       onMouseDown={(e) => {
                         e.stopPropagation();
+                        const trackIdx = project.tracks.findIndex((t) => t.id === track.id);
                         setDragState({
                           clipId: clip.id,
                           mode: 'trim-right',
                           startX: e.clientX,
+                          startY: e.clientY,
                           initialStartBeat: clip.startBeat,
                           initialDurationBeats: clip.durationBeats,
                           initialTrackId: track.id,
+                          initialTrackIndex: trackIdx >= 0 ? trackIdx : 0,
                         });
                       }}
                       className="absolute right-0 top-0 bottom-0 w-2 hover:w-3 bg-white/20 hover:bg-amber-400 cursor-ew-resize transition-all z-20"
@@ -376,6 +403,121 @@ export const TimelineArranger: React.FC<TimelineArrangerProps> = ({
           />
         </div>
       </div>
+
+      {/* Floating Clip Actions Toolbar when a clip is selected */}
+      {selectedClipId && (() => {
+        const selectedClip = project.tracks.flatMap((t) => t.clips).find((c) => c.id === selectedClipId);
+        if (!selectedClip) return null;
+
+        return (
+          <div className="sticky bottom-3 left-4 right-4 z-40 max-w-2xl mx-auto bg-slate-900/95 border-2 border-amber-400/80 rounded-2xl shadow-2xl p-2 px-3.5 flex items-center justify-between gap-3 backdrop-blur-md">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: selectedClip.color }} />
+              <span className="text-xs font-black text-white truncate font-['Fredoka',sans-serif]">
+                {selectedClip.name}
+              </span>
+              <span className="text-[10px] text-amber-300 font-mono px-1.5 py-0.5 rounded bg-amber-400/10 border border-amber-400/30 shrink-0">
+                Bar {Math.floor(selectedClip.startBeat / 4) + 1}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
+              {/* Split */}
+              {currentBeat > selectedClip.startBeat &&
+                currentBeat < selectedClip.startBeat + selectedClip.durationBeats && (
+                  <button
+                    type="button"
+                    onClick={() => onSplitClip(selectedClip.id, currentBeat)}
+                    className="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold border border-slate-700 flex items-center gap-1 cursor-pointer transition-colors"
+                    title="Split clip at playhead position (S)"
+                  >
+                    <Scissors className="w-3 h-3 text-sky-400" />
+                    <span>Split (S)</span>
+                  </button>
+                )}
+
+              {/* Copy */}
+              {onCopyClip && (
+                <button
+                  type="button"
+                  onClick={() => onCopyClip(selectedClip.id)}
+                  className="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold border border-slate-700 flex items-center gap-1 cursor-pointer transition-colors"
+                  title="Copy clip (Cmd+C)"
+                >
+                  <ClipboardCopy className="w-3 h-3 text-emerald-400" />
+                  <span>Copy</span>
+                </button>
+              )}
+
+              {/* Cut */}
+              {onCutClip && (
+                <button
+                  type="button"
+                  onClick={() => onCutClip(selectedClip.id)}
+                  className="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold border border-slate-700 flex items-center gap-1 cursor-pointer transition-colors"
+                  title="Cut clip (Cmd+X)"
+                >
+                  <Scissors className="w-3 h-3 text-amber-400" />
+                  <span>Cut</span>
+                </button>
+              )}
+
+              {/* Paste */}
+              {onPasteClip && (
+                <button
+                  type="button"
+                  onClick={onPasteClip}
+                  disabled={!canPaste}
+                  className={`px-2 py-1 rounded-lg text-[11px] font-bold border flex items-center gap-1 transition-colors ${
+                    canPaste
+                      ? 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700 cursor-pointer'
+                      : 'bg-slate-900 text-slate-600 border-slate-800 cursor-not-allowed opacity-50'
+                  }`}
+                  title="Paste clip at playhead (Cmd+V)"
+                >
+                  <ClipboardPaste className="w-3 h-3 text-indigo-400" />
+                  <span>Paste</span>
+                </button>
+              )}
+
+              {/* Duplicate */}
+              <button
+                type="button"
+                onClick={() => onDuplicateClip(selectedClip.id)}
+                className="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold border border-slate-700 flex items-center gap-1 cursor-pointer transition-colors"
+                title="Duplicate clip to right (Cmd+D)"
+              >
+                <Copy className="w-3 h-3 text-cyan-400" />
+                <span>Duplicate</span>
+              </button>
+
+              {/* Piano Roll (for MIDI) */}
+              {selectedClip.type === 'midi' && onOpenPianoRollForClip && (
+                <button
+                  type="button"
+                  onClick={() => onOpenPianoRollForClip(selectedClip.id)}
+                  className="px-2 py-1 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 text-[11px] font-bold border border-indigo-400/40 flex items-center gap-1 cursor-pointer transition-colors"
+                  title="Open Piano Roll editor"
+                >
+                  <Music className="w-3 h-3" />
+                  <span>Piano Roll</span>
+                </button>
+              )}
+
+              {/* Delete */}
+              <button
+                type="button"
+                onClick={() => onDeleteClip(selectedClip.id)}
+                className="px-2 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 text-[11px] font-bold border border-rose-500/40 flex items-center gap-1 cursor-pointer transition-colors"
+                title="Delete clip (Backspace/Delete)"
+              >
+                <Trash2 className="w-3 h-3 text-rose-400" />
+                <span>Delete</span>
+              </button>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 };
