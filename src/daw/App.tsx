@@ -517,6 +517,7 @@ export const DawApp: React.FC<DawAppProps> = ({
       durationBeats: loop.durationBeats,
       color: loop.color,
       loopId: loop.id,
+      originalBpm: project.bpm || loop.bpm,
       audioBuffer: buffer,
       waveform,
       isLooping: true,
@@ -532,7 +533,7 @@ export const DawApp: React.FC<DawAppProps> = ({
 
     pushState({ ...project, tracks: nextTracks });
     setSelectedClipId(newClip.id);
-    setNotification(`Added "${loop.name}" to ${targetTrack.name}! 🎵`);
+    setNotification(`Added "${loop.name}" (synced to ${project.bpm} BPM)! 🎵`);
     setTimeout(() => setNotification(null), 3000);
   };
 
@@ -553,6 +554,7 @@ export const DawApp: React.FC<DawAppProps> = ({
         startBeat: Math.round(currentBeat),
         durationBeats,
         color: '#06B6D4',
+        originalBpm: project.bpm,
         audioBuffer: buffer,
         waveform,
         gain: 1.0,
@@ -1060,6 +1062,7 @@ export const DawApp: React.FC<DawAppProps> = ({
       {activeDrawerTab === 'loops' && (
         <LoopBrowser
           audioCtx={dawAudioEngine.ensureContext()}
+          projectBpm={project.bpm}
           onAddLoopToTimeline={handleAddLoopToTimeline}
           onUploadAudioFile={handleUploadAudioFile}
           onClose={() => setActiveDrawerTab(null)}

@@ -1,5 +1,10 @@
 import { DawClip, DawFxSettings, DawProject, DawTrack } from '../types';
 import { soundEngine } from '../../audio/soundEngine';
+import {
+  getAcousticSampleForFreq,
+  getHarmonicPeriodicWave,
+  HarmonicTimbreFamily,
+} from '../../audio/acousticSamples';
 
 interface ActivePlaybackSource {
   stop: (time?: number) => void;
@@ -162,8 +167,11 @@ export class DawAudioEngine {
         const clipEndBeat = clip.startBeat + clip.durationBeats;
         if (clipEndBeat <= this.startBeatOffset) return;
 
-        // Audio clip scheduling
+        // Audio clip scheduling with automatic tempo time-stretching
         if (clip.type === 'audio' && clip.audioBuffer) {
+          const stretchRate =
+            clip.originalBpm && clip.originalBpm > 0 ? this.bpm / clip.originalBpm : 1.0;
+
           const clipStartSec = Math.max(0, (clip.startBeat - this.startBeatOffset) * beatSec);
           const startOffsetSec =
             clip.startBeat < this.startBeatOffset
@@ -174,6 +182,7 @@ export class DawAudioEngine {
           const src = ctx.createBufferSource();
           src.buffer = clip.audioBuffer;
           src.loop = clip.isLooping || false;
+          src.playbackRate.setValueAtTime(stretchRate, 0);
 
           const clipGain = ctx.createGain();
           clipGain.gain.setValueAtTime(clip.gain ?? 1.0, 0);
@@ -182,12 +191,13 @@ export class DawAudioEngine {
           clipGain.connect(nodes.input);
 
           const startTime = this.startCtxTime + clipStartSec;
-          src.start(startTime, startOffsetSec, playDurationSec);
+          src.start(startTime, startOffsetSec * stretchRate, playDurationSec);
           this.activeSources.push({ stop: (t) => { try { src.stop(t || 0); } catch {} } });
         }
 
-        // MIDI clip scheduling
+        // MIDI clip scheduling with realistic SoundFont / harmonic wave synthesis
         if (clip.type === 'midi' && clip.midiNotes && clip.midiNotes.length > 0) {
+          const instrumentId = track.instrumentId || 'piano_treble';
           clip.midiNotes.forEach((mNote) => {
             const noteMasterBeat = clip.startBeat + mNote.startBeat;
             if (noteMasterBeat < this.startBeatOffset) return;
@@ -197,23 +207,71 @@ export class DawAudioEngine {
             const freq = 440 * Math.pow(2, (mNote.midi - 69) / 12);
             const startTime = this.startCtxTime + noteStartSec;
 
-            // Trigger synth note through soundEngine onto track input
-            const osc = ctx.createOscillator();
-            const g = ctx.createGain();
-            osc.type = 'triangle';
-            osc.frequency.setValueAtTime(freq, startTime);
+            // Check if acoustic SoundFont sample is cached
+            const sample = getAcousticSampleForFreq(ctx, instrumentId, freq);
+            if (sample) {
+              const src = ctx.createBufferSource();
+              src.buffer = sample.buffer;
+              src.playbackRate.setValueAtTime(sample.playbackRate, startTime);
 
-            g.gain.setValueAtTime(0.001, startTime);
-            g.gain.linearRampToValueAtTime(0.65 * mNote.velocity, startTime + 0.01);
-            g.gain.setValueAtTime(0.55 * mNote.velocity, startTime + noteDurSec * 0.85);
-            g.gain.exponentialRampToValueAtTime(0.0001, startTime + noteDurSec);
+              const g = ctx.createGain();
+              g.gain.setValueAtTime(0.85 * mNote.velocity, startTime);
+              g.gain.setValueAtTime(0.7 * mNote.velocity, startTime + noteDurSec * 0.85);
+              g.gain.exponentialRampToValueAtTime(0.0001, startTime + noteDurSec + 0.15);
 
-            osc.connect(g);
-            g.connect(nodes.input);
-            osc.start(startTime);
-            osc.stop(startTime + noteDurSec + 0.05);
+              src.connect(g);
+              g.connect(nodes.input);
+              src.start(startTime);
+              src.stop(startTime + noteDurSec + 0.2);
+              this.activeSources.push({ stop: (t) => { try { src.stop(t || 0); } catch {} } });
+            } else {
+              // High-quality Fourier PeriodicWave synthesis tailored to instrument family
+              const osc = ctx.createOscillator();
+              const g = ctx.createGain();
 
-            this.activeSources.push({ stop: (t) => { try { osc.stop(t || 0); } catch {} } });
+              let timbre: HarmonicTimbreFamily = 'piano';
+              if (instrumentId.includes('piano')) timbre = 'piano';
+              else if (instrumentId.includes('organ')) timbre = 'organ_church';
+              else if (instrumentId.includes('flute')) timbre = 'flute';
+              else if (instrumentId.includes('sax')) timbre = 'saxophone';
+              else if (
+                instrumentId.includes('brass') ||
+                instrumentId.includes('trumpet') ||
+                instrumentId.includes('horn') ||
+                instrumentId.includes('tuba')
+              )
+                timbre = 'brass_bright';
+              else if (
+                instrumentId.includes('violin') ||
+                instrumentId.includes('string') ||
+                instrumentId.includes('cello')
+              )
+                timbre = 'strings_bowed';
+              else if (instrumentId.includes('guitar')) timbre = 'plucked_folk';
+              else if (instrumentId.includes('lead') || instrumentId.includes('synth'))
+                timbre = 'overdrive_rock';
+              else if (instrumentId.includes('choir') || instrumentId.includes('voice'))
+                timbre = 'choir_voice';
+
+              try {
+                osc.setPeriodicWave(getHarmonicPeriodicWave(ctx, timbre));
+              } catch {
+                osc.type = 'triangle';
+              }
+              osc.frequency.setValueAtTime(freq, startTime);
+
+              g.gain.setValueAtTime(0.001, startTime);
+              g.gain.linearRampToValueAtTime(0.75 * mNote.velocity, startTime + 0.015);
+              g.gain.setValueAtTime(0.6 * mNote.velocity, startTime + noteDurSec * 0.85);
+              g.gain.exponentialRampToValueAtTime(0.0001, startTime + noteDurSec + 0.08);
+
+              osc.connect(g);
+              g.connect(nodes.input);
+              osc.start(startTime);
+              osc.stop(startTime + noteDurSec + 0.1);
+
+              this.activeSources.push({ stop: (t) => { try { osc.stop(t || 0); } catch {} } });
+            }
           });
         }
       });
@@ -362,8 +420,12 @@ export class DawAudioEngine {
 
       track.clips.forEach((clip) => {
         if (clip.type === 'audio' && clip.audioBuffer) {
+          const stretchRate =
+            clip.originalBpm && clip.originalBpm > 0 ? bpm / clip.originalBpm : 1.0;
           const src = offlineCtx.createBufferSource();
           src.buffer = clip.audioBuffer;
+          src.playbackRate.setValueAtTime(stretchRate, 0);
+
           const startTime = clip.startBeat * beatSec;
           const durSec = clip.durationBeats * beatSec;
 
@@ -373,6 +435,44 @@ export class DawAudioEngine {
           src.connect(clipG);
           clipG.connect(trackGain);
           src.start(startTime, 0, durSec);
+        }
+
+        if (clip.type === 'midi' && clip.midiNotes && clip.midiNotes.length > 0) {
+          const instrumentId = track.instrumentId || 'piano_treble';
+          clip.midiNotes.forEach((mNote) => {
+            const noteStartSec = (clip.startBeat + mNote.startBeat) * beatSec;
+            const noteDurSec = mNote.durationBeats * beatSec;
+            const freq = 440 * Math.pow(2, (mNote.midi - 69) / 12);
+
+            const osc = offlineCtx.createOscillator();
+            const g = offlineCtx.createGain();
+
+            let timbre: HarmonicTimbreFamily = 'piano';
+            if (instrumentId.includes('piano')) timbre = 'piano';
+            else if (instrumentId.includes('flute')) timbre = 'flute';
+            else if (instrumentId.includes('brass') || instrumentId.includes('trumpet'))
+              timbre = 'brass_bright';
+            else if (instrumentId.includes('violin') || instrumentId.includes('string'))
+              timbre = 'strings_bowed';
+            else if (instrumentId.includes('guitar')) timbre = 'plucked_folk';
+
+            try {
+              osc.setPeriodicWave(getHarmonicPeriodicWave(offlineCtx, timbre));
+            } catch {
+              osc.type = 'triangle';
+            }
+            osc.frequency.setValueAtTime(freq, noteStartSec);
+
+            g.gain.setValueAtTime(0.001, noteStartSec);
+            g.gain.linearRampToValueAtTime(0.7 * mNote.velocity, noteStartSec + 0.015);
+            g.gain.setValueAtTime(0.55 * mNote.velocity, noteStartSec + noteDurSec * 0.85);
+            g.gain.exponentialRampToValueAtTime(0.0001, noteStartSec + noteDurSec + 0.08);
+
+            osc.connect(g);
+            g.connect(trackGain);
+            osc.start(noteStartSec);
+            osc.stop(noteStartSec + noteDurSec + 0.1);
+          });
         }
       });
     });

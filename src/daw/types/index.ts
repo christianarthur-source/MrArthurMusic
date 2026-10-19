@@ -27,6 +27,7 @@ export interface DawClip {
   trimStartBeat?: number;
   gain?: number;
   isLooping?: boolean;
+  originalBpm?: number; // Native tempo of loop/audio clip for automatic project BPM time-stretching
   // MIDI / Instrument clip fields:
   midiNotes?: DawMidiNote[];
 }

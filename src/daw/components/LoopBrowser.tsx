@@ -16,6 +16,7 @@ import { decodeUploadedAudio, getOrGenerateLoopAudio } from '../audio/loopGenera
 
 interface LoopBrowserProps {
   audioCtx: BaseAudioContext;
+  projectBpm?: number;
   onAddLoopToTimeline: (loop: DawLoopItem, buffer: AudioBuffer, waveform: number[]) => void;
   onUploadAudioFile: (file: File) => void;
   onClose: () => void;
@@ -23,6 +24,7 @@ interface LoopBrowserProps {
 
 export const LoopBrowser: React.FC<LoopBrowserProps> = ({
   audioCtx,
+  projectBpm,
   onAddLoopToTimeline,
   onUploadAudioFile,
   onClose,
@@ -48,7 +50,7 @@ export const LoopBrowser: React.FC<LoopBrowserProps> = ({
     setPreviewingLoopId(null);
   };
 
-  // Preview or stop a loop
+  // Preview or stop a loop (synced to project BPM)
   const handleTogglePreview = async (loop: DawLoopItem) => {
     if (previewingLoopId === loop.id) {
       stopPreview();
@@ -59,7 +61,7 @@ export const LoopBrowser: React.FC<LoopBrowserProps> = ({
     setIsLoadingLoopId(loop.id);
 
     try {
-      const { buffer } = await getOrGenerateLoopAudio(loop, audioCtx);
+      const { buffer } = await getOrGenerateLoopAudio(loop, audioCtx, projectBpm);
       setIsLoadingLoopId(null);
       setPreviewingLoopId(loop.id);
 
@@ -92,11 +94,11 @@ export const LoopBrowser: React.FC<LoopBrowserProps> = ({
     }
   };
 
-  // Add loop directly to project timeline
+  // Add loop directly to project timeline (stretched to project BPM)
   const handleAddLoop = async (loop: DawLoopItem) => {
     setIsLoadingLoopId(loop.id);
     try {
-      const { buffer, waveform } = await getOrGenerateLoopAudio(loop, audioCtx);
+      const { buffer, waveform } = await getOrGenerateLoopAudio(loop, audioCtx, projectBpm);
       onAddLoopToTimeline(loop, buffer, waveform);
     } catch (e) {
       console.error('Could not add loop', e);

@@ -35,6 +35,7 @@ import { InstrumentModal } from './components/InstrumentModal';
 import { DrumBeatsModal } from './components/DrumBeatsModal';
 import { DrumGroove } from './data/drumGrooves';
 import { TemplatesModal } from './components/TemplatesModal';
+import { EnsembleTemplatesModal } from './components/EnsembleTemplatesModal';
 import { HelpModal } from './components/HelpModal';
 import { PrintView } from './components/PrintView';
 import { ShareModal } from './components/ShareModal';
@@ -182,6 +183,7 @@ export default function App() {
   const [isInstrumentModalOpen, setIsInstrumentModalOpen] = useState<boolean>(false);
   const [isDrumBeatsModalOpen, setIsDrumBeatsModalOpen] = useState<boolean>(false);
   const [isTemplatesModalOpen, setIsTemplatesModalOpen] = useState<boolean>(false);
+  const [isEnsembleTemplatesModalOpen, setIsEnsembleTemplatesModalOpen] = useState<boolean>(false);
   const [isToolBoxModalOpen, setIsToolBoxModalOpen] = useState<boolean>(false);
   const [toolBoxInitialTool, setToolBoxInitialTool] = useState<ToolId>('tempo-tapper');
   const [isHelpModalOpen, setIsHelpModalOpen] = useState<boolean>(false);
@@ -1860,6 +1862,7 @@ export default function App() {
           }}
           onAddMeasure={handleAddMeasure}
           onOpenTemplates={() => setIsTemplatesModalOpen(true)}
+          onOpenEnsembleTemplates={() => setIsEnsembleTemplatesModalOpen(true)}
           onOpenToolBox={() => {
             setToolBoxInitialTool('tempo-tapper');
             setIsToolBoxModalOpen(true);
@@ -2086,6 +2089,15 @@ export default function App() {
       <TemplatesModal
         isOpen={isTemplatesModalOpen}
         onClose={() => setIsTemplatesModalOpen(false)}
+        onSelectScore={(newScore) => {
+          pushScoreState(newScore);
+          setSelection({ trackIndex: 0, measureIndex: 0, itemIndex: 0 });
+        }}
+      />
+
+      <EnsembleTemplatesModal
+        isOpen={isEnsembleTemplatesModalOpen}
+        onClose={() => setIsEnsembleTemplatesModalOpen(false)}
         onSelectScore={(newScore) => {
           pushScoreState(newScore);
           setSelection({ trackIndex: 0, measureIndex: 0, itemIndex: 0 });
