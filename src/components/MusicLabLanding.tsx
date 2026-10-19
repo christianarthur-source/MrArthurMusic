@@ -15,7 +15,7 @@ import {
 import { StudentSession } from '../utils/classroomApi';
 import { ClassroomToolBoxModal, ToolId } from './tools/ClassroomToolBoxModal';
 
-export type MusicLabAppId = 'hub' | 'staff-composer' | 'rhythm-rockstars' | 'beat-machine';
+export type MusicLabAppId = 'hub' | 'staff-composer' | 'rhythm-rockstars' | 'beat-machine' | 'daw';
 
 interface MusicLabLandingProps {
   onSelectApp: (appId: MusicLabAppId) => void;
@@ -226,7 +226,7 @@ export const MusicLabLanding: React.FC<MusicLabLandingProps> = ({
             </h3>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* 1. RHYTHM ROCK STARS */}
             <div className="relative rounded-3xl bg-gradient-to-br from-slate-900 via-[#180E1C] to-slate-950 border-2 border-rose-500/40 hover:border-rose-400 p-6 flex flex-col justify-between transition-all duration-300 hover:shadow-2xl hover:shadow-rose-500/20 group overflow-hidden">
               <div className="space-y-4">
@@ -335,6 +335,62 @@ export const MusicLabLanding: React.FC<MusicLabLandingProps> = ({
                 >
                   <Drum className="w-5 h-5" />
                   <span>Launch Beat Machine</span>
+                  <ArrowRight className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* 3. STUDIO DAW */}
+            <div className="relative rounded-3xl bg-gradient-to-br from-slate-900 via-[#130E26] to-slate-950 border-2 border-indigo-500/40 hover:border-indigo-400 p-6 flex flex-col justify-between transition-all duration-300 hover:shadow-2xl hover:shadow-indigo-500/20 group overflow-hidden">
+              <div className="space-y-4">
+                {/* Header Badge & Giant Icon */}
+                <div className="flex items-center justify-between">
+                  <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-0.5 shadow-xl group-hover:scale-108 transition-transform">
+                    <div className="w-full h-full bg-slate-950 rounded-[22px] flex items-center justify-center text-3xl">
+                      🎛️
+                    </div>
+                  </div>
+                  <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-400/40 font-['Fredoka',sans-serif]">
+                    🎧 Digital Audio Workstation
+                  </span>
+                </div>
+
+                <div>
+                  <h4 className="text-2xl sm:text-3xl font-black text-white font-['Fredoka',sans-serif] group-hover:text-indigo-300 transition-colors">
+                    Studio DAW
+                  </h4>
+                  <p className="text-xs font-bold text-indigo-400 uppercase tracking-wider mt-0.5">
+                    Multi-Track Recording &amp; Loops
+                  </p>
+                </div>
+
+                <p className="text-sm text-slate-300 leading-relaxed font-normal">
+                  Arrange audio loops, slice &amp; duplicate clips, record microphone vocals, play virtual instruments with Piano Roll &amp; USB MIDI, and export your song to WAV!
+                </p>
+
+                {/* Graphic Multitrack Arranger Simulation */}
+                <div className="p-3 rounded-2xl bg-slate-950 border border-indigo-500/30 space-y-1.5">
+                  <div className="h-3 rounded-md bg-amber-400/80 w-3/4 flex items-center px-1 text-[8px] font-mono text-slate-950 font-bold">
+                    🥁 Drums
+                  </div>
+                  <div className="h-3 rounded-md bg-pink-500/80 w-1/2 ml-4 flex items-center px-1 text-[8px] font-mono text-white font-bold">
+                    🎸 Bass
+                  </div>
+                  <div className="h-3 rounded-md bg-sky-400/80 w-5/6 flex items-center px-1 text-[8px] font-mono text-slate-950 font-bold">
+                    🎹 Chords
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Button */}
+              <div className="pt-6 mt-4 border-t border-slate-800/80">
+                <button
+                  type="button"
+                  onClick={() => onSelectApp('daw')}
+                  className="w-full py-4 rounded-2xl bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-400 hover:to-pink-400 text-white font-black text-base flex items-center justify-center gap-2 shadow-xl shadow-indigo-500/30 cursor-pointer group-hover:gap-3 transition-all font-['Fredoka',sans-serif]"
+                >
+                  <Music className="w-5 h-5" />
+                  <span>Launch Studio DAW</span>
                   <ArrowRight className="w-5 h-5" />
                 </button>
               </div>

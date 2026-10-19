@@ -44,6 +44,7 @@ import { MusicLabLanding, MusicLabAppId } from './components/MusicLabLanding';
 import { ClassroomToolBoxModal, ToolId } from './components/tools/ClassroomToolBoxModal';
 import RhythmRockStarsApp from './rhythm-rockstars/RhythmRockStarsApp';
 import BeatMachineApp from './beat-machine/App';
+import { DawApp } from './daw/App';
 import { ShieldCheck } from 'lucide-react';
 import {
   SavedProjectRecord,
@@ -90,7 +91,8 @@ export default function App() {
       if (
         appParam === 'staff-composer' ||
         appParam === 'rhythm-rockstars' ||
-        appParam === 'beat-machine'
+        appParam === 'beat-machine' ||
+        appParam === 'daw'
       ) {
         return appParam;
       }
@@ -201,6 +203,7 @@ export default function App() {
   );
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
   const [beatMachineLoadedSong, setBeatMachineLoadedSong] = useState<any>(null);
+  const [dawLoadedProject, setDawLoadedProject] = useState<any>(null);
   const [editingAsTeacher, setEditingAsTeacher] = useState<{
     teacherPin: string;
     studentName: string;
@@ -1621,6 +1624,15 @@ export default function App() {
             return;
           }
 
+          // If the song belongs to Studio DAW, load project and switch directly to DAW!
+          if (proj.appType === 'daw') {
+            if (proj.projectData) {
+              setDawLoadedProject(proj.projectData);
+            }
+            setCurrentApp('daw');
+            return;
+          }
+
           // Default: Staff Composer
           const clean = sanitizeLoadedScore(proj.score || DEFAULT_BLANK_SCORE);
           clean.title = proj.title;
@@ -1727,6 +1739,30 @@ export default function App() {
           studentSession={studentSession}
           loadedSongData={beatMachineLoadedSong}
           onClearLoadedSongData={() => setBeatMachineLoadedSong(null)}
+          currentProjectId={currentProjectId}
+          onProjectSaved={(newId) => setCurrentProjectId(newId)}
+          onOpenClassroomModal={() => {
+            setOpenInTeacherMode(false);
+            setIsClassroomModalOpen(true);
+          }}
+          onOpenAvatar={() => {
+            soundEngine.playWelcomeChime();
+            setIsAvatarOpen(true);
+          }}
+        />
+        {renderSharedAuthAndModals()}
+      </>
+    );
+  }
+
+  if (currentApp === 'daw') {
+    return (
+      <>
+        <DawApp
+          onBackToHub={() => setCurrentApp('hub')}
+          studentSession={studentSession}
+          loadedProjectData={dawLoadedProject}
+          onClearLoadedProjectData={() => setDawLoadedProject(null)}
           currentProjectId={currentProjectId}
           onProjectSaved={(newId) => setCurrentProjectId(newId)}
           onOpenClassroomModal={() => {

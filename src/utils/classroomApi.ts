@@ -21,7 +21,7 @@ export interface StudentRecord {
   createdAt?: string;
 }
 
-export type MusicLabAppType = 'staff-composer' | 'beat-machine' | 'rhythm-rockstars';
+export type MusicLabAppType = 'staff-composer' | 'beat-machine' | 'rhythm-rockstars' | 'daw';
 
 export interface SavedProjectRecord {
   id: string;
