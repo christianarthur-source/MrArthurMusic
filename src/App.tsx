@@ -41,6 +41,7 @@ import { ShareModal } from './components/ShareModal';
 import { ClassroomModal } from './components/ClassroomModal';
 import { EdLawPrivacyModal } from './components/EdLawPrivacyModal';
 import { MusicLabLanding, MusicLabAppId } from './components/MusicLabLanding';
+import { ClassroomToolBoxModal, ToolId } from './components/tools/ClassroomToolBoxModal';
 import RhythmRockStarsApp from './rhythm-rockstars/RhythmRockStarsApp';
 import BeatMachineApp from './beat-machine/App';
 import { ShieldCheck } from 'lucide-react';
@@ -179,6 +180,8 @@ export default function App() {
   const [isInstrumentModalOpen, setIsInstrumentModalOpen] = useState<boolean>(false);
   const [isDrumBeatsModalOpen, setIsDrumBeatsModalOpen] = useState<boolean>(false);
   const [isTemplatesModalOpen, setIsTemplatesModalOpen] = useState<boolean>(false);
+  const [isToolBoxModalOpen, setIsToolBoxModalOpen] = useState<boolean>(false);
+  const [toolBoxInitialTool, setToolBoxInitialTool] = useState<ToolId>('tempo-tapper');
   const [isHelpModalOpen, setIsHelpModalOpen] = useState<boolean>(false);
   const [isEdLawModalOpen, setIsEdLawModalOpen] = useState<boolean>(false);
   const [isPrintView, setIsPrintView] = useState<boolean>(false);
@@ -1642,6 +1645,12 @@ export default function App() {
           setCloudSaveStatus('idle');
         }}
       />
+
+      <ClassroomToolBoxModal
+        isOpen={isToolBoxModalOpen}
+        onClose={() => setIsToolBoxModalOpen(false)}
+        initialTool={toolBoxInitialTool}
+      />
     </>
   );
 
@@ -1791,6 +1800,10 @@ export default function App() {
           }}
           onAddMeasure={handleAddMeasure}
           onOpenTemplates={() => setIsTemplatesModalOpen(true)}
+          onOpenToolBox={() => {
+            setToolBoxInitialTool('tempo-tapper');
+            setIsToolBoxModalOpen(true);
+          }}
           onPrint={() => setIsPrintView(true)}
           onOpenInstrumentManager={() => setIsInstrumentModalOpen(true)}
           onOpenDrumBeats={() => setIsDrumBeatsModalOpen(true)}

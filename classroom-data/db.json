@@ -17,5 +17,78 @@
       "createdAt": "2026-10-19T05:09:31.786Z"
     }
   ],
-  "projects": []
+  "projects": [
+    {
+      "id": "proj_j7hmjifquep",
+      "studentId": "stu_n6muydvdq2y",
+      "studentName": "Alex M",
+      "title": "jam 1",
+      "score": {
+        "id": "score_blank_treble",
+        "title": "jam 1",
+        "composer": "Alex M",
+        "tempo": 108,
+        "timeSignature": [
+          4,
+          4
+        ],
+        "keySignature": "C",
+        "tracks": [
+          {
+            "id": "track_treble_1",
+            "name": "Treble Staff",
+            "instrumentId": "piano_treble",
+            "clef": "treble",
+            "volume": 0.85,
+            "muted": false,
+            "soloed": false,
+            "measures": [
+              {
+                "id": "m_lz3ef7p",
+                "items": [
+                  {
+                    "id": "n_qhclrsr",
+                    "type": "rest",
+                    "duration": 1
+                  }
+                ]
+              },
+              {
+                "id": "m_6swq4bb",
+                "items": [
+                  {
+                    "id": "n_0y159n3",
+                    "type": "rest",
+                    "duration": 1
+                  }
+                ]
+              },
+              {
+                "id": "m_xp637mn",
+                "items": [
+                  {
+                    "id": "n_a1kozev",
+                    "type": "rest",
+                    "duration": 1
+                  }
+                ]
+              },
+              {
+                "id": "m_3zlbtec",
+                "items": [
+                  {
+                    "id": "n_h8wmh30",
+                    "type": "rest",
+                    "duration": 1
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "createdAt": "2026-10-19T16:59:34.321Z",
+      "updatedAt": "2026-10-19T16:59:45.771Z"
+    }
+  ]
 }

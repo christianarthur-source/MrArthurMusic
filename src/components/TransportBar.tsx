@@ -53,6 +53,7 @@ interface TransportBarProps {
   onChangeKeySignature: (ks: 'C' | 'G' | 'F' | 'D' | 'Bb') => void;
   onAddMeasure: () => void;
   onOpenTemplates: () => void;
+  onOpenToolBox?: () => void;
   onPrint: () => void;
   onOpenInstrumentManager: () => void;
   onOpenDrumBeats: () => void;
@@ -112,6 +113,7 @@ export const TransportBar: React.FC<TransportBarProps> = ({
   onChangeKeySignature,
   onAddMeasure,
   onOpenTemplates,
+  onOpenToolBox,
   onPrint,
   onOpenInstrumentManager,
   onOpenDrumBeats,
@@ -462,6 +464,18 @@ export const TransportBar: React.FC<TransportBarProps> = ({
                 <BookOpen className="w-4 h-4 text-amber-400" />
                 <span>Song Templates & Challenges</span>
               </button>
+              {onOpenToolBox && (
+                <button
+                  onClick={() => {
+                    setOpenMenu(null);
+                    onOpenToolBox();
+                  }}
+                  className="flex items-center gap-2.5 w-full px-3 py-2 rounded-xl hover:bg-slate-800 text-left font-bold text-sky-300 transition-colors cursor-pointer"
+                >
+                  <span className="text-sm">🎒</span>
+                  <span>Classroom Tool Box (Tapper, Pitch, Zoo)</span>
+                </button>
+              )}
             </div>
           )}
         </div>
