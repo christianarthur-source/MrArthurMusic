@@ -30,10 +30,10 @@ import {
   SharedSongData,
 } from './types';
 import confetti from 'canvas-confetti';
-import { Sparkles, Grid3X3, Compass, Radio, Music2, Layers, Activity } from 'lucide-react';
+import { Sparkles, Grid3X3, Compass, Radio, Music2, Layers, Activity, Save, X } from 'lucide-react';
 import { extractSongFromLocation } from './utils/songSharing';
 import { cleanProfanity } from './utils/profanityFilter';
-import { StudentSession } from '../utils/classroomApi';
+import { StudentSession, saveStudentProject } from '../utils/classroomApi';
 
 type AppMode = 'both' | 'grid' | 'melody' | 'bass' | 'explorer' | 'pads' | 'xylophone';
 
@@ -42,6 +42,10 @@ export interface BeatMachineAppProps {
   studentSession?: StudentSession | null;
   onOpenClassroomModal?: () => void;
   onOpenAvatar?: () => void;
+  loadedSongData?: SharedSongData | null;
+  onClearLoadedSongData?: () => void;
+  currentProjectId?: string | null;
+  onProjectSaved?: (projectId: string) => void;
 }
 
 export default function BeatMachineApp({
@@ -49,6 +53,10 @@ export default function BeatMachineApp({
   studentSession = null,
   onOpenClassroomModal = () => {},
   onOpenAvatar = () => {},
+  loadedSongData = null,
+  onClearLoadedSongData,
+  currentProjectId = null,
+  onProjectSaved,
 }: BeatMachineAppProps = {}) {
   const [activeMode, setActiveMode] = useState<AppMode>('both');
   const [currentPackId, setCurrentPackId] = useState<string>('space-disco');
@@ -74,6 +82,15 @@ export default function BeatMachineApp({
   const [recordedSongBlob, setRecordedSongBlob] = useState<Blob | null>(null);
   const [isRecordingSong, setIsRecordingSong] = useState<boolean>(false);
   const [notification, setNotification] = useState<string | null>(null);
+
+  // Save Beat Cloud State
+  const [isSaveBeatModalOpen, setIsSaveBeatModalOpen] = useState<boolean>(false);
+  const [currentSongTitle, setCurrentSongTitle] = useState<string>('My Beat');
+  const [beatTitleInput, setBeatTitleInput] = useState<string>('My Beat');
+  const [isSavingBeat, setIsSavingBeat] = useState<boolean>(false);
+  const [activeBeatProjectId, setActiveBeatProjectId] = useState<string | null>(
+    () => currentProjectId
+  );
 
   // Initial tracks generated from sound pack (up to 64 steps for 4 measures)
   const createTracksFromPack = useCallback((packId: string): BeatTrack[] => {
@@ -267,6 +284,27 @@ export default function BeatMachineApp({
       console.warn('Could not load song from URL param', e);
     }
   }, [handleImportSong]);
+
+  // Load song data passed from Classroom Saved Songs list
+  useEffect(() => {
+    if (loadedSongData) {
+      handleImportSong(loadedSongData);
+      const title = loadedSongData.title || 'My Beat';
+      setCurrentSongTitle(title);
+      setBeatTitleInput(title);
+      setNotification(`🎉 Loaded "${title}" into Beat Machine! 🥁`);
+      setTimeout(() => setNotification(null), 4000);
+      if (onClearLoadedSongData) {
+        onClearLoadedSongData();
+      }
+    }
+  }, [loadedSongData, handleImportSong, onClearLoadedSongData]);
+
+  useEffect(() => {
+    if (currentProjectId) {
+      setActiveBeatProjectId(currentProjectId);
+    }
+  }, [currentProjectId]);
 
   // Clock references for precision audio scheduler
   const isPlayingRef = useRef<boolean>(isPlaying);
@@ -1036,6 +1074,52 @@ export default function BeatMachineApp({
     isFilterOn,
   };
 
+  const handleOpenSaveBeat = () => {
+    if (!studentSession) {
+      if (onOpenClassroomModal) {
+        onOpenClassroomModal();
+      }
+      return;
+    }
+    setBeatTitleInput(currentSongTitle || 'My Beat');
+    setIsSaveBeatModalOpen(true);
+  };
+
+  const handleConfirmSaveBeat = async () => {
+    if (!studentSession) return;
+    const cleanTitle = (beatTitleInput || '').trim();
+    if (!cleanTitle) return;
+    setIsSavingBeat(true);
+    try {
+      const res = await saveStudentProject({
+        studentId: studentSession.id,
+        pin: studentSession.pin,
+        projectId: activeBeatProjectId,
+        title: cleanTitle,
+        appType: 'beat-machine',
+        projectData: {
+          ...currentSongData,
+          title: cleanTitle,
+        },
+      });
+      if (res.saved && res.project) {
+        setActiveBeatProjectId(res.project.id);
+        setCurrentSongTitle(cleanTitle);
+        setIsSaveBeatModalOpen(false);
+        setNotification(`🎉 "${cleanTitle}" saved to your cloud account!`);
+        setTimeout(() => setNotification(null), 4000);
+        confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } });
+        if (onProjectSaved) {
+          onProjectSaved(res.project.id);
+        }
+      }
+    } catch (err: any) {
+      alert(err?.message || 'Failed to save beat.');
+    } finally {
+      setIsSavingBeat(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#0B0F19] text-slate-100 p-3 sm:p-6 lg:p-8 font-sans">
       <div className="mx-auto max-w-7xl space-y-6">
@@ -1053,6 +1137,9 @@ export default function BeatMachineApp({
           studentSession={studentSession}
           onOpenClassroomModal={onOpenClassroomModal}
           onOpenAvatar={onOpenAvatar}
+          onSaveSong={handleOpenSaveBeat}
+          isSaving={isSavingBeat}
+          currentSongTitle={currentSongTitle}
           isPlaying={isPlaying}
           onTogglePlay={handleTogglePlay}
           bpm={bpm}
@@ -1479,6 +1566,71 @@ export default function BeatMachineApp({
           melodyTracks={melodyTracks}
           bassTracks={bassTracks}
         />
+
+        {/* Save Beat Modal */}
+        {isSaveBeatModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-xs">
+            <div className="relative w-full max-w-md rounded-3xl border-3 border-amber-400 bg-slate-900 p-6 text-white shadow-2xl">
+              <button
+                type="button"
+                onClick={() => setIsSaveBeatModalOpen(false)}
+                className="absolute top-4 right-4 flex h-9 w-9 items-center justify-center rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-400 to-teal-400 text-2xl flex items-center justify-center shadow-lg text-slate-950">
+                  ☁️
+                </div>
+                <div>
+                  <h3 className="text-xl font-black font-['Fredoka',sans-serif] text-white">
+                    Save Your Beat
+                  </h3>
+                  <p className="text-xs text-slate-300">
+                    Saving to <strong>{studentSession?.firstName}</strong>&apos;s cloud account
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-300">
+                  Beat Title / Song Name
+                </label>
+                <input
+                  type="text"
+                  value={beatTitleInput}
+                  onChange={(e) => setBeatTitleInput(e.target.value)}
+                  placeholder="e.g. Space Robot Funk, Lunchtime Jam..."
+                  className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-700 focus:border-amber-400 text-sm font-bold text-white focus:outline-hidden"
+                  autoFocus
+                />
+                <p className="text-[11px] text-slate-400">
+                  Your beat will save to your Music Lab account and can be loaded anytime!
+                </p>
+              </div>
+
+              <div className="mt-6 flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setIsSaveBeatModalOpen(false)}
+                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmSaveBeat}
+                  disabled={isSavingBeat || !beatTitleInput.trim()}
+                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-300 hover:to-teal-400 text-slate-950 font-black text-xs shadow-lg cursor-pointer disabled:opacity-50 flex items-center gap-1.5 font-['Fredoka',sans-serif]"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>{isSavingBeat ? 'Saving...' : 'Save Beat Now'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

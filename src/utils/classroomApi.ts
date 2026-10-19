@@ -21,6 +21,8 @@ export interface StudentRecord {
   createdAt?: string;
 }
 
+export type MusicLabAppType = 'staff-composer' | 'beat-machine' | 'rhythm-rockstars';
+
 export interface SavedProjectRecord {
   id: string;
   studentId: string;
@@ -28,7 +30,9 @@ export interface SavedProjectRecord {
   title: string;
   updatedAt: string;
   createdAt?: string;
-  score: Score;
+  score?: Score;
+  appType?: MusicLabAppType;
+  projectData?: any;
 }
 
 export interface TeacherPortalData {
@@ -206,7 +210,9 @@ function executeLocalFallback(payload: Record<string, any>): any {
     const teacherPin = String(payload.teacherPin || '');
     const projectId = String(payload.projectId || '');
     const title = String(payload.title || '').trim();
-    const score = payload.score as Score;
+    const score = payload.score as Score | undefined;
+    const appType = (payload.appType as MusicLabAppType) || 'staff-composer';
+    const projectData = payload.projectData;
 
     if (!title || title.toLowerCase() === 'my composition' || title.toLowerCase() === 'untitled') {
       return { ok: false, skipped: true, reason: 'Default untitled song is not auto-saved.' };
@@ -248,6 +254,8 @@ function executeLocalFallback(payload: Record<string, any>): any {
         title,
         studentName,
         score,
+        appType,
+        projectData: projectData ?? db.projects[existingIndex].projectData,
         updatedAt: now,
       };
       savedProject = db.projects[existingIndex];
@@ -258,6 +266,8 @@ function executeLocalFallback(payload: Record<string, any>): any {
         studentName,
         title,
         score,
+        appType,
+        projectData,
         createdAt: now,
         updatedAt: now,
       };
@@ -550,7 +560,9 @@ export async function saveStudentProject(params: {
   teacherPin?: string;
   projectId?: string | null;
   title: string;
-  score: Score;
+  score?: Score;
+  appType?: MusicLabAppType;
+  projectData?: any;
 }): Promise<{ saved: boolean; project?: SavedProjectRecord }> {
   const res = await callClassroomBackend({
     action: 'save_project',
@@ -561,6 +573,8 @@ export async function saveStudentProject(params: {
     projectId: params.projectId || '',
     title: params.title,
     score: params.score,
+    appType: params.appType || 'staff-composer',
+    projectData: params.projectData,
   });
   if (res.skipped) {
     return { saved: false };

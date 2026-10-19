@@ -30,6 +30,7 @@ import {
   SavedProjectRecord,
   StudentRecord,
   StudentSession,
+  MusicLabAppType,
   deleteStudentProject,
   fetchPublicRoster,
   fetchStudentProjects,
@@ -46,6 +47,42 @@ import {
   saveStudentSession,
 } from '../utils/classroomApi';
 import { containsProfanity } from '../utils/profanityFilter';
+
+export function getAppDescriptor(appType?: MusicLabAppType) {
+  switch (appType) {
+    case 'beat-machine':
+      return {
+        id: 'beat-machine' as const,
+        name: 'Beat Machine',
+        shortName: 'Beat Machine',
+        emoji: '🥁',
+        badgeClass: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
+        detail: 'Drum Groove & Synth',
+        openColor: 'bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-slate-950',
+      };
+    case 'rhythm-rockstars':
+      return {
+        id: 'rhythm-rockstars' as const,
+        name: 'Rhythm Rock Stars',
+        shortName: 'Rock Stars',
+        emoji: '🎸',
+        badgeClass: 'bg-rose-500/20 text-rose-300 border-rose-500/40',
+        detail: 'Rhythm Challenge',
+        openColor: 'bg-gradient-to-r from-rose-500 to-amber-500 hover:from-rose-400 hover:to-amber-400 text-slate-950',
+      };
+    case 'staff-composer':
+    default:
+      return {
+        id: 'staff-composer' as const,
+        name: 'Staff Composer',
+        shortName: 'Staff Composer',
+        emoji: '🎼',
+        badgeClass: 'bg-sky-500/20 text-sky-300 border-sky-500/40',
+        detail: 'Sheet Music Score',
+        openColor: 'bg-gradient-to-r from-sky-400 to-blue-500 hover:from-sky-300 hover:to-blue-400 text-slate-950',
+      };
+  }
+}
 
 interface ClassroomModalProps {
   isOpen: boolean;
@@ -127,9 +164,13 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
   const [showBulkAdd, setShowBulkAdd] = useState<boolean>(false);
   const [bulkText, setBulkText] = useState<string>('');
 
+  // Student filter by app
+  const [studentAppFilter, setStudentAppFilter] = useState<'ALL' | MusicLabAppType>('ALL');
+
   // Teacher - Projects filter & rename state
   const [projectSearch, setProjectSearch] = useState<string>('');
   const [projectStudentFilter, setProjectStudentFilter] = useState<string>('ALL');
+  const [projectAppFilter, setProjectAppFilter] = useState<'ALL' | MusicLabAppType>('ALL');
   const [renamingProjectId, setRenamingProjectId] = useState<string | null>(null);
   const [renameTitleInput, setRenameTitleInput] = useState<string>('');
 
@@ -583,6 +624,9 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
     if (projectStudentFilter !== 'ALL' && p.studentId !== projectStudentFilter) {
       return false;
     }
+    if (projectAppFilter !== 'ALL' && (p.appType || 'staff-composer') !== projectAppFilter) {
+      return false;
+    }
     const q = projectSearch.trim().toLowerCase();
     if (!q) return true;
     return (
@@ -827,7 +871,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
 
               {/* Saved Songs List */}
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-2">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
                     My Saved Songs ({studentProjects.length})
                   </h3>
@@ -844,6 +888,53 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                   </button>
                 </div>
 
+                {/* Filter by App Pill Buttons */}
+                {studentProjects.length > 0 && (
+                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+                    {(
+                      [
+                        { id: 'ALL', label: `All (${studentProjects.length})`, emoji: '🎵' },
+                        {
+                          id: 'staff-composer',
+                          label: `Staff Composer (${
+                            studentProjects.filter((p) => !p.appType || p.appType === 'staff-composer')
+                              .length
+                          })`,
+                          emoji: '🎼',
+                        },
+                        {
+                          id: 'beat-machine',
+                          label: `Beat Machine (${
+                            studentProjects.filter((p) => p.appType === 'beat-machine').length
+                          })`,
+                          emoji: '🥁',
+                        },
+                        {
+                          id: 'rhythm-rockstars',
+                          label: `Rock Stars (${
+                            studentProjects.filter((p) => p.appType === 'rhythm-rockstars').length
+                          })`,
+                          emoji: '🎸',
+                        },
+                      ] as const
+                    ).map((f) => (
+                      <button
+                        key={f.id}
+                        type="button"
+                        onClick={() => setStudentAppFilter(f.id)}
+                        className={`flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold border transition-all cursor-pointer whitespace-nowrap ${
+                          studentAppFilter === f.id
+                            ? 'bg-amber-400 border-amber-300 text-slate-950 shadow-xs'
+                            : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800'
+                        }`}
+                      >
+                        <span>{f.emoji}</span>
+                        <span>{f.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
                 {studentProjects.length === 0 ? (
                   <div className="p-6 rounded-xl bg-slate-950/40 border border-slate-800/80 text-center space-y-1">
                     <Music className="w-6 h-6 text-slate-500 mx-auto" />
@@ -851,69 +942,95 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                       No saved songs yet!
                     </p>
                     <p className="text-[11px] text-slate-500">
-                      Type a title for your song in the top bar and it will automatically save here.
+                      Create a song in Staff Composer or Beat Machine and click &quot;Save&quot; to keep it here!
                     </p>
                   </div>
                 ) : (
                   <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                    {studentProjects.map((proj) => {
-                      const isCurrent = proj.id === currentProjectId;
-                      return (
-                        <div
-                          key={proj.id}
-                          className={`p-3 rounded-xl border flex items-center justify-between gap-3 transition-colors ${
-                            isCurrent
-                              ? 'bg-sky-500/15 border-sky-400/60'
-                              : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'
-                          }`}
-                        >
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold text-sm text-white truncate">
-                                {proj.title}
-                              </span>
-                              {isCurrent && (
-                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-500/30 text-sky-200">
-                                  Open Now
-                                </span>
-                              )}
-                            </div>
-                            <div className="text-[11px] text-slate-400">
-                              Last saved:{' '}
-                              {new Date(proj.updatedAt).toLocaleString([], {
-                                month: 'short',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })}{' '}
-                              • {proj.score?.tracks?.length || 1} track(s)
-                            </div>
-                          </div>
+                    {studentProjects
+                      .filter((p) => studentAppFilter === 'ALL' || (p.appType || 'staff-composer') === studentAppFilter)
+                      .map((proj) => {
+                        const isCurrent = proj.id === currentProjectId;
+                        const appMeta = getAppDescriptor(proj.appType);
 
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                onLoadProject(proj);
-                                onClose();
-                              }}
-                              className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs cursor-pointer"
-                            >
-                              <FolderOpen className="w-3.5 h-3.5" />
-                              <span>Open</span>
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleStudentDeleteSong(proj)}
-                              title="Delete song"
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800 cursor-pointer"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
+                        return (
+                          <div
+                            key={proj.id}
+                            className={`p-3 rounded-xl border flex items-center justify-between gap-3 transition-colors ${
+                              isCurrent
+                                ? 'bg-sky-500/15 border-sky-400/60'
+                                : 'bg-slate-950/60 border-slate-800 hover:border-slate-700'
+                            }`}
+                          >
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-bold text-sm text-white truncate">
+                                  {proj.title}
+                                </span>
+                                <span
+                                  className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border flex items-center gap-1 font-['Fredoka',sans-serif] ${appMeta.badgeClass}`}
+                                  title={`Made in ${appMeta.name}`}
+                                >
+                                  <span>{appMeta.emoji}</span>
+                                  <span>{appMeta.name}</span>
+                                </span>
+                                {isCurrent && (
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-500/30 text-sky-200">
+                                    Open Now
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-[11px] text-slate-400 flex items-center gap-1.5 flex-wrap mt-0.5">
+                                <span>
+                                  Saved{' '}
+                                  {new Date(proj.updatedAt).toLocaleDateString([], {
+                                    month: 'short',
+                                    day: 'numeric',
+                                  })}{' '}
+                                  at{' '}
+                                  {new Date(proj.updatedAt).toLocaleTimeString([], {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                  })}
+                                </span>
+                                <span>•</span>
+                                {proj.appType === 'beat-machine' ? (
+                                  <span>
+                                    🥁 {proj.projectData?.measures || 1} bar(s) • {proj.projectData?.bpm || 115} BPM
+                                  </span>
+                                ) : (
+                                  <span>
+                                    🎼 {proj.score?.tracks?.length || 1} track(s) • {proj.score?.tempo || 108} BPM
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  onLoadProject(proj);
+                                  onClose();
+                                }}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-black text-xs cursor-pointer shadow-sm transition-all hover:scale-102 active:scale-98 font-['Fredoka',sans-serif] ${appMeta.openColor}`}
+                                title={`Open in ${appMeta.name}`}
+                              >
+                                <FolderOpen className="w-3.5 h-3.5" />
+                                <span>Open in {appMeta.shortName}</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleStudentDeleteSong(proj)}
+                                title="Delete song"
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800 cursor-pointer"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
                   </div>
                 )}
               </div>
@@ -1398,6 +1515,24 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                         </option>
                       ))}
                     </select>
+
+                    <select
+                      value={projectAppFilter}
+                      onChange={(e) => setProjectAppFilter(e.target.value as any)}
+                      className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200"
+                    >
+                      <option value="ALL">All Apps ({allProjects.length})</option>
+                      <option value="staff-composer">
+                        🎼 Staff Composer (
+                        {allProjects.filter((p) => !p.appType || p.appType === 'staff-composer').length})
+                      </option>
+                      <option value="beat-machine">
+                        🥁 Beat Machine ({allProjects.filter((p) => p.appType === 'beat-machine').length})
+                      </option>
+                      <option value="rhythm-rockstars">
+                        🎸 Rock Stars ({allProjects.filter((p) => p.appType === 'rhythm-rockstars').length})
+                      </option>
+                    </select>
                   </div>
 
                   {filteredProjectsList.length === 0 ? (
@@ -1408,6 +1543,8 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                     <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
                       {filteredProjectsList.map((proj) => {
                         const isRenaming = renamingProjectId === proj.id;
+                        const appMeta = getAppDescriptor(proj.appType);
+
                         return (
                           <div
                             key={proj.id}
@@ -1439,23 +1576,45 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                             ) : (
                               <>
                                 <div className="min-w-0">
-                                  <div className="flex items-center gap-2">
+                                  <div className="flex items-center gap-2 flex-wrap">
                                     <span className="font-bold text-sm text-white truncate">
                                       {proj.title}
+                                    </span>
+                                    <span
+                                      className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border flex items-center gap-1 font-['Fredoka',sans-serif] ${appMeta.badgeClass}`}
+                                    >
+                                      <span>{appMeta.emoji}</span>
+                                      <span>{appMeta.name}</span>
                                     </span>
                                     <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-bold text-[11px]">
                                       by {proj.studentName}
                                     </span>
                                   </div>
-                                  <div className="text-[11px] text-slate-400">
-                                    Updated{' '}
-                                    {new Date(proj.updatedAt).toLocaleString([], {
-                                      month: 'short',
-                                      day: 'numeric',
-                                      hour: '2-digit',
-                                      minute: '2-digit',
-                                    })}{' '}
-                                    • {proj.score?.tracks?.length || 1} track(s)
+                                  <div className="text-[11px] text-slate-400 flex items-center gap-1.5 flex-wrap mt-0.5">
+                                    <span>
+                                      Updated{' '}
+                                      {new Date(proj.updatedAt).toLocaleDateString([], {
+                                        month: 'short',
+                                        day: 'numeric',
+                                      })}{' '}
+                                      at{' '}
+                                      {new Date(proj.updatedAt).toLocaleTimeString([], {
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                      })}
+                                    </span>
+                                    <span>•</span>
+                                    {proj.appType === 'beat-machine' ? (
+                                      <span>
+                                        🥁 {proj.projectData?.measures || 1} bar(s) •{' '}
+                                        {proj.projectData?.bpm || 115} BPM
+                                      </span>
+                                    ) : (
+                                      <span>
+                                        🎼 {proj.score?.tracks?.length || 1} track(s) •{' '}
+                                        {proj.score?.tempo || 108} BPM
+                                      </span>
+                                    )}
                                   </div>
                                 </div>
 
@@ -1470,10 +1629,11 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                                       });
                                       onClose();
                                     }}
-                                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold cursor-pointer"
+                                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg font-bold cursor-pointer font-['Fredoka',sans-serif] ${appMeta.openColor}`}
+                                    title={`Open in ${appMeta.name}`}
                                   >
                                     <FolderOpen className="w-3.5 h-3.5" />
-                                    <span>Open & Edit</span>
+                                    <span>Open in {appMeta.shortName}</span>
                                   </button>
                                   <button
                                     type="button"

@@ -18,6 +18,8 @@ interface ProjectRecord {
   studentName: string;
   title: string;
   score: any;
+  appType?: string;
+  projectData?: any;
   createdAt: string;
   updatedAt: string;
 }
@@ -213,14 +215,15 @@ function classroomApiPlugin(): Plugin {
           }
 
           if (action === 'save_project') {
-            const { studentId, pin, teacherPin, projectId, score } = body;
+            const { studentId, pin, teacherPin, projectId, score, projectData } = body;
+            const appType = body.appType || 'staff-composer';
             const title = String(body.title || '').trim();
             const isTeacher = Boolean(teacherPin && teacherPin === db.teacherPin);
             const student = db.students.find(
               (s) => s.id === studentId && (isTeacher || !pin || s.pin === pin)
             );
 
-            if (!student || !score || !title) {
+            if (!student || (!score && !projectData) || !title) {
               return send(400, {
                 ok: false,
                 error: 'Invalid student session or missing song title.',
@@ -245,7 +248,9 @@ function classroomApiPlugin(): Plugin {
             let savedProject: ProjectRecord;
             if (updatedIdx >= 0) {
               db.projects[updatedIdx].title = title;
-              db.projects[updatedIdx].score = score;
+              if (score !== undefined) db.projects[updatedIdx].score = score;
+              if (projectData !== undefined) db.projects[updatedIdx].projectData = projectData;
+              db.projects[updatedIdx].appType = appType;
               db.projects[updatedIdx].updatedAt = now;
               savedProject = db.projects[updatedIdx];
             } else {
@@ -254,7 +259,9 @@ function classroomApiPlugin(): Plugin {
                 studentId,
                 studentName: student.firstName,
                 title,
-                score,
+                score: score || null,
+                appType,
+                projectData: projectData || null,
                 createdAt: now,
                 updatedAt: now,
               };

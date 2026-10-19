@@ -13,6 +13,8 @@ import {
   Music,
   ArrowLeft,
   UserCheck,
+  Save,
+  Cloud,
 } from 'lucide-react';
 import { StudentSession } from '../../utils/classroomApi';
 import { soundEngine as globalSoundEngine } from '../../audio/soundEngine';
@@ -22,6 +24,9 @@ interface HeaderProps {
   studentSession?: StudentSession | null;
   onOpenClassroomModal?: () => void;
   onOpenAvatar?: () => void;
+  onSaveSong?: () => void;
+  isSaving?: boolean;
+  currentSongTitle?: string;
   isPlaying: boolean;
   onTogglePlay: () => void;
   bpm: number;
@@ -77,6 +82,9 @@ export const Header: React.FC<HeaderProps> = ({
   studentSession,
   onOpenClassroomModal,
   onOpenAvatar,
+  onSaveSong,
+  isSaving = false,
+  currentSongTitle,
   isPlaying,
   onTogglePlay,
   bpm,
@@ -283,6 +291,23 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Line 2: Share & Extras Dropdown + Secondary Controls */}
       <div className="flex flex-wrap items-center justify-between gap-2.5 border-t border-slate-800 pt-2.5">
         <div className="flex items-center gap-2">
+          {/* Save Beat Button */}
+          {onSaveSong && (
+            <button
+              onClick={onSaveSong}
+              disabled={isSaving}
+              className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-emerald-400 to-teal-500 px-4 py-2 text-xs font-black text-slate-950 shadow-md hover:from-emerald-300 hover:to-teal-400 active:scale-95 transition-transform cursor-pointer disabled:opacity-50"
+              title={
+                studentSession
+                  ? `Save "${currentSongTitle || 'My Beat'}" to ${studentSession.firstName}'s cloud account`
+                  : 'Save Beat to Student Cloud Account'
+              }
+            >
+              <Save className="h-3.5 w-3.5" />
+              <span>{isSaving ? 'Saving...' : 'Save Beat ☁️'}</span>
+            </button>
+          )}
+
           {/* Share Song Button */}
           <button
             onClick={onOpenShare}
