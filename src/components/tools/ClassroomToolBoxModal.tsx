@@ -4,8 +4,20 @@ import { TempoTapper } from './TempoTapper';
 import { SolfegeTrainer } from './SolfegeTrainer';
 import { InstrumentZoo } from './InstrumentZoo';
 import { DynamicEars } from './DynamicEars';
+import { SoundPainter } from './SoundPainter';
+import { SongStarter } from './SongStarter';
+import { MusicSymbolMatch } from './MusicSymbolMatch';
+import { StaffWarsReprise } from './StaffWarsReprise';
 
-export type ToolId = 'tempo-tapper' | 'solfege-trainer' | 'instrument-zoo' | 'dynamic-ears';
+export type ToolId =
+  | 'tempo-tapper'
+  | 'solfege-trainer'
+  | 'instrument-zoo'
+  | 'dynamic-ears'
+  | 'sound-painter'
+  | 'song-starter'
+  | 'music-symbol-match'
+  | 'staff-wars';
 
 interface ClassroomToolBoxModalProps {
   isOpen: boolean;
@@ -23,6 +35,38 @@ interface ToolTabMeta {
 }
 
 const TOOL_TABS: ToolTabMeta[] = [
+  {
+    id: 'staff-wars',
+    title: 'Staff Wars Reprise!',
+    emoji: '⚔️',
+    subtitle: 'Arcade Note Defense',
+    accentColor: 'from-cyan-400 to-blue-500',
+    badgeBg: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40',
+  },
+  {
+    id: 'sound-painter',
+    title: 'Sound Painter',
+    emoji: '🎨',
+    subtitle: 'Draw & Sing Shapes',
+    accentColor: 'from-amber-400 to-rose-500',
+    badgeBg: 'bg-rose-500/20 text-rose-300 border-rose-500/40',
+  },
+  {
+    id: 'song-starter',
+    title: 'Song Starter',
+    emoji: '🎶',
+    subtitle: 'K-3rd Song Creator',
+    accentColor: 'from-orange-400 to-amber-500',
+    badgeBg: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
+  },
+  {
+    id: 'music-symbol-match',
+    title: 'Symbol Match',
+    emoji: '🃏',
+    subtitle: 'Memory & Speed Game',
+    accentColor: 'from-purple-400 to-pink-500',
+    badgeBg: 'bg-purple-500/20 text-purple-300 border-purple-500/40',
+  },
   {
     id: 'tempo-tapper',
     title: 'Tempo Tapper',
@@ -138,6 +182,10 @@ export const ClassroomToolBoxModal: React.FC<ClassroomToolBoxModalProps> = ({
 
         {/* Modal Scrollable Body */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+          {activeTool === 'staff-wars' && <StaffWarsReprise />}
+          {activeTool === 'sound-painter' && <SoundPainter />}
+          {activeTool === 'song-starter' && <SongStarter />}
+          {activeTool === 'music-symbol-match' && <MusicSymbolMatch />}
           {activeTool === 'tempo-tapper' && <TempoTapper />}
           {activeTool === 'solfege-trainer' && <SolfegeTrainer />}
           {activeTool === 'instrument-zoo' && <InstrumentZoo />}
