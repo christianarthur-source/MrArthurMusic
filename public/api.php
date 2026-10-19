@@ -249,6 +249,9 @@ switch ($action) {
     $title = trim(isset($body['title']) ? $body['title'] : '');
     $score = isset($body['score']) ? $body['score'] : null;
 
+    $appType = isset($body['appType']) ? $body['appType'] : 'staff-composer';
+    $projectData = isset($body['projectData']) ? $body['projectData'] : null;
+
     $isTeacher = ($teacherPin !== '' && verify_teacher_pin($teacherPin, $db['teacherPin']));
     $student = null;
     foreach ($db['students'] as $s) {
@@ -258,7 +261,7 @@ switch ($action) {
       }
     }
 
-    if (!$student || !$score || $title === '') {
+    if (!$student || (!$score && !$projectData) || $title === '') {
       http_response_code(400);
       echo json_encode(['ok' => false, 'error' => 'Invalid student session or missing song title.']);
       exit;
@@ -289,7 +292,9 @@ switch ($action) {
 
     if ($updatedIndex >= 0) {
       $db['projects'][$updatedIndex]['title'] = $title;
-      $db['projects'][$updatedIndex]['score'] = $score;
+      if ($score !== null) $db['projects'][$updatedIndex]['score'] = $score;
+      if ($projectData !== null) $db['projects'][$updatedIndex]['projectData'] = $projectData;
+      $db['projects'][$updatedIndex]['appType'] = $appType;
       $db['projects'][$updatedIndex]['updatedAt'] = $now;
       $savedProject = $db['projects'][$updatedIndex];
     } else {
@@ -299,6 +304,8 @@ switch ($action) {
         'studentName' => $student['firstName'],
         'title' => $title,
         'score' => $score,
+        'appType' => $appType,
+        'projectData' => $projectData,
         'createdAt' => $now,
         'updatedAt' => $now
       ];

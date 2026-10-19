@@ -186,13 +186,14 @@ const server = http.createServer((req, res) => {
       }
 
       if (action === 'save_project') {
-        const { studentId, pin, teacherPin, projectId, score } = body;
+        const { studentId, pin, teacherPin, projectId, score, projectData } = body;
+        const appType = body.appType || 'staff-composer';
         const title = String(body.title || '').trim();
         const isTeacher = Boolean(teacherPin && teacherPin === db.teacherPin);
         const student = db.students.find(
           (s) => s.id === studentId && (isTeacher || !pin || s.pin === pin)
         );
-        if (!student || !score || !title) {
+        if (!student || (!score && !projectData) || !title) {
           return send(400, { ok: false, error: 'Invalid student session or missing song title.' });
         }
         const now = new Date().toISOString();
@@ -208,7 +209,9 @@ const server = http.createServer((req, res) => {
         let savedProject;
         if (updatedIdx >= 0) {
           db.projects[updatedIdx].title = title;
-          db.projects[updatedIdx].score = score;
+          if (score !== undefined) db.projects[updatedIdx].score = score;
+          if (projectData !== undefined) db.projects[updatedIdx].projectData = projectData;
+          db.projects[updatedIdx].appType = appType;
           db.projects[updatedIdx].updatedAt = now;
           savedProject = db.projects[updatedIdx];
         } else {
@@ -217,7 +220,9 @@ const server = http.createServer((req, res) => {
             studentId,
             studentName: student.firstName,
             title,
-            score,
+            score: score || null,
+            appType,
+            projectData: projectData || null,
             createdAt: now,
             updatedAt: now,
           };

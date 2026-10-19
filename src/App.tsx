@@ -200,6 +200,7 @@ export default function App() {
     getSavedStudentSession()
   );
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
+  const [beatMachineLoadedSong, setBeatMachineLoadedSong] = useState<any>(null);
   const [editingAsTeacher, setEditingAsTeacher] = useState<{
     teacherPin: string;
     studentName: string;
@@ -354,6 +355,7 @@ export default function App() {
         projectId: currentProjectId,
         title: cleanTitle,
         score,
+        appType: 'staff-composer',
       })
         .then((res) => {
           if (res.saved && res.project) {
@@ -1597,14 +1599,31 @@ export default function App() {
         currentScore={score}
         currentProjectId={currentProjectId}
         onLoadProject={(proj, asTeacher) => {
-          const clean = sanitizeLoadedScore(proj.score);
-          clean.title = proj.title;
           setCurrentProjectId(proj.id);
           if (asTeacher) {
             setEditingAsTeacher(asTeacher);
           } else {
             setEditingAsTeacher(null);
           }
+
+          // If the song belongs to Beat Machine, load song and switch directly to Beat Machine!
+          if (proj.appType === 'beat-machine') {
+            if (proj.projectData) {
+              setBeatMachineLoadedSong(proj.projectData);
+            }
+            setCurrentApp('beat-machine');
+            return;
+          }
+
+          // If the song belongs to Rhythm Rock Stars, switch to Rhythm Rock Stars!
+          if (proj.appType === 'rhythm-rockstars') {
+            setCurrentApp('rhythm-rockstars');
+            return;
+          }
+
+          // Default: Staff Composer
+          const clean = sanitizeLoadedScore(proj.score || DEFAULT_BLANK_SCORE);
+          clean.title = proj.title;
           pushScoreState(clean);
           setSelection({ trackIndex: 0, measureIndex: 0, itemIndex: 0 });
           setCurrentApp('staff-composer');
@@ -1632,6 +1651,7 @@ export default function App() {
             projectId: currentProjectId,
             title: nextTitle,
             score: nextScore,
+            appType: 'staff-composer',
           });
           if (res.saved && res.project) {
             setCurrentProjectId(res.project.id);
@@ -1705,6 +1725,10 @@ export default function App() {
         <BeatMachineApp
           onBackToHub={() => setCurrentApp('hub')}
           studentSession={studentSession}
+          loadedSongData={beatMachineLoadedSong}
+          onClearLoadedSongData={() => setBeatMachineLoadedSong(null)}
+          currentProjectId={currentProjectId}
+          onProjectSaved={(newId) => setCurrentProjectId(newId)}
           onOpenClassroomModal={() => {
             setOpenInTeacherMode(false);
             setIsClassroomModalOpen(true);
