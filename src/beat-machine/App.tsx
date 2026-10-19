@@ -1037,7 +1037,7 @@ export default function BeatMachineApp({
   };
 
   return (
-    <div className="min-h-screen bg-app-bg text-app-text p-3 sm:p-6 lg:p-8 font-sans">
+    <div className="min-h-screen bg-[#0B0F19] text-slate-100 p-3 sm:p-6 lg:p-8 font-sans">
       <div className="mx-auto max-w-7xl space-y-6">
         {/* Toast Notification */}
         {notification && (
@@ -1080,7 +1080,7 @@ export default function BeatMachineApp({
         />
 
         {/* Navigation Tabs Bar for Kids */}
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-app-card/90 p-2 border border-app-border shadow-lg">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-slate-900/90 p-2 border border-slate-800 shadow-lg">
           <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => setActiveMode('both')}
