@@ -70,6 +70,16 @@ export function getAppDescriptor(appType?: MusicLabAppType) {
         detail: 'Rhythm Challenge',
         openColor: 'bg-gradient-to-r from-rose-500 to-amber-500 hover:from-rose-400 hover:to-amber-400 text-slate-950',
       };
+    case 'daw':
+      return {
+        id: 'daw' as const,
+        name: 'Studio DAW',
+        shortName: 'Studio DAW',
+        emoji: '🎛️',
+        badgeClass: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40',
+        detail: 'Multitrack Recording & Loops',
+        openColor: 'bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-400 hover:to-pink-400 text-white',
+      };
     case 'staff-composer':
     default:
       return {
@@ -916,6 +926,13 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                           })`,
                           emoji: '🎸',
                         },
+                        {
+                          id: 'daw',
+                          label: `Studio DAW (${
+                            studentProjects.filter((p) => p.appType === 'daw').length
+                          })`,
+                          emoji: '🎛️',
+                        },
                       ] as const
                     ).map((f) => (
                       <button
@@ -1531,6 +1548,9 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                       </option>
                       <option value="rhythm-rockstars">
                         🎸 Rock Stars ({allProjects.filter((p) => p.appType === 'rhythm-rockstars').length})
+                      </option>
+                      <option value="daw">
+                        🎛️ Studio DAW ({allProjects.filter((p) => p.appType === 'daw').length})
                       </option>
                     </select>
                   </div>
