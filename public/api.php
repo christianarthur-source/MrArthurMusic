@@ -8,19 +8,45 @@ header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
+// NY Ed Law § 2-d & NIST CSF Security Headers
+header('X-Content-Type-Options: nosniff');
+header('X-Frame-Options: SAMEORIGIN');
+header('Referrer-Policy: strict-origin-when-cross-origin');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
   http_response_code(200);
   exit;
 }
 
-$dataDir = __DIR__ . '/classroom-data';
-if (!is_dir($dataDir)) {
-  @mkdir($dataDir, 0755, true);
+// NY Ed Law § 2-d Data Storage Security:
+// Prefer storing classroom data one directory above public web root if accessible
+$parentDataDir = dirname(__DIR__) . '/classroom-data';
+$localDataDir = __DIR__ . '/classroom-data';
+
+if (is_dir($parentDataDir) || @mkdir($parentDataDir, 0755, true)) {
+  $dataDir = $parentDataDir;
+  // If old db existed in public/classroom-data, safely migrate it up
+  if (!file_exists($parentDataDir . '/db.json') && file_exists($localDataDir . '/db.json')) {
+    @copy($localDataDir . '/db.json', $parentDataDir . '/db.json');
+  }
+} else {
+  $dataDir = $localDataDir;
+  if (!is_dir($dataDir)) {
+    @mkdir($dataDir, 0755, true);
+  }
 }
+
+// Write Apache 2.2 and 2.4 web access denial rules
 $htaccessFile = $dataDir . '/.htaccess';
-if (!file_exists($htaccessFile)) {
-  @file_put_contents($htaccessFile, "Deny from all\n");
+$htaccessContent = "# NY Ed Law § 2-d Protected Storage\n<IfModule mod_authz_core.c>\n  Require all denied\n</IfModule>\n<IfModule !mod_authz_core.c>\n  Deny from all\n</IfModule>\n";
+if (!file_exists($htaccessFile) || @file_get_contents($htaccessFile) !== $htaccessContent) {
+  @file_put_contents($htaccessFile, $htaccessContent);
+}
+
+// Write direct script guard for Nginx or servers without .htaccess
+$guardFile = $dataDir . '/index.php';
+if (!file_exists($guardFile)) {
+  @file_put_contents($guardFile, "<?php http_response_code(403); header('Content-Type: text/plain'); echo 'Access Denied: Protected by NY State Education Law § 2-d.'; exit;\n");
 }
 
 $dbFile = $dataDir . '/db.json';
@@ -32,6 +58,14 @@ function get_default_db() {
     'students' => [],
     'projects' => []
   ];
+}
+
+function verify_teacher_pin($inputPin, $storedPin) {
+  if (empty($inputPin) || empty($storedPin)) return false;
+  if (strpos((string)$storedPin, '$2y$') === 0 || strpos((string)$storedPin, '$2a$') === 0) {
+    return password_verify((string)$inputPin, (string)$storedPin);
+  }
+  return hash_equals((string)$storedPin, (string)$inputPin);
 }
 
 function load_db($dbFile) {
@@ -215,7 +249,7 @@ switch ($action) {
     $title = trim(isset($body['title']) ? $body['title'] : '');
     $score = isset($body['score']) ? $body['score'] : null;
 
-    $isTeacher = ($teacherPin !== '' && $teacherPin === $db['teacherPin']);
+    $isTeacher = ($teacherPin !== '' && verify_teacher_pin($teacherPin, $db['teacherPin']));
     $student = null;
     foreach ($db['students'] as $s) {
       if ($s['id'] === $studentId && ($isTeacher || $pin === '' || $s['pin'] === $pin)) {
@@ -291,7 +325,7 @@ switch ($action) {
     $teacherPin = isset($body['teacherPin']) ? $body['teacherPin'] : '';
     $projectId = isset($body['projectId']) ? $body['projectId'] : '';
 
-    $isTeacher = ($teacherPin !== '' && $teacherPin === $db['teacherPin']);
+    $isTeacher = ($teacherPin !== '' && verify_teacher_pin($teacherPin, $db['teacherPin']));
     $authorized = $isTeacher;
     if (!$authorized) {
       foreach ($db['students'] as $s) {
@@ -320,10 +354,15 @@ switch ($action) {
 
   case 'teacher_login': {
     $teacherPin = isset($body['teacherPin']) ? $body['teacherPin'] : '';
-    if ($teacherPin !== $db['teacherPin']) {
+    if (!verify_teacher_pin($teacherPin, $db['teacherPin'])) {
       http_response_code(401);
       echo json_encode(['ok' => false, 'error' => 'Incorrect Teacher PIN / Password.']);
       exit;
+    }
+    // Auto-migrate legacy plain text teacher PIN to bcrypt hash
+    if (strpos((string)$db['teacherPin'], '$2y$') !== 0) {
+      $db['teacherPin'] = password_hash($teacherPin, PASSWORD_BCRYPT);
+      save_db($dbFile, $db);
     }
     echo json_encode([
       'ok' => true,
@@ -336,7 +375,7 @@ switch ($action) {
 
   case 'teacher_save_student': {
     $teacherPin = isset($body['teacherPin']) ? $body['teacherPin'] : '';
-    if ($teacherPin !== $db['teacherPin']) {
+    if (!verify_teacher_pin($teacherPin, $db['teacherPin'])) {
       http_response_code(401);
       echo json_encode(['ok' => false, 'error' => 'Unauthorized']);
       exit;
@@ -385,7 +424,7 @@ switch ($action) {
 
   case 'teacher_bulk_add': {
     $teacherPin = isset($body['teacherPin']) ? $body['teacherPin'] : '';
-    if ($teacherPin !== $db['teacherPin']) {
+    if (!verify_teacher_pin($teacherPin, $db['teacherPin'])) {
       http_response_code(401);
       echo json_encode(['ok' => false, 'error' => 'Unauthorized']);
       exit;
@@ -412,7 +451,7 @@ switch ($action) {
 
   case 'teacher_delete_student': {
     $teacherPin = isset($body['teacherPin']) ? $body['teacherPin'] : '';
-    if ($teacherPin !== $db['teacherPin']) {
+    if (!verify_teacher_pin($teacherPin, $db['teacherPin'])) {
       http_response_code(401);
       echo json_encode(['ok' => false, 'error' => 'Unauthorized']);
       exit;
@@ -431,7 +470,7 @@ switch ($action) {
 
   case 'teacher_rename_project': {
     $teacherPin = isset($body['teacherPin']) ? $body['teacherPin'] : '';
-    if ($teacherPin !== $db['teacherPin']) {
+    if (!verify_teacher_pin($teacherPin, $db['teacherPin'])) {
       http_response_code(401);
       echo json_encode(['ok' => false, 'error' => 'Unauthorized']);
       exit;
@@ -456,7 +495,7 @@ switch ($action) {
 
   case 'teacher_update_settings': {
     $teacherPin = isset($body['teacherPin']) ? $body['teacherPin'] : '';
-    if ($teacherPin !== $db['teacherPin']) {
+    if (!verify_teacher_pin($teacherPin, $db['teacherPin'])) {
       http_response_code(401);
       echo json_encode(['ok' => false, 'error' => 'Unauthorized']);
       exit;
@@ -465,7 +504,7 @@ switch ($action) {
       $db['allowSelfRegister'] = (bool)$body['allowSelfRegister'];
     }
     if (isset($body['newTeacherPin']) && trim($body['newTeacherPin']) !== '') {
-      $db['teacherPin'] = trim($body['newTeacherPin']);
+      $db['teacherPin'] = password_hash(trim($body['newTeacherPin']), PASSWORD_BCRYPT);
     }
     if (isset($body['restoreDb']) && is_array($body['restoreDb'])) {
       $restored = $body['restoreDb'];
@@ -479,7 +518,6 @@ switch ($action) {
     save_db($dbFile, $db);
     echo json_encode([
       'ok' => true,
-      'teacherPin' => $db['teacherPin'],
       'allowSelfRegister' => (bool)$db['allowSelfRegister'],
       'students' => $db['students'],
       'projects' => $db['projects']

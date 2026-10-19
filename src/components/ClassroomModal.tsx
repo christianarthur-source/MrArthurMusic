@@ -20,7 +20,10 @@ import {
   Sparkles,
   Printer,
   RefreshCw,
+  ShieldCheck,
+  FileText,
 } from 'lucide-react';
+import { EdLawPrivacyModal } from './EdLawPrivacyModal';
 import { Score } from '../types/music';
 import {
   PublicStudentInfo,
@@ -101,6 +104,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
   const [pinChangeNotice, setPinChangeNotice] = useState<string | null>(null);
   const [pinChangeError, setPinChangeError] = useState<string | null>(null);
   const [isChangingPin, setIsChangingPin] = useState<boolean>(false);
+  const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState<boolean>(false);
 
   // Teacher portal state
   const [teacherPinInput, setTeacherPinInput] = useState<string>('');
@@ -753,7 +757,15 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                 </div>
               </div>
 
-              <div className="pt-2 flex items-center justify-end border-t border-slate-800">
+              <div className="pt-2 flex items-center justify-between border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setIsPrivacyModalOpen(true)}
+                  className="flex items-center gap-1.5 text-[11px] text-slate-400 hover:text-emerald-300 transition-colors cursor-pointer"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>NY Ed Law § 2-d &amp; Student Privacy</span>
+                </button>
                 <button
                   type="submit"
                   disabled={isLoading}
@@ -1593,12 +1605,39 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                       </label>
                     </div>
                   </div>
+
+                  {/* NY State Education Law § 2-d Compliance & Privacy */}
+                  <div className="p-3.5 rounded-xl bg-slate-950/70 border border-emerald-500/30 flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <div className="font-bold text-white text-sm flex items-center gap-2">
+                        <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                        <span>NY State Education Law § 2-d Compliance</span>
+                      </div>
+                      <p className="text-slate-400 text-[11px]">
+                        Review the Parents&apos; Bill of Rights, data minimization policies, and print compliance documentation for your district Data Protection Officer (DPO).
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsPrivacyModalOpen(true)}
+                      className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 text-emerald-300 font-semibold cursor-pointer"
+                    >
+                      <FileText className="w-3.5 h-3.5" />
+                      <span>View NY Ed Law § 2-d Statement</span>
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
           )}
         </div>
       </div>
+
+      {/* NY Ed Law § 2-d Compliance & Parents' Bill of Rights Modal */}
+      <EdLawPrivacyModal
+        isOpen={isPrivacyModalOpen}
+        onClose={() => setIsPrivacyModalOpen(false)}
+      />
     </div>
   );
 };
