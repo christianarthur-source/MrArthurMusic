@@ -16,17 +16,24 @@ import { TapGame } from './components/TapGame';
 import { BeatBuilderGame } from './components/BeatBuilderGame';
 import { RhythmQuizGame } from './components/RhythmQuizGame';
 import { LeaderboardModal } from './components/LeaderboardModal';
-import { StudentProfileModal } from './components/StudentProfileModal';
-import { TeacherDashboardModal } from './components/TeacherDashboardModal';
 import confetti from 'canvas-confetti';
 import { SoundSettings } from './components/SoundSettings';
 import { Trophy, Music, Zap, Flame, Award, Sparkles, Volume2 } from 'lucide-react';
+import { StudentSession } from '../utils/classroomApi';
 
 export interface RhythmRockStarsAppProps {
   onBackToHub?: () => void;
+  studentSession?: StudentSession | null;
+  onOpenClassroomModal?: () => void;
+  onOpenAvatar?: () => void;
 }
 
-export default function RhythmRockStarsApp({ onBackToHub }: RhythmRockStarsAppProps = {}) {
+export default function RhythmRockStarsApp({
+  onBackToHub,
+  studentSession = null,
+  onOpenClassroomModal = () => {},
+  onOpenAvatar = () => {},
+}: RhythmRockStarsAppProps = {}) {
   // Current Student Session
   const [student, setStudent] = useState<StudentProfile | null>(() => apiClient.getLocalProfile());
 
@@ -60,33 +67,36 @@ export default function RhythmRockStarsApp({ onBackToHub }: RhythmRockStarsAppPr
 
   // Modals
   const [showLeaderboard, setShowLeaderboard] = useState(false);
-  const [showProfile, setShowProfile] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showLevelMap, setShowLevelMap] = useState(false);
-  const [showTeacherDashboard, setShowTeacherDashboard] = useState(false);
 
-  // Secret keystroke listener for "adminbaby"
+  // Synchronize global student session
   useEffect(() => {
-    let keyBuffer = '';
-    const secretCode = 'adminbaby';
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) {
-        return;
+    if (studentSession) {
+      const existing = apiClient.getLocalProfile();
+      if (!existing || existing.name !== studentSession.firstName) {
+        const synced: StudentProfile = {
+          id: studentSession.id,
+          name: studentSession.firstName,
+          avatar: '🎸',
+          passcode: studentSession.pin || '1234',
+          classCode: studentSession.classGroup || 'Classroom',
+          totalScore: existing?.totalScore || 0,
+          highestStreak: existing?.highestStreak || 0,
+          quizzesCompleted: existing?.quizzesCompleted || 0,
+          levelProgress: existing?.levelProgress || { 1: { stars: 3, highAccuracy: 100 } },
+          badges: existing?.badges || ['rockstar_rookie'],
+          updatedAt: new Date().toISOString(),
+        };
+        apiClient.saveLocalProfile(synced);
+        setStudent(synced);
+      } else {
+        setStudent(existing);
       }
-      keyBuffer += e.key.toLowerCase();
-      if (keyBuffer.length > secretCode.length) {
-        keyBuffer = keyBuffer.slice(-secretCode.length);
-      }
-      if (keyBuffer === secretCode) {
-        setShowTeacherDashboard(true);
-        keyBuffer = '';
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+    } else {
+      setStudent(null);
+    }
+  }, [studentSession]);
 
   // Active level config
   const activeLevelConfig = LEVELS_CONFIG.find(l => l.levelNumber === currentLevelNumber) || LEVELS_CONFIG[0];
@@ -238,8 +248,9 @@ export default function RhythmRockStarsApp({ onBackToHub }: RhythmRockStarsAppPr
       <Navbar
         currentMode={currentMode}
         onSelectMode={(mode) => setCurrentMode(mode)}
-        student={student}
-        onOpenProfile={() => setShowProfile(true)}
+        studentSession={studentSession}
+        onOpenClassroomModal={onOpenClassroomModal}
+        onOpenAvatar={onOpenAvatar}
         onOpenLeaderboard={() => setShowLeaderboard(true)}
         onOpenSettings={() => setShowSettings(true)}
         streak={streak}
@@ -426,9 +437,9 @@ export default function RhythmRockStarsApp({ onBackToHub }: RhythmRockStarsAppPr
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto">
-            {!student ? (
+            {!studentSession ? (
               <button
-                onClick={() => setShowProfile(true)}
+                onClick={onOpenClassroomModal}
                 className="w-full sm:w-auto px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition-colors cursor-pointer"
               >
                 Sign In to Save Scores
@@ -437,7 +448,7 @@ export default function RhythmRockStarsApp({ onBackToHub }: RhythmRockStarsAppPr
 
             <button
               onClick={() => setShowLeaderboard(true)}
-              className="w-full sm:w-auto px-5 py-2 bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-xs rounded-xl shadow-md transition-all hover:scale-105 active:scale-95 cursor-pointer"
+              className="w-full sm:w-auto px-5 py-2 bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold text-xs rounded-xl shadow-md transition-all hover:scale-105 active:scale-95 cursor-pointer font-['Fredoka',sans-serif]"
             >
               View Class Leaderboard
             </button>
@@ -453,31 +464,11 @@ export default function RhythmRockStarsApp({ onBackToHub }: RhythmRockStarsAppPr
         onPlayNow={() => setCurrentMode('quiz')}
       />
 
-      <StudentProfileModal
-        isOpen={showProfile}
-        onClose={() => setShowProfile(false)}
-        student={student}
-        onLoginSuccess={(s) => setStudent(s)}
-        onLogout={() => {
-          apiClient.clearLocalProfile();
-          setStudent(null);
-          setShowProfile(false);
-        }}
-      />
-
       <SoundSettings
         isOpen={showSettings}
         onClose={() => setShowSettings(false)}
         settings={soundSettings}
         onChangeSettings={handleUpdateSettings}
-      />
-
-      <TeacherDashboardModal
-        isOpen={showTeacherDashboard}
-        onClose={() => setShowTeacherDashboard(false)}
-        onStudentUpdated={() => {
-          setStudent(apiClient.getLocalProfile());
-        }}
       />
     </div>
   );

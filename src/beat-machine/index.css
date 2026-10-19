@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+@theme {
+  --color-app-bg: var(--bg-app);
+  --color-app-card: var(--bg-card);
+  --color-app-accent: var(--bg-accent);
+  --color-app-text: var(--text-main);
+  --color-app-muted: var(--text-muted);
+  --color-app-accent: var(--accent);
+  --color-app-border: var(--border);
+}
+
+@layer base {
+  :root {
+    --bg-app: #020617;
+    --bg-card: #0f172a;
+    --bg-accent: #1e293b;
+    --text-main: #f8fafc;
+    --text-muted: #94a3b8;
+    --accent: #f43f5e;
+    --border: #1e293b;
+  }
+}
+
+body {
+  background-color: var(--bg-app);
+  color: var(--text-main);
+}
+
+kbd {
+  @apply inline-flex items-center rounded border border-slate-200 bg-slate-100 px-1 font-sans text-xs font-medium text-slate-800;
+}
