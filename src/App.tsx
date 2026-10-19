@@ -39,6 +39,8 @@ import { HelpModal } from './components/HelpModal';
 import { PrintView } from './components/PrintView';
 import { ShareModal } from './components/ShareModal';
 import { ClassroomModal } from './components/ClassroomModal';
+import { EdLawPrivacyModal } from './components/EdLawPrivacyModal';
+import { ShieldCheck } from 'lucide-react';
 import {
   SavedProjectRecord,
   StudentSession,
@@ -154,6 +156,7 @@ export default function App() {
   const [isDrumBeatsModalOpen, setIsDrumBeatsModalOpen] = useState<boolean>(false);
   const [isTemplatesModalOpen, setIsTemplatesModalOpen] = useState<boolean>(false);
   const [isHelpModalOpen, setIsHelpModalOpen] = useState<boolean>(false);
+  const [isEdLawModalOpen, setIsEdLawModalOpen] = useState<boolean>(false);
   const [isPrintView, setIsPrintView] = useState<boolean>(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState<boolean>(false);
   const [isClassroomModalOpen, setIsClassroomModalOpen] = useState<boolean>(false);
@@ -1723,6 +1726,36 @@ export default function App() {
             playheadPosition={playheadPosition}
             activePlayingNoteIds={activePlayingNoteIds}
           />
+
+          {/* Visible Site Footer with NY Ed Law § 2-d & Parents' Bill of Rights */}
+          {!isFullScreen && (
+            <footer className="w-full max-w-5xl mt-12 mb-6 pt-5 pb-8 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400 print:hidden">
+              <div className="flex items-center gap-2 text-slate-400 text-xs">
+                <span className="font-bold text-slate-300">Mr. Arthur&apos;s Staff Composer</span>
+                <span className="opacity-40">•</span>
+                <span>Elementary &amp; Middle School Music</span>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                <button
+                  type="button"
+                  onClick={() => setIsEdLawModalOpen(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 hover:text-emerald-200 border border-emerald-500/30 font-semibold transition-all cursor-pointer shadow-xs"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>NY Ed Law § 2-d &amp; Parents&apos; Bill of Rights</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIsHelpModalOpen(true)}
+                  className="px-2.5 py-1.5 rounded-lg text-slate-400 hover:text-sky-300 hover:bg-slate-800/60 transition-colors cursor-pointer"
+                >
+                  Help &amp; Shortcuts
+                </button>
+              </div>
+            </footer>
+          )}
         </div>
       </main>
 
@@ -1768,6 +1801,7 @@ export default function App() {
       />
 
       <HelpModal isOpen={isHelpModalOpen} onClose={() => setIsHelpModalOpen(false)} />
+      <EdLawPrivacyModal isOpen={isEdLawModalOpen} onClose={() => setIsEdLawModalOpen(false)} />
 
       <ShareModal
         isOpen={isShareModalOpen}
