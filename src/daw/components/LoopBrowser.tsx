@@ -13,6 +13,7 @@ import {
 import { DAW_LOOP_CATALOG } from '../data/loopCatalog';
 import { DawLoopCategory, DawLoopGenre, DawLoopItem } from '../types';
 import { decodeUploadedAudio, getOrGenerateLoopAudio } from '../audio/loopGenerator';
+import { containsProfanity } from '../../utils/profanityFilter';
 
 interface LoopBrowserProps {
   audioCtx: BaseAudioContext;
@@ -120,17 +121,21 @@ export const LoopBrowser: React.FC<LoopBrowserProps> = ({
     return () => stopPreview();
   }, []);
 
-  const filteredLoops = DAW_LOOP_CATALOG.filter((item) => {
-    const matchGenre = selectedGenre === 'all' || item.genre === selectedGenre;
-    const matchCat = selectedCategory === 'all' || item.category === selectedCategory;
-    const matchSearch =
-      searchQuery.trim() === '' ||
-      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.genre.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()));
-    return matchGenre && matchCat && matchSearch;
-  });
+  const isSearchProfane = containsProfanity(searchQuery);
+
+  const filteredLoops = isSearchProfane
+    ? []
+    : DAW_LOOP_CATALOG.filter((item) => {
+        const matchGenre = selectedGenre === 'all' || item.genre === selectedGenre;
+        const matchCat = selectedCategory === 'all' || item.category === selectedCategory;
+        const matchSearch =
+          searchQuery.trim() === '' ||
+          item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          item.genre.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          item.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()));
+        return matchGenre && matchCat && matchSearch;
+      });
 
   return (
     <div className="h-72 bg-slate-900 border-t border-slate-800 flex flex-col shadow-2xl select-none z-30">
@@ -163,8 +168,17 @@ export const LoopBrowser: React.FC<LoopBrowserProps> = ({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search drums, bass, keys..."
-            className="w-full pl-8 pr-2.5 py-1 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400"
+            className={`w-full pl-8 pr-2.5 py-1 rounded-xl bg-slate-900 border text-xs text-white placeholder-slate-500 focus:outline-none ${
+              isSearchProfane
+                ? 'border-rose-500 bg-rose-950/40 ring-1 ring-rose-500/50'
+                : 'border-slate-800 focus:border-amber-400'
+            }`}
           />
+          {isSearchProfane && (
+            <div className="absolute left-0 -bottom-4 text-[9px] font-bold text-rose-400 whitespace-nowrap">
+              Inappropriate search term blocked
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-2">

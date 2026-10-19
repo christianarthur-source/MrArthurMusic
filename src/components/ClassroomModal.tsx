@@ -413,6 +413,10 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
       setTeacherError('Student first name and PIN are required.');
       return;
     }
+    if (containsProfanity(fn) || containsProfanity(cg)) {
+      setTeacherError('Please use school-appropriate student and class names.');
+      return;
+    }
     try {
       const res = await teacherSaveStudent({
         teacherPin: activeTeacherPin,
@@ -433,17 +437,24 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
 
   const handleSaveEditedStudent = async (studentId: string) => {
     setTeacherError(null);
-    if (!editStuName.trim() || !editStuPin.trim()) {
+    const fn = editStuName.trim();
+    const pin = editStuPin.trim();
+    const cg = editStuClass.trim();
+    if (!fn || !pin) {
       setTeacherError('Name and PIN cannot be empty.');
+      return;
+    }
+    if (containsProfanity(fn) || containsProfanity(cg)) {
+      setTeacherError('Please use school-appropriate names.');
       return;
     }
     try {
       const res = await teacherSaveStudent({
         teacherPin: activeTeacherPin,
         id: studentId,
-        firstName: editStuName.trim(),
-        pin: editStuPin.trim(),
-        classGroup: editStuClass.trim(),
+        firstName: fn,
+        pin,
+        classGroup: cg,
       });
       setAllStudents(res.students);
       setAllProjects(res.projects);
@@ -490,6 +501,13 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
         classGroup: parts[2] || newStuClass.trim() || '',
       };
     });
+
+    for (const entry of entries) {
+      if (containsProfanity(entry.firstName) || containsProfanity(entry.classGroup)) {
+        setTeacherError(`Roster list contains inappropriate language ("${entry.firstName}"). Please fix before importing.`);
+        return;
+      }
+    }
 
     try {
       const updated = await teacherBulkAddStudents({
@@ -550,12 +568,17 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
   };
 
   const handleTeacherRenameSong = async (projectId: string) => {
-    if (!renameTitleInput.trim()) return;
+    const cleanRename = renameTitleInput.trim();
+    if (!cleanRename) return;
+    if (containsProfanity(cleanRename)) {
+      setTeacherError('Please choose a school-appropriate song title.');
+      return;
+    }
     try {
       const updated = await teacherRenameProject({
         teacherPin: activeTeacherPin,
         projectId,
-        newTitle: renameTitleInput.trim(),
+        newTitle: cleanRename,
       });
       setAllProjects(updated);
       setRenamingProjectId(null);
