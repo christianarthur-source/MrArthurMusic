@@ -102,10 +102,9 @@ export const StageHeader: React.FC<StageHeaderProps> = ({
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
           {/* Level, RED & White DENTI badge & Stage Title */}
           <div>
-            <div className="flex items-center gap-1.5 sm:gap-2 text-xs font-bold text-amber-400 uppercase tracking-wider mb-1 flex-wrap">
-              {/* Prominent RED & White DENTI School Branding */}
-              <span className="px-2.5 py-0.5 rounded-lg bg-red-600 text-white font-black text-xs sm:text-sm tracking-wider border-2 border-white shadow-md shadow-red-600/50 uppercase shrink-0">
-                DENTI
+            <div className="flex items-center gap-1.5 sm:gap-2 text-xs font-bold text-amber-400 uppercase tracking-wider mb-1 flex-wrap font-['Fredoka',sans-serif]">
+              <span className="px-2.5 py-0.5 rounded-lg bg-slate-800 text-amber-300 font-extrabold text-xs tracking-wider border border-amber-300/30 uppercase shrink-0">
+                Music Lab
               </span>
               <span className="bg-slate-950/80 px-2 py-0.5 rounded-lg border border-slate-800 text-amber-300 font-extrabold text-xs">
                 STAGE {levelNumber}
