@@ -1,6 +1,7 @@
 import React from 'react';
 import { Volume2, VolumeX, Play, Square, FastForward, Music } from 'lucide-react';
 import { GameMode, SoundKit } from '../types/game';
+import rockstarBanner from '../assets/images/rockstar_stage_banner_1791818144423.jpg';
 
 interface StageHeaderProps {
   stageName: string;
@@ -85,7 +86,7 @@ export const StageHeader: React.FC<StageHeaderProps> = ({
       {/* Background Graphic Layer */}
       <div className="absolute inset-0 opacity-25 mix-blend-luminosity pointer-events-none">
         <img
-          src="/src/assets/images/rockstar_stage_banner_1791818144423.jpg"
+          src={rockstarBanner}
           alt="Rockstar Stage"
           className="w-full h-full object-cover object-center"
           referrerPolicy="no-referrer"
