@@ -1,0 +1,21 @@
+{
+  "teacherPin": "1138",
+  "allowSelfRegister": true,
+  "students": [
+    {
+      "id": "stu_ntrn3ymef4t",
+      "firstName": "test",
+      "pin": "1138",
+      "className": "",
+      "createdAt": "2026-10-19T04:49:04.541Z"
+    },
+    {
+      "id": "stu_n6muydvdq2y",
+      "firstName": "Alex M",
+      "pin": "1234",
+      "className": "",
+      "createdAt": "2026-10-19T05:09:31.786Z"
+    }
+  ],
+  "projects": []
+}
