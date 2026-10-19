@@ -615,6 +615,30 @@ export const LEVELS_CONFIG: LevelConfig[] = [
   }
 ];
 
+/**
+ * Question counts scaling by 20% per level starting at 10 for Level 1 up to Secret Level 7:
+ * Level 1: 10
+ * Level 2: 12 (10 * 1.2)
+ * Level 3: 14 (12 * 1.2 = 14.4 -> 14)
+ * Level 4: 17 (14.4 * 1.2 = 17.28 -> 17)
+ * Level 5: 21 (17.28 * 1.2 = 20.736 -> 21)
+ * Level 6: 25 (20.736 * 1.2 = 24.88 -> 25)
+ * Level 7: 30 (24.88 * 1.2 = 29.86 -> 30)
+ */
+export const LEVEL_QUESTION_COUNTS: Record<number, number> = {
+  1: 10,
+  2: 12,
+  3: 14,
+  4: 17,
+  5: 21,
+  6: 25,
+  7: 30,
+};
+
+export const getQuestionCountForLevel = (levelNumber: number): number => {
+  return LEVEL_QUESTION_COUNTS[levelNumber] || 10;
+};
+
 export const ALL_BADGES: Badge[] = [
   {
     id: 'quarter_master',
