@@ -129,7 +129,16 @@ export const DawApp: React.FC<DawAppProps> = ({
 }) => {
   const [project, setProject] = useState<DawProject>(() => {
     if (loadedProjectData && loadedProjectData.tracks) {
-      return loadedProjectData;
+      return {
+        ...DEFAULT_DAW_PROJECT,
+        ...loadedProjectData,
+        loopRegion: { ...DEFAULT_DAW_PROJECT.loopRegion, ...(loadedProjectData.loopRegion || {}) },
+        tracks: (loadedProjectData.tracks || []).map((t: any) => ({
+          ...t,
+          clips: (t.clips || []).map((c: any) => ({ ...c })),
+          fx: { ...DEFAULT_DAW_FX, ...(t.fx || {}) },
+        })),
+      };
     }
     return DEFAULT_DAW_PROJECT;
   });
@@ -167,9 +176,19 @@ export const DawApp: React.FC<DawAppProps> = ({
   // Load project passed from Classroom Saved Songs list
   useEffect(() => {
     if (loadedProjectData && loadedProjectData.tracks) {
-      setProject(loadedProjectData);
-      setSaveTitleInput(loadedProjectData.title || 'My Studio Beat');
-      setNotification(`🎉 Loaded "${loadedProjectData.title || 'Studio Song'}" into DAW! 🎛️`);
+      const merged: DawProject = {
+        ...DEFAULT_DAW_PROJECT,
+        ...loadedProjectData,
+        loopRegion: { ...DEFAULT_DAW_PROJECT.loopRegion, ...(loadedProjectData.loopRegion || {}) },
+        tracks: (loadedProjectData.tracks || []).map((t: any) => ({
+          ...t,
+          clips: (t.clips || []).map((c: any) => ({ ...c })),
+          fx: { ...DEFAULT_DAW_FX, ...(t.fx || {}) },
+        })),
+      };
+      setProject(merged);
+      setSaveTitleInput(merged.title || 'My Studio Beat');
+      setNotification(`🎉 Loaded "${merged.title || 'Studio Song'}" into DAW! 🎛️`);
       setTimeout(() => setNotification(null), 4000);
       if (onClearLoadedProjectData) {
         onClearLoadedProjectData();
@@ -199,6 +218,214 @@ export const DawApp: React.FC<DawAppProps> = ({
   useEffect(() => {
     dawAudioEngine.syncTracks(project.tracks, project.masterVolume);
   }, [project.tracks, project.masterVolume]);
+
+  // Play / Pause toggle
+  const handleTogglePlay = useCallback(() => {
+    if (isPlaying) {
+      dawAudioEngine.pause();
+      setIsPlaying(false);
+    } else {
+      dawAudioEngine.play(project);
+      setIsPlaying(true);
+    }
+  }, [isPlaying, project]);
+
+  const handleStop = useCallback(() => {
+    dawAudioEngine.stop();
+    setIsPlaying(false);
+    setCurrentBeat(0);
+  }, []);
+
+  const handleSeek = useCallback((beat: number) => {
+    dawAudioEngine.seek(beat);
+    setCurrentBeat(beat);
+    if (isPlaying) {
+      dawAudioEngine.play(project);
+    }
+  }, [isPlaying, project]);
+
+  // Move clip (beat position and track)
+  const handleMoveClip = useCallback((clipId: string, newStartBeat: number, newTrackId?: string) => {
+    let clipToMove: DawClip | null = null;
+    let fromTrackId: string | null = null;
+
+    for (const t of project.tracks) {
+      const found = t.clips.find((c) => c.id === clipId);
+      if (found) {
+        clipToMove = found;
+        fromTrackId = t.id;
+        break;
+      }
+    }
+
+    if (!clipToMove) return;
+    const targetTrackId = newTrackId || fromTrackId;
+
+    if (targetTrackId === fromTrackId) {
+      const nextTracks = project.tracks.map((t) => ({
+        ...t,
+        clips: t.clips.map((c) => (c.id === clipId ? { ...c, startBeat: Math.max(0, newStartBeat) } : c)),
+      }));
+      setProject((prev) => ({ ...prev, tracks: nextTracks }));
+    } else {
+      const targetTrack = project.tracks.find((t) => t.id === targetTrackId);
+      if (!targetTrack) return;
+
+      const updatedClip: DawClip = {
+        ...clipToMove,
+        trackId: targetTrackId,
+        startBeat: Math.max(0, newStartBeat),
+        color: targetTrack.color,
+      };
+
+      const nextTracks = project.tracks.map((t) => {
+        if (t.id === fromTrackId) {
+          return { ...t, clips: t.clips.filter((c) => c.id !== clipId) };
+        }
+        if (t.id === targetTrackId) {
+          return { ...t, clips: [...t.clips, updatedClip] };
+        }
+        return t;
+      });
+      setProject((prev) => ({ ...prev, tracks: nextTracks }));
+    }
+  }, [project.tracks]);
+
+  // Trim clip
+  const handleTrimClip = useCallback((clipId: string, newStartBeat: number, newDurationBeats: number) => {
+    const nextTracks = project.tracks.map((t) => ({
+      ...t,
+      clips: t.clips.map((c) =>
+        c.id === clipId ? { ...c, startBeat: newStartBeat, durationBeats: newDurationBeats } : c
+      ),
+    }));
+    setProject((prev) => ({ ...prev, tracks: nextTracks }));
+  }, [project.tracks]);
+
+  // Delete clip
+  const handleDeleteClip = useCallback((clipId: string) => {
+    const nextTracks = project.tracks.map((t) => ({
+      ...t,
+      clips: t.clips.filter((c) => c.id !== clipId),
+    }));
+    pushState({ ...project, tracks: nextTracks });
+    if (selectedClipId === clipId) setSelectedClipId(null);
+  }, [project, pushState, selectedClipId]);
+
+  // Copy clip to clipboard
+  const handleCopyClip = useCallback(
+    (clipId: string) => {
+      for (const t of project.tracks) {
+        const c = t.clips.find((clip) => clip.id === clipId);
+        if (c) {
+          setClipClipboard({ ...c });
+          setNotification(`Copied "${c.name}" to clipboard 📋`);
+          setTimeout(() => setNotification(null), 2000);
+          return;
+        }
+      }
+    },
+    [project.tracks]
+  );
+
+  // Cut clip
+  const handleCutClip = useCallback(
+    (clipId: string) => {
+      handleCopyClip(clipId);
+      handleDeleteClip(clipId);
+      setNotification('Cut clip ✂️');
+      setTimeout(() => setNotification(null), 2000);
+    },
+    [handleCopyClip, handleDeleteClip]
+  );
+
+  // Duplicate clip
+  const handleDuplicateClip = useCallback((clipId: string) => {
+    let duplicated = false;
+    const nextTracks = project.tracks.map((t) => {
+      const clip = t.clips.find((c) => c.id === clipId);
+      if (!clip) return t;
+
+      const newClip: DawClip = {
+        ...clip,
+        id: `clip_${Date.now()}_dup`,
+        startBeat: clip.startBeat + clip.durationBeats,
+      };
+      duplicated = true;
+      return { ...t, clips: [...t.clips, newClip] };
+    });
+
+    if (duplicated) {
+      pushState({ ...project, tracks: nextTracks });
+      setNotification('Duplicated clip! 📋');
+      setTimeout(() => setNotification(null), 2500);
+    }
+  }, [project, pushState]);
+
+  // Split clip at playhead
+  const handleSplitClip = useCallback((clipId: string, splitBeat: number) => {
+    let splitted = false;
+    const nextTracks = project.tracks.map((t) => {
+      const clipIdx = t.clips.findIndex((c) => c.id === clipId);
+      if (clipIdx === -1) return t;
+
+      const orig = t.clips[clipIdx];
+      const firstDur = splitBeat - orig.startBeat;
+      const secondDur = orig.durationBeats - firstDur;
+      if (firstDur <= 0.25 || secondDur <= 0.25) return t;
+
+      const firstClip: DawClip = { ...orig, durationBeats: firstDur };
+      const secondClip: DawClip = {
+        ...orig,
+        id: `clip_${Date.now()}_split`,
+        startBeat: splitBeat,
+        durationBeats: secondDur,
+        name: `${orig.name} (Part 2)`,
+      };
+
+      splitted = true;
+      const newClips = [...t.clips];
+      newClips.splice(clipIdx, 1, firstClip, secondClip);
+      return { ...t, clips: newClips };
+    });
+
+    if (splitted) {
+      pushState({ ...project, tracks: nextTracks });
+      setNotification('Sliced clip into two parts! ✂️');
+      setTimeout(() => setNotification(null), 2500);
+    }
+  }, [project, pushState]);
+
+  // Paste clip at current playhead
+  const handlePasteClip = useCallback(() => {
+    if (!clipClipboard) {
+      setNotification('Clipboard is empty! Select a clip to copy first.');
+      setTimeout(() => setNotification(null), 2000);
+      return;
+    }
+
+    let targetTrack = project.tracks.find((t) => t.id === selectedTrackId);
+    if (!targetTrack) {
+      targetTrack = project.tracks.find((t) => t.id === clipClipboard.trackId) || project.tracks[0];
+    }
+
+    const pasteBeat = Math.max(0, Math.round(currentBeat));
+    const pastedClip: DawClip = {
+      ...clipClipboard,
+      id: `clip_${Date.now()}_paste`,
+      trackId: targetTrack.id,
+      startBeat: pasteBeat,
+    };
+
+    const nextTracks = project.tracks.map((t) =>
+      t.id === targetTrack!.id ? { ...t, clips: [...t.clips, pastedClip] } : t
+    );
+
+    pushState({ ...project, tracks: nextTracks });
+    setSelectedClipId(pastedClip.id);
+    setNotification(`Pasted "${pastedClip.name}" at Bar ${Math.floor(pasteBeat / 4) + 1}! 📥`);
+    setTimeout(() => setNotification(null), 2500);
+  }, [clipClipboard, currentBeat, project, pushState, selectedTrackId]);
 
   // Keyboard shortcuts: Spacebar, Copy, Cut, Paste, Duplicate, Delete, Split
   useEffect(() => {
@@ -265,35 +492,10 @@ export const DawApp: React.FC<DawAppProps> = ({
     handleDeleteClip,
     handlePasteClip,
     handleSplitClip,
-    isPlaying,
-    project,
+    handleTogglePlay,
     selectedClipId,
   ]);
 
-  // Play / Pause toggle
-  const handleTogglePlay = () => {
-    if (isPlaying) {
-      dawAudioEngine.pause();
-      setIsPlaying(false);
-    } else {
-      dawAudioEngine.play(project);
-      setIsPlaying(true);
-    }
-  };
-
-  const handleStop = () => {
-    dawAudioEngine.stop();
-    setIsPlaying(false);
-    setCurrentBeat(0);
-  };
-
-  const handleSeek = (beat: number) => {
-    dawAudioEngine.seek(beat);
-    setCurrentBeat(beat);
-    if (isPlaying) {
-      dawAudioEngine.play(project);
-    }
-  };
 
   // Add loop from loop browser to project timeline
   const handleAddLoopToTimeline = (loop: DawLoopItem, buffer: AudioBuffer, waveform: number[]) => {
@@ -372,189 +574,6 @@ export const DawApp: React.FC<DawAppProps> = ({
       setTimeout(() => setNotification(null), 4000);
     }
   };
-
-  // Move clip (beat position and track)
-  const handleMoveClip = (clipId: string, newStartBeat: number, newTrackId?: string) => {
-    let clipToMove: DawClip | null = null;
-    let fromTrackId: string | null = null;
-
-    for (const t of project.tracks) {
-      const found = t.clips.find((c) => c.id === clipId);
-      if (found) {
-        clipToMove = found;
-        fromTrackId = t.id;
-        break;
-      }
-    }
-
-    if (!clipToMove) return;
-    const targetTrackId = newTrackId || fromTrackId;
-
-    if (targetTrackId === fromTrackId) {
-      const nextTracks = project.tracks.map((t) => ({
-        ...t,
-        clips: t.clips.map((c) => (c.id === clipId ? { ...c, startBeat: Math.max(0, newStartBeat) } : c)),
-      }));
-      setProject((prev) => ({ ...prev, tracks: nextTracks }));
-    } else {
-      const targetTrack = project.tracks.find((t) => t.id === targetTrackId);
-      if (!targetTrack) return;
-
-      const updatedClip: DawClip = {
-        ...clipToMove,
-        trackId: targetTrackId,
-        startBeat: Math.max(0, newStartBeat),
-        color: targetTrack.color,
-      };
-
-      const nextTracks = project.tracks.map((t) => {
-        if (t.id === fromTrackId) {
-          return { ...t, clips: t.clips.filter((c) => c.id !== clipId) };
-        }
-        if (t.id === targetTrackId) {
-          return { ...t, clips: [...t.clips, updatedClip] };
-        }
-        return t;
-      });
-      setProject((prev) => ({ ...prev, tracks: nextTracks }));
-    }
-  };
-
-  // Trim clip
-  const handleTrimClip = (clipId: string, newStartBeat: number, newDurationBeats: number) => {
-    const nextTracks = project.tracks.map((t) => ({
-      ...t,
-      clips: t.clips.map((c) =>
-        c.id === clipId ? { ...c, startBeat: newStartBeat, durationBeats: newDurationBeats } : c
-      ),
-    }));
-    setProject((prev) => ({ ...prev, tracks: nextTracks }));
-  };
-
-  // Split clip at playhead
-  const handleSplitClip = (clipId: string, splitBeat: number) => {
-    let splitted = false;
-    const nextTracks = project.tracks.map((t) => {
-      const clipIdx = t.clips.findIndex((c) => c.id === clipId);
-      if (clipIdx === -1) return t;
-
-      const orig = t.clips[clipIdx];
-      const firstDur = splitBeat - orig.startBeat;
-      const secondDur = orig.durationBeats - firstDur;
-      if (firstDur <= 0.25 || secondDur <= 0.25) return t;
-
-      const firstClip: DawClip = { ...orig, durationBeats: firstDur };
-      const secondClip: DawClip = {
-        ...orig,
-        id: `clip_${Date.now()}_split`,
-        startBeat: splitBeat,
-        durationBeats: secondDur,
-        name: `${orig.name} (Part 2)`,
-      };
-
-      splitted = true;
-      const newClips = [...t.clips];
-      newClips.splice(clipIdx, 1, firstClip, secondClip);
-      return { ...t, clips: newClips };
-    });
-
-    if (splitted) {
-      pushState({ ...project, tracks: nextTracks });
-      setNotification('Sliced clip into two parts! ✂️');
-      setTimeout(() => setNotification(null), 2500);
-    }
-  };
-
-  // Duplicate clip
-  const handleDuplicateClip = (clipId: string) => {
-    let duplicated = false;
-    const nextTracks = project.tracks.map((t) => {
-      const clip = t.clips.find((c) => c.id === clipId);
-      if (!clip) return t;
-
-      const newClip: DawClip = {
-        ...clip,
-        id: `clip_${Date.now()}_dup`,
-        startBeat: clip.startBeat + clip.durationBeats,
-      };
-      duplicated = true;
-      return { ...t, clips: [...t.clips, newClip] };
-    });
-
-    if (duplicated) {
-      pushState({ ...project, tracks: nextTracks });
-      setNotification('Duplicated clip! 📋');
-      setTimeout(() => setNotification(null), 2500);
-    }
-  };
-
-  // Delete clip
-  const handleDeleteClip = (clipId: string) => {
-    const nextTracks = project.tracks.map((t) => ({
-      ...t,
-      clips: t.clips.filter((c) => c.id !== clipId),
-    }));
-    pushState({ ...project, tracks: nextTracks });
-    if (selectedClipId === clipId) setSelectedClipId(null);
-  };
-
-  // Copy clip to clipboard
-  const handleCopyClip = useCallback(
-    (clipId: string) => {
-      for (const t of project.tracks) {
-        const c = t.clips.find((clip) => clip.id === clipId);
-        if (c) {
-          setClipClipboard({ ...c });
-          setNotification(`Copied "${c.name}" to clipboard 📋`);
-          setTimeout(() => setNotification(null), 2000);
-          return;
-        }
-      }
-    },
-    [project.tracks]
-  );
-
-  // Cut clip
-  const handleCutClip = useCallback(
-    (clipId: string) => {
-      handleCopyClip(clipId);
-      handleDeleteClip(clipId);
-      setNotification('Cut clip ✂️');
-      setTimeout(() => setNotification(null), 2000);
-    },
-    [handleCopyClip]
-  );
-
-  // Paste clip at current playhead
-  const handlePasteClip = useCallback(() => {
-    if (!clipClipboard) {
-      setNotification('Clipboard is empty! Select a clip to copy first.');
-      setTimeout(() => setNotification(null), 2000);
-      return;
-    }
-
-    let targetTrack = project.tracks.find((t) => t.id === selectedTrackId);
-    if (!targetTrack) {
-      targetTrack = project.tracks.find((t) => t.id === clipClipboard.trackId) || project.tracks[0];
-    }
-
-    const pasteBeat = Math.max(0, Math.round(currentBeat));
-    const pastedClip: DawClip = {
-      ...clipClipboard,
-      id: `clip_${Date.now()}_paste`,
-      trackId: targetTrack.id,
-      startBeat: pasteBeat,
-    };
-
-    const nextTracks = project.tracks.map((t) =>
-      t.id === targetTrack!.id ? { ...t, clips: [...t.clips, pastedClip] } : t
-    );
-
-    pushState({ ...project, tracks: nextTracks });
-    setSelectedClipId(pastedClip.id);
-    setNotification(`Pasted "${pastedClip.name}" at Bar ${Math.floor(pasteBeat / 4) + 1}! 📥`);
-    setTimeout(() => setNotification(null), 2500);
-  }, [clipClipboard, currentBeat, project, pushState, selectedTrackId]);
 
   // Add Track
   const handleAddTrack = (type: 'audio' | 'instrument') => {
