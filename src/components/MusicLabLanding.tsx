@@ -433,9 +433,157 @@ export const MusicLabLanding: React.FC<MusicLabLandingProps> = ({
             <span className="text-xs text-slate-400 font-semibold">1-Click Launch • Smartboard Ready</span>
           </div>
 
-          {/* 4 Large Visual Graphic Cards */}
+          {/* 8 Large Visual Graphic Cards for Tool Box */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Tool 1: Tempo Tapper */}
+            {/* Tool 1: Staff Wars Reprise! */}
+            <div
+              onClick={() => setSelectedToolModal('staff-wars')}
+              className="p-5 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900 to-cyan-950/40 border border-cyan-500/30 hover:border-cyan-400 hover:shadow-xl hover:shadow-cyan-500/10 cursor-pointer transition-all duration-200 group flex flex-col justify-between"
+            >
+              <div className="space-y-3">
+                <div className="w-16 h-16 rounded-2xl bg-cyan-500/20 border border-cyan-400/40 flex items-center justify-center text-4xl group-hover:scale-110 transition-transform shadow-inner">
+                  ⚔️
+                </div>
+                <div>
+                  <h4 className="text-xl font-black text-white font-['Fredoka',sans-serif] group-hover:text-cyan-300 transition-colors">
+                    Staff Wars Reprise!
+                  </h4>
+                  <p className="text-xs text-cyan-300 font-bold mt-0.5">
+                    Arcade note reading! Blast notes before they hit your barrier! 🛸
+                  </p>
+                </div>
+                <div className="flex items-center justify-between text-xs font-mono font-bold text-cyan-300 pt-1 px-1 bg-slate-950/60 p-1.5 rounded-xl border border-slate-800">
+                  <span>𝄞 Treble</span>
+                  <span>•</span>
+                  <span>𝄢 Bass</span>
+                  <span>•</span>
+                  <span>⚡ 3 Lives</span>
+                </div>
+              </div>
+
+              <div className="pt-4 mt-3 border-t border-slate-800/80">
+                <button
+                  type="button"
+                  className="w-full py-2.5 rounded-xl bg-slate-800 group-hover:bg-cyan-400 group-hover:text-slate-950 text-cyan-300 font-black text-xs transition-colors flex items-center justify-center gap-1.5 font-['Fredoka',sans-serif]"
+                >
+                  <span>Play Staff Wars</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Tool 2: Sound Painter */}
+            <div
+              onClick={() => setSelectedToolModal('sound-painter')}
+              className="p-5 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900 to-rose-950/40 border border-rose-500/30 hover:border-rose-400 hover:shadow-xl hover:shadow-rose-500/10 cursor-pointer transition-all duration-200 group flex flex-col justify-between"
+            >
+              <div className="space-y-3">
+                <div className="w-16 h-16 rounded-2xl bg-rose-500/20 border border-rose-400/40 flex items-center justify-center text-4xl group-hover:scale-110 transition-transform shadow-inner">
+                  🎨
+                </div>
+                <div>
+                  <h4 className="text-xl font-black text-white font-['Fredoka',sans-serif] group-hover:text-rose-300 transition-colors">
+                    Sound Painter
+                  </h4>
+                  <p className="text-xs text-rose-300 font-bold mt-0.5">
+                    Kandinsky-style art! Draw singing faces, lines &amp; shapes! 🖌️
+                  </p>
+                </div>
+                <div className="flex items-center justify-between text-2xl pt-1 px-1">
+                  <span>⭕</span>
+                  <span>〰️</span>
+                  <span>🔺</span>
+                  <span>✨</span>
+                  <span>🌈</span>
+                </div>
+              </div>
+
+              <div className="pt-4 mt-3 border-t border-slate-800/80">
+                <button
+                  type="button"
+                  className="w-full py-2.5 rounded-xl bg-slate-800 group-hover:bg-rose-400 group-hover:text-slate-950 text-rose-300 font-black text-xs transition-colors flex items-center justify-center gap-1.5 font-['Fredoka',sans-serif]"
+                >
+                  <span>Start Painting</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Tool 3: Song Starter */}
+            <div
+              onClick={() => setSelectedToolModal('song-starter')}
+              className="p-5 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900 to-amber-950/40 border border-amber-500/30 hover:border-amber-400 hover:shadow-xl hover:shadow-amber-500/10 cursor-pointer transition-all duration-200 group flex flex-col justify-between"
+            >
+              <div className="space-y-3">
+                <div className="w-16 h-16 rounded-2xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-4xl group-hover:scale-110 transition-transform shadow-inner">
+                  🎶
+                </div>
+                <div>
+                  <h4 className="text-xl font-black text-white font-['Fredoka',sans-serif] group-hover:text-amber-300 transition-colors">
+                    Song Starter
+                  </h4>
+                  <p className="text-xs text-amber-300 font-bold mt-0.5">
+                    Grades K-3rd song maker! Pick moods, chords &amp; melodies! ☀️
+                  </p>
+                </div>
+                <div className="flex items-center justify-between text-2xl pt-1 px-1">
+                  <span>☀️</span>
+                  <span>🌙</span>
+                  <span>🎃</span>
+                  <span>⚡</span>
+                  <span>🏝️</span>
+                </div>
+              </div>
+
+              <div className="pt-4 mt-3 border-t border-slate-800/80">
+                <button
+                  type="button"
+                  className="w-full py-2.5 rounded-xl bg-slate-800 group-hover:bg-amber-400 group-hover:text-slate-950 text-amber-300 font-black text-xs transition-colors flex items-center justify-center gap-1.5 font-['Fredoka',sans-serif]"
+                >
+                  <span>Build Songs</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Tool 4: Music Symbol Match */}
+            <div
+              onClick={() => setSelectedToolModal('music-symbol-match')}
+              className="p-5 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900 to-purple-950/40 border border-purple-500/30 hover:border-purple-400 hover:shadow-xl hover:shadow-purple-500/10 cursor-pointer transition-all duration-200 group flex flex-col justify-between"
+            >
+              <div className="space-y-3">
+                <div className="w-16 h-16 rounded-2xl bg-purple-500/20 border border-purple-400/40 flex items-center justify-center text-4xl group-hover:scale-110 transition-transform shadow-inner">
+                  🃏
+                </div>
+                <div>
+                  <h4 className="text-xl font-black text-white font-['Fredoka',sans-serif] group-hover:text-purple-300 transition-colors">
+                    Symbol Match
+                  </h4>
+                  <p className="text-xs text-purple-300 font-bold mt-0.5">
+                    Memory match &amp; 45s speed challenge game! ⚡
+                  </p>
+                </div>
+                <div className="flex items-center justify-around font-serif text-2xl text-purple-200 pt-1 px-1">
+                  <span>♩</span>
+                  <span>𝄽</span>
+                  <span>𝄢</span>
+                  <span>𝄞</span>
+                  <span>𝄐</span>
+                </div>
+              </div>
+
+              <div className="pt-4 mt-3 border-t border-slate-800/80">
+                <button
+                  type="button"
+                  className="w-full py-2.5 rounded-xl bg-slate-800 group-hover:bg-purple-400 group-hover:text-slate-950 text-purple-300 font-black text-xs transition-colors flex items-center justify-center gap-1.5 font-['Fredoka',sans-serif]"
+                >
+                  <span>Play Match Game</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Tool 5: Tempo Tapper */}
             <div
               onClick={() => setSelectedToolModal('tempo-tapper')}
               className="p-5 rounded-3xl bg-gradient-to-br from-slate-900 to-slate-950 border border-amber-500/30 hover:border-amber-400 hover:shadow-xl hover:shadow-amber-500/10 cursor-pointer transition-all duration-200 group flex flex-col justify-between"
@@ -473,7 +621,7 @@ export const MusicLabLanding: React.FC<MusicLabLandingProps> = ({
               </div>
             </div>
 
-            {/* Tool 2: Do-Re-Mi Chimes */}
+            {/* Tool 6: Do-Re-Mi Chimes */}
             <div
               onClick={() => setSelectedToolModal('solfege-trainer')}
               className="p-5 rounded-3xl bg-gradient-to-br from-slate-900 to-slate-950 border border-rose-500/30 hover:border-rose-400 hover:shadow-xl hover:shadow-rose-500/10 cursor-pointer transition-all duration-200 group flex flex-col justify-between"
@@ -508,7 +656,7 @@ export const MusicLabLanding: React.FC<MusicLabLandingProps> = ({
               </div>
             </div>
 
-            {/* Tool 3: Instrument Zoo */}
+            {/* Tool 7: Instrument Zoo */}
             <div
               onClick={() => setSelectedToolModal('instrument-zoo')}
               className="p-5 rounded-3xl bg-gradient-to-br from-slate-900 to-slate-950 border border-cyan-500/30 hover:border-cyan-400 hover:shadow-xl hover:shadow-cyan-500/10 cursor-pointer transition-all duration-200 group flex flex-col justify-between"
@@ -544,7 +692,7 @@ export const MusicLabLanding: React.FC<MusicLabLandingProps> = ({
               </div>
             </div>
 
-            {/* Tool 4: Dynamic Ears */}
+            {/* Tool 8: Dynamic Ears */}
             <div
               onClick={() => setSelectedToolModal('dynamic-ears')}
               className="p-5 rounded-3xl bg-gradient-to-br from-slate-900 to-slate-950 border border-emerald-500/30 hover:border-emerald-400 hover:shadow-xl hover:shadow-emerald-500/10 cursor-pointer transition-all duration-200 group flex flex-col justify-between"
