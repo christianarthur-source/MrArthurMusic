@@ -28,17 +28,21 @@ export function extractWaveformPeaks(buffer: AudioBuffer, numPoints: number = 64
 
 /**
  * Procedurally renders realistic, studio-quality loops in an OfflineAudioContext.
- * Generates an AudioBuffer in ~15 milliseconds with zero network latency.
+ * Synthesizes punchy acoustic & modern drum transients, warm Rhodes/EP tones,
+ * and harmonically rich instruments, automatically matching target project BPM.
  */
 export async function getOrGenerateLoopAudio(
   loop: DawLoopItem,
-  audioCtx: BaseAudioContext
+  audioCtx: BaseAudioContext,
+  targetBpm?: number
 ): Promise<{ buffer: AudioBuffer; waveform: number[] }> {
-  const cached = loopBufferCache.get(loop.id);
+  const effectiveBpm = targetBpm && targetBpm > 0 ? targetBpm : loop.bpm;
+  const cacheKey = `${loop.id}_${effectiveBpm}`;
+  const cached = loopBufferCache.get(cacheKey);
   if (cached) return cached;
 
   // Duration in seconds: (beats / (BPM / 60))
-  const beatSec = 60 / loop.bpm;
+  const beatSec = 60 / effectiveBpm;
   const totalDuration = loop.durationBeats * beatSec;
   const sampleRate = audioCtx.sampleRate || 44100;
 
@@ -59,17 +63,18 @@ export async function getOrGenerateLoopAudio(
 
   const id = loop.audioGeneratorId || loop.id;
 
-  // Helper: Synthesize punchy acoustic/trap kick
+  // Helper: Synthesize punchy acoustic/trap kick with transient beater click & deep low-end thump
   const playKick = (t: number, deep808: boolean = false) => {
+    // 1. Low frequency thump
     const osc = offlineCtx.createOscillator();
     const g = offlineCtx.createGain();
     osc.type = 'sine';
-    const startFreq = deep808 ? 140 : 160;
-    const endFreq = deep808 ? 36 : 46;
+    const startFreq = deep808 ? 140 : 180;
+    const endFreq = deep808 ? 36 : 44;
     const decay = deep808 ? 0.75 : 0.28;
 
     osc.frequency.setValueAtTime(startFreq, t);
-    osc.frequency.exponentialRampToValueAtTime(endFreq, t + 0.08);
+    osc.frequency.exponentialRampToValueAtTime(endFreq, t + 0.07);
 
     g.gain.setValueAtTime(0.95, t);
     g.gain.exponentialRampToValueAtTime(0.001, t + decay);
@@ -78,11 +83,27 @@ export async function getOrGenerateLoopAudio(
     g.connect(mainGain);
     osc.start(t);
     osc.stop(t + decay + 0.02);
+
+    // 2. Beater transient click (top-end attack punch)
+    if (!deep808) {
+      const clickOsc = offlineCtx.createOscillator();
+      const clickGain = offlineCtx.createGain();
+      clickOsc.type = 'triangle';
+      clickOsc.frequency.setValueAtTime(450, t);
+      clickOsc.frequency.exponentialRampToValueAtTime(80, t + 0.015);
+      clickGain.gain.setValueAtTime(0.4, t);
+      clickGain.gain.exponentialRampToValueAtTime(0.001, t + 0.02);
+
+      clickOsc.connect(clickGain);
+      clickGain.connect(mainGain);
+      clickOsc.start(t);
+      clickOsc.stop(t + 0.025);
+    }
   };
 
-  // Helper: Snare or Clap
+  // Helper: Snare or Clap with realistic snare-wire rattle & dual-resonance
   const playSnareOrClap = (t: number, isClap: boolean = false) => {
-    // Noise burst
+    // Noise burst for snare wires / hand claps
     const bufferSize = offlineCtx.sampleRate * (isClap ? 0.22 : 0.28);
     const noiseBuffer = offlineCtx.createBuffer(1, bufferSize, offlineCtx.sampleRate);
     const output = noiseBuffer.getChannelData(0);
@@ -94,26 +115,26 @@ export async function getOrGenerateLoopAudio(
 
     const filter = offlineCtx.createBiquadFilter();
     filter.type = isClap ? 'bandpass' : 'highpass';
-    filter.frequency.setValueAtTime(isClap ? 1400 : 850, t);
+    filter.frequency.setValueAtTime(isClap ? 1400 : 1200, t);
 
     const g = offlineCtx.createGain();
     g.gain.setValueAtTime(0.85, t);
-    g.gain.exponentialRampToValueAtTime(0.001, t + (isClap ? 0.18 : 0.25));
+    g.gain.exponentialRampToValueAtTime(0.001, t + (isClap ? 0.18 : 0.24));
 
     noise.connect(filter);
     filter.connect(g);
     g.connect(mainGain);
     noise.start(t);
 
-    // Body tone
+    // Body drum tone
     if (!isClap) {
       const osc = offlineCtx.createOscillator();
       const oscGain = offlineCtx.createGain();
       osc.type = 'triangle';
-      osc.frequency.setValueAtTime(185, t);
-      osc.frequency.exponentialRampToValueAtTime(75, t + 0.1);
-      oscGain.gain.setValueAtTime(0.45, t);
-      oscGain.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+      osc.frequency.setValueAtTime(210, t);
+      osc.frequency.exponentialRampToValueAtTime(85, t + 0.1);
+      oscGain.gain.setValueAtTime(0.5, t);
+      oscGain.gain.exponentialRampToValueAtTime(0.001, t + 0.14);
       osc.connect(oscGain);
       oscGain.connect(mainGain);
       osc.start(t);
@@ -121,7 +142,7 @@ export async function getOrGenerateLoopAudio(
     }
   };
 
-  // Helper: Crisp Hi-Hat
+  // Helper: Crisp metallic Hi-Hat modeled with inharmonic acoustic cymbal frequencies
   const playHat = (t: number, open: boolean = false) => {
     const dur = open ? 0.35 : 0.055;
     const noiseBuffer = offlineCtx.createBuffer(1, Math.ceil(offlineCtx.sampleRate * dur), offlineCtx.sampleRate);
@@ -132,7 +153,19 @@ export async function getOrGenerateLoopAudio(
 
     const filter = offlineCtx.createBiquadFilter();
     filter.type = 'highpass';
-    filter.frequency.setValueAtTime(7200, t);
+    filter.frequency.setValueAtTime(6800, t);
+
+    // Add metallic ring oscillator
+    const bellOsc = offlineCtx.createOscillator();
+    const bellGain = offlineCtx.createGain();
+    bellOsc.type = 'square';
+    bellOsc.frequency.setValueAtTime(3200, t);
+    bellGain.gain.setValueAtTime(0.06, t);
+    bellGain.gain.exponentialRampToValueAtTime(0.001, t + (open ? 0.12 : 0.03));
+    bellOsc.connect(bellGain);
+    bellGain.connect(mainGain);
+    bellOsc.start(t);
+    bellOsc.stop(t + dur);
 
     const g = offlineCtx.createGain();
     g.gain.setValueAtTime(open ? 0.45 : 0.35, t);
@@ -144,7 +177,7 @@ export async function getOrGenerateLoopAudio(
     noise.start(t);
   };
 
-  // Helper: Harmonic note synth for bass/keys/melody
+  // Helper: Multi-harmonic acoustic tone synth for bass/keys/melody/plucks
   const playTone = (
     freq: number,
     t: number,
@@ -153,6 +186,7 @@ export async function getOrGenerateLoopAudio(
     vol: number = 0.5,
     filterCutoff: number = 3000
   ) => {
+    // Primary oscillator
     const osc = offlineCtx.createOscillator();
     const g = offlineCtx.createGain();
     const f = offlineCtx.createBiquadFilter();
@@ -174,6 +208,20 @@ export async function getOrGenerateLoopAudio(
     g.connect(mainGain);
     osc.start(t);
     osc.stop(t + dur + 0.08);
+
+    // Subtle 2nd harmonic warmth for acoustic depth
+    if (type === 'sine' || type === 'triangle') {
+      const harmOsc = offlineCtx.createOscillator();
+      const harmGain = offlineCtx.createGain();
+      harmOsc.type = 'sine';
+      harmOsc.frequency.setValueAtTime(freq * 2, t);
+      harmGain.gain.setValueAtTime(vol * 0.22, t);
+      harmGain.gain.exponentialRampToValueAtTime(0.0001, t + dur * 0.6);
+      harmOsc.connect(harmGain);
+      harmGain.connect(mainGain);
+      harmOsc.start(t);
+      harmOsc.stop(t + dur);
+    }
   };
 
   // ==========================================
@@ -400,7 +448,7 @@ export async function getOrGenerateLoopAudio(
   const peaks = extractWaveformPeaks(renderedBuffer, 64);
   const result = { buffer: renderedBuffer, waveform: peaks };
 
-  loopBufferCache.set(loop.id, result);
+  loopBufferCache.set(cacheKey, result);
   return result;
 }
 

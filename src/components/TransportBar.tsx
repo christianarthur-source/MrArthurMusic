@@ -26,6 +26,7 @@ import {
   Sliders,
   UserCheck,
   ArrowLeft,
+  Users,
 } from 'lucide-react';
 import { CountingMode, NoteLabelMode, ViewLayout } from '../types/music';
 import { BOOMWHACKER_COLORS, getTempoDescription } from '../utils/musicMath';
@@ -53,6 +54,7 @@ interface TransportBarProps {
   onChangeKeySignature: (ks: 'C' | 'G' | 'F' | 'D' | 'Bb') => void;
   onAddMeasure: () => void;
   onOpenTemplates: () => void;
+  onOpenEnsembleTemplates?: () => void;
   onOpenToolBox?: () => void;
   onPrint: () => void;
   onOpenInstrumentManager: () => void;
@@ -113,6 +115,7 @@ export const TransportBar: React.FC<TransportBarProps> = ({
   onChangeKeySignature,
   onAddMeasure,
   onOpenTemplates,
+  onOpenEnsembleTemplates,
   onOpenToolBox,
   onPrint,
   onOpenInstrumentManager,
@@ -417,7 +420,25 @@ export const TransportBar: React.FC<TransportBarProps> = ({
           </button>
 
           {openMenu === 'ensemble' && (
-            <div className="absolute right-0 mt-2 w-60 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-2 z-50 flex flex-col gap-1 text-xs">
+            <div className="absolute right-0 mt-2 w-64 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-2 z-50 flex flex-col gap-1 text-xs">
+              {onOpenEnsembleTemplates && (
+                <button
+                  onClick={() => {
+                    setOpenMenu(null);
+                    onOpenEnsembleTemplates();
+                  }}
+                  className="flex items-center justify-between w-full px-3 py-2.5 rounded-xl bg-gradient-to-r from-sky-500/20 to-indigo-500/20 hover:from-sky-500/30 hover:to-indigo-500/30 border border-sky-400/30 hover:border-sky-400/60 text-left font-black text-sky-200 transition-all cursor-pointer shadow-xs"
+                >
+                  <span className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-sky-400" />
+                    <span>+ Ensemble Templates</span>
+                  </span>
+                  <span className="px-1.5 py-0.5 rounded-md bg-sky-400 text-slate-950 text-[9px] font-black uppercase tracking-wider">
+                    New
+                  </span>
+                </button>
+              )}
+              <div className="h-px bg-slate-800 my-0.5" />
               <button
                 onClick={() => {
                   setOpenMenu(null);
