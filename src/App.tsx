@@ -97,8 +97,40 @@ export default function App() {
       ) {
         return appParam;
       }
-      if (params.get('share')) {
+      // If a shared beat link is opened (?song=... or ?s=...)
+      if (params.get('song') || params.get('s')) {
+        return 'beat-machine';
+      }
+      // If a shared DAW project link is opened (?project=... or ?daw=...)
+      if (params.get('project') || params.get('daw')) {
+        return 'daw';
+      }
+      // If a shared Staff Composer score link is opened (?share=... or ?score=...)
+      if (params.get('share') || params.get('score')) {
         return 'staff-composer';
+      }
+      // Check hash fragment (#app=... or #song=... or #share=...)
+      if (window.location.hash) {
+        const hashContent = window.location.hash.replace(/^#/, '');
+        const hashParams = new URLSearchParams(hashContent);
+        const hashApp = hashParams.get('app');
+        if (
+          hashApp === 'staff-composer' ||
+          hashApp === 'rhythm-rockstars' ||
+          hashApp === 'beat-machine' ||
+          hashApp === 'daw'
+        ) {
+          return hashApp;
+        }
+        if (hashParams.get('song') || hashParams.get('s')) {
+          return 'beat-machine';
+        }
+        if (hashParams.get('project') || hashParams.get('daw')) {
+          return 'daw';
+        }
+        if (hashParams.get('share') || hashParams.get('score')) {
+          return 'staff-composer';
+        }
       }
     } catch {
       // ignore in SSR / restricted iframe
@@ -250,10 +282,39 @@ export default function App() {
     }
   }, []);
 
-  // Load shared score from URL query params on mount
+  const handleSelectApp = useCallback((app: MusicLabAppId) => {
+    soundEngine.playWelcomeChime();
+    try {
+      if (typeof window !== 'undefined' && window.history && window.history.replaceState) {
+        const nextUrl = app === 'hub' ? window.location.pathname : `${window.location.pathname}?app=${app}`;
+        window.history.replaceState({}, '', nextUrl);
+      }
+    } catch {
+      // ignore
+    }
+    setCurrentApp(app);
+  }, []);
+
+  const handleBackToHub = useCallback(() => {
+    try {
+      if (typeof window !== 'undefined' && window.history && window.history.replaceState) {
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+    } catch {
+      // ignore
+    }
+    setCurrentApp('hub');
+  }, []);
+
+  // Load shared score from URL query params or hash on mount
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const shareParam = params.get('share');
+    let shareParam = params.get('share') || params.get('score');
+    if (!shareParam && window.location.hash) {
+      const hashContent = window.location.hash.replace(/^#/, '');
+      const hashParams = new URLSearchParams(hashContent);
+      shareParam = hashParams.get('share') || hashParams.get('score');
+    }
     if (shareParam) {
       try {
         const jsonStr = decodeURIComponent(escape(atob(shareParam)));
@@ -299,7 +360,7 @@ export default function App() {
     try {
       const jsonStr = JSON.stringify(shareData);
       const encoded = btoa(unescape(encodeURIComponent(jsonStr)));
-      const url = `${window.location.origin}${window.location.pathname}?share=${encoded}`;
+      const url = `${window.location.origin}${window.location.pathname}?app=staff-composer&share=${encoded}`;
       setShareUrl(url);
       setIsShareModalOpen(true);
       navigator.clipboard.writeText(url).catch(() => {});
@@ -1615,13 +1676,13 @@ export default function App() {
             if (proj.projectData) {
               setBeatMachineLoadedSong(proj.projectData);
             }
-            setCurrentApp('beat-machine');
+            handleSelectApp('beat-machine');
             return;
           }
 
           // If the song belongs to Rhythm Rock Stars, switch to Rhythm Rock Stars!
           if (proj.appType === 'rhythm-rockstars') {
-            setCurrentApp('rhythm-rockstars');
+            handleSelectApp('rhythm-rockstars');
             return;
           }
 
@@ -1630,7 +1691,7 @@ export default function App() {
             if (proj.projectData) {
               setDawLoadedProject(proj.projectData);
             }
-            setCurrentApp('daw');
+            handleSelectApp('daw');
             return;
           }
 
@@ -1639,11 +1700,11 @@ export default function App() {
           clean.title = proj.title;
           pushScoreState(clean);
           setSelection({ trackIndex: 0, measureIndex: 0, itemIndex: 0 });
-          setCurrentApp('staff-composer');
+          handleSelectApp('staff-composer');
         }}
         onStartNewSong={() => {
           handleNewBlankScore();
-          setCurrentApp('staff-composer');
+          handleSelectApp('staff-composer');
         }}
         onManualSaveCurrentSong={async (customTitle) => {
           if (!studentSession) return;
@@ -1691,10 +1752,7 @@ export default function App() {
     return (
       <>
         <MusicLabLanding
-          onSelectApp={(app) => {
-            soundEngine.playWelcomeChime();
-            setCurrentApp(app);
-          }}
+          onSelectApp={handleSelectApp}
           studentSession={studentSession}
           onOpenClassroom={() => {
             setOpenInTeacherMode(false);
@@ -1716,7 +1774,7 @@ export default function App() {
     return (
       <>
         <RhythmRockStarsApp
-          onBackToHub={() => setCurrentApp('hub')}
+          onBackToHub={handleBackToHub}
           studentSession={studentSession}
           onOpenClassroomModal={() => {
             setOpenInTeacherMode(false);
@@ -1736,7 +1794,7 @@ export default function App() {
     return (
       <>
         <BeatMachineApp
-          onBackToHub={() => setCurrentApp('hub')}
+          onBackToHub={handleBackToHub}
           studentSession={studentSession}
           loadedSongData={beatMachineLoadedSong}
           onClearLoadedSongData={() => setBeatMachineLoadedSong(null)}
@@ -1760,7 +1818,7 @@ export default function App() {
     return (
       <>
         <DawApp
-          onBackToHub={() => setCurrentApp('hub')}
+          onBackToHub={handleBackToHub}
           studentSession={studentSession}
           loadedProjectData={dawLoadedProject}
           onClearLoadedProjectData={() => setDawLoadedProject(null)}
@@ -1810,7 +1868,7 @@ export default function App() {
 
       {!isFullScreen && (
         <TransportBar
-          onBackToHub={() => setCurrentApp('hub')}
+          onBackToHub={handleBackToHub}
           title={score.title}
           composer={score.composer}
           onChangeTitle={(t) => {

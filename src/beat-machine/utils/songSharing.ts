@@ -189,6 +189,7 @@ export const createShareableSongUrl = (songData: SharedSongData): string => {
 
     const publicBase = getPublicBaseUrl();
     const url = new URL(window.location.pathname, publicBase);
+    url.searchParams.set('app', 'beat-machine');
     url.searchParams.set('song', encoded);
     return url.toString();
   } catch (err) {

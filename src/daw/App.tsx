@@ -40,6 +40,8 @@ import {
 } from '../utils/classroomApi';
 import { containsProfanity } from '../utils/profanityFilter';
 import { soundEngine } from '../audio/soundEngine';
+import { DawShareModal } from './components/ShareModal';
+import { extractProjectFromLocation } from './utils/projectSharing';
 
 interface DawAppProps {
   onBackToHub: () => void;
@@ -157,8 +159,9 @@ export const DawApp: React.FC<DawAppProps> = ({
   const [isInstrumentPickerOpen, setIsInstrumentPickerOpen] = useState<boolean>(false);
   const [instrumentPickerTrackId, setInstrumentPickerTrackId] = useState<string | null>(null);
 
-  // Cloud Save Modal & Notifications
+  // Cloud Save Modal, Share Modal & Notifications
   const [isCloudSaveOpen, setIsCloudSaveOpen] = useState<boolean>(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState<boolean>(false);
   const [saveTitleInput, setSaveTitleInput] = useState<string>(project.title);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [notification, setNotification] = useState<string | null>(null);
@@ -172,6 +175,31 @@ export const DawApp: React.FC<DawAppProps> = ({
     redoRef.current = [];
     setProject(nextProject);
   }, [project]);
+
+  // Check URL query parameters or hash on mount to load shared project if present
+  useEffect(() => {
+    try {
+      const shared = extractProjectFromLocation();
+      if (shared && shared.tracks && shared.tracks.length > 0) {
+        const merged: DawProject = {
+          ...DEFAULT_DAW_PROJECT,
+          ...shared,
+          loopRegion: { ...DEFAULT_DAW_PROJECT.loopRegion, ...(shared.loopRegion || {}) },
+          tracks: (shared.tracks || []).map((t: any) => ({
+            ...t,
+            clips: (t.clips || []).map((c: any) => ({ ...c })),
+            fx: { ...DEFAULT_DAW_FX, ...(t.fx || {}) },
+          })),
+        };
+        setProject(merged);
+        setSaveTitleInput(merged.title || 'Shared Studio Song');
+        setNotification(`🎉 Loaded shared Studio DAW song: "${merged.title}"! 🎛️`);
+        setTimeout(() => setNotification(null), 4500);
+      }
+    } catch (e) {
+      console.warn('Could not load DAW project from URL param', e);
+    }
+  }, []);
 
   // Load project passed from Classroom Saved Songs list
   useEffect(() => {
@@ -994,6 +1022,7 @@ export const DawApp: React.FC<DawAppProps> = ({
             setIsCloudSaveOpen(true);
           }
         }}
+        onShareProject={() => setIsShareModalOpen(true)}
         onExportWav={handleExportWav}
         canUndo={historyRef.current.length > 0}
         canRedo={redoRef.current.length > 0}
@@ -1183,6 +1212,17 @@ export const DawApp: React.FC<DawAppProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* ========================================================
+          SHARE MODAL (Direct Link that opens Studio DAW)
+          ======================================================== */}
+      {isShareModalOpen && (
+        <DawShareModal
+          isOpen={isShareModalOpen}
+          onClose={() => setIsShareModalOpen(false)}
+          project={project}
+        />
       )}
     </div>
   );
