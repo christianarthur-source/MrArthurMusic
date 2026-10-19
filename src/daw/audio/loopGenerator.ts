@@ -179,7 +179,12 @@ export async function getOrGenerateLoopAudio(
   // ==========================================
   // DISPATCH LOOP SYNTHESIS PATTERNS
   // ==========================================
-  if (id === 'hiphop_boom_bap_drums' || id === 'rock_stadium_kit' || id === 'funk_breakbeat_drums') {
+  if (
+    id === 'hiphop_boom_bap_drums' ||
+    id === 'rock_stadium_kit' ||
+    id === 'funk_breakbeat_drums' ||
+    id === 'motown_pocket_drums'
+  ) {
     // 2-bar drum patterns across 8 beats
     for (let b = 0; b < 8; b++) {
       const t = b * beatSec;
@@ -199,7 +204,6 @@ export async function getOrGenerateLoopAudio(
       const t = b * beatSec;
       if (b === 0 || b === 3 || b === 4.5) playKick(t, true);
       if (b === 2 || b === 6) playSnareOrClap(t, true); // Trap clap
-      // Trap rolling hi-hats (triplets on beat 7)
       if (b === 7) {
         for (let k = 0; k < 6; k++) playHat(t + (k / 6) * beatSec);
       } else {
@@ -207,23 +211,60 @@ export async function getOrGenerateLoopAudio(
         playHat(t + 0.5 * beatSec);
       }
     }
-  } else if (id === 'pop_disco_dance_beat') {
-    // 4-on-the-floor
+  } else if (id === 'hiphop_drill_slide_beat') {
+    for (let b = 0; b < 8; b++) {
+      const t = b * beatSec;
+      if (b === 0 || b === 3.5 || b === 6) playKick(t, true);
+      if (b === 2.5 || b === 6.5) playSnareOrClap(t, true);
+      for (let k = 0; k < 3; k++) playHat(t + (k / 3) * beatSec);
+    }
+  } else if (id === 'pop_disco_dance_beat' || id === 'edm_festival_kick_build') {
     for (let b = 0; b < 8; b++) {
       const t = b * beatSec;
       playKick(t);
       if (b % 2 === 1) playSnareOrClap(t, true);
-      playHat(t + 0.5 * beatSec, true); // Open hat on off-beat
+      playHat(t + 0.5 * beatSec, true);
+    }
+  } else if (id === 'pop_claps_shaker_groove' || id === 'lofi_tape_shaker_groove') {
+    for (let b = 0; b < 8; b++) {
+      const t = b * beatSec;
+      playSnareOrClap(t, true);
+      for (let s = 0; s < 4; s++) playHat(t + (s / 4) * beatSec);
+    }
+  } else if (id === 'punk_crash_beat') {
+    for (let b = 0; b < 8; b++) {
+      const t = b * beatSec;
+      playKick(t);
+      playKick(t + 0.5 * beatSec);
+      if (b % 2 === 1) playSnareOrClap(t);
+      playHat(t, true);
+    }
+  } else if (id === 'latin_afrobeat_shakers' || id === 'latin_conga_bongo_groove') {
+    for (let b = 0; b < 8; b++) {
+      const t = b * beatSec;
+      if (b % 2 === 0) playKick(t);
+      if (b === 3 || b === 7) playSnareOrClap(t, true);
+      playHat(t + 0.25 * beatSec);
+      playHat(t + 0.75 * beatSec);
+    }
+  } else if (id === 'reggae_one_drop_drums') {
+    for (let b = 0; b < 8; b++) {
+      const t = b * beatSec;
+      if (b === 2 || b === 6) {
+        playKick(t);
+        playSnareOrClap(t);
+      }
+      playHat(t);
+      playHat(t + 0.5 * beatSec);
     }
   } else if (id === 'lofi_dusty_beat') {
     for (let b = 0; b < 8; b++) {
       const t = b * beatSec;
       if (b === 0 || b === 3.5 || b === 5) playKick(t);
       if (b === 2 || b === 6) playSnareOrClap(t);
-      playHat(t + (b % 2 === 1 ? 0.02 : 0)); // Unquantized swing
+      playHat(t + (b % 2 === 1 ? 0.02 : 0));
     }
-  } else if (id === 'hiphop_808_sub_bass') {
-    // Deep 808 sub notes in Fm: F1 (43.65), Ab1 (51.91), Bb1 (58.27), C2 (65.41)
+  } else if (id === 'hiphop_808_sub_bass' || id === 'lofi_sub_chill_808') {
     const notes = [
       { f: 43.65, b: 0, d: 2.8 },
       { f: 51.91, b: 3, d: 1.2 },
@@ -231,8 +272,22 @@ export async function getOrGenerateLoopAudio(
       { f: 43.65, b: 6, d: 1.8 },
     ];
     notes.forEach((n) => playTone(n.f, n.b * beatSec, n.d * beatSec, 'sine', 0.95, 600));
+  } else if (id === 'hiphop_drill_glide_bass') {
+    const notes = [
+      { f: 41.2, b: 0, d: 2.2 },
+      { f: 55.0, b: 2.5, d: 1.0 },
+      { f: 49.0, b: 4, d: 1.8 },
+      { f: 61.74, b: 6, d: 1.5 },
+    ];
+    notes.forEach((n) => playTone(n.f, n.b * beatSec, n.d * beatSec, 'triangle', 0.9, 1200));
+  } else if (id === 'synthwave_neon_bass') {
+    for (let b = 0; b < 8; b++) {
+      for (let s = 0; s < 4; s++) {
+        const root = b < 4 ? 55.0 : 43.65;
+        playTone(root, (b + s / 4) * beatSec, 0.2 * beatSec, 'sawtooth', 0.65, 1400);
+      }
+    }
   } else if (id === 'pop_slap_bass_groove' || id === 'rock_driving_pick_bass') {
-    // Funky bassline: A1, C2, D2, E2
     const notes = [
       { f: 55.0, b: 0, d: 0.7 },
       { f: 55.0, b: 0.75, d: 0.7 },
@@ -243,22 +298,19 @@ export async function getOrGenerateLoopAudio(
     ];
     notes.forEach((n) => playTone(n.f, n.b * beatSec, n.d * beatSec, 'triangle', 0.8, 1800));
   } else if (id === 'lofi_upright_acoustic_bass') {
-    // Warm jazz walking bass: D2 (73.42), F2 (87.31), G2 (98.0), A2 (110.0)
     const walking = [73.42, 87.31, 98.0, 110.0, 98.0, 87.31, 73.42, 65.41];
     walking.forEach((f, idx) => playTone(f, idx * beatSec, 0.85 * beatSec, 'triangle', 0.85, 750));
-  } else if (id === 'lofi_warm_rhodes' || id === 'hiphop_dark_grand_piano') {
-    // Lush jazz/chill chords: Dm7 -> Gm7 -> C7 -> Fmaj7
+  } else if (id === 'lofi_warm_rhodes' || id === 'hiphop_dark_grand_piano' || id === 'hiphop_soul_chops') {
     const chords = [
-      { notes: [146.83, 174.61, 220.0, 261.63], b: 0, d: 1.8 }, // Dm7
-      { notes: [196.0, 233.08, 293.66, 349.23], b: 2, d: 1.8 }, // Gm7
-      { notes: [130.81, 164.81, 196.0, 233.08], b: 4, d: 1.8 }, // C7
-      { notes: [174.61, 220.0, 261.63, 329.63], b: 6, d: 1.8 }, // Fmaj7
+      { notes: [146.83, 174.61, 220.0, 261.63], b: 0, d: 1.8 },
+      { notes: [196.0, 233.08, 293.66, 349.23], b: 2, d: 1.8 },
+      { notes: [130.81, 164.81, 196.0, 233.08], b: 4, d: 1.8 },
+      { notes: [174.61, 220.0, 261.63, 329.63], b: 6, d: 1.8 },
     ];
     chords.forEach((c) => {
       c.notes.forEach((freq) => playTone(freq, c.b * beatSec, c.d * beatSec, 'sine', 0.38, 2400));
     });
-  } else if (id === 'pop_bright_electric_piano' || id === 'pop_acoustic_guitar_strum') {
-    // Upbeat chords: C -> G -> Am -> F
+  } else if (id === 'pop_bright_electric_piano' || id === 'pop_acoustic_guitar_strum' || id === 'bossa_nova_nylon') {
     const progression = [
       { notes: [261.63, 329.63, 392.0], b: 0, d: 1.8 },
       { notes: [196.0, 246.94, 293.66], b: 2, d: 1.8 },
@@ -268,8 +320,17 @@ export async function getOrGenerateLoopAudio(
     progression.forEach((c) => {
       c.notes.forEach((freq) => playTone(freq, c.b * beatSec, c.d * beatSec, 'triangle', 0.42, 3800));
     });
+  } else if (id === 'future_bass_super_saws' || id === 'trance_euro_gate') {
+    const saws = [
+      { notes: [220.0, 277.18, 329.63, 440.0], b: 0, d: 1.8 },
+      { notes: [174.61, 220.0, 261.63, 349.23], b: 2, d: 1.8 },
+      { notes: [196.0, 246.94, 293.66, 392.0], b: 4, d: 1.8 },
+      { notes: [220.0, 277.18, 329.63, 440.0], b: 6, d: 1.8 },
+    ];
+    saws.forEach((c) => {
+      c.notes.forEach((freq) => playTone(freq, c.b * beatSec, c.d * beatSec, 'sawtooth', 0.28, 4800));
+    });
   } else if (id === 'rock_electric_power_riff') {
-    // Power chords: E5 (164.81, 246.94), G5 (196.0, 293.66), A5 (220.0, 329.63)
     const power = [
       { f: [164.81, 246.94], b: 0, d: 1.5 },
       { f: [196.0, 293.66], b: 2, d: 1.5 },
@@ -279,13 +340,57 @@ export async function getOrGenerateLoopAudio(
     power.forEach((p) => {
       p.f.forEach((freq) => playTone(freq, p.b * beatSec, p.d * beatSec, 'sawtooth', 0.35, 2800));
     });
+  } else if (id === 'funk_clavinet_chops' || id === 'funk_wah_guitar' || id === 'reggae_skank_guitar') {
+    const stabs = [
+      { f: [261.63, 329.63, 392.0], b: 0.5 },
+      { f: [261.63, 329.63, 392.0], b: 1.5 },
+      { f: [293.66, 349.23, 440.0], b: 2.5 },
+      { f: [261.63, 329.63, 392.0], b: 4.5 },
+      { f: [261.63, 329.63, 392.0], b: 5.5 },
+      { f: [329.63, 392.0, 493.88], b: 6.5 },
+    ];
+    stabs.forEach((s) => {
+      s.f.forEach((freq) => playTone(freq, s.b * beatSec, 0.35 * beatSec, 'triangle', 0.45, 3200));
+    });
+  } else if (id === 'salsa_montuno_piano') {
+    const montuno = [
+      { f: 440.0, b: 0.5 }, { f: 523.25, b: 1.0 }, { f: 659.25, b: 1.5 },
+      { f: 440.0, b: 2.5 }, { f: 523.25, b: 3.0 }, { f: 587.33, b: 3.5 },
+      { f: 392.0, b: 4.5 }, { f: 493.88, b: 5.0 }, { f: 587.33, b: 5.5 },
+      { f: 392.0, b: 6.5 }, { f: 493.88, b: 7.0 }, { f: 659.25, b: 7.5 },
+    ];
+    montuno.forEach((m) => playTone(m.f, m.b * beatSec, 0.4 * beatSec, 'sine', 0.45, 3500));
   } else if (id === 'cinematic_taiko_impact') {
-    // Thunderous taiko hits on 0, 2, 4, 6
-    for (let b = 0; b < 8; b += 2) {
-      playKick(b * beatSec, true);
+    for (let b = 0; b < 8; b += 2) playKick(b * beatSec, true);
+  } else if (id === 'cyberpunk_arpeggio' || id === 'acid_303_res_line') {
+    const scale = [293.66, 349.23, 440.0, 523.25, 587.33, 440.0, 349.23, 293.66];
+    for (let b = 0; b < 8; b++) {
+      for (let s = 0; s < 2; s++) {
+        const noteIdx = (b * 2 + s) % scale.length;
+        playTone(scale[noteIdx], (b + s * 0.5) * beatSec, 0.4 * beatSec, 'sawtooth', 0.35, 2600);
+      }
     }
+  } else if (id === 'cinematic_spiccato_strings') {
+    const ostinato = [293.66, 293.66, 349.23, 349.23, 440.0, 440.0, 349.23, 329.63];
+    for (let b = 0; b < 8; b++) {
+      for (let s = 0; s < 4; s++) {
+        const freq = ostinato[b % ostinato.length];
+        playTone(freq, (b + s * 0.25) * beatSec, 0.18 * beatSec, 'sawtooth', 0.28, 2800);
+      }
+    }
+  } else if (id === 'cinematic_brass_horns' || id === 'cinematic_choir_pad') {
+    const chords = [
+      { f: [116.54, 174.61, 233.08, 293.66], b: 0, d: 3.5 },
+      { f: [130.81, 196.0, 261.63, 329.63], b: 4, d: 3.5 },
+    ];
+    chords.forEach((c) => {
+      c.f.forEach((freq) => playTone(freq, c.b * beatSec, c.d * beatSec, 'sawtooth', 0.25, 2200));
+    });
+  } else if (id === 'cinematic_sub_drop_fx') {
+    playKick(0, true);
+    playKick(4 * beatSec, true);
   } else {
-    // Default melodic pattern (kalimba, flute, pop synth hook)
+    // Melodic lead / kalimba / bells / plucks default
     const melody = [523.25, 587.33, 659.25, 783.99, 880.0, 783.99, 659.25, 523.25];
     melody.forEach((f, idx) => playTone(f, idx * beatSec, 0.75 * beatSec, 'triangle', 0.5, 4500));
   }

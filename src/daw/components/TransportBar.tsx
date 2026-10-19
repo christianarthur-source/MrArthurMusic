@@ -22,14 +22,14 @@ interface TransportBarProps {
   isPlaying: boolean;
   currentBeat: number;
   isRecording: boolean;
-  activeDrawerTab: 'loops' | 'piano-roll' | 'mixer' | null;
+  activeDrawerTab: 'loops' | 'virtual-piano' | 'piano-roll' | 'mixer' | null;
   onTogglePlay: () => void;
   onStop: () => void;
   onToggleRecord: () => void;
   onChangeBpm: (bpm: number) => void;
   onChangeSnapGrid: (snap: DawSnapGrid) => void;
   onToggleLoopRegion: () => void;
-  onToggleDrawerTab: (tab: 'loops' | 'piano-roll' | 'mixer') => void;
+  onToggleDrawerTab: (tab: 'loops' | 'virtual-piano' | 'piano-roll' | 'mixer') => void;
   onSaveProject: () => void;
   onExportWav: () => void;
   canUndo: boolean;
@@ -202,12 +202,27 @@ export const TransportBar: React.FC<TransportBarProps> = ({
           onClick={() => onToggleDrawerTab('loops')}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
             activeDrawerTab === 'loops'
-              ? 'bg-amber-400 text-slate-950 border-amber-300 shadow-md'
+              ? 'bg-amber-400 text-slate-950 border-amber-300 shadow-md font-black'
               : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
           }`}
         >
           <span>🔄</span>
           <span>Loops</span>
+        </button>
+
+        {/* Live Virtual Piano Drawer Toggle */}
+        <button
+          type="button"
+          onClick={() => onToggleDrawerTab('virtual-piano')}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
+            activeDrawerTab === 'virtual-piano'
+              ? 'bg-amber-400 text-slate-950 border-amber-300 shadow-md font-black'
+              : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
+          }`}
+          title="Play live virtual instruments with your computer keys"
+        >
+          <span>🎹</span>
+          <span>Virtual Piano</span>
         </button>
 
         {/* Piano Roll / MIDI Drawer Toggle */}
@@ -216,11 +231,11 @@ export const TransportBar: React.FC<TransportBarProps> = ({
           onClick={() => onToggleDrawerTab('piano-roll')}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
             activeDrawerTab === 'piano-roll'
-              ? 'bg-sky-400 text-slate-950 border-sky-300 shadow-md'
+              ? 'bg-sky-400 text-slate-950 border-sky-300 shadow-md font-black'
               : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
           }`}
         >
-          <span>🎹</span>
+          <span>🎼</span>
           <span>Piano Roll</span>
         </button>
 

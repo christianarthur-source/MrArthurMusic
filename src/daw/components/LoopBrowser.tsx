@@ -72,7 +72,18 @@ export const LoopBrowser: React.FC<LoopBrowserProps> = ({
 
       src.connect(gain);
       gain.connect(audioCtx.destination);
+
+      // Play twice then automatically stop
+      const playDuration = buffer.duration * 2;
       src.start(0);
+      src.stop(audioCtx.currentTime + playDuration);
+
+      src.onended = () => {
+        if (previewSourceRef.current === src) {
+          previewSourceRef.current = null;
+          setPreviewingLoopId(null);
+        }
+      };
 
       previewSourceRef.current = src;
     } catch {
@@ -186,8 +197,10 @@ export const LoopBrowser: React.FC<LoopBrowserProps> = ({
             { id: 'all', label: 'All Genres' },
             { id: 'hiphop', label: '🔥 Hip-Hop' },
             { id: 'pop', label: '🪩 Pop & Dance' },
+            { id: 'electronic', label: '⚡ EDM & Electro' },
             { id: 'lofi', label: '☕ Lo-Fi & Chill' },
             { id: 'rock', label: '🎸 Rock & Funk' },
+            { id: 'latin_world', label: '🌴 Latin & World' },
             { id: 'cinematic', label: '🎻 Cinematic' },
           ].map((g) => (
             <button

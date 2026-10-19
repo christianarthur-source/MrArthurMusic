@@ -14,6 +14,7 @@ interface TrackHeaderListProps {
   onChangeTrackName: (trackId: string, name: string) => void;
   onAddTrack: (type: 'audio' | 'instrument') => void;
   onDeleteTrack: (trackId: string) => void;
+  onChangeInstrument?: (trackId: string) => void;
 }
 
 export const TrackHeaderList: React.FC<TrackHeaderListProps> = ({
@@ -155,10 +156,25 @@ export const TrackHeaderList: React.FC<TrackHeaderListProps> = ({
                   ●
                 </button>
 
-                {/* Track Type Indicator Pill */}
-                <span className="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded-sm bg-slate-950 border border-slate-800 text-slate-400 ml-auto">
-                  {track.type}
-                </span>
+                {/* Track Type Indicator Pill / Instrument Selector */}
+                {track.type === 'instrument' ? (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (onChangeInstrument) onChangeInstrument(track.id);
+                    }}
+                    className="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded-sm bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-400/40 ml-auto cursor-pointer flex items-center gap-1 transition-colors"
+                    title="Change Virtual Instrument Sound"
+                  >
+                    <span>{track.icon || '🎹'}</span>
+                    <span>MIDI</span>
+                  </button>
+                ) : (
+                  <span className="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded-sm bg-slate-950 border border-slate-800 text-slate-400 ml-auto">
+                    {track.type}
+                  </span>
+                )}
               </div>
 
               {/* Bottom row: Volume & Pan Sliders */}
