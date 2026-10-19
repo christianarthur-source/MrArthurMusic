@@ -1,0 +1,7 @@
+{
+  "name": "Staff Composer",
+  "description": "Interactive music composition and notation editor for students with multi-track playback, Boomwhacker colors, pitch names, beat counters, and virtual piano.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+

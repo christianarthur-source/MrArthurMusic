@@ -1,0 +1,6 @@
+{
+  "summary": "Implementation plan to fix playback starting position, enforce Measure 0 Beat 0 playback, and render metronome click track for leading rests.",
+  "updatedAt": "2026-10-16T19:09:24.136414779Z",
+  "requestFeedback": true,
+  "userFacing": true
+}
