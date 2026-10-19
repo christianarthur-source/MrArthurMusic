@@ -60,10 +60,13 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
           ))}
         </div>
 
-        <div className="mt-5 pt-3 border-t border-slate-200 flex justify-end">
+        <div className="mt-5 pt-3 border-t border-slate-200 flex items-center justify-between">
+          <span className="text-[11px] text-slate-500 font-medium">
+            🔒 NY Ed Law § 2-d Compliant • No Ads or Tracking
+          </span>
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-slate-900 text-white text-xs font-bold rounded-xl hover:bg-slate-800 transition-all"
+            className="px-4 py-2 bg-slate-900 text-white text-xs font-bold rounded-xl hover:bg-slate-800 transition-all cursor-pointer"
           >
             Got it, let's compose!
           </button>
