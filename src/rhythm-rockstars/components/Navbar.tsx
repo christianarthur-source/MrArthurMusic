@@ -1,6 +1,6 @@
 import React from 'react';
 import { GameMode } from '../types/game';
-import { Trophy, Music, Zap, Flame, Settings, UserCheck, ArrowLeft } from 'lucide-react';
+import { Trophy, Music, Zap, Flame, Settings, UserCheck, ArrowLeft, Star } from 'lucide-react';
 import { StudentSession } from '../../utils/classroomApi';
 import { soundEngine } from '../../audio/soundEngine';
 
@@ -8,6 +8,7 @@ interface NavbarProps {
   currentMode: GameMode;
   onSelectMode: (mode: GameMode) => void;
   studentSession: StudentSession | null;
+  studentScore?: number;
   onOpenClassroomModal: () => void;
   onOpenAvatar: () => void;
   onOpenLeaderboard: () => void;
@@ -22,6 +23,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   currentMode,
   onSelectMode,
   studentSession,
+  studentScore,
   onOpenClassroomModal,
   onOpenAvatar,
   onOpenLeaderboard,
@@ -140,10 +142,10 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         <button
           onClick={onOpenLeaderboard}
-          className="flex items-center gap-1 px-2 sm:px-2.5 py-1.5 rounded-xl text-xs font-extrabold text-amber-300 hover:text-white hover:bg-amber-500/20 transition-all cursor-pointer font-['Fredoka',sans-serif] shrink-0"
+          className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-extrabold text-amber-300 hover:text-white hover:bg-amber-500/20 transition-all cursor-pointer font-['Fredoka',sans-serif] shrink-0 border border-amber-400/20"
         >
           <Trophy className="w-3.5 h-3.5 text-amber-400" />
-          <span className="hidden sm:inline">Ranks</span>
+          <span>Leaderboard</span>
         </button>
       </nav>
 
@@ -159,29 +161,46 @@ export const Navbar: React.FC<NavbarProps> = ({
         <button
           onClick={onOpenSettings}
           className="p-2 rounded-xl text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700 border border-slate-700/80 transition-colors cursor-pointer"
-          title="Sound &amp; Counting Settings"
+          title="Sound & Counting Settings"
         >
           <Settings className="w-4 h-4 text-amber-300" />
         </button>
 
-        {/* Global Student Sign In button - Exact Staff Composer integration */}
-        <button
-          type="button"
-          onClick={onOpenClassroomModal}
-          title={
-            studentSession
-              ? `Signed in as ${studentSession.firstName} — click to view saved progress or log out`
-              : 'Student Sign In'
-          }
-          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer shadow-xs ${
-            studentSession
-              ? 'bg-sky-500/20 border-sky-400/60 text-sky-300 hover:bg-sky-500/30'
-              : 'bg-slate-800/90 border-slate-700 text-slate-300 hover:text-white hover:bg-slate-700'
-          }`}
-        >
-          <UserCheck className="w-3.5 h-3.5" />
-          <span>{studentSession ? studentSession.firstName : 'Sign In'}</span>
-        </button>
+        {/* Global Student Sign In button & Score Display */}
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={onOpenClassroomModal}
+            title={
+              studentSession
+                ? `Signed in as ${studentSession.firstName} — click to view saved progress or log out`
+                : 'Student Sign In'
+            }
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer shadow-xs ${
+              studentSession
+                ? 'bg-sky-500/20 border-sky-400/60 text-sky-300 hover:bg-sky-500/30'
+                : 'bg-slate-800/90 border-slate-700 text-slate-300 hover:text-white hover:bg-slate-700'
+            }`}
+          >
+            <UserCheck className="w-3.5 h-3.5" />
+            <span>{studentSession ? studentSession.firstName : 'Sign In'}</span>
+          </button>
+
+          {studentSession && (
+            <div
+              className="flex items-center gap-1 px-2.5 py-1.5 bg-amber-400/15 border border-amber-400/30 rounded-xl text-amber-300 text-xs font-bold shadow-xs"
+              title={`Points earned: ${(studentScore ?? 0).toLocaleString()} PTS`}
+            >
+              <Star className="w-3 h-3 text-amber-400 fill-amber-400" />
+              <span className="font-mono tabular-nums text-white font-black">
+                {(studentScore ?? 0).toLocaleString()}
+              </span>
+              <span className="text-[10px] text-amber-400/80 uppercase font-sans font-semibold">
+                PTS
+              </span>
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );

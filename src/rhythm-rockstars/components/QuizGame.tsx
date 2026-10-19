@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { RhythmPattern, LevelConfig } from '../types/rhythm';
+import { LEVEL_QUESTION_COUNTS } from '../data/rhythmCatalog';
 import { RhythmNotation } from './RhythmNotation';
 import { audioEngine } from '../services/audioEngine';
 import { SoundSettingsConfig, SoundKit } from '../types/game';
@@ -48,6 +49,8 @@ export const QuizGame: React.FC<QuizGameProps> = ({
   const [correctAnswersCount, setCorrectAnswersCount] = useState(0);
   const [totalQuestionsAnswered, setTotalQuestionsAnswered] = useState(0);
   const [showLevelSummary, setShowLevelSummary] = useState(false);
+
+  const totalQuestions = LEVEL_QUESTION_COUNTS[levelConfig.levelNumber] || 10;
 
   // Set up question with choices
   const setupQuestion = (qIdx: number) => {
@@ -147,7 +150,7 @@ export const QuizGame: React.FC<QuizGameProps> = ({
 
   const handleNextQuestion = () => {
     audioEngine.stopAll();
-    if (questionIndex + 1 < levelConfig.patterns.length) {
+    if (questionIndex + 1 < totalQuestions) {
       setQuestionIndex(prev => prev + 1);
     } else {
       // Level Complete
@@ -247,7 +250,7 @@ export const QuizGame: React.FC<QuizGameProps> = ({
             className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 transition-all hover:scale-105"
           >
             <Trophy className="w-4 h-4" />
-            View Classroom Leaderboard
+            View Leaderboard
           </button>
 
           {onNextLevel && (
@@ -280,19 +283,19 @@ export const QuizGame: React.FC<QuizGameProps> = ({
           <span>Question </span>
           <strong className="text-white font-mono tabular-nums">{questionIndex + 1}</strong>
           <span> of </span>
-          <strong className="text-white font-mono tabular-nums">{levelConfig.patterns.length}</strong>
+          <strong className="text-white font-mono tabular-nums">{totalQuestions}</strong>
         </div>
 
-        <div className="flex items-center gap-1.5">
-          {levelConfig.patterns.map((_, idx) => (
+        <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap justify-end max-w-[260px]">
+          {Array.from({ length: totalQuestions }).map((_, idx) => (
             <div
               key={idx}
-              className={`w-2.5 h-2.5 rounded-full transition-all ${
+              className={`h-2 rounded-full transition-all ${
                 idx === questionIndex
-                  ? 'bg-amber-400 ring-2 ring-amber-400/40 scale-125'
+                  ? 'bg-amber-400 ring-2 ring-amber-400/40 w-3.5 scale-110'
                   : idx < questionIndex
-                  ? 'bg-emerald-500'
-                  : 'bg-slate-800'
+                  ? 'bg-emerald-500 w-1.5'
+                  : 'bg-slate-800 w-1.5'
               }`}
             />
           ))}

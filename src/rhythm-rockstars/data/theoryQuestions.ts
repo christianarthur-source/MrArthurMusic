@@ -1,3 +1,5 @@
+import { LEVEL_QUESTION_COUNTS } from './rhythmCatalog';
+
 export interface EquationItem {
   type: 'note' | 'operator' | 'unknown' | 'text';
   value: string;
@@ -2470,11 +2472,181 @@ export const THEORY_QUESTIONS: TheoryQuestion[] = [
       { id: 'opt4', label: 'Beat Cadet', isCorrect: false }
     ],
     explanation: 'Congratulations! Conquering Level 7 awards you the Secret Rockstar Overlord badge!'
+  },
+  {
+    id: 'tq_l7_21',
+    levelNumber: 7,
+    questionType: 'beat_sum',
+    prompt: '⚡ SECRET POLYSUM: Add 2 Triplet Beats + 1 Syn-co-pa (8th-Quarter-8th)',
+    visualType: 'syncopation_beat',
+    symbolNotation: 'SECRET: 2 Triplets (2) + Syn-co-pa (2) = ?',
+    options: [
+      { id: 'opt1', label: '4 Beats', isCorrect: true },
+      { id: 'opt2', label: '3.5 Beats', isCorrect: false },
+      { id: 'opt3', label: '5 Beats', isCorrect: false },
+      { id: 'opt4', label: '4.5 Beats', isCorrect: false }
+    ],
+    explanation: '2 Triplet beats (2 full beats) + 1 Syn-co-pa (2 beats) = 4 beats total!'
+  },
+  {
+    id: 'tq_l7_22',
+    levelNumber: 7,
+    questionType: 'note_name',
+    prompt: '⚡ SECRET SPEED: How many 16th notes (semiquavers) fit inside one 4/4 measure?',
+    visualType: 'sixteenth_quad',
+    symbolNotation: 'SECRET: Total 16ths in 4/4',
+    options: [
+      { id: 'opt1', label: '16 Notes', isCorrect: true },
+      { id: 'opt2', label: '8 Notes', isCorrect: false },
+      { id: 'opt3', label: '12 Notes', isCorrect: false },
+      { id: 'opt4', label: '32 Notes', isCorrect: false }
+    ],
+    explanation: 'Each beat has four 16th notes. 4 beats x 4 = 16 sixteenth notes!'
+  },
+  {
+    id: 'tq_l7_23',
+    levelNumber: 7,
+    questionType: 'note_name',
+    prompt: '⚡ SECRET DIVISION: Which rhythmic grouping divides 1 standard quarter beat into 3 equal sounds?',
+    visualType: 'triplet',
+    symbolNotation: 'SECRET: 1 Beat into 3 parts',
+    options: [
+      { id: 'opt1', label: '8th-Note Triplet', isCorrect: true },
+      { id: 'opt2', label: 'Sixteenth Quad', isCorrect: false },
+      { id: 'opt3', label: 'Dotted Eighth', isCorrect: false },
+      { id: 'opt4', label: 'Half Note', isCorrect: false }
+    ],
+    explanation: 'An 8th-note triplet squeezes 3 equal notes into the space of 1 single quarter beat.'
+  },
+  {
+    id: 'tq_l7_24',
+    levelNumber: 7,
+    questionType: 'measure_completion',
+    prompt: '⚡ SECRET CALCULATION: In 4/4 time, if you play 1 Dotted Quarter Note (1.5 beats), how many 16th notes complete the remaining 2.5 beats?',
+    visualType: 'time_4_4',
+    symbolNotation: 'SECRET: 2.5 beats into 16ths',
+    options: [
+      { id: 'opt1', label: '10 Sixteenth Notes', isCorrect: true },
+      { id: 'opt2', label: '8 Sixteenth Notes', isCorrect: false },
+      { id: 'opt3', label: '12 Sixteenth Notes', isCorrect: false },
+      { id: 'opt4', label: '6 Sixteenth Notes', isCorrect: false }
+    ],
+    explanation: '2.5 beats x 4 sixteenths per beat = 10 sixteenth notes!'
+  },
+  {
+    id: 'tq_l7_25',
+    levelNumber: 7,
+    questionType: 'beat_sum',
+    prompt: '⚡ SECRET MATH WITH RESTS: 1 Whole Note (4 beats) minus 1 Half Rest (2 beats) plus 1 Sixteenth Quad (1 beat) = ?',
+    visualType: 'whole',
+    symbolNotation: 'SECRET: 4 - 2 + 1 = ?',
+    options: [
+      { id: 'opt1', label: '3 Beats', isCorrect: true },
+      { id: 'opt2', label: '2.5 Beats', isCorrect: false },
+      { id: 'opt3', label: '4 Beats', isCorrect: false },
+      { id: 'opt4', label: '5 Beats', isCorrect: false }
+    ],
+    explanation: '4 - 2 + 1 = 3 beats!'
+  },
+  {
+    id: 'tq_l7_26',
+    levelNumber: 7,
+    questionType: 'counting_syllables',
+    prompt: '⚡ SECRET COMPOUND TIME: In fast 6/8 meter, how many dotted-quarter pulse beats do musicians tap per measure?',
+    visualType: 'time_6_8',
+    symbolNotation: 'SECRET: 6/8 Macro Pulses',
+    options: [
+      { id: 'opt1', label: '2 Macro Beats (dotted-quarters)', isCorrect: true },
+      { id: 'opt2', label: '6 Macro Beats', isCorrect: false },
+      { id: 'opt3', label: '3 Macro Beats', isCorrect: false },
+      { id: 'opt4', label: '4 Macro Beats', isCorrect: false }
+    ],
+    explanation: 'In 6/8 time, the 6 eighth notes group into 2 macro pulse beats (1-2-3, 4-5-6).'
+  },
+  {
+    id: 'tq_l7_27',
+    levelNumber: 7,
+    questionType: 'counting_syllables',
+    prompt: '⚡ SECRET SYLLABLE: What Kodály rhythm syllable represents an 8th note followed by two 16th notes?',
+    visualType: 'broken_eighth_two_sixteenth',
+    symbolNotation: 'SECRET: 1 Eighth + 2 Sixteenths',
+    options: [
+      { id: 'opt1', label: 'Ti-Tika', isCorrect: true },
+      { id: 'opt2', label: 'Tika-Ti', isCorrect: false },
+      { id: 'opt3', label: 'Tim-Ka', isCorrect: false },
+      { id: 'opt4', label: 'Tika-Tika', isCorrect: false }
+    ],
+    explanation: '"Ti-Tika" corresponds to one 8th note (half beat) plus two 16th notes (quarter beat each).'
+  },
+  {
+    id: 'tq_l7_28',
+    levelNumber: 7,
+    questionType: 'beat_sum',
+    prompt: '⚡ SECRET OVERLORD FORMULA: (1 Whole Note + 1 Whole Note) divided by 1 Half Note = ?',
+    visualType: 'whole',
+    symbolNotation: 'SECRET: (4 + 4) / 2 = ?',
+    options: [
+      { id: 'opt1', label: '4', isCorrect: true },
+      { id: 'opt2', label: '2', isCorrect: false },
+      { id: 'opt3', label: '6', isCorrect: false },
+      { id: 'opt4', label: '8', isCorrect: false }
+    ],
+    explanation: '(4 + 4) / 2 = 8 / 2 = 4!'
+  },
+  {
+    id: 'tq_l7_29',
+    levelNumber: 7,
+    questionType: 'note_name',
+    prompt: '⚡ SECRET SYNCOPATION: What creates syncopation in modern rock and jazz?',
+    visualType: 'syncopation_beat',
+    symbolNotation: 'SECRET: Syncopation Accent',
+    options: [
+      { id: 'opt1', label: 'Accenting normally weak or off-beat pulses', isCorrect: true },
+      { id: 'opt2', label: 'Playing only whole notes quietly', isCorrect: false },
+      { id: 'opt3', label: 'Slowing down the tempo suddenly', isCorrect: false },
+      { id: 'opt4', label: 'Skipping all rests in the music', isCorrect: false }
+    ],
+    explanation: 'Syncopation shifts the rhythmic accent to an unexpected weak beat or off-beat.'
+  },
+  {
+    id: 'tq_l7_30',
+    levelNumber: 7,
+    questionType: 'counting_syllables',
+    prompt: '⚡ SECRET OVERLORD VICTORY: You reached the final 30th question of the secret gauntlet! How many questions did you conquer in Level 7?',
+    symbolNotation: 'SECRET: Level 7 Final Boss (30 Questions)',
+    options: [
+      { id: 'opt1', label: '30 Questions (+20% from Level 6)', isCorrect: true },
+      { id: 'opt2', label: '10 Questions', isCorrect: false },
+      { id: 'opt3', label: '20 Questions', isCorrect: false },
+      { id: 'opt4', label: '25 Questions', isCorrect: false }
+    ],
+    explanation: 'Incredible achievement! You cleared all 30 secret questions with mastery!'
   }
 ];
 
 export function getTheoryQuestionsForLevel(levelNumber: number): TheoryQuestion[] {
   const filtered = THEORY_QUESTIONS.filter(q => q.levelNumber === levelNumber);
-  if (filtered.length > 0) return filtered;
-  return THEORY_QUESTIONS.filter(q => q.levelNumber === 1);
+  const targetCount = LEVEL_QUESTION_COUNTS[levelNumber] || 10;
+
+  if (filtered.length === 0) {
+    return THEORY_QUESTIONS.slice(0, targetCount);
+  }
+
+  // If we have at least targetCount, slice to exact target count
+  if (filtered.length >= targetCount) {
+    return filtered.slice(0, targetCount);
+  }
+
+  // Otherwise cycle with unique IDs to reach targetCount
+  const result: TheoryQuestion[] = [];
+  let idx = 0;
+  while (result.length < targetCount) {
+    const q = filtered[idx % filtered.length];
+    result.push({
+      ...q,
+      id: `${q.id}_c${result.length}`
+    });
+    idx++;
+  }
+  return result;
 }

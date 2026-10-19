@@ -240,7 +240,7 @@ export const RhythmQuizGame: React.FC<RhythmQuizGameProps> = ({
               onClick={onOpenLeaderboard}
               className="w-full py-3 bg-amber-400 text-slate-950 font-extrabold text-sm rounded-xl shadow-md transition-all cursor-pointer"
             >
-              View Class Leaderboard
+              View Leaderboard
             </button>
           )}
         </div>

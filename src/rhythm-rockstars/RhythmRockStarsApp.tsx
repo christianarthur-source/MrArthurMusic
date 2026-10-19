@@ -249,6 +249,7 @@ export default function RhythmRockStarsApp({
         currentMode={currentMode}
         onSelectMode={(mode) => setCurrentMode(mode)}
         studentSession={studentSession}
+        studentScore={student?.totalScore ?? 0}
         onOpenClassroomModal={onOpenClassroomModal}
         onOpenAvatar={onOpenAvatar}
         onOpenLeaderboard={() => setShowLeaderboard(true)}
@@ -422,7 +423,7 @@ export default function RhythmRockStarsApp({
             </div>
             <div>
               <span className="font-display font-extrabold text-white text-sm block">
-                Classroom Leaderboard is Live!
+                Leaderboard is Live!
               </span>
               <span className="text-xs text-slate-400">
                 {student ? (
@@ -430,7 +431,7 @@ export default function RhythmRockStarsApp({
                     Your Standing: <strong className="text-amber-400">Level {Math.max(1, ...Object.keys(student.levelProgress || {}).map(Number))}</strong> · <strong className="text-white font-mono">{student.totalScore.toLocaleString()} pts</strong>
                   </>
                 ) : (
-                  'Compete with classmates across all Chromebooks in real-time.'
+                  'Compete with players across all Chromebooks in real-time.'
                 )}
               </span>
             </div>
