@@ -14,6 +14,7 @@ import {
   Music,
   FolderOpen,
   Mic,
+  Share2,
 } from 'lucide-react';
 import { DawProject, DawSnapGrid, DawToolMode } from '../types';
 
@@ -31,6 +32,7 @@ interface TransportBarProps {
   onToggleLoopRegion: () => void;
   onToggleDrawerTab: (tab: 'loops' | 'virtual-piano' | 'piano-roll' | 'mixer') => void;
   onSaveProject: () => void;
+  onShareProject?: () => void;
   onExportWav: () => void;
   canUndo: boolean;
   canRedo: boolean;
@@ -53,6 +55,7 @@ export const TransportBar: React.FC<TransportBarProps> = ({
   onToggleLoopRegion,
   onToggleDrawerTab,
   onSaveProject,
+  onShareProject,
   onExportWav,
   canUndo,
   canRedo,
@@ -263,6 +266,19 @@ export const TransportBar: React.FC<TransportBarProps> = ({
           <Cloud className="w-3.5 h-3.5 text-emerald-400" />
           <span>{isSaving ? 'Saving...' : 'Save ☁️'}</span>
         </button>
+
+        {/* Share Link Button */}
+        {onShareProject && (
+          <button
+            type="button"
+            onClick={onShareProject}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/40 hover:border-amber-400 transition-all cursor-pointer"
+            title="Create Shareable Link that opens directly in DAW"
+          >
+            <Share2 className="w-3.5 h-3.5 text-amber-400" />
+            <span>Share 🔗</span>
+          </button>
+        )}
 
         {/* Export Audio Mixdown Button */}
         <button
