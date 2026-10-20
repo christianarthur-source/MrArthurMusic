@@ -97,25 +97,16 @@ export const MusicLabLanding: React.FC<MusicLabLandingProps> = ({
       </header>
 
       {/* Main Content Area */}
+      {/* Main Content Area */}
       <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-8 sm:space-y-10">
-        {/* Welcome Header */}
-        <div className="text-center space-y-2 max-w-2xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/10 border border-amber-400/30 text-amber-300 text-xs font-black uppercase tracking-wider font-['Fredoka',sans-serif]">
-            <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-spin" />
-            <span>Classroom Music Activity Hub</span>
-          </div>
-
-          <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight font-['Fredoka',sans-serif]">
-            Pick Your Musical Activity! 🎵
-          </h2>
-
-          {studentSession && (
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-bold shadow-inner">
+        {studentSession && (
+          <div className="text-center">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-bold shadow-inner">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               <span>Welcome, {studentSession.firstName}! Your work saves automatically.</span>
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* =========================================================================
             FLAGSHIP APP #1: STAFF COMPOSER (Hero Graphic Showcase)
@@ -134,8 +125,7 @@ export const MusicLabLanding: React.FC<MusicLabLandingProps> = ({
           </div>
 
           <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-6">
-            {/* Visual Preview: Giant Graphic Sheet Music Staff with Boomwhacker Notes */}
-            <div className="space-y-4 max-w-2xl text-center lg:text-left">
+            <div className="space-y-4 max-w-2xl text-center lg:text-left w-full">
               <div className="flex items-center justify-center lg:justify-start gap-2">
                 <span className="px-3.5 py-1 rounded-xl bg-amber-400 text-slate-950 font-black text-xs uppercase tracking-wider font-['Fredoka',sans-serif] shadow-md flex items-center gap-1.5">
                   ⭐ Star App
@@ -152,49 +142,94 @@ export const MusicLabLanding: React.FC<MusicLabLandingProps> = ({
                   </span>
                 </h3>
                 <p className="text-sm sm:text-base text-sky-200 font-bold mt-1">
-                  Click colorful notes on the musical staff, compose songs &amp; hear them play! 🎼
+                  Compose songs on the musical staff and hear them play! 🎼
                 </p>
               </div>
 
-              {/* Big Interactive-Style Visual Staff Graphic */}
-              <div className="p-4 rounded-2xl bg-slate-950/90 border-2 border-sky-500/30 flex items-center justify-center lg:justify-start gap-2 sm:gap-3 flex-wrap shadow-inner group-hover:border-sky-400 transition-colors">
-                <span className="text-4xl select-none font-serif text-amber-300 font-bold">𝄞</span>
-                {[
-                  { name: 'C', color: '#EF4444' },
-                  { name: 'D', color: '#F97316' },
-                  { name: 'E', color: '#EAB308' },
-                  { name: 'F', color: '#22C55E' },
-                  { name: 'G', color: '#06B6D4' },
-                  { name: 'A', color: '#3B82F6' },
-                  { name: 'B', color: '#A855F7' },
-                  { name: "C'", color: '#EF4444' },
-                ].map((n, i) => (
-                  <div
-                    key={i}
-                    style={{ backgroundColor: n.color }}
-                    className="w-8 h-8 sm:w-10 sm:h-10 rounded-full text-slate-950 font-black text-sm sm:text-base flex items-center justify-center shadow-lg font-['Fredoka',sans-serif] group-hover:scale-115 transition-transform"
-                  >
-                    {n.name}
-                  </div>
-                ))}
-                <span className="text-2xl sm:text-3xl ml-1">🎹 🥁 🎻</span>
-              </div>
+              {/* Simple Music Staff with Notes Graphic */}
+              <div className="w-full max-w-xl p-3 sm:p-4 rounded-2xl bg-slate-950/90 border-2 border-sky-500/30 group-hover:border-sky-400 transition-colors shadow-inner overflow-hidden">
+                <svg
+                  viewBox="0 0 520 120"
+                  className="w-full h-auto text-slate-100"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  {/* 5 Horizontal Staff Lines */}
+                  <line x1="8" y1="26" x2="512" y2="26" stroke="#94a3b8" strokeWidth="1.75" opacity="0.6" />
+                  <line x1="8" y1="44" x2="512" y2="44" stroke="#94a3b8" strokeWidth="1.75" opacity="0.6" />
+                  <line x1="8" y1="62" x2="512" y2="62" stroke="#94a3b8" strokeWidth="1.75" opacity="0.6" />
+                  <line x1="8" y1="80" x2="512" y2="80" stroke="#94a3b8" strokeWidth="1.75" opacity="0.6" />
+                  <line x1="8" y1="98" x2="512" y2="98" stroke="#94a3b8" strokeWidth="1.75" opacity="0.6" />
 
-              {/* Fun Visual Pills */}
-              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 pt-1">
-                {[
-                  '🌈 Boomwhacker Colors',
-                  '🎹 Piano Keys',
-                  '🥁 Real Drum Beats',
-                  '👥 Ensemble Templates',
-                ].map((badge) => (
-                  <span
-                    key={badge}
-                    className="px-3 py-1 rounded-xl bg-slate-800/90 text-slate-200 text-xs font-bold border border-slate-700/80 shadow-xs"
+                  {/* Treble Clef */}
+                  <text
+                    x="16"
+                    y="93"
+                    fontSize="82"
+                    fontFamily="serif, 'Noto Music', 'Bravura'"
+                    fill="#f8fafc"
+                    className="select-none pointer-events-none"
                   >
-                    {badge}
-                  </span>
-                ))}
+                    𝄞
+                  </text>
+
+                  {/* Time Signature 4/4 */}
+                  <text
+                    x="76"
+                    y="58"
+                    fontSize="32"
+                    fontWeight="800"
+                    fontFamily="serif"
+                    fill="#f8fafc"
+                    className="select-none"
+                  >
+                    4
+                  </text>
+                  <text
+                    x="76"
+                    y="94"
+                    fontSize="32"
+                    fontWeight="800"
+                    fontFamily="serif"
+                    fill="#f8fafc"
+                    className="select-none"
+                  >
+                    4
+                  </text>
+
+                  {/* Measure 1 - Note 1: E4 (Quarter Note) */}
+                  <ellipse cx="138" cy="98" rx="8.5" ry="6" transform="rotate(-20 138 98)" fill="#f8fafc" />
+                  <line x1="146" y1="98" x2="146" y2="44" stroke="#f8fafc" strokeWidth="2.5" strokeLinecap="round" />
+
+                  {/* Measure 1 - Note 2: G4 (Quarter Note) */}
+                  <ellipse cx="192" cy="80" rx="8.5" ry="6" transform="rotate(-20 192 80)" fill="#f8fafc" />
+                  <line x1="200" y1="80" x2="200" y2="26" stroke="#f8fafc" strokeWidth="2.5" strokeLinecap="round" />
+
+                  {/* Measure 1 - Notes 3 & 4: Beamed 8th Notes (B4 & C5) */}
+                  <ellipse cx="244" cy="62" rx="8.5" ry="6" transform="rotate(-20 244 62)" fill="#f8fafc" />
+                  <line x1="236" y1="62" x2="236" y2="114" stroke="#f8fafc" strokeWidth="2.5" strokeLinecap="round" />
+
+                  <ellipse cx="284" cy="53" rx="8.5" ry="6" transform="rotate(-20 284 53)" fill="#f8fafc" />
+                  <line x1="276" y1="53" x2="276" y2="105" stroke="#f8fafc" strokeWidth="2.5" strokeLinecap="round" />
+
+                  {/* Beam connecting stems */}
+                  <polygon points="235,108 277,99 277,105 235,114" fill="#f8fafc" />
+
+                  {/* Measure Barline */}
+                  <line x1="330" y1="26" x2="330" y2="98" stroke="#94a3b8" strokeWidth="1.5" opacity="0.6" />
+
+                  {/* Measure 2 - Note 5: D5 (Quarter Note) */}
+                  <ellipse cx="372" cy="44" rx="8.5" ry="6" transform="rotate(-20 372 44)" fill="#f8fafc" />
+                  <line x1="364" y1="44" x2="364" y2="98" stroke="#f8fafc" strokeWidth="2.5" strokeLinecap="round" />
+
+                  {/* Measure 2 - Note 6: E5 (Half Note) */}
+                  <ellipse cx="430" cy="35" rx="8.5" ry="6" transform="rotate(-20 430 35)" fill="none" stroke="#f8fafc" strokeWidth="2.5" />
+                  <line x1="422" y1="35" x2="422" y2="89" stroke="#f8fafc" strokeWidth="2.5" strokeLinecap="round" />
+
+                  {/* Double End Barline */}
+                  <line x1="488" y1="26" x2="488" y2="98" stroke="#94a3b8" strokeWidth="1.5" opacity="0.8" />
+                  <line x1="496" y1="26" x2="496" y2="98" stroke="#f8fafc" strokeWidth="4" />
+                </svg>
               </div>
             </div>
 
