@@ -173,24 +173,26 @@ export const MusicLabLanding: React.FC<MusicLabLandingProps> = ({
                     𝄞
                   </text>
 
-                  {/* Time Signature 4/4 */}
+                  {/* Time Signature 3/4 */}
                   <text
-                    x="76"
+                    x="84"
                     y="58"
                     fontSize="32"
                     fontWeight="800"
                     fontFamily="serif"
+                    textAnchor="middle"
                     fill="#f8fafc"
                     className="select-none"
                   >
-                    4
+                    3
                   </text>
                   <text
-                    x="76"
+                    x="84"
                     y="94"
                     fontSize="32"
                     fontWeight="800"
                     fontFamily="serif"
+                    textAnchor="middle"
                     fill="#f8fafc"
                     className="select-none"
                   >
