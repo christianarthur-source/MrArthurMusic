@@ -5,7 +5,6 @@ import {
   ArrowRight,
   ShieldCheck,
   UserCheck,
-  HelpCircle,
   Drum,
   Music,
   Flame,
@@ -21,7 +20,6 @@ interface MusicLabLandingProps {
   studentSession: StudentSession | null;
   onOpenClassroom: () => void;
   onOpenEdLaw: () => void;
-  onOpenHelp: () => void;
   onOpenAvatar: () => void;
 }
 
@@ -30,7 +28,6 @@ export const MusicLabLanding: React.FC<MusicLabLandingProps> = ({
   studentSession,
   onOpenClassroom,
   onOpenEdLaw,
-  onOpenHelp,
   onOpenAvatar,
 }) => {
   const [selectedToolModal, setSelectedToolModal] = useState<ToolId | null>(null);
@@ -82,15 +79,6 @@ export const MusicLabLanding: React.FC<MusicLabLandingProps> = ({
             >
               <UserCheck className="w-4 h-4 text-amber-400" />
               <span>{studentSession ? studentSession.firstName : 'Student Sign In'}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={onOpenHelp}
-              className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 text-xs font-bold border border-slate-700/80 cursor-pointer transition-colors"
-            >
-              <HelpCircle className="w-4 h-4" />
-              <span>Help</span>
             </button>
           </div>
         </div>
@@ -790,14 +778,6 @@ export const MusicLabLanding: React.FC<MusicLabLandingProps> = ({
             >
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
               <span>NY Ed Law § 2-d &amp; Parents&apos; Bill of Rights</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={onOpenHelp}
-              className="px-2.5 py-1.5 rounded-lg text-slate-400 hover:text-sky-300 hover:bg-slate-800/60 transition-colors cursor-pointer"
-            >
-              Help &amp; Shortcuts
             </button>
           </div>
         </footer>

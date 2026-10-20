@@ -10,6 +10,24 @@ interface ActivePlaybackSource {
   stop: (time?: number) => void;
 }
 
+/**
+ * Creates a synthetic stereo impulse response for algorithmic studio reverb
+ */
+function createReverbImpulse(ctx: BaseAudioContext, duration = 1.4, decay = 2.4): AudioBuffer {
+  const sampleRate = ctx.sampleRate || 44100;
+  const length = Math.ceil(sampleRate * duration);
+  const impulse = ctx.createBuffer(2, length, sampleRate);
+  const left = impulse.getChannelData(0);
+  const right = impulse.getChannelData(1);
+  for (let i = 0; i < length; i++) {
+    const t = i / length;
+    const env = Math.pow(1 - t, decay);
+    left[i] = (Math.random() * 2 - 1) * env;
+    right[i] = (Math.random() * 2 - 1) * env;
+  }
+  return impulse;
+}
+
 export class DawAudioEngine {
   private ctx: AudioContext | null = null;
   private isPlaying: boolean = false;
@@ -34,8 +52,12 @@ export class DawAudioEngine {
     }
   >();
 
-  private masterBus: GainNode | null = null;
+  private masterSummingGain: GainNode | null = null;
   private masterCompressor: DynamicsCompressorNode | null = null;
+  private masterLimiter: DynamicsCompressorNode | null = null;
+  private masterBus: GainNode | null = null;
+  private reverbConvolver: ConvolverNode | null = null;
+  private reverbReturn: GainNode | null = null;
   private activeSources: ActivePlaybackSource[] = [];
 
   // Mic recording
@@ -62,14 +84,47 @@ export class DawAudioEngine {
   }
 
   private setupMasterBus(ctx: AudioContext) {
+    // 1. Headroom summing bus: scales multitrack sum to prevent digital bus saturation
+    this.masterSummingGain = ctx.createGain();
+    this.masterSummingGain.gain.setValueAtTime(0.72, 0);
+
+    // 2. Smooth glue compressor for cohesive acoustic balance
     this.masterCompressor = ctx.createDynamicsCompressor();
     this.masterCompressor.threshold.setValueAtTime(-14, 0);
-    this.masterCompressor.ratio.setValueAtTime(4, 0);
+    this.masterCompressor.knee.setValueAtTime(12, 0);
+    this.masterCompressor.ratio.setValueAtTime(4.0, 0);
+    this.masterCompressor.attack.setValueAtTime(0.003, 0);
+    this.masterCompressor.release.setValueAtTime(0.15, 0);
 
+    // 3. Brickwall true peak limiter: catches all transient spikes at -1.0 dBFS to guarantee zero DAC distortion
+    this.masterLimiter = ctx.createDynamicsCompressor();
+    this.masterLimiter.threshold.setValueAtTime(-1.0, 0);
+    this.masterLimiter.knee.setValueAtTime(0, 0);
+    this.masterLimiter.ratio.setValueAtTime(20.0, 0);
+    this.masterLimiter.attack.setValueAtTime(0.001, 0);
+    this.masterLimiter.release.setValueAtTime(0.05, 0);
+
+    // 4. Master fader gain node
     this.masterBus = ctx.createGain();
     this.masterBus.gain.setValueAtTime(1.0, 0);
 
-    this.masterCompressor.connect(this.masterBus);
+    // 5. Studio Reverb Send/Return auxiliary bus
+    try {
+      this.reverbConvolver = ctx.createConvolver();
+      this.reverbConvolver.buffer = createReverbImpulse(ctx);
+      this.reverbReturn = ctx.createGain();
+      this.reverbReturn.gain.setValueAtTime(0.65, 0);
+      this.reverbConvolver.connect(this.reverbReturn);
+      this.reverbReturn.connect(this.masterSummingGain);
+    } catch {
+      // fallback in restricted environments
+    }
+
+    // Connect master chain:
+    // masterSummingGain -> masterCompressor -> masterLimiter -> masterBus -> destination
+    this.masterSummingGain.connect(this.masterCompressor);
+    this.masterCompressor.connect(this.masterLimiter);
+    this.masterLimiter.connect(this.masterBus);
     this.masterBus.connect(ctx.destination);
   }
 
@@ -113,13 +168,21 @@ export class DawAudioEngine {
         const reverbSend = ctx.createGain();
         const delaySend = ctx.createGain();
 
-        // Connect chain: input -> eqLow -> eqMid -> eqHigh -> volume -> panner -> masterCompressor
+        // Connect chain: input -> eqLow -> eqMid -> eqHigh -> volume -> panner -> masterSummingGain
         input.connect(eqLow);
         eqLow.connect(eqMid);
         eqMid.connect(eqHigh);
         eqHigh.connect(volume);
         volume.connect(panner);
-        panner.connect(this.masterCompressor || ctx.destination);
+        panner.connect(this.masterSummingGain || this.masterCompressor || ctx.destination);
+
+        // Connect auxiliary reverb send
+        volume.connect(reverbSend);
+        if (this.reverbConvolver) {
+          try {
+            reverbSend.connect(this.reverbConvolver);
+          } catch {}
+        }
 
         nodes = { input, volume, panner, eqLow, eqMid, eqHigh, reverbSend, delaySend };
         this.trackNodes.set(track.id, nodes);
@@ -139,6 +202,10 @@ export class DawAudioEngine {
       nodes.eqLow.gain.setTargetAtTime(track.fx?.eqLow ?? 0, ctx.currentTime, 0.02);
       nodes.eqMid.gain.setTargetAtTime(track.fx?.eqMid ?? 0, ctx.currentTime, 0.02);
       nodes.eqHigh.gain.setTargetAtTime(track.fx?.eqHigh ?? 0, ctx.currentTime, 0.02);
+
+      // Reverb send level
+      const effectiveVerb = isAudible ? (track.fx?.reverbWet ?? 0) : 0.0;
+      nodes.reverbSend.gain.setTargetAtTime(effectiveVerb, ctx.currentTime, 0.02);
     });
   }
 
@@ -185,7 +252,7 @@ export class DawAudioEngine {
           src.playbackRate.setValueAtTime(stretchRate, 0);
 
           const clipGain = ctx.createGain();
-          clipGain.gain.setValueAtTime(clip.gain ?? 1.0, 0);
+          clipGain.gain.setValueAtTime((clip.gain ?? 0.85) * 0.85, 0);
 
           src.connect(clipGain);
           clipGain.connect(nodes.input);
@@ -402,9 +469,30 @@ export class DawAudioEngine {
     const sampleRate = 44100;
     const offlineCtx = new OfflineAudioContext(2, Math.ceil(totalSeconds * sampleRate), sampleRate);
 
-    // Master bus
+    // Master bus with summing headroom + glue compressor + brickwall peak limiter
+    const masterSummingGain = offlineCtx.createGain();
+    masterSummingGain.gain.setValueAtTime(0.75, 0);
+
+    const comp = offlineCtx.createDynamicsCompressor();
+    comp.threshold.setValueAtTime(-14, 0);
+    comp.knee.setValueAtTime(12, 0);
+    comp.ratio.setValueAtTime(4.0, 0);
+    comp.attack.setValueAtTime(0.003, 0);
+    comp.release.setValueAtTime(0.15, 0);
+
+    const limiter = offlineCtx.createDynamicsCompressor();
+    limiter.threshold.setValueAtTime(-1.0, 0);
+    limiter.knee.setValueAtTime(0, 0);
+    limiter.ratio.setValueAtTime(20.0, 0);
+    limiter.attack.setValueAtTime(0.001, 0);
+    limiter.release.setValueAtTime(0.05, 0);
+
     const masterGain = offlineCtx.createGain();
     masterGain.gain.setValueAtTime(project.masterVolume, 0);
+
+    masterSummingGain.connect(comp);
+    comp.connect(limiter);
+    limiter.connect(masterGain);
     masterGain.connect(offlineCtx.destination);
 
     const anySolo = project.tracks.some((t) => t.solo);
@@ -416,7 +504,7 @@ export class DawAudioEngine {
 
       const trackGain = offlineCtx.createGain();
       trackGain.gain.setValueAtTime(track.fx?.volume ?? 1.0, 0);
-      trackGain.connect(masterGain);
+      trackGain.connect(masterSummingGain);
 
       track.clips.forEach((clip) => {
         if (clip.type === 'audio' && clip.audioBuffer) {
@@ -430,7 +518,7 @@ export class DawAudioEngine {
           const durSec = clip.durationBeats * beatSec;
 
           const clipG = offlineCtx.createGain();
-          clipG.gain.setValueAtTime(clip.gain ?? 1.0, 0);
+          clipG.gain.setValueAtTime((clip.gain ?? 0.85) * 0.85, 0);
 
           src.connect(clipG);
           clipG.connect(trackGain);

@@ -27,6 +27,7 @@ import {
   UserCheck,
   ArrowLeft,
   Users,
+  HelpCircle,
 } from 'lucide-react';
 import { CountingMode, NoteLabelMode, ViewLayout } from '../types/music';
 import { BOOMWHACKER_COLORS, getTempoDescription } from '../utils/musicMath';
@@ -91,6 +92,7 @@ interface TransportBarProps {
   isAvatarOpen: boolean;
   onOpenAvatar: () => void;
   onCloseAvatar: () => void;
+  onOpenHelp?: () => void;
 }
 
 export const TransportBar: React.FC<TransportBarProps> = ({
@@ -149,6 +151,7 @@ export const TransportBar: React.FC<TransportBarProps> = ({
   isAvatarOpen,
   onOpenAvatar,
   onCloseAvatar,
+  onOpenHelp,
 }) => {
   const tempoInfo = getTempoDescription(tempo);
   const [openMenu, setOpenMenu] = useState<'ensemble' | 'helpers' | 'export' | null>(null);
@@ -701,6 +704,19 @@ export const TransportBar: React.FC<TransportBarProps> = ({
           <Maximize2 className="w-3.5 h-3.5 text-indigo-400" />
           <span className="hidden xl:inline">Full Screen</span>
         </button>
+
+        {/* Help & Shortcuts Button */}
+        {onOpenHelp && (
+          <button
+            type="button"
+            onClick={onOpenHelp}
+            className="flex items-center gap-1.5 px-2.5 py-2 rounded-xl text-xs font-bold bg-slate-800 hover:bg-slate-700 text-sky-300 hover:text-white border border-slate-700 hover:border-sky-500/50 transition-all cursor-pointer shadow-xs active:scale-95"
+            title="Keyboard Shortcuts & User Guide"
+          >
+            <HelpCircle className="w-3.5 h-3.5 text-sky-400" />
+            <span className="hidden xl:inline">Help</span>
+          </button>
+        )}
 
         {/* 3) Share, Print & Export Dropdown */}
         <div className="relative">

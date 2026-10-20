@@ -526,15 +526,78 @@ export const DawApp: React.FC<DawAppProps> = ({
   ]);
 
 
-  // Add loop from loop browser to project timeline
+  // Add loop from loop browser to project timeline, intelligently routing to appropriate track
   const handleAddLoopToTimeline = (loop: DawLoopItem, buffer: AudioBuffer, waveform: number[]) => {
-    // Find armed audio track or default to first audio track
-    let targetTrack = project.tracks.find((t) => t.armRecord && t.type === 'audio');
+    const category = loop.category || 'drums';
+
+    // Keyword map for intelligent track auto-routing
+    const catKeywords: Record<string, string[]> = {
+      drums: ['drum', 'beat', 'perc', 'kick', 'snare', 'hihat', 'trap', 'rhythm'],
+      bass: ['bass', '808', 'sub', 'low'],
+      chords: ['chord', 'key', 'piano', 'synth', 'pad', 'harmony', 'organ'],
+      melody: ['melody', 'lead', 'solo', 'riff', 'hook', 'flute', 'violin', 'horn', 'trumpet'],
+      vocals: ['vocal', 'voice', 'sing', 'choir', 'mic'],
+      fx: ['fx', 'effect', 'sfx', 'riser', 'sweep', 'drop', 'impact'],
+    };
+
+    const keywords = catKeywords[category] || [category];
+
+    // Priority 1: Find an existing track that matches this loop's category
+    let targetTrack = project.tracks.find((t) => {
+      const lowerName = t.name.toLowerCase();
+      const lowerId = t.id.toLowerCase();
+      return keywords.some((kw) => lowerName.includes(kw) || lowerId.includes(kw));
+    });
+
+    let nextTracks = [...project.tracks];
+
+    // Priority 2: If no matching track exists, automatically create a dedicated track for it!
     if (!targetTrack) {
-      targetTrack = project.tracks.find((t) => t.type === 'audio');
+      const categoryMetadata: Record<string, { name: string; icon: string; color: string }> = {
+        drums: { name: 'Drums', icon: '🥁', color: '#F59E0B' },
+        bass: { name: 'Bass', icon: '🎸', color: '#EC4899' },
+        chords: { name: 'Keys & Chords', icon: '🎹', color: '#38BDF8' },
+        melody: { name: 'Melody', icon: '🎵', color: '#8B5CF6' },
+        vocals: { name: 'Vocals', icon: '🎤', color: '#10B981' },
+        fx: { name: 'Sound FX', icon: '✨', color: '#06B6D4' },
+      };
+
+      const meta = categoryMetadata[category] || {
+        name: `${category.charAt(0).toUpperCase() + category.slice(1)} Track`,
+        icon: loop.icon || '🎧',
+        color: loop.color || '#38BDF8',
+      };
+
+      targetTrack = {
+        id: `track_${category}_${Date.now()}`,
+        name: meta.name,
+        type: 'audio',
+        color: meta.color,
+        icon: meta.icon,
+        muted: false,
+        solo: false,
+        armRecord: false,
+        clips: [],
+        fx: { ...DEFAULT_DAW_FX },
+      };
+
+      nextTracks.push(targetTrack);
     }
-    if (!targetTrack) {
-      targetTrack = project.tracks[0];
+
+    // Smart beat placement: if current playhead overlaps with existing clips on target track,
+    // or if at beat 0 and clips already exist, place right after the last clip
+    let startBeat = Math.round(currentBeat);
+    const hasOverlap = targetTrack.clips.some(
+      (c) => startBeat < c.startBeat + c.durationBeats && startBeat + loop.durationBeats > c.startBeat
+    );
+    if (hasOverlap || (startBeat === 0 && targetTrack.clips.length > 0)) {
+      const lastEnd = targetTrack.clips.reduce(
+        (max, c) => Math.max(max, c.startBeat + c.durationBeats),
+        0
+      );
+      if (lastEnd > 0) {
+        startBeat = lastEnd;
+      }
     }
 
     const newClip: DawClip = {
@@ -542,7 +605,7 @@ export const DawApp: React.FC<DawAppProps> = ({
       trackId: targetTrack.id,
       name: loop.name,
       type: 'audio',
-      startBeat: Math.round(currentBeat),
+      startBeat,
       durationBeats: loop.durationBeats,
       color: loop.color,
       loopId: loop.id,
@@ -550,19 +613,20 @@ export const DawApp: React.FC<DawAppProps> = ({
       audioBuffer: buffer,
       waveform,
       isLooping: true,
-      gain: 1.0,
+      gain: 0.85,
     };
 
-    const nextTracks = project.tracks.map((t) => {
+    const finalTracks = nextTracks.map((t) => {
       if (t.id === targetTrack!.id) {
         return { ...t, clips: [...t.clips, newClip] };
       }
       return t;
     });
 
-    pushState({ ...project, tracks: nextTracks });
+    pushState({ ...project, tracks: finalTracks });
     setSelectedClipId(newClip.id);
-    setNotification(`Added "${loop.name}" (synced to ${project.bpm} BPM)! 🎵`);
+    setSelectedTrackId(targetTrack.id);
+    setNotification(`Added "${loop.name}" to ${targetTrack.name} Track! 🎵`);
     setTimeout(() => setNotification(null), 3000);
   };
 
@@ -1152,6 +1216,8 @@ export const DawApp: React.FC<DawAppProps> = ({
           project={project}
           onUpdateTrackFx={handleUpdateTrackFx}
           onUpdateMasterVolume={(vol) => setProject((prev) => ({ ...prev, masterVolume: vol }))}
+          onToggleMuteTrack={handleToggleMute}
+          onToggleSoloTrack={handleToggleSolo}
           onClose={() => setActiveDrawerTab(null)}
         />
       )}

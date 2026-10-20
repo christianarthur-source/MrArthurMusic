@@ -1767,7 +1767,6 @@ export default function App() {
             setIsClassroomModalOpen(true);
           }}
           onOpenEdLaw={() => setIsEdLawModalOpen(true)}
-          onOpenHelp={() => setIsHelpModalOpen(true)}
           onOpenAvatar={() => {
             soundEngine.playWelcomeChime();
             setIsAvatarOpen(true);
@@ -1972,6 +1971,7 @@ export default function App() {
           onExportMusicXml={() => exportScoreToMusicXml(score)}
           onExportJson={handleExportJSON}
           onImportJson={handleImportJSON}
+          onOpenHelp={() => setIsHelpModalOpen(true)}
         />
       )}
 

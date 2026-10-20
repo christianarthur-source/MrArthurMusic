@@ -1,5 +1,5 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react';
-import { Scissors, Copy, Trash2, Repeat, Maximize2, ClipboardCopy, ClipboardPaste, Music } from 'lucide-react';
+import { Scissors, Copy, Trash2, Repeat, Maximize2, Music } from 'lucide-react';
 import { DawClip, DawProject, DawSnapGrid, DawTrack } from '../types';
 
 interface TimelineArrangerProps {
@@ -403,121 +403,6 @@ export const TimelineArranger: React.FC<TimelineArrangerProps> = ({
           />
         </div>
       </div>
-
-      {/* Floating Clip Actions Toolbar when a clip is selected */}
-      {selectedClipId && (() => {
-        const selectedClip = project.tracks.flatMap((t) => t.clips).find((c) => c.id === selectedClipId);
-        if (!selectedClip) return null;
-
-        return (
-          <div className="sticky bottom-3 left-4 right-4 z-40 max-w-2xl mx-auto bg-slate-900/95 border-2 border-amber-400/80 rounded-2xl shadow-2xl p-2 px-3.5 flex items-center justify-between gap-3 backdrop-blur-md">
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: selectedClip.color }} />
-              <span className="text-xs font-black text-white truncate font-['Fredoka',sans-serif]">
-                {selectedClip.name}
-              </span>
-              <span className="text-[10px] text-amber-300 font-mono px-1.5 py-0.5 rounded bg-amber-400/10 border border-amber-400/30 shrink-0">
-                Bar {Math.floor(selectedClip.startBeat / 4) + 1}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
-              {/* Split */}
-              {currentBeat > selectedClip.startBeat &&
-                currentBeat < selectedClip.startBeat + selectedClip.durationBeats && (
-                  <button
-                    type="button"
-                    onClick={() => onSplitClip(selectedClip.id, currentBeat)}
-                    className="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold border border-slate-700 flex items-center gap-1 cursor-pointer transition-colors"
-                    title="Split clip at playhead position (S)"
-                  >
-                    <Scissors className="w-3 h-3 text-sky-400" />
-                    <span>Split (S)</span>
-                  </button>
-                )}
-
-              {/* Copy */}
-              {onCopyClip && (
-                <button
-                  type="button"
-                  onClick={() => onCopyClip(selectedClip.id)}
-                  className="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold border border-slate-700 flex items-center gap-1 cursor-pointer transition-colors"
-                  title="Copy clip (Cmd+C)"
-                >
-                  <ClipboardCopy className="w-3 h-3 text-emerald-400" />
-                  <span>Copy</span>
-                </button>
-              )}
-
-              {/* Cut */}
-              {onCutClip && (
-                <button
-                  type="button"
-                  onClick={() => onCutClip(selectedClip.id)}
-                  className="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold border border-slate-700 flex items-center gap-1 cursor-pointer transition-colors"
-                  title="Cut clip (Cmd+X)"
-                >
-                  <Scissors className="w-3 h-3 text-amber-400" />
-                  <span>Cut</span>
-                </button>
-              )}
-
-              {/* Paste */}
-              {onPasteClip && (
-                <button
-                  type="button"
-                  onClick={onPasteClip}
-                  disabled={!canPaste}
-                  className={`px-2 py-1 rounded-lg text-[11px] font-bold border flex items-center gap-1 transition-colors ${
-                    canPaste
-                      ? 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700 cursor-pointer'
-                      : 'bg-slate-900 text-slate-600 border-slate-800 cursor-not-allowed opacity-50'
-                  }`}
-                  title="Paste clip at playhead (Cmd+V)"
-                >
-                  <ClipboardPaste className="w-3 h-3 text-indigo-400" />
-                  <span>Paste</span>
-                </button>
-              )}
-
-              {/* Duplicate */}
-              <button
-                type="button"
-                onClick={() => onDuplicateClip(selectedClip.id)}
-                className="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] font-bold border border-slate-700 flex items-center gap-1 cursor-pointer transition-colors"
-                title="Duplicate clip to right (Cmd+D)"
-              >
-                <Copy className="w-3 h-3 text-cyan-400" />
-                <span>Duplicate</span>
-              </button>
-
-              {/* Piano Roll (for MIDI) */}
-              {selectedClip.type === 'midi' && onOpenPianoRollForClip && (
-                <button
-                  type="button"
-                  onClick={() => onOpenPianoRollForClip(selectedClip.id)}
-                  className="px-2 py-1 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 text-[11px] font-bold border border-indigo-400/40 flex items-center gap-1 cursor-pointer transition-colors"
-                  title="Open Piano Roll editor"
-                >
-                  <Music className="w-3 h-3" />
-                  <span>Piano Roll</span>
-                </button>
-              )}
-
-              {/* Delete */}
-              <button
-                type="button"
-                onClick={() => onDeleteClip(selectedClip.id)}
-                className="px-2 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 text-[11px] font-bold border border-rose-500/40 flex items-center gap-1 cursor-pointer transition-colors"
-                title="Delete clip (Backspace/Delete)"
-              >
-                <Trash2 className="w-3 h-3 text-rose-400" />
-                <span>Delete</span>
-              </button>
-            </div>
-          </div>
-        );
-      })()}
     </div>
   );
 };
