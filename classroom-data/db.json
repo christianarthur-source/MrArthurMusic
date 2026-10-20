@@ -1,6 +1,30 @@
 {
   "teacherPin": "1138",
   "allowSelfRegister": true,
+  "classrooms": [
+    { "id": "cls_1_darois", "name": "Darois", "grade": "1st Grade", "teacherName": "Darois", "schoolName": "Music Lab Elementary", "allowSelfRegister": true },
+    { "id": "cls_1_milne", "name": "Milne", "grade": "1st Grade", "teacherName": "Milne", "schoolName": "Music Lab Elementary", "allowSelfRegister": true },
+    { "id": "cls_2_kent", "name": "Kent", "grade": "2nd Grade", "teacherName": "Kent", "schoolName": "Music Lab Elementary", "allowSelfRegister": true },
+    { "id": "cls_2_summa", "name": "Summa", "grade": "2nd Grade", "teacherName": "Summa", "schoolName": "Music Lab Elementary", "allowSelfRegister": true },
+    { "id": "cls_2_calicchia", "name": "Calicchia", "grade": "2nd Grade", "teacherName": "Calicchia", "schoolName": "Music Lab Elementary", "allowSelfRegister": true },
+    { "id": "cls_3_lachacz", "name": "Lachacz", "grade": "3rd Grade", "teacherName": "Lachacz", "schoolName": "Music Lab Elementary", "allowSelfRegister": true },
+    { "id": "cls_3_falcone", "name": "Falcone", "grade": "3rd Grade", "teacherName": "Falcone", "schoolName: "Music Lab Elementary", "allowSelfRegister": true },
+    { "id": "cls_3_stalder", "name": "Stalder", "grade": "3rd Grade", "teacherName": "Stalder", "schoolName": "Music Lab Elementary", "allowSelfRegister": true },
+    { "id": "cls_3_powless", "name": "Powless", "grade": "3rd Grade", "teacherName": "Powless", "schoolName": "Music Lab Elementary", "allowSelfRegister": true },
+    { "id": "cls_3_elliott", "name": "Elliott", "grade": "3rd Grade", "teacherName": "Elliott", "schoolName": "Music Lab Elementary", "allowSelfRegister": true },
+    { "id": "cls_4_cary", "name": "Cary", "grade": "4th Grade", "teacherName": "Cary", "schoolName": "Music Lab Elementary", "allowSelfRegister": true },
+    { "id": "cls_4_shea", "name": "Shea", "grade": "4th Grade", "teacherName": "Shea", "schoolName": "Music Lab Elementary", "allowSelfRegister": true },
+    { "id": "cls_4_fluty", "name": "Fluty", "grade": "4th Grade", "teacherName": "Fluty", "schoolName": "Music Lab Elementary", "allowSelfRegister": true },
+    { "id": "cls_4_reid", "name": "Reid", "grade": "4th Grade", "teacherName": "Reid", "schoolName": "Music Lab Elementary", "allowSelfRegister": true },
+    { "id": "cls_5_clawson", "name": "Clawson", "grade": "5th Grade", "teacherName": "Clawson", "schoolName": "Music Lab Elementary", "allowSelfRegister": true },
+    { "id": "cls_5_fluty", "name": "Fluty", "grade": "5th Grade", "teacherName": "Fluty", "schoolName": "Music Lab Elementary", "allowSelfRegister": true },
+    { "id": "cls_5_chambrone", "name": "Chambrone", "grade": "5th Grade", "teacherName": "Chambrone", "schoolName": "Music Lab Elementary", "allowSelfRegister": true },
+    { "id": "cls_5_ott", "name": "Ott", "grade": "5th Grade", "teacherName": "Ott", "schoolName": "Music Lab Elementary", "allowSelfRegister": true },
+    { "id": "cls_6_lewha", "name": "Lewha", "grade": "6th Grade", "teacherName": "Lewha", "schoolName": "Music Lab Elementary", "allowSelfRegister": true },
+    { "id": "cls_6_smith", "name": "Smith", "grade": "6th Grade", "teacherName": "Smith", "schoolName": "Music Lab Elementary", "allowSelfRegister": true },
+    { "id": "cls_6_moore", "name": "Moore", "grade": "6th Grade", "teacherName": "Moore", "schoolName": "Music Lab Elementary", "allowSelfRegister": true },
+    { "id": "cls_6_szczerba", "name": "Szczerba", "grade": "6th Grade", "teacherName": "Szczerba", "schoolName": "Music Lab Elementary", "allowSelfRegister": true }
+  ],
   "students": [
     {
       "id": "stu_ntrn3ymef4t",
@@ -100,7 +124,7 @@
         "id": "score_ens_1792451153560",
         "title": "String Orchestra Piece",
         "composer": "Alex M",
-        "tempo": 100,
+        "tempo": 159,
         "timeSignature": [
           4,
           4
@@ -2765,7 +2789,7 @@
       "appType": "staff-composer",
       "projectData": null,
       "createdAt": "2026-10-19T23:12:49.063Z",
-      "updatedAt": "2026-10-20T00:03:29.185Z"
+      "updatedAt": "2026-10-20T00:29:22.257Z"
     },
     {
       "id": "proj_hwolu7est6y",
