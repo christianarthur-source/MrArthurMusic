@@ -57,6 +57,7 @@ import {
 import { exportScoreToPdf } from './utils/pdfExport';
 import { exportScoreToMidi, exportScoreToMusicXml } from './utils/scoreExport';
 import { containsProfanity } from './utils/profanityFilter';
+import { createShortLink, fetchShortLink } from './utils/shortLinkService';
 
 function sanitizeLoadedScore(raw: Score): Score {
   const copy: Score = JSON.parse(JSON.stringify(raw));
@@ -97,8 +98,9 @@ export default function App() {
       ) {
         return appParam;
       }
-      // If a shared beat link is opened (?song=... or ?s=...)
-      if (params.get('song') || params.get('s')) {
+      // If a shared beat link is opened (?song=... or legacy long ?s=...)
+      const sParam = params.get('s');
+      if (params.get('song') || (sParam && sParam.length > 16)) {
         return 'beat-machine';
       }
       // If a shared DAW project link is opened (?project=... or ?daw=...)
@@ -122,7 +124,8 @@ export default function App() {
         ) {
           return hashApp;
         }
-        if (hashParams.get('song') || hashParams.get('s')) {
+        const hashS = hashParams.get('s');
+        if (hashParams.get('song') || (hashS && hashS.length > 16)) {
           return 'beat-machine';
         }
         if (hashParams.get('project') || hashParams.get('daw')) {
@@ -226,6 +229,7 @@ export default function App() {
   const [openInTeacherMode, setOpenInTeacherMode] = useState<boolean>(false);
   const [isAvatarOpen, setIsAvatarOpen] = useState<boolean>(false);
   const [shareUrl, setShareUrl] = useState<string>('');
+  const [isGeneratingShareLink, setIsGeneratingShareLink] = useState<boolean>(false);
   const [lastSavedTime, setLastSavedTime] = useState<string | null>('just now');
 
   // Secret "adminbaby" keyboard shortcut tracking (only active when Mr. Arthur's avatar is enlarged)
@@ -306,16 +310,76 @@ export default function App() {
     setCurrentApp('hub');
   }, []);
 
-  // Load shared score from URL query params or hash on mount
+  // Load shared score/song from URL query params or hash on mount
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    let shareParam = params.get('share') || params.get('score');
-    if (!shareParam && window.location.hash) {
+    let hashParams: URLSearchParams | null = null;
+    if (window.location.hash) {
       const hashContent = window.location.hash.replace(/^#/, '');
-      const hashParams = new URLSearchParams(hashContent);
-      shareParam = hashParams.get('share') || hashParams.get('score');
+      hashParams = new URLSearchParams(hashContent);
     }
+
+    const shortSlug = params.get('s') || params.get('link') || hashParams?.get('s') || hashParams?.get('link');
+
+    // 1. If short slug is detected (<= 16 characters), fetch from Supabase
+    if (shortSlug && shortSlug.trim().length <= 16) {
+      fetchShortLink(shortSlug.trim()).then((record) => {
+        if (!record || !record.payload) return;
+        const app = record.app_type;
+        if (app === 'beat-machine') {
+          setBeatMachineLoadedSong(record.payload);
+          setCurrentApp('beat-machine');
+        } else if (app === 'daw') {
+          setDawLoadedProject(record.payload);
+          setCurrentApp('daw');
+        } else {
+          // Staff Composer
+          const data = record.payload;
+          if (data.score) {
+            const cleanScore = sanitizeLoadedScore(data.score);
+            setScore(cleanScore);
+            setHistory([JSON.parse(JSON.stringify(cleanScore))]);
+            setHistoryIndex(0);
+          }
+          if (data.uiMode) setUiMode(data.uiMode);
+          if (data.viewLayout) setViewLayout(data.viewLayout);
+          if (data.noteLabelMode) {
+            setNoteLabelMode(data.noteLabelMode);
+          } else if (data.showPitchNames !== undefined) {
+            setNoteLabelMode(data.showPitchNames ? 'letters' : 'off');
+          }
+          if (data.boomwhackerColors !== undefined) setBoomwhackerColors(data.boomwhackerColors);
+          if (data.countingMode) {
+            setCountingMode(data.countingMode);
+          } else if (data.showBeatCounters !== undefined) {
+            setCountingMode(data.showBeatCounters ? 'numbers' : 'off');
+          }
+          if (data.metronome !== undefined) setMetronome(data.metronome);
+          setCurrentApp('staff-composer');
+        }
+      }).catch((e) => {
+        console.error('Failed to load short link', e);
+      });
+      return;
+    }
+
+    // 2. Legacy long Base64 URL parameter loading
+    let shareParam = params.get('share') || params.get('score') || hashParams?.get('share') || hashParams?.get('score');
     if (shareParam) {
+      // If someone passed short slug in share parameter
+      if (shareParam.length <= 16) {
+        fetchShortLink(shareParam).then((record) => {
+          if (record?.payload?.score) {
+            const cleanScore = sanitizeLoadedScore(record.payload.score);
+            setScore(cleanScore);
+            setHistory([JSON.parse(JSON.stringify(cleanScore))]);
+            setHistoryIndex(0);
+            setCurrentApp('staff-composer');
+          }
+        }).catch(() => {});
+        return;
+      }
+
       try {
         const jsonStr = decodeURIComponent(escape(atob(shareParam)));
         const data = JSON.parse(jsonStr);
@@ -345,7 +409,7 @@ export default function App() {
     }
   }, []);
 
-  const handleShare = useCallback(() => {
+  const handleShare = useCallback(async () => {
     const shareData = {
       score,
       uiMode,
@@ -357,15 +421,35 @@ export default function App() {
       showBeatCounters,
       metronome,
     };
+
+    let fallbackUrl = '';
     try {
       const jsonStr = JSON.stringify(shareData);
       const encoded = btoa(unescape(encodeURIComponent(jsonStr)));
-      const url = `${window.location.origin}${window.location.pathname}?app=staff-composer&share=${encoded}`;
-      setShareUrl(url);
-      setIsShareModalOpen(true);
-      navigator.clipboard.writeText(url).catch(() => {});
+      fallbackUrl = `${window.location.origin}${window.location.pathname}?app=staff-composer&share=${encoded}`;
     } catch (e) {
-      console.error('Failed to generate share link', e);
+      console.error('Failed to generate fallback share link', e);
+    }
+
+    setShareUrl(fallbackUrl);
+    setIsShareModalOpen(true);
+    setIsGeneratingShareLink(true);
+
+    try {
+      const res = await createShortLink('staff-composer', score.title, shareData);
+      if (res?.shortUrl) {
+        setShareUrl(res.shortUrl);
+        navigator.clipboard.writeText(res.shortUrl).catch(() => {});
+      } else if (fallbackUrl) {
+        navigator.clipboard.writeText(fallbackUrl).catch(() => {});
+      }
+    } catch (e) {
+      console.error('Failed to generate short link', e);
+      if (fallbackUrl) {
+        navigator.clipboard.writeText(fallbackUrl).catch(() => {});
+      }
+    } finally {
+      setIsGeneratingShareLink(false);
     }
   }, [score, uiMode, viewLayout, noteLabelMode, showPitchNames, boomwhackerColors, countingMode, showBeatCounters, metronome]);
 
@@ -2181,6 +2265,7 @@ export default function App() {
         isOpen={isShareModalOpen}
         onClose={() => setIsShareModalOpen(false)}
         shareUrl={shareUrl}
+        isLoading={isGeneratingShareLink}
       />
 
       {renderSharedAuthAndModals()}
