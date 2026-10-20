@@ -49,16 +49,16 @@ export async function getOrGenerateLoopAudio(
   // Offline rendering context for lightning fast non-blocking generation
   const offlineCtx = new OfflineAudioContext(2, Math.ceil(totalDuration * sampleRate), sampleRate);
 
-  // Master compressor on the rendering bus for punchy modern mastering
+  // Master compressor and limiter on the rendering bus for punchy modern mastering without distortion
   const comp = offlineCtx.createDynamicsCompressor();
-  comp.threshold.setValueAtTime(-14, 0);
-  comp.ratio.setValueAtTime(4.0, 0);
-  comp.attack.setValueAtTime(0.003, 0);
-  comp.release.setValueAtTime(0.18, 0);
+  comp.threshold.setValueAtTime(-12, 0);
+  comp.ratio.setValueAtTime(8.0, 0);
+  comp.attack.setValueAtTime(0.002, 0);
+  comp.release.setValueAtTime(0.15, 0);
   comp.connect(offlineCtx.destination);
 
   const mainGain = offlineCtx.createGain();
-  mainGain.gain.setValueAtTime(0.85, 0);
+  mainGain.gain.setValueAtTime(0.75, 0);
   mainGain.connect(comp);
 
   const id = loop.audioGeneratorId || loop.id;
