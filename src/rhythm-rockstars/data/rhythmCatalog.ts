@@ -33,6 +33,30 @@ export const createUnit = {
     ]
   }),
 
+  eighthRestEighth: (): RhythmUnit => ({
+    type: 'eighth_rest_eighth',
+    durationBeats: 1,
+    name: '8th Rest + 8th Note',
+    syllableKodaly: '(Shh)-Ti',
+    syllableCounting: '(1) &',
+    events: [
+      { offsetBeats: 0, durationBeats: 0.5, isRest: true },
+      { offsetBeats: 0.5, durationBeats: 0.45, accent: true }
+    ]
+  }),
+
+  eighthEighthRest: (): RhythmUnit => ({
+    type: 'eighth_eighth_rest',
+    durationBeats: 1,
+    name: '8th Note + 8th Rest',
+    syllableKodaly: 'Ti-(Shh)',
+    syllableCounting: '1 (&)',
+    events: [
+      { offsetBeats: 0, durationBeats: 0.45, accent: true },
+      { offsetBeats: 0.5, durationBeats: 0.5, isRest: true }
+    ]
+  }),
+
   sixteenthQuad: (): RhythmUnit => ({
     type: 'sixteenth_quad',
     durationBeats: 1,
@@ -81,6 +105,31 @@ export const createUnit = {
     syllableCounting: '1 .. a',
     events: [
       { offsetBeats: 0, durationBeats: 0.65, accent: true },
+      { offsetBeats: 0.75, durationBeats: 0.2 }
+    ]
+  }),
+
+  brokenSixteenthDotted: (): RhythmUnit => ({
+    type: 'broken_sixteenth_dotted',
+    durationBeats: 1,
+    name: '16th + Dotted 8th',
+    syllableKodaly: 'Ka-Tim',
+    syllableCounting: '1 e ..',
+    events: [
+      { offsetBeats: 0, durationBeats: 0.2, accent: true },
+      { offsetBeats: 0.25, durationBeats: 0.7 }
+    ]
+  }),
+
+  sixteenthEighthSixteenth: (): RhythmUnit => ({
+    type: 'sixteenth_eighth_sixteenth',
+    durationBeats: 1,
+    name: 'Single-Beat Syncopa',
+    syllableKodaly: 'Syn-Co-Pa',
+    syllableCounting: '1 e a',
+    events: [
+      { offsetBeats: 0, durationBeats: 0.2 },
+      { offsetBeats: 0.25, durationBeats: 0.45, accent: true },
       { offsetBeats: 0.75, durationBeats: 0.2 }
     ]
   }),
@@ -270,6 +319,16 @@ export const LEVELS_CONFIG: LevelConfig[] = [
         units: [createUnit.eighthPair(), createUnit.eighthPair(), createUnit.half()],
         difficulty: 'Junior',
         tags: ['8th Notes', 'Half Note']
+      },
+      {
+        id: 'l2_p6',
+        name: 'The Offbeat 8th Groove',
+        level: 2,
+        timeSignature: '4/4',
+        totalBeats: 4,
+        units: [createUnit.quarter(), createUnit.eighthRestEighth(), createUnit.quarter(), createUnit.eighthPair()],
+        difficulty: 'Junior',
+        tags: ['8th Rest & Note', 'Offbeat']
       }
     ]
   },
@@ -323,9 +382,9 @@ export const LEVELS_CONFIG: LevelConfig[] = [
         level: 3,
         timeSignature: '4/4',
         totalBeats: 4,
-        units: [createUnit.sixteenthQuad(), createUnit.quarterRest(), createUnit.sixteenthQuad(), createUnit.half()],
+        units: [createUnit.sixteenthQuad(), createUnit.quarterRest(), createUnit.sixteenthQuad(), createUnit.quarter()],
         difficulty: 'Pro',
-        tags: ['16th Notes', 'Quarter Rest', 'Half Note']
+        tags: ['16th Notes', 'Quarter Rest', 'Quarter Note']
       },
       {
         id: 'l3_p5',
@@ -402,6 +461,16 @@ export const LEVELS_CONFIG: LevelConfig[] = [
         units: [createUnit.brokenTwoSixteenthEighth(), createUnit.brokenDottedSixteenth(), createUnit.sixteenthQuad(), createUnit.quarter()],
         difficulty: 'Shredder',
         tags: ['Broken 16ths', '16th Notes']
+      },
+      {
+        id: 'l4_p6',
+        name: 'Scotch Snap Groove',
+        level: 4,
+        timeSignature: '4/4',
+        totalBeats: 4,
+        units: [createUnit.brokenSixteenthDotted(), createUnit.quarter(), createUnit.brokenSixteenthDotted(), createUnit.quarter()],
+        difficulty: 'Shredder',
+        tags: ['Broken 16ths', 'Scotch Snap']
       }
     ]
   },
@@ -465,9 +534,19 @@ export const LEVELS_CONFIG: LevelConfig[] = [
         level: 5,
         timeSignature: '4/4',
         totalBeats: 4,
-        units: [createUnit.triplet(), createUnit.brokenEighthTwoSixteenth(), createUnit.triplet(), createUnit.half()],
+        units: [createUnit.triplet(), createUnit.brokenEighthTwoSixteenth(), createUnit.triplet(), createUnit.quarter()],
         difficulty: 'Virtuoso',
-        tags: ['Triplets', 'Broken 16ths']
+        tags: ['Triplets', 'Broken 16ths', 'Quarter Notes']
+      },
+      {
+        id: 'l5_p6',
+        name: 'Single Beat Syncopa Funk',
+        level: 5,
+        timeSignature: '4/4',
+        totalBeats: 4,
+        units: [createUnit.sixteenthEighthSixteenth(), createUnit.quarter(), createUnit.sixteenthEighthSixteenth(), createUnit.quarter()],
+        difficulty: 'Virtuoso',
+        tags: ['Syncopation', 'Broken 16ths']
       }
     ]
   },
@@ -557,9 +636,9 @@ export const LEVELS_CONFIG: LevelConfig[] = [
         level: 7,
         timeSignature: '4/4',
         totalBeats: 4,
-        units: [createUnit.sixteenthQuad(), createUnit.triplet(), createUnit.syncopationBeat(), createUnit.brokenEighthTwoSixteenth()],
+        units: [createUnit.sixteenthQuad(), createUnit.syncopationBeat(), createUnit.brokenEighthTwoSixteenth()],
         difficulty: 'Secret Rockstar',
-        tags: ['16ths', 'Triplets', 'Syncopation']
+        tags: ['16ths', 'Syncopation', 'Broken 16ths']
       },
       {
         id: 'l7_p2',
@@ -567,7 +646,7 @@ export const LEVELS_CONFIG: LevelConfig[] = [
         level: 7,
         timeSignature: '4/4',
         totalBeats: 4,
-        units: [createUnit.brokenDottedSixteenth(), createUnit.syncopationBeat(), createUnit.triplet(), createUnit.sixteenthQuad()],
+        units: [createUnit.brokenDottedSixteenth(), createUnit.syncopationBeat(), createUnit.triplet()],
         difficulty: 'Secret Rockstar',
         tags: ['Dotted', 'Syncopation', 'Triplets']
       },
@@ -587,7 +666,7 @@ export const LEVELS_CONFIG: LevelConfig[] = [
         level: 7,
         timeSignature: '4/4',
         totalBeats: 4,
-        units: [createUnit.brokenEighthTwoSixteenth(), createUnit.sixteenthQuad(), createUnit.brokenDottedSixteenth(), createUnit.syncopationBeat()],
+        units: [createUnit.sixteenthQuad(), createUnit.brokenDottedSixteenth(), createUnit.syncopationBeat()],
         difficulty: 'Secret Rockstar',
         tags: ['Broken 16ths', 'Syncopation']
       },
@@ -597,7 +676,7 @@ export const LEVELS_CONFIG: LevelConfig[] = [
         level: 7,
         timeSignature: '4/4',
         totalBeats: 4,
-        units: [createUnit.syncopationBeat(), createUnit.triplet(), createUnit.sixteenthQuad(), createUnit.brokenTwoSixteenthEighth()],
+        units: [createUnit.syncopationBeat(), createUnit.triplet(), createUnit.brokenTwoSixteenthEighth()],
         difficulty: 'Secret Rockstar',
         tags: ['Master Secret']
       },

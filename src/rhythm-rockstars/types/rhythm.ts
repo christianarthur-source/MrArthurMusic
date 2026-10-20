@@ -1,16 +1,20 @@
 export type NoteType = 
-  | 'quarter'          // 1 beat
-  | 'quarter_rest'     // 1 beat rest
-  | 'eighth_pair'      // 2 eighth notes (1 beat)
-  | 'sixteenth_quad'   // 4 sixteenth notes (1 beat)
+  | 'quarter'                     // 1 beat
+  | 'quarter_rest'                // 1 beat rest
+  | 'eighth_pair'                 // 2 eighth notes (1 beat)
+  | 'eighth_rest_eighth'          // 8th rest followed by 8th note (1 beat)
+  | 'eighth_eighth_rest'          // 8th note followed by 8th rest (1 beat)
+  | 'sixteenth_quad'              // 4 sixteenth notes (1 beat)
   | 'broken_eighth_two_sixteenth' // 1 eighth + 2 sixteenths (ti-tika) (1 beat)
   | 'broken_two_sixteenth_eighth' // 2 sixteenths + 1 eighth (tika-ti) (1 beat)
   | 'broken_dotted_sixteenth'     // dotted eighth + sixteenth (tim-ka) (1 beat)
-  | 'triplet'          // 3 eighth-note triplet (1 beat)
-  | 'half'             // 2 beats
-  | 'half_rest'        // 2 beats rest
-  | 'whole'            // 4 beats
-  | 'syncopation_beat'; // eighth - quarter - eighth across 2 beats
+  | 'broken_sixteenth_dotted'     // sixteenth + dotted eighth (ka-tim) (1 beat)
+  | 'sixteenth_eighth_sixteenth'  // sixteenth + eighth + sixteenth (syn-co-pa) (1 beat)
+  | 'triplet'                     // 3 eighth-note triplet (1 beat)
+  | 'half'                        // 2 beats
+  | 'half_rest'                   // 2 beats rest
+  | 'whole'                       // 4 beats
+  | 'syncopation_beat';           // eighth - quarter - eighth across 2 beats
 
 export interface RhythmUnit {
   type: NoteType;

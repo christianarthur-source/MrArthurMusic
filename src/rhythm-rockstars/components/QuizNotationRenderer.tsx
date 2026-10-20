@@ -237,6 +237,81 @@ export const QuizSingleNoteSVG: React.FC<{
         </svg>
       );
 
+    case 'broken_sixteenth_dotted':
+      return (
+        <svg viewBox="0 0 85 80" height={height} className="overflow-visible">
+          <ellipse cx="18" cy="56" rx="7.5" ry="5.5" transform="rotate(-22 18 56)" fill={color} />
+          <line x1="24.5" y1="54" x2="24.5" y2="14" stroke={color} strokeWidth="2.6" />
+
+          <ellipse cx="64" cy="56" rx="7.5" ry="5.5" transform="rotate(-22 64 56)" fill={color} />
+          <circle cx="77" cy="56" r="2.8" fill={color} />
+          <line x1="70.5" y1="54" x2="70.5" y2="14" stroke={color} strokeWidth="2.6" />
+
+          <polygon points="24.5,12 70.5,12 70.5,17.5 24.5,17.5" fill={color} />
+          <polygon points="24.5,21 40,21 40,26.5 24.5,26.5" fill={color} />
+        </svg>
+      );
+
+    case 'sixteenth_eighth_sixteenth':
+      return (
+        <svg viewBox="0 0 100 80" height={height} className="overflow-visible">
+          <ellipse cx="18" cy="56" rx="7" ry="5" transform="rotate(-22 18 56)" fill={color} />
+          <line x1="24.5" y1="54" x2="24.5" y2="14" stroke={color} strokeWidth="2.6" />
+
+          <ellipse cx="50" cy="56" rx="7.5" ry="5.5" transform="rotate(-22 50 56)" fill={color} />
+          <line x1="56.5" y1="54" x2="56.5" y2="14" stroke={color} strokeWidth="2.6" />
+
+          <ellipse cx="80" cy="56" rx="7" ry="5" transform="rotate(-22 80 56)" fill={color} />
+          <line x1="86.5" y1="54" x2="86.5" y2="14" stroke={color} strokeWidth="2.6" />
+
+          <polygon points="24.5,12 86.5,12 86.5,17.5 24.5,17.5" fill={color} />
+          <polygon points="24.5,21 38,21 38,26.5 24.5,26.5" fill={color} />
+          <polygon points="73,21 86.5,21 86.5,26.5 73,26.5" fill={color} />
+        </svg>
+      );
+
+    case 'eighth_rest_eighth':
+      return (
+        <svg viewBox="0 0 75 80" height={height} className="overflow-visible">
+          {/* 8th rest */}
+          <path
+            d="M 20 32 C 18 29 14 30 13 32 C 12 35 14 37 17 37 C 19 37 21 34 23 30 L 20 50"
+            stroke={color}
+            strokeWidth="2.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            fill="none"
+          />
+          <circle cx="14" cy="34" r="2.5" fill={color} />
+
+          {/* 8th note */}
+          <ellipse cx="52" cy="56" rx="7.5" ry="5.5" transform="rotate(-22 52 56)" fill={color} />
+          <line x1="58.5" y1="54" x2="58.5" y2="14" stroke={color} strokeWidth="2.6" />
+          <path d="M 58.5 14 Q 69 19 66 33" stroke={color} strokeWidth="2.8" fill="none" strokeLinecap="round" />
+        </svg>
+      );
+
+    case 'eighth_eighth_rest':
+      return (
+        <svg viewBox="0 0 75 80" height={height} className="overflow-visible">
+          {/* 8th note */}
+          <ellipse cx="22" cy="56" rx="7.5" ry="5.5" transform="rotate(-22 22 56)" fill={color} />
+          <line x1="28.5" y1="54" x2="28.5" y2="14" stroke={color} strokeWidth="2.6" />
+          <path d="M 28.5 14 Q 39 19 36 33" stroke={color} strokeWidth="2.8" fill="none" strokeLinecap="round" />
+
+          {/* 8th rest */}
+          <path
+            d="M 56 32 C 54 29 50 30 49 32 C 48 35 50 37 53 37 C 55 37 57 34 59 30 L 56 50"
+            stroke={color}
+            strokeWidth="2.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            fill="none"
+          />
+          <circle cx="50" cy="34" r="2.5" fill={color} />
+        </svg>
+      );
+
     case 'time_3_4':
       return (
         <div className="flex flex-col items-center justify-center text-amber-400 font-extrabold font-display leading-none px-3">

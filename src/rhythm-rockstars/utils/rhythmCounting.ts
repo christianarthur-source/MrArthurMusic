@@ -26,6 +26,12 @@ export function formatCountingSyllable(unit: RhythmUnit, beatNumber: number): st
     case 'eighth_pair':
       return `${b} &`;
 
+    case 'eighth_rest_eighth': // 8th rest + 8th note
+      return `(${b}) &`;
+
+    case 'eighth_eighth_rest': // 8th note + 8th rest
+      return `${b} (&)`;
+
     case 'sixteenth_quad':
       return `${b} e & a`;
 
@@ -37,6 +43,12 @@ export function formatCountingSyllable(unit: RhythmUnit, beatNumber: number): st
 
     case 'broken_dotted_sixteenth': // Tim-Ka (dotted 8th + 16th)
       return `${b} .. a`;
+
+    case 'broken_sixteenth_dotted': // Ka-Tim (16th + dotted 8th)
+      return `${b} e ..`;
+
+    case 'sixteenth_eighth_sixteenth': // Syn-co-pa 1 beat (16th + 8th + 16th)
+      return `${b} e a`;
 
     case 'triplet': // 8th note triplet (Tri-po-let)
       return `${b} la li`;
