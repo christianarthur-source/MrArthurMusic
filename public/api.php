@@ -53,14 +53,39 @@ $dbFile = $dataDir . '/db.json';
 
 function get_default_classrooms() {
   return [
-    ['id' => 'cls_k', 'name' => 'Kindergarten Music', 'grade' => 'Kindergarten', 'teacherName' => 'Mr. Arthur', 'schoolName' => 'Music Lab Elementary', 'allowSelfRegister' => true],
-    ['id' => 'cls_1a', 'name' => 'Room 101 - 1A', 'grade' => '1st Grade', 'teacherName' => 'Mr. Arthur', 'schoolName' => 'Music Lab Elementary', 'allowSelfRegister' => true],
-    ['id' => 'cls_2a', 'name' => 'Room 102 - 2A', 'grade' => '2nd Grade', 'teacherName' => 'Mr. Arthur', 'schoolName' => 'Music Lab Elementary', 'allowSelfRegister' => true],
-    ['id' => 'cls_3a', 'name' => 'Room 201 - 3A', 'grade' => '3rd Grade', 'teacherName' => 'Mr. Arthur', 'schoolName' => 'Music Lab Elementary', 'allowSelfRegister' => true],
-    ['id' => 'cls_4a', 'name' => 'Room 204 - 4A', 'grade' => '4th Grade', 'teacherName' => 'Mr. Arthur', 'schoolName' => 'Music Lab Elementary', 'allowSelfRegister' => true],
-    ['id' => 'cls_4b', 'name' => 'Room 205 - 4B', 'grade' => '4th Grade', 'teacherName' => 'Mr. Arthur', 'schoolName' => 'Music Lab Elementary', 'allowSelfRegister' => true],
-    ['id' => 'cls_5a', 'name' => 'Room 301 - 5A', 'grade' => '5th Grade', 'teacherName' => 'Mr. Arthur', 'schoolName' => 'Music Lab Elementary', 'allowSelfRegister' => true],
-    ['id' => 'cls_band', 'name' => 'Elementary Band', 'grade' => '5th Grade', 'teacherName' => 'Mr. Arthur', 'schoolName' => 'Music Lab Elementary', 'allowSelfRegister' => true],
+    // 1st Grade: Darois, Milne
+    ['id' => 'cls_1_darois', 'name' => 'Darois', 'grade' => '1st Grade', 'teacherName' => 'Darois', 'schoolName' => 'Music Lab Elementary', 'allowSelfRegister' => true],
+    ['id' => 'cls_1_milne', 'name' => 'Milne', 'grade' => '1st Grade', 'teacherName' => 'Milne', 'schoolName' => 'Music Lab Elementary', 'allowSelfRegister' => true],
+
+    // 2nd Grade: Kent, Summa, Calicchia
+    ['id' => 'cls_2_kent', 'name' => 'Kent', 'grade' => '2nd Grade', 'teacherName' => 'Kent', 'schoolName' => 'Music Lab Elementary', 'allowSelfRegister' => true],
+    ['id' => 'cls_2_summa', 'name' => 'Summa', 'grade' => '2nd Grade', 'teacherName' => 'Summa', 'schoolName' => 'Music Lab Elementary', 'allowSelfRegister' => true],
+    ['id' => 'cls_2_calicchia', 'name' => 'Calicchia', 'grade' => '2nd Grade', 'teacherName' => 'Calicchia', 'schoolName' => 'Music Lab Elementary', 'allowSelfRegister' => true],
+
+    // 3rd Grade: Lachacz, Falcone, Stalder, Powless, Elliott
+    ['id' => 'cls_3_lachacz', 'name' => 'Lachacz', 'grade' => '3rd Grade', 'teacherName' => 'Lachacz', 'schoolName' => 'Music Lab Elementary', 'allowSelfRegister' => true],
+    ['id' => 'cls_3_falcone', 'name' => 'Falcone', 'grade' => '3rd Grade', 'teacherName' => 'Falcone', 'schoolName' => 'Music Lab Elementary', 'allowSelfRegister' => true],
+    ['id' => 'cls_3_stalder', 'name' => 'Stalder', 'grade' => '3rd Grade', 'teacherName' => 'Stalder', 'schoolName' => 'Music Lab Elementary', 'allowSelfRegister' => true],
+    ['id' => 'cls_3_powless', 'name' => 'Powless', 'grade' => '3rd Grade', 'teacherName' => 'Powless', 'schoolName' => 'Music Lab Elementary', 'allowSelfRegister' => true],
+    ['id' => 'cls_3_elliott', 'name' => 'Elliott', 'grade' => '3rd Grade', 'teacherName' => 'Elliott', 'schoolName' => 'Music Lab Elementary', 'allowSelfRegister' => true],
+
+    // 4th Grade: Cary, Shea, Fluty, Reid
+    ['id' => 'cls_4_cary', 'name' => 'Cary', 'grade' => '4th Grade', 'teacherName' => 'Cary', 'schoolName' => 'Music Lab Elementary', 'allowSelfRegister' => true],
+    ['id' => 'cls_4_shea', 'name' => 'Shea', 'grade' => '4th Grade', 'teacherName' => 'Shea', 'schoolName' => 'Music Lab Elementary', 'allowSelfRegister' => true],
+    ['id' => 'cls_4_fluty', 'name' => 'Fluty', 'grade' => '4th Grade', 'teacherName' => 'Fluty', 'schoolName' => 'Music Lab Elementary', 'allowSelfRegister' => true],
+    ['id' => 'cls_4_reid', 'name' => 'Reid', 'grade' => '4th Grade', 'teacherName' => 'Reid', 'schoolName' => 'Music Lab Elementary', 'allowSelfRegister' => true],
+
+    // 5th Grade: Clawson, Fluty, Chambrone, Ott
+    ['id' => 'cls_5_clawson', 'name' => 'Clawson', 'grade' => '5th Grade', 'teacherName' => 'Clawson', 'schoolName' => 'Music Lab Elementary', 'allowSelfRegister' => true],
+    ['id' => 'cls_5_fluty', 'name' => 'Fluty', 'grade' => '5th Grade', 'teacherName' => 'Fluty', 'schoolName' => 'Music Lab Elementary', 'allowSelfRegister' => true],
+    ['id' => 'cls_5_chambrone', 'name' => 'Chambrone', 'grade' => '5th Grade', 'teacherName' => 'Chambrone', 'schoolName' => 'Music Lab Elementary', 'allowSelfRegister' => true],
+    ['id' => 'cls_5_ott', 'name' => 'Ott', 'grade' => '5th Grade', 'teacherName' => 'Ott', 'schoolName' => 'Music Lab Elementary', 'allowSelfRegister' => true],
+
+    // 6th Grade: Lewha, Smith, Moore, Szczerba
+    ['id' => 'cls_6_lewha', 'name' => 'Lewha', 'grade' => '6th Grade', 'teacherName' => 'Lewha', 'schoolName' => 'Music Lab Elementary', 'allowSelfRegister' => true],
+    ['id' => 'cls_6_smith', 'name' => 'Smith', 'grade' => '6th Grade', 'teacherName' => 'Smith', 'schoolName' => 'Music Lab Elementary', 'allowSelfRegister' => true],
+    ['id' => 'cls_6_moore', 'name' => 'Moore', 'grade' => '6th Grade', 'teacherName' => 'Moore', 'schoolName' => 'Music Lab Elementary', 'allowSelfRegister' => true],
+    ['id' => 'cls_6_szczerba', 'name' => 'Szczerba', 'grade' => '6th Grade', 'teacherName' => 'Szczerba', 'schoolName' => 'Music Lab Elementary', 'allowSelfRegister' => true],
   ];
 }
 

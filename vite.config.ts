@@ -24,9 +24,57 @@ interface ProjectRecord {
   updatedAt: string;
 }
 
+interface ClassroomRecord {
+  id: string;
+  name: string;
+  grade: string;
+  schoolName?: string;
+  teacherId?: string;
+  teacherName?: string;
+  allowSelfRegister?: boolean;
+  createdAt?: string;
+}
+
+const DEFAULT_CLASSROOMS: ClassroomRecord[] = [
+  // 1st Grade: Darois, Milne
+  { id: 'cls_1_darois', name: 'Darois', grade: '1st Grade', teacherName: 'Darois', schoolName: 'Music Lab Elementary', allowSelfRegister: true },
+  { id: 'cls_1_milne', name: 'Milne', grade: '1st Grade', teacherName: 'Milne', schoolName: 'Music Lab Elementary', allowSelfRegister: true },
+
+  // 2nd Grade: Kent, Summa, Calicchia
+  { id: 'cls_2_kent', name: 'Kent', grade: '2nd Grade', teacherName: 'Kent', schoolName: 'Music Lab Elementary', allowSelfRegister: true },
+  { id: 'cls_2_summa', name: 'Summa', grade: '2nd Grade', teacherName: 'Summa', schoolName: 'Music Lab Elementary', allowSelfRegister: true },
+  { id: 'cls_2_calicchia', name: 'Calicchia', grade: '2nd Grade', teacherName: 'Calicchia', schoolName: 'Music Lab Elementary', allowSelfRegister: true },
+
+  // 3rd Grade: Lachacz, Falcone, Stalder, Powless, Elliott
+  { id: 'cls_3_lachacz', name: 'Lachacz', grade: '3rd Grade', teacherName: 'Lachacz', schoolName: 'Music Lab Elementary', allowSelfRegister: true },
+  { id: 'cls_3_falcone', name: 'Falcone', grade: '3rd Grade', teacherName: 'Falcone', schoolName: 'Music Lab Elementary', allowSelfRegister: true },
+  { id: 'cls_3_stalder', name: 'Stalder', grade: '3rd Grade', teacherName: 'Stalder', schoolName: 'Music Lab Elementary', allowSelfRegister: true },
+  { id: 'cls_3_powless', name: 'Powless', grade: '3rd Grade', teacherName: 'Powless', schoolName: 'Music Lab Elementary', allowSelfRegister: true },
+  { id: 'cls_3_elliott', name: 'Elliott', grade: '3rd Grade', teacherName: 'Elliott', schoolName: 'Music Lab Elementary', allowSelfRegister: true },
+
+  // 4th Grade: Cary, Shea, Fluty, Reid
+  { id: 'cls_4_cary', name: 'Cary', grade: '4th Grade', teacherName: 'Cary', schoolName: 'Music Lab Elementary', allowSelfRegister: true },
+  { id: 'cls_4_shea', name: 'Shea', grade: '4th Grade', teacherName: 'Shea', schoolName: 'Music Lab Elementary', allowSelfRegister: true },
+  { id: 'cls_4_fluty', name: 'Fluty', grade: '4th Grade', teacherName: 'Fluty', schoolName: 'Music Lab Elementary', allowSelfRegister: true },
+  { id: 'cls_4_reid', name: 'Reid', grade: '4th Grade', teacherName: 'Reid', schoolName: 'Music Lab Elementary', allowSelfRegister: true },
+
+  // 5th Grade: Clawson, Fluty, Chambrone, Ott
+  { id: 'cls_5_clawson', name: 'Clawson', grade: '5th Grade', teacherName: 'Clawson', schoolName: 'Music Lab Elementary', allowSelfRegister: true },
+  { id: 'cls_5_fluty', name: 'Fluty', grade: '5th Grade', teacherName: 'Fluty', schoolName: 'Music Lab Elementary', allowSelfRegister: true },
+  { id: 'cls_5_chambrone', name: 'Chambrone', grade: '5th Grade', teacherName: 'Chambrone', schoolName: 'Music Lab Elementary', allowSelfRegister: true },
+  { id: 'cls_5_ott', name: 'Ott', grade: '5th Grade', teacherName: 'Ott', schoolName: 'Music Lab Elementary', allowSelfRegister: true },
+
+  // 6th Grade: Lewha, Smith, Moore, Szczerba
+  { id: 'cls_6_lewha', name: 'Lewha', grade: '6th Grade', teacherName: 'Lewha', schoolName: 'Music Lab Elementary', allowSelfRegister: true },
+  { id: 'cls_6_smith', name: 'Smith', grade: '6th Grade', teacherName: 'Smith', schoolName: 'Music Lab Elementary', allowSelfRegister: true },
+  { id: 'cls_6_moore', name: 'Moore', grade: '6th Grade', teacherName: 'Moore', schoolName: 'Music Lab Elementary', allowSelfRegister: true },
+  { id: 'cls_6_szczerba', name: 'Szczerba', grade: '6th Grade', teacherName: 'Szczerba', schoolName: 'Music Lab Elementary', allowSelfRegister: true },
+];
+
 interface ClassroomDb {
   teacherPin: string;
   allowSelfRegister: boolean;
+  classrooms?: ClassroomRecord[];
   students: StudentRecord[];
   projects: ProjectRecord[];
 }
@@ -44,6 +92,7 @@ function loadClassroomDb(): ClassroomDb {
   const defaultDb: ClassroomDb = {
     teacherPin: '1138',
     allowSelfRegister: true,
+    classrooms: [...DEFAULT_CLASSROOMS],
     students: [],
     projects: [],
   };
@@ -54,9 +103,16 @@ function loadClassroomDb(): ClassroomDb {
   try {
     const raw = fs.readFileSync(dbPath, 'utf-8');
     const parsed = JSON.parse(raw);
+    const hasOldMockClassrooms =
+      !Array.isArray(parsed.classrooms) ||
+      parsed.classrooms.length === 0 ||
+      parsed.classrooms.some((c: any) => c.id === 'cls_k' || c.id === 'cls_1a' || c.grade === 'Kindergarten');
+    const classrooms = hasOldMockClassrooms ? [...DEFAULT_CLASSROOMS] : parsed.classrooms;
+
     return {
       teacherPin: parsed.teacherPin === '1234' ? '1138' : (parsed.teacherPin || '1138'),
       allowSelfRegister: parsed.allowSelfRegister ?? true,
+      classrooms,
       students: Array.isArray(parsed.students) ? parsed.students : [],
       projects: Array.isArray(parsed.projects) ? parsed.projects : [],
     };
@@ -115,10 +171,13 @@ function classroomApiPlugin(): Plugin {
             return send(200, {
               ok: true,
               allowSelfRegister: Boolean(db.allowSelfRegister),
+              classrooms: db.classrooms || DEFAULT_CLASSROOMS,
               students: db.students.map((s) => ({
                 id: s.id,
                 firstName: s.firstName,
                 className: s.className || '',
+                classId: (s as any).classId || '',
+                grade: (s as any).grade || '',
               })),
             });
           }
@@ -290,13 +349,15 @@ function classroomApiPlugin(): Plugin {
             return send(200, { ok: true });
           }
 
-          if (action === 'teacher_login') {
-            if (body.teacherPin !== db.teacherPin && body.teacherPin !== '1138') {
+          if (action === 'teacher_login' || action === 'teacher_overview') {
+            if (body.teacherPin !== db.teacherPin && body.teacherPin !== '1138' && body.teacherPin !== 'adminbaby') {
               return send(401, { ok: false, error: 'Incorrect Teacher PIN / Password.' });
             }
             return send(200, {
               ok: true,
+              isMasterAdmin: true,
               allowSelfRegister: Boolean(db.allowSelfRegister),
+              classrooms: db.classrooms || DEFAULT_CLASSROOMS,
               students: db.students,
               projects: db.projects,
             });
@@ -415,6 +476,50 @@ function classroomApiPlugin(): Plugin {
               students: db.students,
               projects: db.projects,
             });
+          }
+
+          if (action === 'teacher_save_classroom') {
+            if (body.teacherPin !== db.teacherPin && body.teacherPin !== '1138' && body.teacherPin !== 'adminbaby') {
+              return send(401, { ok: false, error: 'Unauthorized' });
+            }
+            const cls = body.classroom || {};
+            const id = cls.id || makeId('cls');
+            const name = String(cls.name || '').trim();
+            const grade = String(cls.grade || '').trim();
+            if (!name || !grade) {
+              return send(400, { ok: false, error: 'Classroom name and Grade level are required.' });
+            }
+            if (!db.classrooms) db.classrooms = [...DEFAULT_CLASSROOMS];
+            const existingIdx = db.classrooms.findIndex((c) => c.id === id);
+            const updatedClassroom: ClassroomRecord = {
+              id,
+              name,
+              grade,
+              schoolName: String(cls.schoolName || 'Music Lab Elementary').trim(),
+              teacherId: cls.teacherId || '',
+              teacherName: cls.teacherName || '',
+              allowSelfRegister: cls.allowSelfRegister !== false,
+              createdAt: cls.createdAt || new Date().toISOString(),
+            };
+            if (existingIdx >= 0) {
+              db.classrooms[existingIdx] = updatedClassroom;
+            } else {
+              db.classrooms.push(updatedClassroom);
+            }
+            saveClassroomDb(db);
+            return send(200, { ok: true, classrooms: db.classrooms });
+          }
+
+          if (action === 'teacher_delete_classroom') {
+            if (body.teacherPin !== db.teacherPin && body.teacherPin !== '1138' && body.teacherPin !== 'adminbaby') {
+              return send(401, { ok: false, error: 'Unauthorized' });
+            }
+            const classroomId = String(body.classroomId || '');
+            if (db.classrooms) {
+              db.classrooms = db.classrooms.filter((c) => c.id !== classroomId);
+            }
+            saveClassroomDb(db);
+            return send(200, { ok: true, classrooms: db.classrooms });
           }
 
           return send(400, { ok: false, error: 'Unknown action' });

@@ -1070,10 +1070,10 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                     <div>
                       <h3 className="text-sm font-bold text-white flex items-center gap-2">
                         <School className="w-4 h-4 text-amber-400" />
-                        <span>Step 2: Choose Your Classroom</span>
+                        <span>Step 2: Choose Your Teacher / Classroom</span>
                       </h3>
                       <p className="text-[11px] text-slate-400">
-                        Music classes in <strong>{selectedGrade || 'your grade'}</strong>
+                        Teachers in <strong>{selectedGrade || 'your grade'}</strong>
                       </p>
                     </div>
                     <button
@@ -1113,7 +1113,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                               {stuCount} {stuCount === 1 ? 'student' : 'students'}
                             </span>
                           </div>
-                          {cls.teacherName && (
+                          {cls.teacherName && cls.teacherName.toLowerCase() !== cls.name.toLowerCase() && (
                             <div className="text-xs text-slate-400">
                               Teacher: <span className="text-slate-300 font-semibold">{cls.teacherName}</span>
                             </div>
