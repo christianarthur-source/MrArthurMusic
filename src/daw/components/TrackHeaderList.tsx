@@ -29,6 +29,7 @@ export const TrackHeaderList: React.FC<TrackHeaderListProps> = ({
   onChangeTrackName,
   onAddTrack,
   onDeleteTrack,
+  onChangeInstrument,
 }) => {
   return (
     <div className="w-56 sm:w-64 bg-slate-900 border-r border-slate-800 flex flex-col shrink-0 select-none">

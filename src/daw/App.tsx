@@ -40,6 +40,7 @@ import {
 } from '../utils/classroomApi';
 import { containsProfanity } from '../utils/profanityFilter';
 import { soundEngine } from '../audio/soundEngine';
+import { Pitch } from '../types/music';
 import { DawShareModal } from './components/ShareModal';
 import { extractProjectFromLocation } from './utils/projectSharing';
 

@@ -61,7 +61,7 @@ import {
 } from '../utils/classroomApi';
 import { containsProfanity } from '../utils/profanityFilter';
 
-export function getAppDescriptor(appType?: MusicLabAppType) {
+function getAppDescriptor(appType?: MusicLabAppType) {
   switch (appType) {
     case 'beat-machine':
       return {
@@ -238,12 +238,19 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
 
   // Refresh data when modal opens
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      setActiveTeacherPin('');
+      return;
+    }
     setLoginError(null);
     setTeacherError(null);
     setTeacherNotice(null);
 
     if (openInTeacherMode) {
+      if (activeTeacherPin) {
+        setMode('teacher_portal');
+        return;
+      }
       setTeacherPinInput('');
       setTeacherError(null);
       setTeacherNotice(null);
@@ -302,7 +309,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
         .then((projs) => setStudentProjects(projs))
         .catch(() => {});
     }
-  }, [isOpen, studentSession, editingAsTeacher, openInTeacherMode, activeTeacherPin]);
+  }, [isOpen, studentSession, editingAsTeacher, openInTeacherMode]);
 
   // Derived grades from classrooms list, preserving standard educational order
   const availableGrades = useMemo(() => {
@@ -663,13 +670,15 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
     try {
       const res = await teacherSaveClassroom({
         teacherPin: activeTeacherPin,
-        id: editingClassId || undefined,
-        name: classFormName.trim(),
-        grade: classFormGrade,
-        teacherName: classFormTeacher.trim(),
-        allowSelfRegister: classFormSelfRegister,
+        classroom: {
+          id: editingClassId || undefined,
+          name: classFormName.trim(),
+          grade: classFormGrade,
+          teacherName: classFormTeacher.trim(),
+          allowSelfRegister: classFormSelfRegister,
+        },
       });
-      setClassrooms(res.classrooms);
+      setClassrooms(res);
       setEditingClassId(null);
       setClassFormName('');
       setClassFormTeacher('');
@@ -689,7 +698,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
         teacherPin: activeTeacherPin,
         classroomId: cls.id,
       });
-      setClassrooms(res.classrooms);
+      setClassrooms(res);
       setTeacherNotice(`Deleted classroom "${cls.name}".`);
       window.setTimeout(() => setTeacherNotice(null), 2500);
     } catch (err: any) {
@@ -708,13 +717,15 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
     try {
       const res = await teacherSaveTeacher({
         teacherPin: activeTeacherPin,
-        id: editingTeacherId || undefined,
-        name: teacherFormName.trim(),
-        pin: teacherFormPin.trim(),
-        schoolName: teacherFormSchool.trim(),
-        gradeRange: teacherFormGrades.trim(),
+        teacher: {
+          id: editingTeacherId || undefined,
+          name: teacherFormName.trim(),
+          pin: teacherFormPin.trim(),
+          schoolName: teacherFormSchool.trim(),
+          gradeRange: teacherFormGrades.trim(),
+        },
       });
-      setTeachers(res.teachers);
+      setTeachers(res);
       setEditingTeacherId(null);
       setTeacherFormName('');
       setTeacherFormPin('');
@@ -739,7 +750,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
         teacherPin: activeTeacherPin,
         teacherId: t.id,
       });
-      setTeachers(res.teachers);
+      setTeachers(res);
       setTeacherNotice(`Deleted teacher account for "${t.name}".`);
       window.setTimeout(() => setTeacherNotice(null), 2500);
     } catch (err: any) {
@@ -982,7 +993,10 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
             {mode !== 'student' && (
               <button
                 type="button"
-                onClick={() => setMode('student')}
+                onClick={() => {
+                  setActiveTeacherPin('');
+                  setMode('student');
+                }}
                 className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 cursor-pointer"
               >
                 ← Student View
