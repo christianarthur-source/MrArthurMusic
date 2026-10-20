@@ -1343,6 +1343,69 @@ async function executeSupabaseRequest(payload: Record<string, any>): Promise<any
     return { ok: true };
   }
 
+  // 15. TEACHER SAVE / UPDATE TEACHER ACCOUNT
+  if (action === 'teacher_save_teacher') {
+    const pin = String(payload.teacherPin || '').trim();
+    if (pin !== '1138' && pin !== 'adminbaby') {
+      throw new Error('Only Master Admin can manage teacher accounts.');
+    }
+    const tData = payload.teacher || {};
+    const id = tData.id || 'teach_' + Math.random().toString(36).slice(2, 10);
+    const name = String(tData.name || '').trim();
+    const teacherPin = String(tData.pin || '').trim();
+    const schoolName = String(tData.schoolName || 'Music Lab Elementary').trim();
+    if (!name || !teacherPin) {
+      throw new Error('Teacher name and PIN are required.');
+    }
+
+    await supabaseFetch('teachers', {
+      method: 'POST',
+      headers: { Prefer: 'resolution=merge-duplicates' },
+      body: JSON.stringify([
+        {
+          id,
+          name,
+          pin: teacherPin,
+          school_name: schoolName,
+          is_master_admin: Boolean(tData.isMasterAdmin),
+        },
+      ]),
+    });
+
+    const teachers = await supabaseFetch('teachers?select=*&order=name.asc');
+    return {
+      ok: true,
+      teachers: (teachers || []).map((t: any) => ({
+        id: t.id,
+        name: t.name,
+        pin: t.pin,
+        schoolName: t.school_name,
+        isMasterAdmin: Boolean(t.is_master_admin),
+      })),
+    };
+  }
+
+  // 16. TEACHER DELETE TEACHER ACCOUNT
+  if (action === 'teacher_delete_teacher') {
+    const pin = String(payload.teacherPin || '').trim();
+    if (pin !== '1138' && pin !== 'adminbaby') {
+      throw new Error('Only Master Admin can delete teacher accounts.');
+    }
+    const teacherId = String(payload.teacherId || '');
+    await supabaseFetch(`teachers?id=eq.${teacherId}`, { method: 'DELETE' });
+    const teachers = await supabaseFetch('teachers?select=*&order=name.asc');
+    return {
+      ok: true,
+      teachers: (teachers || []).map((t: any) => ({
+        id: t.id,
+        name: t.name,
+        pin: t.pin,
+        schoolName: t.school_name,
+        isMasterAdmin: Boolean(t.is_master_admin),
+      })),
+    };
+  }
+
   throw new Error('Unknown cloud classroom action: ' + action);
 }
 
