@@ -88,7 +88,7 @@
         ]
       },
       "createdAt": "2026-10-19T16:59:34.321Z",
-      "updatedAt": "2026-10-19T23:05:07.601Z",
+      "updatedAt": "2026-10-20T00:01:22.400Z",
       "appType": "staff-composer"
     },
     {
@@ -2765,7 +2765,619 @@
       "appType": "staff-composer",
       "projectData": null,
       "createdAt": "2026-10-19T23:12:49.063Z",
-      "updatedAt": "2026-10-19T23:12:49.063Z"
+      "updatedAt": "2026-10-20T00:03:29.185Z"
+    },
+    {
+      "id": "proj_hwolu7est6y",
+      "studentId": "stu_n6muydvdq2y",
+      "studentName": "Alex M",
+      "title": "test",
+      "score": {
+        "id": "score_blank_treble",
+        "title": "test",
+        "composer": "Alex M",
+        "tempo": 108,
+        "timeSignature": [
+          4,
+          4
+        ],
+        "keySignature": "C",
+        "tracks": [
+          {
+            "id": "track_treble_1",
+            "name": "Treble Staff",
+            "instrumentId": "piano_treble",
+            "clef": "treble",
+            "volume": 0.85,
+            "muted": false,
+            "soloed": false,
+            "measures": [
+              {
+                "id": "m_6f2rf8i",
+                "items": [
+                  {
+                    "id": "n_2gd3neb",
+                    "type": "note",
+                    "pitch": {
+                      "step": "E",
+                      "octave": 4,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "E",
+                        "octave": 4,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_uzc37iu",
+                    "type": "note",
+                    "pitch": {
+                      "step": "F",
+                      "octave": 4,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "F",
+                        "octave": 4,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_zvgl3je",
+                    "type": "note",
+                    "pitch": {
+                      "step": "A",
+                      "octave": 4,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "A",
+                        "octave": 4,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  },
+                  {
+                    "id": "n_7kjeuir",
+                    "type": "note",
+                    "pitch": {
+                      "step": "B",
+                      "octave": 4,
+                      "accidental": null
+                    },
+                    "pitches": [
+                      {
+                        "step": "B",
+                        "octave": 4,
+                        "accidental": null
+                      }
+                    ],
+                    "duration": 0.25,
+                    "isDotted": false,
+                    "isTied": false,
+                    "isTriplet": false,
+                    "articulation": null,
+                    "dynamic": null
+                  }
+                ]
+              },
+              {
+                "id": "m_5e9z87q",
+                "items": [
+                  {
+                    "id": "n_myaaqu1",
+                    "type": "rest",
+                    "duration": 1
+                  }
+                ]
+              },
+              {
+                "id": "m_u9jatfu",
+                "items": [
+                  {
+                    "id": "n_qmf7njj",
+                    "type": "rest",
+                    "duration": 1
+                  }
+                ]
+              },
+              {
+                "id": "m_ya6we3p",
+                "items": [
+                  {
+                    "id": "n_lkmsoq4",
+                    "type": "rest",
+                    "duration": 1
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "appType": "staff-composer",
+      "projectData": null,
+      "createdAt": "2026-10-20T00:01:46.954Z",
+      "updatedAt": "2026-10-20T00:02:06.656Z"
+    },
+    {
+      "id": "proj_c5a9oa3dmpx",
+      "studentId": "stu_n6muydvdq2y",
+      "studentName": "Alex M",
+      "title": "My Beat jam1",
+      "score": null,
+      "appType": "beat-machine",
+      "projectData": {
+        "version": 1,
+        "title": "My Beat jam1",
+        "bpm": 115,
+        "measures": 1,
+        "totalStepsInMeasure": 16,
+        "packId": "space-disco",
+        "drumTracks": [
+          {
+            "soundType": "kick",
+            "steps": [
+              true,
+              false,
+              false,
+              false,
+              true,
+              false,
+              false,
+              false,
+              true,
+              false,
+              true,
+              false,
+              false,
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "soundType": "snare",
+            "steps": [
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              true,
+              true,
+              true,
+              false
+            ]
+          },
+          {
+            "soundType": "hihat",
+            "steps": [
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "soundType": "zap",
+            "steps": [
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "soundType": "coin",
+            "steps": [
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "soundType": "boing",
+            "steps": [
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "soundType": "xylo-g",
+            "steps": [
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "soundType": "bass-wobble",
+            "steps": [
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false
+            ]
+          }
+        ],
+        "melodyInstrument": "xylo",
+        "melodyScale": "pentatonic",
+        "melodyOctaves": 1,
+        "melodyTracks": [
+          {
+            "noteId": "c5",
+            "steps": [
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "noteId": "a4",
+            "steps": [
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "noteId": "g4",
+            "steps": [
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "noteId": "e4",
+            "steps": [
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "noteId": "d4",
+            "steps": [
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "noteId": "c4",
+            "steps": [
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false
+            ]
+          }
+        ],
+        "bassInstrument": "bass-guitar",
+        "bassScale": "pentatonic",
+        "bassOctaves": 1,
+        "bassTracks": [
+          {
+            "noteId": "c3-bass",
+            "steps": [
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "noteId": "a2-bass",
+            "steps": [
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "noteId": "g2-bass",
+            "steps": [
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "noteId": "e2-bass",
+            "steps": [
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "noteId": "d2-bass",
+            "steps": [
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false
+            ]
+          },
+          {
+            "noteId": "c2-bass",
+            "steps": [
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false,
+              false
+            ]
+          }
+        ],
+        "isEchoOn": false,
+        "isReverbOn": false,
+        "isBitcrusherOn": false,
+        "isDistortionOn": false,
+        "isFilterOn": false
+      },
+      "createdAt": "2026-10-20T00:03:11.877Z",
+      "updatedAt": "2026-10-20T00:03:11.877Z"
     }
   ]
 }

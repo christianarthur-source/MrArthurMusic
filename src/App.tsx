@@ -1453,9 +1453,11 @@ export default function App() {
     }
     setCurrentProjectId(null);
     setEditingAsTeacher(null);
-    pushScoreState(blank);
+    setScore(blank);
+    setHistory([JSON.parse(JSON.stringify(blank))]);
+    setHistoryIndex(0);
     setSelection({ trackIndex: 0, measureIndex: 0, itemIndex: 0 });
-  }, [pushScoreState, studentSession]);
+  }, [studentSession]);
 
   // Add Drum Track with selected beat
   const handleAddDrumTrack = useCallback(
@@ -1557,7 +1559,11 @@ export default function App() {
         const loadedScore = JSON.parse(event.target?.result as string);
         if (loadedScore.tracks && Array.isArray(loadedScore.tracks)) {
           const cleanScore = sanitizeLoadedScore(loadedScore);
-          pushScoreState(cleanScore);
+          setCurrentProjectId(null);
+          setEditingAsTeacher(null);
+          setScore(cleanScore);
+          setHistory([JSON.parse(JSON.stringify(cleanScore))]);
+          setHistoryIndex(0);
           setSelection({ trackIndex: 0, measureIndex: 0, itemIndex: 0 });
         }
       } catch {
@@ -1698,7 +1704,9 @@ export default function App() {
           // Default: Staff Composer
           const clean = sanitizeLoadedScore(proj.score || DEFAULT_BLANK_SCORE);
           clean.title = proj.title;
-          pushScoreState(clean);
+          setScore(clean);
+          setHistory([JSON.parse(JSON.stringify(clean))]);
+          setHistoryIndex(0);
           setSelection({ trackIndex: 0, measureIndex: 0, itemIndex: 0 });
           handleSelectApp('staff-composer');
         }}
@@ -2147,7 +2155,11 @@ export default function App() {
         isOpen={isTemplatesModalOpen}
         onClose={() => setIsTemplatesModalOpen(false)}
         onSelectScore={(newScore) => {
-          pushScoreState(newScore);
+          setCurrentProjectId(null);
+          setEditingAsTeacher(null);
+          setScore(newScore);
+          setHistory([JSON.parse(JSON.stringify(newScore))]);
+          setHistoryIndex(0);
           setSelection({ trackIndex: 0, measureIndex: 0, itemIndex: 0 });
         }}
       />
@@ -2156,7 +2168,11 @@ export default function App() {
         isOpen={isEnsembleTemplatesModalOpen}
         onClose={() => setIsEnsembleTemplatesModalOpen(false)}
         onSelectScore={(newScore) => {
-          pushScoreState(newScore);
+          setCurrentProjectId(null);
+          setEditingAsTeacher(null);
+          setScore(newScore);
+          setHistory([JSON.parse(JSON.stringify(newScore))]);
+          setHistoryIndex(0);
           setSelection({ trackIndex: 0, measureIndex: 0, itemIndex: 0 });
         }}
       />
