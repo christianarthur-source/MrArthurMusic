@@ -4,6 +4,7 @@ import { TempoTapper } from './TempoTapper';
 import { SolfegeTrainer } from './SolfegeTrainer';
 import { InstrumentZoo } from './InstrumentZoo';
 import { DynamicEars } from './DynamicEars';
+import { MusicTuner } from './MusicTuner';
 
 export type ToolId =
   | 'tempo-tapper'
@@ -13,7 +14,7 @@ export type ToolId =
   | 'sound-painter'
   | 'song-starter'
   | 'music-symbol-match'
-  | 'staff-wars';
+  | 'tuner';
 
 interface ClassroomToolBoxModalProps {
   isOpen: boolean;
@@ -62,6 +63,14 @@ const TOOL_TABS: ToolTabMeta[] = [
     subtitle: 'Sound Meter & Dynamics',
     accentColor: 'from-emerald-400 to-teal-500',
     badgeBg: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
+  },
+  {
+    id: 'tuner',
+    title: 'Instrument Tuner',
+    emoji: '🎸',
+    subtitle: 'Guitar, Violin, Bass & Mic',
+    accentColor: 'from-teal-400 to-emerald-500',
+    badgeBg: 'bg-teal-500/20 text-teal-300 border-teal-500/40',
   },
 ];
 
@@ -152,6 +161,7 @@ export const ClassroomToolBoxModal: React.FC<ClassroomToolBoxModalProps> = ({
           {activeTool === 'solfege-trainer' && <SolfegeTrainer />}
           {activeTool === 'instrument-zoo' && <InstrumentZoo />}
           {activeTool === 'dynamic-ears' && <DynamicEars />}
+          {activeTool === 'tuner' && <MusicTuner />}
         </div>
       </div>
     </div>
