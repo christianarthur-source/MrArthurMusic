@@ -728,11 +728,659 @@ function executeLocalFallback(payload: Record<string, any>): any {
   throw new Error('Unknown classroom action: ' + action);
 }
 
+// ============================================================================
+// SUPABASE CLOUD DATABASE CONFIGURATION & HANDLER
+// ============================================================================
+const SUPABASE_URL = 'https://xnbhxrzzyjbthrobdkwb.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_JipVOkkWnwggeTM6uv7sEQ_rcLwiMmZ';
+
+async function supabaseFetch(endpoint: string, options: RequestInit = {}): Promise<any> {
+  const headers: Record<string, string> = {
+    apikey: SUPABASE_KEY,
+    'Content-Type': 'application/json',
+    ...((options.headers as Record<string, string>) || {}),
+  };
+
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${endpoint}`, {
+    ...options,
+    headers,
+  });
+
+  if (!res.ok) {
+    let errMsg = `Supabase request failed (${res.status})`;
+    try {
+      const errJson = await res.json();
+      if (errJson && (errJson.message || errJson.error)) {
+        errMsg = errJson.message || errJson.error;
+      }
+    } catch {
+      try {
+        const text = await res.text();
+        if (text) errMsg = text;
+      } catch {}
+    }
+    throw new Error(errMsg);
+  }
+
+  if (res.status === 204) return null;
+
+  try {
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
 /**
- * Sends a request to the server backend (/api/classroom for Node/Vite, /api.php for PHP hosting),
- * and falls back to local storage if neither server endpoint returns JSON.
+ * Handles all classroom and student requests against Supabase PostgreSQL cloud database
+ */
+async function executeSupabaseRequest(payload: Record<string, any>): Promise<any> {
+  const action = String(payload.action || '');
+
+  // 1. PUBLIC ROSTER
+  if (action === 'public_roster') {
+    const [classrooms, students, configs] = await Promise.all([
+      supabaseFetch('classrooms?select=*&order=grade.asc,name.asc').catch(() => []),
+      supabaseFetch('students?select=id,first_name,class_group,class_id,grade&order=first_name.asc').catch(() => []),
+      supabaseFetch('classroom_config?key=eq.allowStudentSelfCreate').catch(() => []),
+    ]);
+
+    const allowStudentSelfCreate =
+      configs && configs.length > 0 && configs[0].value !== undefined
+        ? Boolean(configs[0].value)
+        : true;
+
+    return {
+      ok: true,
+      roster: (students || []).map((s: any) => ({
+        id: s.id,
+        firstName: s.first_name,
+        classGroup: s.class_group || '',
+        classId: s.class_id || '',
+        grade: s.grade || '',
+      })),
+      classrooms: (classrooms || []).map((c: any) => ({
+        id: c.id,
+        name: c.name,
+        grade: c.grade,
+        teacherName: c.teacher_name || '',
+        schoolName: c.school_name || 'Music Lab Elementary',
+        allowSelfRegister: c.allow_self_register !== false,
+      })),
+      allowStudentSelfCreate,
+    };
+  }
+
+  // 2. STUDENT LOGIN
+  if (action === 'student_login') {
+    const firstName = String(payload.firstName || '').trim();
+    const pin = String(payload.pin || '').trim();
+    const classId = String(payload.classId || '').trim();
+    const grade = String(payload.grade || '').trim();
+    const classGroup = String(payload.classGroup || payload.className || '').trim();
+
+    if (!firstName || !pin) {
+      throw new Error('Please enter your first name and PIN.');
+    }
+    if (containsProfanity(firstName)) {
+      throw new Error('Please use a school-appropriate student name.');
+    }
+
+    const normInput = normalizeStudentName(firstName);
+    const matchingStudents = await supabaseFetch(
+      `students?first_name=ilike.${encodeURIComponent(firstName)}`
+    );
+
+    let found = (matchingStudents || []).find((s: any) => {
+      const matchName = normalizeStudentName(s.first_name) === normInput;
+      if (!matchName) return false;
+      if (classId && s.class_id) return s.class_id === classId;
+      if (classGroup && s.class_group) return s.class_group.toLowerCase() === classGroup.toLowerCase();
+      return true;
+    });
+
+    if (found) {
+      if (String(found.pin).trim() !== pin) {
+        throw new Error('Incorrect PIN for ' + found.first_name + '. Please try again!');
+      }
+
+      // Update classId/grade if previously missing
+      if ((classId && !found.class_id) || (grade && !found.grade) || (classGroup && !found.class_group)) {
+        await supabaseFetch(`students?id=eq.${found.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({
+            class_id: classId || found.class_id,
+            grade: grade || found.grade,
+            class_group: classGroup || found.class_group,
+          }),
+        }).catch(() => {});
+      }
+
+      const rawProjects = await supabaseFetch(
+        `projects?student_id=eq.${found.id}&order=updated_at.desc`
+      );
+
+      const projects: SavedProjectRecord[] = (rawProjects || []).map((p: any) => ({
+        id: p.id,
+        studentId: p.student_id,
+        studentName: p.student_name,
+        title: p.title,
+        appType: p.app_type,
+        score: p.score,
+        projectData: p.project_data,
+        createdAt: p.created_at,
+        updatedAt: p.updated_at,
+      }));
+
+      return {
+        ok: true,
+        student: {
+          id: found.id,
+          firstName: found.first_name,
+          pin: found.pin,
+          classGroup: found.class_group || classGroup || '',
+          classId: found.class_id || classId || '',
+          grade: found.grade || grade || '',
+          schoolName: found.school_name || 'Music Lab Elementary',
+        },
+        projects,
+      };
+    }
+
+    // New student self-registration
+    const classrooms = await supabaseFetch('classrooms?select=*').catch(() => []);
+    const classroom = (classrooms || []).find((c: any) => c.id === classId);
+    const selfRegisterAllowed = classroom ? classroom.allow_self_register !== false : true;
+
+    if (!selfRegisterAllowed) {
+      throw new Error('Self-registration is currently closed for this class. Ask your teacher to add your name.');
+    }
+
+    const displayName = formatStudentDisplayName(firstName);
+    const newStudentId = 'stu_' + Math.random().toString(36).slice(2, 10);
+    const newStudent = {
+      id: newStudentId,
+      first_name: displayName,
+      pin,
+      class_group: classroom ? classroom.name : (classGroup || ''),
+      class_id: classId || '',
+      grade: classroom ? classroom.grade : (grade || ''),
+      school_name: classroom?.school_name || 'Music Lab Elementary',
+    };
+
+    await supabaseFetch('students', {
+      method: 'POST',
+      headers: { Prefer: 'return=representation' },
+      body: JSON.stringify([newStudent]),
+    });
+
+    return {
+      ok: true,
+      student: {
+        id: newStudentId,
+        firstName: displayName,
+        pin,
+        classGroup: newStudent.class_group,
+        classId: newStudent.class_id,
+        grade: newStudent.grade,
+        schoolName: newStudent.school_name,
+      },
+      projects: [],
+    };
+  }
+
+  // 3. STUDENT PROJECTS
+  if (action === 'student_projects') {
+    const studentId = String(payload.studentId || '');
+    const pin = String(payload.pin || '');
+
+    const students = await supabaseFetch(`students?id=eq.${studentId}`);
+    const student = students && students[0];
+    if (!student || (pin && String(student.pin) !== pin)) {
+      throw new Error('Invalid student session.');
+    }
+
+    const rawProjects = await supabaseFetch(
+      `projects?student_id=eq.${studentId}&order=updated_at.desc`
+    );
+
+    const projects: SavedProjectRecord[] = (rawProjects || []).map((p: any) => ({
+      id: p.id,
+      studentId: p.student_id,
+      studentName: p.student_name,
+      title: p.title,
+      appType: p.app_type,
+      score: p.score,
+      projectData: p.project_data,
+      createdAt: p.created_at,
+      updatedAt: p.updated_at,
+    }));
+
+    return { ok: true, projects };
+  }
+
+  // 4. STUDENT CHANGE PIN
+  if (action === 'student_change_pin') {
+    const studentId = String(payload.studentId || '');
+    const currentPin = String(payload.currentPin || '');
+    const newPin = String(payload.newPin || '').trim();
+
+    if (!newPin || newPin.length < 3) {
+      throw new Error('New PIN must be at least 3 digits.');
+    }
+
+    const students = await supabaseFetch(`students?id=eq.${studentId}`);
+    const student = students && students[0];
+    if (!student || (currentPin && String(student.pin) !== currentPin)) {
+      throw new Error('Current session verification failed.');
+    }
+
+    await supabaseFetch(`students?id=eq.${studentId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ pin: newPin }),
+    });
+
+    return { ok: true, newPin };
+  }
+
+  // 5. SAVE PROJECT
+  if (action === 'save_project') {
+    const studentId = String(payload.studentId || '');
+    const pin = String(payload.pin || '');
+    const isTeacher = Boolean(payload.isTeacher);
+    const teacherPin = String(payload.teacherPin || '');
+    let projectId = String(payload.projectId || '');
+    const title = String(payload.title || '').trim();
+    const score = payload.score;
+    const appType = (payload.appType as MusicLabAppType) || 'staff-composer';
+    const projectData = payload.projectData;
+
+    if (!title || title.toLowerCase() === 'my composition' || title.toLowerCase() === 'untitled') {
+      return { ok: false, skipped: true, reason: 'Default untitled song is not auto-saved.' };
+    }
+
+    if (containsProfanity(title)) {
+      throw new Error('Please choose a school-appropriate song title.');
+    }
+
+    let studentName = 'Student';
+    const isMaster = teacherPin === '1138' || teacherPin === 'adminbaby';
+
+    if (isTeacher && isMaster) {
+      const st = await supabaseFetch(`students?id=eq.${studentId}`);
+      if (st && st[0]) studentName = st[0].first_name;
+    } else {
+      const st = await supabaseFetch(`students?id=eq.${studentId}`);
+      if (!st || !st[0] || (pin && String(st[0].pin) !== pin)) {
+        throw new Error('Unauthorized save request.');
+      }
+      studentName = st[0].first_name;
+    }
+
+    if (!projectId) {
+      const existing = await supabaseFetch(
+        `projects?student_id=eq.${studentId}&title=ilike.${encodeURIComponent(title)}`
+      );
+      if (existing && existing.length > 0) {
+        projectId = existing[0].id;
+      } else {
+        projectId = 'proj_' + Math.random().toString(36).slice(2, 12);
+      }
+    }
+
+    const now = new Date().toISOString();
+    const saved = await supabaseFetch('projects', {
+      method: 'POST',
+      headers: { Prefer: 'resolution=merge-duplicates,return=representation' },
+      body: JSON.stringify([
+        {
+          id: projectId,
+          student_id: studentId,
+          student_name: studentName,
+          title,
+          app_type: appType,
+          score: score || null,
+          project_data: projectData || null,
+          updated_at: now,
+        },
+      ]),
+    });
+
+    const savedRecord = saved && saved[0] ? saved[0] : null;
+
+    return {
+      ok: true,
+      project: savedRecord
+        ? {
+            id: savedRecord.id,
+            studentId: savedRecord.student_id,
+            studentName: savedRecord.student_name,
+            title: savedRecord.title,
+            appType: savedRecord.app_type,
+            score: savedRecord.score,
+            projectData: savedRecord.project_data,
+            updatedAt: savedRecord.updated_at,
+            createdAt: savedRecord.created_at,
+          }
+        : {
+            id: projectId,
+            studentId,
+            studentName,
+            title,
+            appType,
+            score,
+            projectData,
+            updatedAt: now,
+            createdAt: now,
+          },
+    };
+  }
+
+  // 6. DELETE PROJECT
+  if (action === 'delete_project') {
+    const projectId = String(payload.projectId || '');
+    const studentId = String(payload.studentId || '');
+    const isTeacher = Boolean(payload.isTeacher);
+
+    await supabaseFetch(
+      `projects?id=eq.${projectId}${isTeacher ? '' : `&student_id=eq.${studentId}`}`,
+      { method: 'DELETE' }
+    );
+
+    return { ok: true };
+  }
+
+  // 7. TEACHER PORTAL & OVERVIEW
+  if (action === 'teacher_login' || action === 'teacher_overview') {
+    const teacherPin = String(payload.teacherPin || '').trim();
+    const isMaster = teacherPin === '1138' || teacherPin === 'adminbaby';
+
+    const teachers = await supabaseFetch('teachers?select=*').catch(() => []);
+    const matchedTeacher = (teachers || []).find((t: any) => String(t.pin).trim() === teacherPin);
+
+    if (!isMaster && !matchedTeacher) {
+      throw new Error('Invalid Teacher PIN.');
+    }
+
+    const [students, projects, classrooms, configs] = await Promise.all([
+      supabaseFetch('students?select=*&order=first_name.asc').catch(() => []),
+      supabaseFetch('projects?select=*&order=updated_at.desc').catch(() => []),
+      supabaseFetch('classrooms?select=*&order=grade.asc,name.asc').catch(() => []),
+      supabaseFetch('classroom_config?key=eq.allowStudentSelfCreate').catch(() => []),
+    ]);
+
+    const allowStudentSelfCreate =
+      configs && configs.length > 0 && configs[0].value !== undefined
+        ? Boolean(configs[0].value)
+        : true;
+
+    return {
+      ok: true,
+      isMasterAdmin: isMaster,
+      currentTeacher: matchedTeacher
+        ? {
+            id: matchedTeacher.id,
+            name: matchedTeacher.name,
+            pin: matchedTeacher.pin,
+            schoolName: matchedTeacher.school_name,
+            isMasterAdmin: Boolean(matchedTeacher.is_master_admin),
+          }
+        : {
+            id: 'teach_master',
+            name: 'Mr. Arthur',
+            pin: '1138',
+            schoolName: 'Music Lab Elementary',
+            isMasterAdmin: true,
+          },
+      teachers: (teachers || []).map((t: any) => ({
+        id: t.id,
+        name: t.name,
+        pin: t.pin,
+        schoolName: t.school_name,
+        isMasterAdmin: Boolean(t.is_master_admin),
+      })),
+      classrooms: (classrooms || []).map((c: any) => ({
+        id: c.id,
+        name: c.name,
+        grade: c.grade,
+        teacherName: c.teacher_name,
+        schoolName: c.school_name,
+        allowSelfRegister: c.allow_self_register !== false,
+      })),
+      students: (students || []).map((s: any) => ({
+        id: s.id,
+        firstName: s.first_name,
+        pin: s.pin,
+        classGroup: s.class_group || '',
+        classId: s.class_id || '',
+        grade: s.grade || '',
+        schoolName: s.school_name || '',
+        createdAt: s.created_at,
+      })),
+      projects: (projects || []).map((p: any) => ({
+        id: p.id,
+        studentId: p.student_id,
+        studentName: p.student_name,
+        title: p.title,
+        appType: p.app_type,
+        score: p.score,
+        projectData: p.project_data,
+        createdAt: p.created_at,
+        updatedAt: p.updated_at,
+      })),
+      allowStudentSelfCreate,
+      teacherPin: '1138',
+    };
+  }
+
+  // 8. TEACHER ADD / SAVE STUDENT
+  if (action === 'teacher_save_student') {
+    const id = String(payload.id || '').trim();
+    const firstName = String(payload.firstName || '').trim();
+    const pin = String(payload.pin || '').trim();
+    const classGroup = String(payload.classGroup || '').trim();
+    const classId = String(payload.classId || '').trim();
+    const grade = String(payload.grade || '').trim();
+
+    if (!firstName || !pin) {
+      throw new Error('First name and PIN are required.');
+    }
+    if (containsProfanity(firstName) || containsProfanity(classGroup)) {
+      throw new Error('Please use school-appropriate student and class names.');
+    }
+
+    const displayName = formatStudentDisplayName(firstName);
+    const studentId = id || 'stu_' + Math.random().toString(36).slice(2, 10);
+
+    await supabaseFetch('students', {
+      method: 'POST',
+      headers: { Prefer: 'resolution=merge-duplicates' },
+      body: JSON.stringify([
+        {
+          id: studentId,
+          first_name: displayName,
+          pin,
+          class_group: classGroup,
+          class_id: classId,
+          grade,
+          school_name: 'Music Lab Elementary',
+        },
+      ]),
+    });
+
+    return { ok: true };
+  }
+
+  // 9. TEACHER BULK ADD STUDENTS
+  if (action === 'teacher_bulk_add') {
+    const entries = Array.isArray(payload.entries) ? payload.entries : [];
+    const inserts: any[] = [];
+
+    for (const entry of entries) {
+      const fn = String(entry.firstName || '').trim();
+      const p = String(entry.pin || '').trim() || String(Math.floor(1000 + Math.random() * 9000));
+      const cg = String(entry.classGroup || '').trim();
+      const cid = String(entry.classId || '').trim();
+      const gr = String(entry.grade || '').trim();
+      if (!fn) continue;
+      inserts.push({
+        id: 'stu_' + Math.random().toString(36).slice(2, 10),
+        first_name: formatStudentDisplayName(fn),
+        pin: p,
+        class_group: cg,
+        class_id: cid,
+        grade: gr,
+        school_name: 'Music Lab Elementary',
+      });
+    }
+
+    if (inserts.length > 0) {
+      await supabaseFetch('students', {
+        method: 'POST',
+        headers: { Prefer: 'resolution=merge-duplicates' },
+        body: JSON.stringify(inserts),
+      });
+    }
+
+    return { ok: true };
+  }
+
+  // 10. TEACHER DELETE STUDENT
+  if (action === 'teacher_delete_student') {
+    const studentId = String(payload.studentId || '');
+    const deleteProjects = Boolean(payload.deleteProjects);
+
+    await supabaseFetch(`students?id=eq.${studentId}`, { method: 'DELETE' });
+    if (deleteProjects) {
+      await supabaseFetch(`projects?student_id=eq.${studentId}`, { method: 'DELETE' }).catch(() => {});
+    }
+
+    return { ok: true };
+  }
+
+  // 11. TEACHER SAVE CLASSROOM
+  if (action === 'teacher_save_classroom') {
+    const cls = payload.classroom || {};
+    const id = cls.id || 'cls_' + Math.random().toString(36).slice(2, 10);
+    const name = String(cls.name || '').trim();
+    const grade = String(cls.grade || '').trim();
+
+    if (!name || !grade) throw new Error('Classroom name and Grade level are required.');
+
+    await supabaseFetch('classrooms', {
+      method: 'POST',
+      headers: { Prefer: 'resolution=merge-duplicates' },
+      body: JSON.stringify([
+        {
+          id,
+          name,
+          grade,
+          school_name: String(cls.schoolName || 'Music Lab Elementary').trim(),
+          teacher_name: cls.teacherName || '',
+          allow_self_register: cls.allowSelfRegister !== false,
+        },
+      ]),
+    });
+
+    const classrooms = await supabaseFetch('classrooms?select=*&order=grade.asc,name.asc');
+    return {
+      ok: true,
+      classrooms: (classrooms || []).map((c: any) => ({
+        id: c.id,
+        name: c.name,
+        grade: c.grade,
+        teacherName: c.teacher_name,
+        schoolName: c.school_name,
+        allowSelfRegister: c.allow_self_register !== false,
+      })),
+    };
+  }
+
+  // 12. TEACHER DELETE CLASSROOM
+  if (action === 'teacher_delete_classroom') {
+    const classroomId = String(payload.classroomId || '');
+    await supabaseFetch(`classrooms?id=eq.${classroomId}`, { method: 'DELETE' });
+    const classrooms = await supabaseFetch('classrooms?select=*&order=grade.asc,name.asc');
+    return {
+      ok: true,
+      classrooms: (classrooms || []).map((c: any) => ({
+        id: c.id,
+        name: c.name,
+        grade: c.grade,
+        teacherName: c.teacher_name,
+        schoolName: c.school_name,
+        allowSelfRegister: c.allow_self_register !== false,
+      })),
+    };
+  }
+
+  // 13. TEACHER RENAME PROJECT
+  if (action === 'teacher_rename_project') {
+    const projectId = String(payload.projectId || '');
+    const newTitle = String(payload.newTitle || '').trim();
+    if (!newTitle) throw new Error('New title cannot be empty.');
+
+    await supabaseFetch(`projects?id=eq.${projectId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ title: newTitle, updated_at: new Date().toISOString() }),
+    });
+
+    return { ok: true };
+  }
+
+  // 14. TEACHER UPDATE SETTINGS
+  if (action === 'teacher_update_settings') {
+    if (payload.allowStudentSelfCreate !== undefined) {
+      await supabaseFetch('classroom_config', {
+        method: 'POST',
+        headers: { Prefer: 'resolution=merge-duplicates' },
+        body: JSON.stringify([
+          { key: 'allowStudentSelfCreate', value: Boolean(payload.allowStudentSelfCreate) },
+        ]),
+      }).catch(() => {});
+    }
+
+    return { ok: true };
+  }
+
+  throw new Error('Unknown cloud classroom action: ' + action);
+}
+
+/**
+ * Sends a request to:
+ * 1. Supabase Cloud Database (for seamless cross-device synchronization)
+ * 2. Node/PHP backend (if self-hosted)
+ * 3. Browser localStorage fallback (if offline)
  */
 async function callClassroomBackend(payload: Record<string, any>): Promise<any> {
+  // 1. Primary: Supabase Cloud Database (ensures students access work from school and home)
+  if (SUPABASE_URL && SUPABASE_KEY) {
+    try {
+      const cloudResult = await executeSupabaseRequest(payload);
+      // Keep a local copy updated in localStorage as an offline cache
+      try {
+        executeLocalFallback(payload);
+      } catch {}
+      return cloudResult;
+    } catch (err: any) {
+      // If it was an explicit user validation error, rethrow immediately
+      if (
+        err instanceof Error &&
+        (err.message.includes('PIN') ||
+          err.message.includes('not found') ||
+          err.message.includes('Unauthorized') ||
+          err.message.includes('required') ||
+          err.message.includes('appropriate') ||
+          err.message.includes('Invalid') ||
+          err.message.includes('closed'))
+      ) {
+        throw err;
+      }
+      console.warn('Supabase cloud request unavailable, falling back to local storage:', err);
+    }
+  }
+
+  // 2. Secondary: Node/PHP endpoints
   const endpoints = ['/api/classroom', '/api.php'];
 
   for (const endpoint of endpoints) {
@@ -745,7 +1393,6 @@ async function callClassroomBackend(payload: Record<string, any>): Promise<any> 
 
       const contentType = res.headers.get('content-type') || '';
       if (!contentType.includes('application/json')) {
-        // Endpoint returned HTML or raw PHP source (e.g. static server without PHP), try next
         continue;
       }
 
@@ -755,7 +1402,6 @@ async function callClassroomBackend(payload: Record<string, any>): Promise<any> 
       }
       return data;
     } catch (err: any) {
-      // If it was an explicit application error from JSON response, rethrow immediately
       if (
         err instanceof Error &&
         (err.message.includes('PIN') ||
@@ -766,11 +1412,10 @@ async function callClassroomBackend(payload: Record<string, any>): Promise<any> 
       ) {
         throw err;
       }
-      // Otherwise network / 404 / non-JSON -> try next endpoint
     }
   }
 
-  // Fallback to local browser DB if running on a static-only host
+  // 3. Tertiary: Local browser localStorage fallback (for offline use)
   return executeLocalFallback(payload);
 }
 

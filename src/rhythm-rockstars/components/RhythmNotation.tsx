@@ -94,6 +94,60 @@ export const NoteGlyphSVG: React.FC<{
         </svg>
       );
 
+    case 'eighth_rest_eighth': // 8th rest + 8th note
+      return (
+        <svg viewBox="0 0 90 90" height={height} className="overflow-visible">
+          {/* Eighth Rest glyph (left side) */}
+          <path
+            d="M 24 38 C 22 35 18 36 17 38 C 16 41 18 43 21 43 C 24 43 26 40 28 36 L 25 58"
+            stroke={strokeColor}
+            strokeWidth="3.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            fill="none"
+          />
+          <circle cx="18" cy="40" r="3" fill={fillColor} />
+
+          {/* Eighth Note (right side) */}
+          <ellipse cx="62" cy="62" rx="8.5" ry="6" transform="rotate(-22 62 62)" fill={fillColor} />
+          <line x1="69.5" y1="60" x2="69.5" y2="18" stroke={strokeColor} strokeWidth="3" />
+          <path
+            d="M 69.5 18 Q 82 24 78 40"
+            stroke={strokeColor}
+            strokeWidth="3.2"
+            fill="none"
+            strokeLinecap="round"
+          />
+        </svg>
+      );
+
+    case 'eighth_eighth_rest': // 8th note + 8th rest
+      return (
+        <svg viewBox="0 0 90 90" height={height} className="overflow-visible">
+          {/* Eighth Note (left side) */}
+          <ellipse cx="26" cy="62" rx="8.5" ry="6" transform="rotate(-22 26 62)" fill={fillColor} />
+          <line x1="33.5" y1="60" x2="33.5" y2="18" stroke={strokeColor} strokeWidth="3" />
+          <path
+            d="M 33.5 18 Q 46 24 42 40"
+            stroke={strokeColor}
+            strokeWidth="3.2"
+            fill="none"
+            strokeLinecap="round"
+          />
+
+          {/* Eighth Rest glyph (right side) */}
+          <path
+            d="M 68 38 C 66 35 62 36 61 38 C 60 41 62 43 65 43 C 68 43 70 40 72 36 L 69 58"
+            stroke={strokeColor}
+            strokeWidth="3.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            fill="none"
+          />
+          <circle cx="62" cy="40" r="3" fill={fillColor} />
+        </svg>
+      );
+
     case 'sixteenth_quad':
       return (
         <svg viewBox="0 0 130 90" height={height} className="overflow-visible">
@@ -167,6 +221,49 @@ export const NoteGlyphSVG: React.FC<{
           <polygon points="29.5,14 79.5,14 79.5,20 29.5,20" fill={fillColor} />
           {/* 16th Stub beam pointing left from 2nd stem */}
           <polygon points="63,24 79.5,24 79.5,30 63,30" fill={fillColor} />
+        </svg>
+      );
+
+    case 'broken_sixteenth_dotted': // Ka-Tim (16th + dotted 8th, Scotch Snap)
+      return (
+        <svg viewBox="0 0 95 90" height={height} className="overflow-visible">
+          {/* 16th note on left */}
+          <ellipse cx="22" cy="62" rx="8.5" ry="6" transform="rotate(-22 22 62)" fill={fillColor} />
+          <line x1="29.5" y1="60" x2="29.5" y2="16" stroke={strokeColor} strokeWidth="2.8" />
+
+          {/* Dotted 8th note on right */}
+          <ellipse cx="72" cy="62" rx="8.5" ry="6" transform="rotate(-22 72 62)" fill={fillColor} />
+          <circle cx="87" cy="62" r="3" fill={fillColor} />
+          <line x1="79.5" y1="60" x2="79.5" y2="16" stroke={strokeColor} strokeWidth="2.8" />
+
+          {/* Full Primary Beam */}
+          <polygon points="29.5,14 79.5,14 79.5,20 29.5,20" fill={fillColor} />
+          {/* 16th Stub beam pointing right from 1st stem */}
+          <polygon points="29.5,24 46,24 46,30 29.5,30" fill={fillColor} />
+        </svg>
+      );
+
+    case 'sixteenth_eighth_sixteenth': // Single-Beat Syncopation (16th + 8th + 16th)
+      return (
+        <svg viewBox="0 0 115 90" height={height} className="overflow-visible">
+          {/* Notehead 1 (16th) */}
+          <ellipse cx="20" cy="62" rx="7.5" ry="5.5" transform="rotate(-22 20 62)" fill={fillColor} />
+          <line x1="27" y1="60" x2="27" y2="16" stroke={strokeColor} strokeWidth="2.8" />
+
+          {/* Notehead 2 (8th - middle) */}
+          <ellipse cx="57" cy="62" rx="8" ry="6" transform="rotate(-22 57 62)" fill={fillColor} />
+          <line x1="64" y1="60" x2="64" y2="16" stroke={strokeColor} strokeWidth="2.8" />
+
+          {/* Notehead 3 (16th) */}
+          <ellipse cx="92" cy="62" rx="7.5" ry="5.5" transform="rotate(-22 92 62)" fill={fillColor} />
+          <line x1="99" y1="60" x2="99" y2="16" stroke={strokeColor} strokeWidth="2.8" />
+
+          {/* Full Primary Beam across all 3 stems */}
+          <polygon points="27,14 99,14 99,20 27,20" fill={fillColor} />
+          {/* 16th secondary beam stub pointing right from 1st stem */}
+          <polygon points="27,24 42,24 42,30 27,30" fill={fillColor} />
+          {/* 16th secondary beam stub pointing left from 3rd stem */}
+          <polygon points="84,24 99,24 99,30 84,30" fill={fillColor} />
         </svg>
       );
 
