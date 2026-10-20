@@ -31,6 +31,7 @@ export interface TeacherRecord {
   name: string;
   pin: string;
   schoolName?: string;
+  gradeRange?: string;
   isMasterAdmin?: boolean;
   createdAt?: string;
 }
