@@ -78,8 +78,6 @@ interface RhythmicPaletteProps {
   onUndo: () => void;
   onRedo: () => void;
   onOpenHelp: () => void;
-  onToggleBigStaff?: () => void;
-  isBigStaffMode?: boolean;
 }
 
 export const RhythmicPalette: React.FC<RhythmicPaletteProps> = ({
@@ -126,8 +124,6 @@ export const RhythmicPalette: React.FC<RhythmicPaletteProps> = ({
   onUndo,
   onRedo,
   onOpenHelp,
-  onToggleBigStaff,
-  isBigStaffMode = false,
 }) => {
   const isMeasureSelected = selection !== null && selection.itemIndex === -1;
   const hasSelection = selection !== null;
@@ -319,23 +315,6 @@ export const RhythmicPalette: React.FC<RhythmicPaletteProps> = ({
               <span>Rest</span>
             </button>
           </div>
-
-          {/* Big Staff! Button for Simple Mode */}
-          {uiMode === 'simple' && onToggleBigStaff && (
-            <button
-              onClick={onToggleBigStaff}
-              title="Open Big Staff! (Huge notes, horizontal scroll & fun themes for young musicians!)"
-              className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl font-black text-xs text-white transition-all shadow-md cursor-pointer border border-white/20 active:scale-95 ${
-                isBigStaffMode
-                  ? 'bg-gradient-to-r from-emerald-500 to-teal-500 ring-2 ring-emerald-300'
-                  : 'bg-gradient-to-r from-pink-500 via-amber-500 to-emerald-400 hover:from-pink-400 hover:via-amber-400 hover:to-emerald-300 hover:scale-105 shadow-amber-500/20'
-              }`}
-            >
-              <Sparkles className="w-4 h-4 text-yellow-200 fill-yellow-200" />
-              <span>{isBigStaffMode ? 'Exit Big Staff' : 'Big Staff!'}</span>
-              <span className="text-base">{isBigStaffMode ? '✨' : '🎈'}</span>
-            </button>
-          )}
 
           {/* Repeat Sign Dropdown (Available in Standard & Advanced modes!) */}
           {uiMode !== 'simple' && (

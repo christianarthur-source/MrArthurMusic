@@ -29,7 +29,6 @@ import { RhythmicPalette } from './components/RhythmicPalette';
 import { TransportBar } from './components/TransportBar';
 import { FullScreenMiniPalette } from './components/FullScreenMiniPalette';
 import { ScoreRenderer } from './components/ScoreRenderer';
-import { BigStaffView } from './components/BigStaffView';
 import { TrackStrip } from './components/TrackStrip';
 import { VirtualPiano } from './components/VirtualPiano';
 import { InstrumentModal } from './components/InstrumentModal';
@@ -161,7 +160,6 @@ export default function App() {
 
   // UI Mode: ALWAYS default to 'standard'
   const [uiMode, setUiMode] = useState<UiMode>('standard');
-  const [isBigStaffMode, setIsBigStaffMode] = useState<boolean>(false);
 
   // View Layout ('vertical' page view vs 'horizontal' auto-scroll view) & Full Screen state
   const [viewLayout, setViewLayout] = useState<ViewLayout>('vertical');
@@ -703,7 +701,6 @@ export default function App() {
         // Standard & Advanced: show regular black notes, not labeled in color
         setNoteLabelMode('off');
         setBoomwhackerColors(false);
-        setIsBigStaffMode(false);
       }
     },
     [activeDuration]
@@ -2017,8 +2014,6 @@ export default function App() {
             <RhythmicPalette
               uiMode={uiMode}
               onChangeUiMode={handleChangeUiMode}
-              onToggleBigStaff={() => setIsBigStaffMode((prev) => !prev)}
-              isBigStaffMode={isBigStaffMode}
               onReset={handleReset}
               onAddMeasure={handleAddMeasure}
               isSelectMode={isSelectMode}
@@ -2063,19 +2058,7 @@ export default function App() {
             />
           )}
 
-          {isBigStaffMode && uiMode === 'simple' ? (
-            <BigStaffView
-              score={score}
-              onUpdateScore={pushScoreState}
-              onPlayScore={handleTogglePlay}
-              onStopPlayback={handleTogglePlay}
-              isPlaying={isPlaying}
-              playheadPosition={playheadPosition}
-              onPlayPreview={handlePlayPreview}
-              onExitBigStaff={() => setIsBigStaffMode(false)}
-            />
-          ) : (
-            <ScoreRenderer
+          <ScoreRenderer
               score={score}
               selection={selection}
               onSelect={setSelection}
@@ -2103,7 +2086,6 @@ export default function App() {
               playheadPosition={playheadPosition}
               activePlayingNoteIds={activePlayingNoteIds}
             />
-          )}
 
           {/* Visible Site Footer with NY Ed Law § 2-d & Parents' Bill of Rights */}
           {!isFullScreen && (
