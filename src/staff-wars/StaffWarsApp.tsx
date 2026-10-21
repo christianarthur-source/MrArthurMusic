@@ -447,6 +447,11 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
     [status, activeNote, streak, score, highScore, notesHit, level, triggerExplosion, spawnNote]
   );
 
+  const handleAnswerRef = useRef(handleAnswer);
+  handleAnswerRef.current = handleAnswer;
+  const lastMicTriggerRef = useRef<number>(0);
+  const lastUiUpdateRef = useRef<number>(0);
+
   // Live Mic Pitch Detection Listener
   useEffect(() => {
     if (status !== 'playing' || inputMode !== 'mic') {
@@ -457,17 +462,26 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
     }
 
     let isSubscribed = true;
-
     livePitchDetector.setTransposition(transposition);
+
     livePitchDetector.start((result) => {
       if (!isSubscribed) return;
-      setDetectedPitch(result);
+
+      // Throttle UI tuner re-renders to ~13 FPS for fluid 60 FPS gameplay
+      const now = performance.now();
+      if (now - lastUiUpdateRef.current > 75) {
+        lastUiUpdateRef.current = now;
+        setDetectedPitch(result);
+      }
 
       if (result && result.writtenStep) {
-        // Check if detected pitch matches active note
-        if (activeNoteRef.current && !activeNoteRef.current.isHit) {
-          if (result.writtenStep === activeNoteRef.current.def.step) {
-            handleAnswer(result.writtenStep);
+        // Cooldown between note triggers prevents multi-firing on sustained acoustic notes
+        if (now - lastMicTriggerRef.current > 350) {
+          if (activeNoteRef.current && !activeNoteRef.current.isHit) {
+            if (result.writtenStep === activeNoteRef.current.def.step) {
+              lastMicTriggerRef.current = now;
+              handleAnswerRef.current(result.writtenStep);
+            }
           }
         }
       }
@@ -482,7 +496,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
       livePitchDetector.stop();
       setMicActive(false);
     };
-  }, [status, inputMode, transposition, handleAnswer]);
+  }, [status, inputMode, transposition]);
 
   // Start new game
   const startGame = () => {
