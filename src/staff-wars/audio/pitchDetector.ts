@@ -1,7 +1,8 @@
 /**
- * High-performance real-time microphone pitch detector for "Staff Wars Live".
- * Uses time-domain autocorrelation / YIN-style NSDF to detect fundamental pitch,
- * note step, octave, cents deviation, and volume from acoustic instruments.
+ * Ultra-efficient, high-precision real-time microphone pitch detector for "Staff Wars Live".
+ * Optimized using McLeod Pitch Method (MPM) with early-exit peak picking,
+ * zero garbage collection (preallocated buffers), and 25Hz throttled analysis
+ * to ensure 60 FPS silky smooth gameplay without any lag or freezing.
  */
 
 export interface PitchDetectionResult {
@@ -33,10 +34,16 @@ export class LivePitchDetector {
   private transposition: InstrumentTransposition = 'C';
   private onPitchCallback: ((res: PitchDetectionResult | null) => void) | null = null;
 
-  // Smoothing & stable pitch tracking
+  // Pre-allocated buffer to eliminate garbage collection pauses
+  private timeBuffer: Float32Array = new Float32Array(new ArrayBuffer(2048 * Float32Array.BYTES_PER_ELEMENT));
+  private nsdfBuffer: Float32Array = new Float32Array(1024);
+  private lastProcessTime: number = 0;
+  private readonly PROCESS_INTERVAL_MS: number = 38; // ~26 Hz update rate (real-time responsiveness, negligible CPU)
+
+  // Stability tracking
   private stableStep: string = '';
   private stableFrames: number = 0;
-  private minStableFrames: number = 2; // ~60ms stability requirement
+  private readonly minStableFrames: number = 2; // ~75ms stability requirement
 
   public setTransposition(trans: InstrumentTransposition) {
     this.transposition = trans;
@@ -53,7 +60,12 @@ export class LivePitchDetector {
     this.transposition = transposition;
     this.onPitchCallback = onPitch;
 
-    if (this.isRunning) return true;
+    if (this.isRunning && this.audioCtx && this.analyser) {
+      if (this.audioCtx.state === 'suspended') {
+        await this.audioCtx.resume();
+      }
+      return true;
+    }
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -81,6 +93,7 @@ export class LivePitchDetector {
       this.isRunning = true;
       this.stableStep = '';
       this.stableFrames = 0;
+      this.lastProcessTime = 0;
 
       this.processLoop();
       return true;
@@ -98,15 +111,21 @@ export class LivePitchDetector {
       this.animId = null;
     }
     if (this.sourceNode) {
-      this.sourceNode.disconnect();
+      try {
+        this.sourceNode.disconnect();
+      } catch {}
       this.sourceNode = null;
     }
     if (this.mediaStream) {
-      this.mediaStream.getTracks().forEach((track) => track.stop());
+      try {
+        this.mediaStream.getTracks().forEach((track) => track.stop());
+      } catch {}
       this.mediaStream = null;
     }
     if (this.audioCtx) {
-      this.audioCtx.close().catch(() => {});
+      try {
+        this.audioCtx.close().catch(() => {});
+      } catch {}
       this.audioCtx = null;
     }
     this.analyser = null;
@@ -122,87 +141,124 @@ export class LivePitchDetector {
   private processLoop = () => {
     if (!this.isRunning || !this.analyser || !this.audioCtx) return;
 
-    const buffer = new Float32Array(this.analyser.fftSize);
-    this.analyser.getFloatTimeDomainData(buffer);
+    const now = performance.now();
+    // Throttle frequency analysis to ~26 Hz for zero frame drops on the main thread
+    if (now - this.lastProcessTime >= this.PROCESS_INTERVAL_MS) {
+      this.lastProcessTime = now;
 
-    const result = this.detectPitch(buffer, this.audioCtx.sampleRate);
-    if (result && this.onPitchCallback) {
-      // Stability check
-      if (result.writtenStep === this.stableStep) {
-        this.stableFrames++;
-      } else {
-        this.stableStep = result.writtenStep;
-        this.stableFrames = 1;
-      }
+      this.analyser.getFloatTimeDomainData(this.timeBuffer as any);
+      const result = this.detectPitchMPM(this.timeBuffer, this.audioCtx.sampleRate);
 
-      if (this.stableFrames >= this.minStableFrames) {
-        this.onPitchCallback(result);
-      } else {
+      if (result && this.onPitchCallback) {
+        if (result.writtenStep === this.stableStep) {
+          this.stableFrames++;
+        } else {
+          this.stableStep = result.writtenStep;
+          this.stableFrames = 1;
+        }
+
+        if (this.stableFrames >= this.minStableFrames) {
+          this.onPitchCallback(result);
+        } else {
+          this.onPitchCallback(null);
+        }
+      } else if (this.onPitchCallback) {
+        this.stableStep = '';
+        this.stableFrames = 0;
         this.onPitchCallback(null);
       }
-    } else if (this.onPitchCallback) {
-      this.stableStep = '';
-      this.stableFrames = 0;
-      this.onPitchCallback(null);
     }
 
     this.animId = requestAnimationFrame(this.processLoop);
   };
 
   /**
-   * Fast Normalized Square Difference Function (Autocorrelation)
+   * High-speed McLeod Pitch Method (MPM) with early-exit peak search.
+   * Window size = 1024, search range = 55Hz (A1) to 1200Hz (D6).
    */
-  private detectPitch(buf: Float32Array, sampleRate: number): PitchDetectionResult | null {
-    // 1. RMS volume calculation
-    let sumSquares = 0;
-    for (let i = 0; i < buf.length; i++) {
-      sumSquares += buf[i] * buf[i];
+  private detectPitchMPM(buf: Float32Array, sampleRate: number): PitchDetectionResult | null {
+    const W = 1024; // Analysis window size
+    if (buf.length < W * 2) return null;
+
+    // 1. RMS Energy check
+    let sum0 = 0;
+    for (let i = 0; i < W; i++) {
+      const v = buf[i];
+      sum0 += v * v;
     }
-    const rms = Math.sqrt(sumSquares / buf.length);
-    if (rms < 0.012) {
-      return null; // Silence / background noise
-    }
-
-    // 2. Autocorrelation
-    const minPeriod = Math.floor(sampleRate / 1200); // Max pitch ~1200Hz
-    const maxPeriod = Math.floor(sampleRate / 55);   // Min pitch ~55Hz (A1)
-    let bestPeriod = -1;
-    let maxCorr = -1;
-
-    for (let period = minPeriod; period <= maxPeriod; period++) {
-      let corr = 0;
-      let energy = 0;
-      for (let i = 0; i < buf.length - period; i++) {
-        corr += buf[i] * buf[i + period];
-        energy += buf[i] * buf[i] + buf[i + period] * buf[i + period];
-      }
-      const normCorr = (2 * corr) / (energy + 1e-6);
-
-      if (normCorr > 0.82 && normCorr > maxCorr) {
-        maxCorr = normCorr;
-        bestPeriod = period;
-      }
-    }
-
-    if (bestPeriod === -1 || maxCorr < 0.82) {
+    const rms = Math.sqrt(sum0 / W);
+    // Gated threshold: reject silence / ambient background noise
+    if (rms < 0.015) {
       return null;
     }
 
-    // 3. Parabolic Interpolation for exact sub-sample frequency
-    const p = bestPeriod;
-    let delta = 0;
-    if (p > minPeriod && p < maxPeriod) {
-      const alpha = this.getLagCorr(buf, p - 1);
-      const beta = this.getLagCorr(buf, p);
-      const gamma = this.getLagCorr(buf, p + 1);
-      delta = (0.5 * (alpha - gamma)) / (alpha - 2 * beta + gamma + 1e-9);
+    const minPeriod = Math.max(20, Math.floor(sampleRate / 1200)); // ~1200Hz max
+    const maxPeriod = Math.min(W - 1, Math.floor(sampleRate / 55));  // ~55Hz min
+
+    // 2. Compute Normalized Square Difference Function (NSDF) with early peak picking
+    // nsdf(tau) = 2 * r(tau) / (m0 + m_tau)
+    let bestPeriod = -1;
+    let maxClarity = -1;
+    let turnedNegative = false;
+
+    // Zero out nsdfBuffer
+    for (let i = 0; i <= maxPeriod; i++) {
+      this.nsdfBuffer[i] = 0;
     }
 
-    const exactPeriod = bestPeriod + delta;
-    const frequency = sampleRate / exactPeriod;
+    for (let tau = minPeriod; tau <= maxPeriod; tau++) {
+      let r_tau = 0;
+      let sum_tau = 0;
 
-    // 4. MIDI Pitch & Note conversion
-    // 440Hz is A4 (MIDI 69)
+      for (let i = 0; i < W; i++) {
+        const a = buf[i];
+        const b = buf[i + tau];
+        r_tau += a * b;
+        sum_tau += b * b;
+      }
+
+      const nsdf = (2 * r_tau) / (sum0 + sum_tau + 1e-9);
+      this.nsdfBuffer[tau] = nsdf;
+
+      if (nsdf < 0) {
+        turnedNegative = true;
+      }
+
+      // Early-exit peak picking: find first strong peak after zero-crossing
+      if (turnedNegative && tau > minPeriod + 1) {
+        const prev = this.nsdfBuffer[tau - 1];
+        const prev2 = this.nsdfBuffer[tau - 2];
+
+        // Did we just pass a local maximum at (tau - 1)?
+        if (prev > prev2 && prev >= nsdf && prev > 0.78) {
+          bestPeriod = tau - 1;
+          maxClarity = prev;
+          // Break immediately! The first prominent peak is the fundamental frequency!
+          break;
+        }
+      }
+    }
+
+    if (bestPeriod === -1 || maxClarity < 0.78) {
+      return null;
+    }
+
+    // 3. Parabolic Interpolation for exact fractional pitch
+    const p = bestPeriod;
+    const alpha = this.nsdfBuffer[p - 1];
+    const beta = this.nsdfBuffer[p];
+    const gamma = this.nsdfBuffer[p + 1];
+    const denom = alpha - 2 * beta + gamma;
+    const delta = denom !== 0 ? (0.5 * (alpha - gamma)) / denom : 0;
+
+    const exactPeriod = p + delta;
+    if (exactPeriod <= 0) return null;
+
+    const frequency = sampleRate / exactPeriod;
+    if (frequency < 50 || frequency > 1400) return null;
+
+    // 4. MIDI Pitch & Note Conversion
+    // 440 Hz = A4 (MIDI 69)
     const exactMidi = 12 * Math.log2(frequency / 440) + 69;
     const soundingMidi = Math.round(exactMidi);
     const cents = Math.round((exactMidi - soundingMidi) * 100);
@@ -214,9 +270,7 @@ export class LivePitchDetector {
     const soundingStep = rawNoteStr.charAt(0) as 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G';
     const soundingAccidental = rawNoteStr.length > 1 ? '#' : '';
 
-    // 5. Transpose sounding pitch to written pitch for student's instrument
-    // E.g., Bb trumpet playing written C sounds concert Bb (soundingMidi = writtenMidi - 2)
-    // Therefore writtenMidi = soundingMidi + 2
+    // 5. Instrument Transposition (Sounding pitch -> Written pitch for student)
     let transposeOffset = 0;
     if (this.transposition === 'Bb') {
       transposeOffset = 2; // Up 2 semitones
@@ -243,19 +297,9 @@ export class LivePitchDetector {
       writtenOctave,
       writtenNoteName: `${writtenRawStr}${writtenOctave}`,
       cents,
-      volume: Math.min(1, rms * 8),
-      clarity: maxCorr,
+      volume: Math.min(1, rms * 7),
+      clarity: maxClarity,
     };
-  }
-
-  private getLagCorr(buf: Float32Array, lag: number): number {
-    let corr = 0;
-    let energy = 0;
-    for (let i = 0; i < buf.length - lag; i++) {
-      corr += buf[i] * buf[i + lag];
-      energy += buf[i] * buf[i] + buf[i + lag] * buf[i + lag];
-    }
-    return (2 * corr) / (energy + 1e-6);
   }
 }
 
