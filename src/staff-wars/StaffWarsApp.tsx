@@ -101,6 +101,8 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
 
   // Live Mic State
   const [micActive, setMicActive] = useState<boolean>(false);
+  const [isRequestingMic, setIsRequestingMic] = useState<boolean>(false);
+  const [micError, setMicError] = useState<string | null>(null);
   const [detectedPitch, setDetectedPitch] = useState<PitchDetectionResult | null>(null);
 
   // Game Status
@@ -447,59 +449,73 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
     [status, activeNote, streak, score, highScore, notesHit, level, triggerExplosion, spawnNote]
   );
 
+
   const handleAnswerRef = useRef(handleAnswer);
   handleAnswerRef.current = handleAnswer;
   const lastMicTriggerRef = useRef<number>(0);
   const lastUiUpdateRef = useRef<number>(0);
 
-  // Live Mic Pitch Detection Listener
-  useEffect(() => {
-    if (status !== 'playing' || inputMode !== 'mic') {
-      livePitchDetector.stop();
-      setMicActive(false);
-      setDetectedPitch(null);
-      return;
-    }
+  // Robust Live Mic Starter with graceful error and permission handling
+  const startLiveMic = useCallback(async (): Promise<boolean> => {
+    setIsRequestingMic(true);
+    setMicError(null);
+    try {
+      const success = await livePitchDetector.start((result) => {
+        const now = performance.now();
+        if (now - lastUiUpdateRef.current > 75) {
+          lastUiUpdateRef.current = now;
+          setDetectedPitch(result);
+        }
 
-    let isSubscribed = true;
-    livePitchDetector.setTransposition(transposition);
-
-    livePitchDetector.start((result) => {
-      if (!isSubscribed) return;
-
-      // Throttle UI tuner re-renders to ~13 FPS for fluid 60 FPS gameplay
-      const now = performance.now();
-      if (now - lastUiUpdateRef.current > 75) {
-        lastUiUpdateRef.current = now;
-        setDetectedPitch(result);
-      }
-
-      if (result && result.writtenStep) {
-        // Cooldown between note triggers prevents multi-firing on sustained acoustic notes
-        if (now - lastMicTriggerRef.current > 350) {
-          if (activeNoteRef.current && !activeNoteRef.current.isHit) {
-            if (result.writtenStep === activeNoteRef.current.def.step) {
-              lastMicTriggerRef.current = now;
-              handleAnswerRef.current(result.writtenStep);
+        if (result && result.writtenStep) {
+          if (now - lastMicTriggerRef.current > 350) {
+            if (activeNoteRef.current && !activeNoteRef.current.isHit) {
+              if (result.writtenStep === activeNoteRef.current.def.step) {
+                lastMicTriggerRef.current = now;
+                handleAnswerRef.current(result.writtenStep);
+              }
             }
           }
         }
-      }
-    }, transposition).then((success) => {
-      if (isSubscribed) {
-        setMicActive(success);
-      }
-    });
+      }, transposition);
 
-    return () => {
-      isSubscribed = false;
-      livePitchDetector.stop();
+      setMicActive(success);
+      if (!success) {
+        setMicError('Microphone permission blocked or not available in this browser.');
+      }
+      return success;
+    } catch (err: any) {
+      console.error('Failed to start live mic:', err);
       setMicActive(false);
-    };
-  }, [status, inputMode, transposition]);
+      setMicError(err?.message || 'Microphone access failed');
+      return false;
+    } finally {
+      setIsRequestingMic(false);
+    }
+  }, [transposition]);
+
+  // Live Mic Pitch Detection Listener
+  useEffect(() => {
+    if (status !== 'playing' || inputMode !== 'mic') {
+      if (status !== 'menu' || inputMode !== 'mic') {
+        livePitchDetector.stop();
+        setMicActive(false);
+        setDetectedPitch(null);
+      }
+      return;
+    }
+
+    if (!micActive && !isRequestingMic) {
+      startLiveMic();
+    }
+  }, [status, inputMode, micActive, isRequestingMic, startLiveMic]);
 
   // Start new game
-  const startGame = () => {
+  const startGame = async () => {
+    // If in live mic mode and not yet active, request immediately within user click gesture
+    if (inputMode === 'mic' && !micActive) {
+      await startLiveMic();
+    }
     setScore(0);
     setLives(3);
     setLevel(1);
@@ -715,6 +731,53 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
                       </div>
                     </button>
                   ))}
+                </div>
+
+                {/* Live Mic Test & Permission */}
+                <div className="flex flex-col sm:flex-row items-center justify-between p-3.5 rounded-xl bg-slate-950/80 border border-cyan-500/30 gap-3 text-xs mt-2">
+                  <div className="flex items-center gap-3 w-full sm:w-auto">
+                    <div
+                      className={`p-2 rounded-xl shrink-0 ${
+                        micActive
+                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/50'
+                          : 'bg-slate-900 text-slate-400 border border-slate-700'
+                      }`}
+                    >
+                      <Mic className="w-4 h-4" />
+                    </div>
+                    <div className="text-left">
+                      <span className="font-bold text-white block">
+                        {micActive ? 'Microphone Active & Ready' : 'Microphone Permission'}
+                      </span>
+                      <span className="text-[11px] text-slate-400">
+                        {micActive
+                          ? detectedPitch
+                            ? `Heard note: ${detectedPitch.writtenNoteName} (${detectedPitch.frequency.toFixed(0)} Hz)`
+                            : 'Listening... Play your instrument to test!'
+                          : micError
+                          ? micError
+                          : 'Click to grant browser microphone permission'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {!micActive ? (
+                    <button
+                      type="button"
+                      onClick={() => startLiveMic()}
+                      disabled={isRequestingMic}
+                      className="w-full sm:w-auto px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-400 to-sky-400 hover:from-cyan-300 hover:to-sky-300 text-slate-950 font-black text-xs transition-all shadow-md active:scale-95 cursor-pointer shrink-0"
+                    >
+                      {isRequestingMic ? 'Connecting...' : '🎙️ Test & Allow Microphone'}
+                    </button>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <span className="px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 font-bold text-[11px] flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                        Ready
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -957,13 +1020,19 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
                         Live Pitch Detector ({transposition} Instrument):
                       </span>
                       {micActive ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold border border-emerald-500/40">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[11px] font-bold border border-emerald-500/40 animate-pulse">
                           ● LISTENING
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-bold border border-amber-500/40">
-                          Waiting for Mic...
-                        </span>
+                        <button
+                          type="button"
+                          onClick={() => startLiveMic()}
+                          disabled={isRequestingMic}
+                          className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400 hover:bg-amber-300 text-slate-950 text-xs font-black shadow-lg transition-all cursor-pointer animate-bounce"
+                        >
+                          <Mic className="w-3.5 h-3.5" />
+                          <span>{isRequestingMic ? 'Connecting...' : 'Click to Allow Microphone'}</span>
+                        </button>
                       )}
                     </div>
                     <p className="text-[11px] text-slate-400">
