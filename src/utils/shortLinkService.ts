@@ -6,7 +6,7 @@
 const SUPABASE_URL = 'https://xnbhxrzzyjbthrobdkwb.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_JipVOkkWnwggeTM6uv7sEQ_rcLwiMmZ';
 
-export type SupportedShareApp = 'staff-composer' | 'beat-machine' | 'daw';
+export type SupportedShareApp = 'staff-composer' | 'beat-machine' | 'daw' | 'staff-wars';
 
 export interface SharedLinkRecord {
   id: string;

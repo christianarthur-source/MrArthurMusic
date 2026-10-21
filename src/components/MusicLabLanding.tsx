@@ -13,7 +13,7 @@ import {
 import { StudentSession } from '../utils/classroomApi';
 import { ClassroomToolBoxModal, ToolId } from './tools/ClassroomToolBoxModal';
 
-export type MusicLabAppId = 'hub' | 'staff-composer' | 'rhythm-rockstars' | 'beat-machine' | 'daw';
+export type MusicLabAppId = 'hub' | 'staff-composer' | 'rhythm-rockstars' | 'beat-machine' | 'daw' | 'staff-wars';
 
 interface MusicLabLandingProps {
   onSelectApp: (appId: MusicLabAppId) => void;
@@ -250,8 +250,76 @@ export const MusicLabLanding: React.FC<MusicLabLandingProps> = ({
             </h3>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {/* 1. RHYTHM ROCK STARS */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* 1. STAFF WARS */}
+            <div
+              onClick={() => onSelectApp('staff-wars')}
+              className="relative rounded-3xl bg-gradient-to-br from-slate-900 via-[#1A1805] to-slate-950 border-2 border-amber-400/50 hover:border-amber-300 p-6 flex flex-col justify-between transition-all duration-300 hover:shadow-2xl hover:shadow-amber-500/25 group overflow-hidden cursor-pointer"
+            >
+              <div className="space-y-4">
+                {/* Header Badge & Giant Icon */}
+                <div className="flex items-center justify-between">
+                  <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-amber-400 to-yellow-500 p-0.5 shadow-xl group-hover:scale-110 transition-transform">
+                    <div className="w-full h-full bg-slate-950 rounded-[22px] flex items-center justify-center text-3xl">
+                      🚀
+                    </div>
+                  </div>
+                  <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-amber-400/20 text-amber-300 border border-amber-400/40 font-['Fredoka',sans-serif]">
+                    ⚡ Space Arcade
+                  </span>
+                </div>
+
+                <div>
+                  <h4 className="text-2xl sm:text-3xl font-black text-white font-['Fredoka',sans-serif] group-hover:text-amber-300 transition-colors">
+                    Staff Wars
+                  </h4>
+                  <p className="text-xs font-bold text-amber-300 mt-1">
+                    Blast enemy notes with spaceship lasers before they hit your clef! ⚡
+                  </p>
+                </div>
+
+                {/* Big Visual Game Graphic: Space Highway with Clef Shield & Laser */}
+                <div className="p-3.5 rounded-2xl bg-slate-950 border border-amber-400/30 space-y-2">
+                  <div className="flex items-center justify-between text-xs font-black font-['Fredoka',sans-serif] px-1 text-amber-300">
+                    <span>SECTOR: TREBLE DEFENSE</span>
+                    <span className="text-emerald-400 flex items-center gap-1 font-mono">
+                      🚀 3 LIVES
+                    </span>
+                  </div>
+                  <div className="relative h-12 bg-slate-900 rounded-xl border border-slate-800 flex items-center justify-between px-3 overflow-hidden">
+                    <div className="absolute inset-x-0 top-2 h-px bg-sky-400/40" />
+                    <div className="absolute inset-x-0 top-4 h-px bg-sky-400/40" />
+                    <div className="absolute inset-x-0 top-6 h-px bg-sky-400/40" />
+                    <div className="absolute inset-x-0 top-8 h-px bg-sky-400/40" />
+                    <div className="absolute inset-x-0 top-10 h-px bg-sky-400/40" />
+
+                    <div className="w-8 h-8 rounded-full bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center text-lg z-10 shadow-[0_0_10px_rgba(34,197,94,0.5)]">
+                      𝄞
+                    </div>
+
+                    <div className="flex-1 h-1 bg-gradient-to-r from-emerald-400 via-yellow-300 to-rose-500 mx-2 rounded-full shadow-[0_0_8px_rgba(34,197,94,0.8)] animate-pulse" />
+
+                    <div className="w-6 h-6 rounded-full bg-amber-400 text-slate-950 font-black text-xs flex items-center justify-center shadow-lg shadow-amber-400/50 z-10 animate-bounce">
+                      ♩
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Button */}
+              <div className="pt-5 mt-4 border-t border-slate-800/80">
+                <button
+                  type="button"
+                  className="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 group-hover:from-amber-300 group-hover:to-yellow-300 text-slate-950 font-black text-base flex items-center justify-center gap-2 shadow-xl shadow-amber-500/30 transition-all font-['Fredoka',sans-serif]"
+                >
+                  <Play className="w-5 h-5 fill-current" />
+                  <span>Play Staff Wars</span>
+                  <ArrowRight className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* 2. RHYTHM ROCK STARS */}
             <div
               onClick={() => onSelectApp('rhythm-rockstars')}
               className="relative rounded-3xl bg-gradient-to-br from-slate-900 via-[#1F0E1E] to-slate-950 border-2 border-rose-500/40 hover:border-rose-400 p-6 flex flex-col justify-between transition-all duration-300 hover:shadow-2xl hover:shadow-rose-500/20 group overflow-hidden cursor-pointer"
@@ -460,9 +528,9 @@ export const MusicLabLanding: React.FC<MusicLabLandingProps> = ({
 
           {/* 8 Large Visual Graphic Cards for Tool Box */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Tool 1: Tempo Tapper (Active) */}
+            {/* Tool 1: Interactive Metronome (Active) */}
             <div
-              onClick={() => setSelectedToolModal('tempo-tapper')}
+              onClick={() => setSelectedToolModal('metronome')}
               className="p-5 rounded-3xl bg-gradient-to-br from-slate-900 to-slate-950 border border-amber-500/30 hover:border-amber-400 hover:shadow-xl hover:shadow-amber-500/10 cursor-pointer transition-all duration-200 group flex flex-col justify-between"
             >
               <div className="space-y-3">
@@ -471,15 +539,15 @@ export const MusicLabLanding: React.FC<MusicLabLandingProps> = ({
                 </div>
                 <div>
                   <h4 className="text-xl font-black text-white font-['Fredoka',sans-serif] group-hover:text-amber-300 transition-colors">
-                    Tempo Tapper
+                    Metronome
                   </h4>
                   <p className="text-xs text-amber-300 font-bold mt-0.5">
-                    Tap the speed to race your animal! 🐢 🐆 🚀
+                    Visual screen flash, woodblock clicks &amp; animal speeds! ⚡
                   </p>
                 </div>
                 <div className="flex items-center justify-between text-2xl pt-1 px-1">
                   <span>🐢</span>
-                  <span>🚶</span>
+                  <span>🐧</span>
                   <span>🦘</span>
                   <span>🐎</span>
                   <span>🐆</span>
@@ -492,7 +560,7 @@ export const MusicLabLanding: React.FC<MusicLabLandingProps> = ({
                   type="button"
                   className="w-full py-2.5 rounded-xl bg-slate-800 group-hover:bg-amber-400 group-hover:text-slate-950 text-amber-300 font-black text-xs transition-colors flex items-center justify-center gap-1.5 font-['Fredoka',sans-serif] cursor-pointer"
                 >
-                  <span>Open Tapper</span>
+                  <span>Open Metronome</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -610,40 +678,39 @@ export const MusicLabLanding: React.FC<MusicLabLandingProps> = ({
               </div>
             </div>
 
-            {/* Tool 5: Sound Painter (Coming Soon - No link) */}
-            <div className="p-5 rounded-3xl bg-gradient-to-br from-slate-900/90 via-slate-900/80 to-rose-950/20 border border-slate-800 select-none flex flex-col justify-between relative overflow-hidden">
-              <div className="absolute top-3.5 right-3.5">
-                <span className="px-2.5 py-0.5 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-300 font-black text-[10px] uppercase font-['Fredoka',sans-serif] tracking-wider flex items-center gap-1">
-                  <Sparkles className="w-2.5 h-2.5" />
-                  <span>Coming Soon!</span>
-                </span>
-              </div>
+            {/* Tool 5: Tempo Tapper (Active) */}
+            <div
+              onClick={() => setSelectedToolModal('tempo-tapper')}
+              className="p-5 rounded-3xl bg-gradient-to-br from-slate-900 to-slate-950 border border-orange-500/30 hover:border-orange-400 hover:shadow-xl hover:shadow-orange-500/10 cursor-pointer transition-all duration-200 group flex flex-col justify-between"
+            >
               <div className="space-y-3">
-                <div className="w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-4xl shadow-inner opacity-80">
-                  🎨
+                <div className="w-16 h-16 rounded-2xl bg-orange-500/20 border border-orange-400/40 flex items-center justify-center text-4xl group-hover:scale-110 transition-transform shadow-inner">
+                  👆
                 </div>
                 <div>
-                  <h4 className="text-xl font-black text-slate-200 font-['Fredoka',sans-serif]">
-                    Sound Painter
+                  <h4 className="text-xl font-black text-white font-['Fredoka',sans-serif] group-hover:text-orange-300 transition-colors">
+                    Tempo Tapper
                   </h4>
-                  <p className="text-xs text-slate-400 font-medium mt-0.5">
-                    Draw lines, singing faces &amp; shapes that trigger soundscapes!
+                  <p className="text-xs text-orange-300 font-bold mt-0.5">
+                    Tap the beat with your fingers to find any song&apos;s speed! ⏱️
                   </p>
                 </div>
-                <div className="flex items-center justify-between text-2xl pt-1 px-1 opacity-50">
-                  <span>⭕</span>
-                  <span>〰️</span>
-                  <span>🔺</span>
+                <div className="flex items-center justify-around text-2xl pt-1">
+                  <span>👆</span>
                   <span>✨</span>
-                  <span>🌈</span>
+                  <span>🥁</span>
+                  <span>🎯</span>
                 </div>
               </div>
 
-              <div className="pt-4 mt-3 border-t border-slate-800/60">
-                <div className="w-full py-2.5 rounded-xl bg-slate-800/60 border border-slate-700/50 text-slate-400 font-black text-xs flex items-center justify-center gap-1.5 font-['Fredoka',sans-serif]">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-400/70" />
-                  <span>Coming Soon!</span>
-                </div>
+              <div className="pt-4 mt-3 border-t border-slate-800/80">
+                <button
+                  type="button"
+                  className="w-full py-2.5 rounded-xl bg-slate-800 group-hover:bg-orange-400 group-hover:text-slate-950 text-orange-300 font-black text-xs transition-colors flex items-center justify-center gap-1.5 font-['Fredoka',sans-serif] cursor-pointer"
+                >
+                  <span>Open Tapper</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
               </div>
             </div>
 

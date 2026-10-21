@@ -46,6 +46,7 @@ import { ClassroomToolBoxModal, ToolId } from './components/tools/ClassroomToolB
 import RhythmRockStarsApp from './rhythm-rockstars/RhythmRockStarsApp';
 import BeatMachineApp from './beat-machine/App';
 import { DawApp } from './daw/App';
+import { StaffWarsApp } from './staff-wars/StaffWarsApp';
 import { ShieldCheck } from 'lucide-react';
 import {
   SavedProjectRecord,
@@ -94,7 +95,8 @@ export default function App() {
         appParam === 'staff-composer' ||
         appParam === 'rhythm-rockstars' ||
         appParam === 'beat-machine' ||
-        appParam === 'daw'
+        appParam === 'daw' ||
+        appParam === 'staff-wars'
       ) {
         return appParam;
       }
@@ -120,7 +122,8 @@ export default function App() {
           hashApp === 'staff-composer' ||
           hashApp === 'rhythm-rockstars' ||
           hashApp === 'beat-machine' ||
-          hashApp === 'daw'
+          hashApp === 'daw' ||
+          hashApp === 'staff-wars'
         ) {
           return hashApp;
         }
@@ -1923,6 +1926,18 @@ export default function App() {
             soundEngine.playWelcomeChime();
             setIsAvatarOpen(true);
           }}
+        />
+        {renderSharedAuthAndModals()}
+      </>
+    );
+  }
+
+  if (currentApp === 'staff-wars') {
+    return (
+      <>
+        <StaffWarsApp
+          onBackToHub={handleBackToHub}
+          studentSession={studentSession}
         />
         {renderSharedAuthAndModals()}
       </>
