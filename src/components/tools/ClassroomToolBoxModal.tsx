@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Sparkles, SlidersHorizontal, Volume2 } from 'lucide-react';
+import { MetronomeTool } from './MetronomeTool';
 import { TempoTapper } from './TempoTapper';
 import { SolfegeTrainer } from './SolfegeTrainer';
 import { InstrumentZoo } from './InstrumentZoo';
@@ -7,6 +8,7 @@ import { DynamicEars } from './DynamicEars';
 import { MusicTuner } from './MusicTuner';
 
 export type ToolId =
+  | 'metronome'
   | 'tempo-tapper'
   | 'solfege-trainer'
   | 'instrument-zoo'
@@ -33,12 +35,20 @@ interface ToolTabMeta {
 
 const TOOL_TABS: ToolTabMeta[] = [
   {
-    id: 'tempo-tapper',
-    title: 'Tempo Tapper',
+    id: 'metronome',
+    title: 'Metronome',
     emoji: '⏱️',
-    subtitle: 'BPM & Animal Speeds',
-    accentColor: 'from-amber-400 to-orange-500',
+    subtitle: 'Beats, Flash & Sound',
+    accentColor: 'from-amber-400 to-yellow-500',
     badgeBg: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
+  },
+  {
+    id: 'tempo-tapper',
+    title: 'Tap Tempo',
+    emoji: '👆',
+    subtitle: 'BPM & Animal Speeds',
+    accentColor: 'from-orange-400 to-amber-500',
+    badgeBg: 'bg-orange-500/20 text-orange-300 border-orange-500/40',
   },
   {
     id: 'solfege-trainer',
@@ -157,6 +167,7 @@ export const ClassroomToolBoxModal: React.FC<ClassroomToolBoxModalProps> = ({
 
         {/* Modal Scrollable Body */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+          {activeTool === 'metronome' && <MetronomeTool />}
           {activeTool === 'tempo-tapper' && <TempoTapper />}
           {activeTool === 'solfege-trainer' && <SolfegeTrainer />}
           {activeTool === 'instrument-zoo' && <InstrumentZoo />}
