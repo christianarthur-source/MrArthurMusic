@@ -16,6 +16,9 @@ import {
   Radio,
   Sliders,
   CheckCircle2,
+  X,
+  Medal,
+  User,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { StudentSession } from '../utils/classroomApi';
@@ -80,6 +83,22 @@ const SOLFEGE_MAP: Record<string, string> = {
   B: 'Ti',
 };
 
+export interface StaffWarsLeaderboardEntry {
+  id: string;
+  name: string;
+  score: number;
+  studentId?: string;
+  updatedAt?: string;
+}
+
+const DEFAULT_LEADERBOARD: StaffWarsLeaderboardEntry[] = [
+  { id: 'def_1', name: 'Cadet Luke', score: 1250 },
+  { id: 'def_2', name: 'Cadet Leia', score: 980 },
+  { id: 'def_3', name: 'Cadet Han', score: 820 },
+  { id: 'def_4', name: 'Cadet Chewie', score: 650 },
+  { id: 'def_5', name: 'Cadet Ahsoka', score: 500 },
+];
+
 export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
   onBackToHub,
   studentSession,
@@ -131,6 +150,108 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
       setHighScore(0);
     }
   }, [studentSession]);
+
+  // Leaderboard State & Sync
+  const [showLeaderboard, setShowLeaderboard] = useState<boolean>(false);
+  const [leaderboard, setLeaderboard] = useState<StaffWarsLeaderboardEntry[]>(DEFAULT_LEADERBOARD);
+  const [guestPlayerName, setGuestPlayerName] = useState<string>(() => {
+    return localStorage.getItem('staff_wars_player_name') || 'Cadet Guest';
+  });
+
+  const loadLeaderboard = useCallback(async () => {
+    let localList: StaffWarsLeaderboardEntry[] = [];
+    try {
+      const saved = localStorage.getItem('staff_wars_leaderboard');
+      if (saved) {
+        localList = JSON.parse(saved);
+      }
+    } catch {}
+
+    // Fetch from classroom server API if reachable
+    try {
+      const res = await fetch('/api/classroom?action=staff_wars_leaderboard');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.ok && Array.isArray(data.leaderboard)) {
+          const map = new Map<string, StaffWarsLeaderboardEntry>();
+          [...DEFAULT_LEADERBOARD, ...localList, ...data.leaderboard].forEach((entry) => {
+            const key = (entry.studentId || entry.name).trim().toLowerCase();
+            const existing = map.get(key);
+            if (!existing || entry.score > existing.score) {
+              map.set(key, entry);
+            }
+          });
+          const merged = Array.from(map.values()).sort((a, b) => b.score - a.score);
+          setLeaderboard(merged);
+          localStorage.setItem('staff_wars_leaderboard', JSON.stringify(merged));
+          return;
+        }
+      }
+    } catch {}
+
+    const map = new Map<string, StaffWarsLeaderboardEntry>();
+    [...DEFAULT_LEADERBOARD, ...localList].forEach((entry) => {
+      const key = (entry.studentId || entry.name).trim().toLowerCase();
+      const existing = map.get(key);
+      if (!existing || entry.score > existing.score) {
+        map.set(key, entry);
+      }
+    });
+    const sorted = Array.from(map.values()).sort((a, b) => b.score - a.score);
+    setLeaderboard(sorted);
+  }, []);
+
+  useEffect(() => {
+    loadLeaderboard();
+  }, [loadLeaderboard]);
+
+  const submitHighScore = useCallback(
+    async (newScore: number) => {
+      const playerName = studentSession?.firstName || guestPlayerName || 'Cadet Player';
+      const studentId = studentSession?.id;
+
+      try {
+        const saved = localStorage.getItem('staff_wars_leaderboard');
+        const list: StaffWarsLeaderboardEntry[] = saved ? JSON.parse(saved) : [...DEFAULT_LEADERBOARD];
+        const matchIdx = list.findIndex(
+          (e) => (studentId && e.studentId === studentId) || (!studentId && e.name.toLowerCase() === playerName.toLowerCase())
+        );
+        if (matchIdx >= 0) {
+          if (newScore > list[matchIdx].score) {
+            list[matchIdx].score = newScore;
+            list[matchIdx].name = playerName;
+            list[matchIdx].updatedAt = new Date().toISOString();
+          }
+        } else {
+          list.push({
+            id: 'sw_' + Math.random().toString(36).substring(2, 9),
+            studentId,
+            name: playerName,
+            score: newScore,
+            updatedAt: new Date().toISOString(),
+          });
+        }
+        list.sort((a, b) => b.score - a.score);
+        localStorage.setItem('staff_wars_leaderboard', JSON.stringify(list));
+        setLeaderboard(list);
+      } catch {}
+
+      try {
+        await fetch('/api/classroom', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'staff_wars_submit_score',
+            studentId,
+            name: playerName,
+            score: newScore,
+            classGroup: studentSession?.classGroup,
+          }),
+        });
+      } catch {}
+    },
+    [studentSession, guestPlayerName]
+  );
 
   // Interactive Visuals
   const [activeNote, setActiveNote] = useState<ActiveNote | null>(null);
@@ -276,6 +397,9 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
         staffWarsAudio.playGameOver();
         livePitchDetector.stop();
         setMicActive(false);
+        if (score > 0) {
+          submitHighScore(score);
+        }
         return 0;
       } else {
         setTimeout(() => {
@@ -284,7 +408,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
         return remaining;
       }
     });
-  }, [level, spawnNote]);
+  }, [level, spawnNote, score, submitHighScore]);
 
   // Main Game Loop (Updates note position across staff)
   useEffect(() => {
@@ -369,21 +493,8 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
           try {
             const key = getHighScoreKey(studentSession);
             localStorage.setItem(key, String(newScore));
-
-            // Record in student leaderboard map if logged in
-            if (studentSession?.id) {
-              const studentScoresKey = 'staff_wars_student_leaderboard';
-              const existing = JSON.parse(localStorage.getItem(studentScoresKey) || '{}');
-              existing[studentSession.id] = {
-                studentId: studentSession.id,
-                firstName: studentSession.firstName,
-                classGroup: studentSession.classGroup,
-                highScore: newScore,
-                updatedAt: new Date().toISOString(),
-              };
-              localStorage.setItem(studentScoresKey, JSON.stringify(existing));
-            }
           } catch {}
+          submitHighScore(newScore);
         }
 
         const newStreak = streak + 1;
@@ -446,7 +557,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
         });
       }
     },
-    [status, activeNote, streak, score, highScore, notesHit, level, triggerExplosion, spawnNote]
+    [status, activeNote, streak, score, highScore, notesHit, level, triggerExplosion, spawnNote, submitHighScore]
   );
 
 
@@ -608,10 +719,22 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
             </div>
           )}
 
-          <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-900 border border-slate-800 text-xs text-amber-300">
-            <Trophy className="w-3.5 h-3.5 text-amber-400" />
+          {/* High Score / Leaderboard Button */}
+          <button
+            type="button"
+            onClick={() => {
+              loadLeaderboard();
+              setShowLeaderboard(true);
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-amber-400/50 text-xs text-amber-300 transition-colors cursor-pointer group shadow-xs"
+            title="View High Score Leaderboard"
+          >
+            <Trophy className="w-3.5 h-3.5 text-amber-400 group-hover:scale-110 transition-transform" />
             <span className="font-mono font-bold">BEST: {highScore.toLocaleString()}</span>
-          </div>
+            <span className="text-[10px] text-slate-400 font-semibold group-hover:text-amber-300 hidden sm:inline ml-1 underline">
+              Leaderboard
+            </span>
+          </button>
 
           {/* Music Toggle */}
           <button
@@ -654,6 +777,19 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
               <p className="text-xs sm:text-sm text-slate-300 max-w-md mx-auto mt-3">
                 Enemy musical notes are flying toward the staff! Name the note or play it on your instrument to fire your starfighter lasers!
               </p>
+              <div className="flex items-center justify-center gap-3 pt-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    loadLeaderboard();
+                    setShowLeaderboard(true);
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-400/15 hover:bg-amber-400/25 border border-amber-400/40 text-amber-300 font-bold text-xs transition-all cursor-pointer shadow-md hover:scale-102"
+                >
+                  <Trophy className="w-4 h-4 text-amber-400" />
+                  <span>View High Score Leaderboard</span>
+                </button>
+              </div>
             </div>
 
             {/* Input Mode Selector: Buttons vs Live Mic */}
@@ -1161,6 +1297,18 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
 
               <button
                 type="button"
+                onClick={() => {
+                  loadLeaderboard();
+                  setShowLeaderboard(true);
+                }}
+                className="w-full py-3 rounded-2xl bg-amber-400/15 hover:bg-amber-400/25 text-amber-300 font-bold text-sm border border-amber-400/40 flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-sm"
+              >
+                <Trophy className="w-4 h-4 text-amber-400" />
+                <span>View Leaderboard</span>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => setStatus('menu')}
                 className="w-full py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-sm border border-slate-700 cursor-pointer transition-colors"
               >
@@ -1170,6 +1318,151 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
           </div>
         )}
       </main>
+
+      {/* 4. HIGH SCORE LEADERBOARD MODAL (Simple List Showing Name and Score) */}
+      {showLeaderboard && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-xs p-4 animate-in fade-in duration-150"
+          onClick={() => setShowLeaderboard(false)}
+        >
+          <div
+            className="bg-slate-900 border-2 border-amber-400/50 rounded-3xl shadow-[0_0_50px_rgba(251,191,36,0.25)] max-w-md w-full p-6 text-white space-y-5 animate-in zoom-in-95 duration-150 flex flex-col max-h-[85vh] overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-amber-400/20 border border-amber-400/50 flex items-center justify-center text-amber-300 shadow-inner">
+                  <Trophy className="w-5 h-5 text-amber-400" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-amber-400 tracking-wide leading-tight">
+                    HIGH SCORE LEADERBOARD
+                  </h3>
+                  <p className="text-xs text-slate-400">Staff Wars Cadet Hall of Fame</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowLeaderboard(false)}
+                className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                title="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Current Player High Score Badge */}
+            <div className="px-4 py-2.5 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-center justify-between text-xs">
+              <div className="flex items-center gap-1.5 text-slate-400">
+                <User className="w-3.5 h-3.5 text-slate-400" />
+                <span>Your Best:</span>
+                <span className="font-bold text-white">
+                  {studentSession?.firstName || guestPlayerName}
+                </span>
+              </div>
+              <span className="font-mono font-black text-amber-400 text-sm">
+                {highScore > 0 ? `${highScore.toLocaleString()} PTS` : '0 PTS'}
+              </span>
+            </div>
+
+            {/* Simple List showing Name and Score */}
+            <div className="overflow-y-auto flex-1 pr-1 space-y-2 max-h-[46vh]">
+              {leaderboard.length === 0 ? (
+                <div className="py-12 text-center text-slate-500 text-xs">
+                  No high scores recorded yet. Be the first Cadet to claim the top spot!
+                </div>
+              ) : (
+                leaderboard.map((entry, index) => {
+                  const rank = index + 1;
+                  const isTop3 = rank <= 3;
+                  const isCurrentPlayer =
+                    (studentSession?.id && entry.studentId === studentSession.id) ||
+                    (!studentSession?.id &&
+                      entry.name.toLowerCase() === guestPlayerName.toLowerCase());
+
+                  return (
+                    <div
+                      key={entry.id || `${entry.name}-${index}`}
+                      className={`flex items-center justify-between px-4 py-3 rounded-2xl border transition-all ${
+                        isCurrentPlayer
+                          ? 'bg-amber-500/15 border-amber-400/60 shadow-[0_0_15px_rgba(251,191,36,0.15)] ring-1 ring-amber-400/30'
+                          : isTop3
+                          ? 'bg-slate-950/70 border-slate-800 hover:border-slate-700'
+                          : 'bg-slate-950/40 border-slate-800/80'
+                      }`}
+                    >
+                      {/* Left: Rank & Name */}
+                      <div className="flex items-center gap-3">
+                        {/* Rank Badge */}
+                        <div
+                          className={`w-7 h-7 rounded-xl flex items-center justify-center font-black text-xs font-mono shrink-0 ${
+                            rank === 1
+                              ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-400/30'
+                              : rank === 2
+                              ? 'bg-slate-300 text-slate-950'
+                              : rank === 3
+                              ? 'bg-amber-700/80 text-amber-100'
+                              : 'bg-slate-800 text-slate-400'
+                          }`}
+                        >
+                          {rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`}
+                        </div>
+
+                        {/* Cadet / Student Name */}
+                        <div className="flex items-center gap-2">
+                          <span className="font-extrabold text-sm text-slate-100">
+                            {entry.name}
+                          </span>
+                          {isCurrentPlayer && (
+                            <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded bg-amber-400/20 text-amber-300 border border-amber-400/40">
+                              YOU
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Right: Score */}
+                      <div className="font-mono font-black text-base text-amber-300">
+                        {entry.score.toLocaleString()}{' '}
+                        <span className="text-xs text-amber-400/80 font-normal">PTS</span>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Guest Name Editor (if not logged in as a student) */}
+            {!studentSession && (
+              <div className="pt-2 border-t border-slate-800/80 flex items-center gap-2 text-xs">
+                <span className="text-slate-400 shrink-0">Player Name:</span>
+                <input
+                  type="text"
+                  value={guestPlayerName}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setGuestPlayerName(val);
+                    localStorage.setItem('staff_wars_player_name', val);
+                  }}
+                  placeholder="Enter your name..."
+                  className="flex-1 px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-700 text-white font-semibold text-xs focus:outline-hidden focus:border-amber-400"
+                  maxLength={20}
+                />
+              </div>
+            )}
+
+            {/* Close Button */}
+            <button
+              type="button"
+              onClick={() => setShowLeaderboard(false)}
+              className="w-full py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm border border-slate-700 transition-colors cursor-pointer"
+            >
+              Back to Game
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

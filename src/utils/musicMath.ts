@@ -2,12 +2,14 @@ import {
   AccidentalType,
   ClefType,
   CountingMode,
+  KeySignature,
   NoteDuration,
   NoteItem,
   NoteLabelMode,
   NoteStep,
   Pitch,
   Score,
+  VoltaEnding,
 } from '../types/music';
 
 export const LINE_SPACING = 18;
@@ -79,19 +81,40 @@ export const SEMITONE_OFFSETS: Record<NoteStep, number> = {
   B: 11,
 };
 
+export const KEY_DEFAULT_ACCIDENTALS: Record<KeySignature, Partial<Record<NoteStep, 'sharp' | 'flat'>>> = {
+  C: {},
+  G: { F: 'sharp' },
+  D: { F: 'sharp', C: 'sharp' },
+  A: { F: 'sharp', C: 'sharp', G: 'sharp' },
+  E: { F: 'sharp', C: 'sharp', G: 'sharp', D: 'sharp' },
+  B: { F: 'sharp', C: 'sharp', G: 'sharp', D: 'sharp', A: 'sharp' },
+  'F#': { F: 'sharp', C: 'sharp', G: 'sharp', D: 'sharp', A: 'sharp', E: 'sharp' },
+  'C#': { F: 'sharp', C: 'sharp', G: 'sharp', D: 'sharp', A: 'sharp', E: 'sharp', B: 'sharp' },
+  F: { B: 'flat' },
+  Bb: { B: 'flat', E: 'flat' },
+  Eb: { B: 'flat', E: 'flat', A: 'flat' },
+  Ab: { B: 'flat', E: 'flat', A: 'flat', D: 'flat' },
+  Db: { B: 'flat', E: 'flat', A: 'flat', D: 'flat', G: 'flat' },
+  Gb: { B: 'flat', E: 'flat', A: 'flat', D: 'flat', G: 'flat', C: 'flat' },
+  Cb: { B: 'flat', E: 'flat', A: 'flat', D: 'flat', G: 'flat', C: 'flat', F: 'flat' },
+};
+
+export function getEffectiveAccidental(
+  pitch: Pitch,
+  keySignature: KeySignature = 'C'
+): AccidentalType {
+  if (pitch.accidental !== undefined && pitch.accidental !== null) {
+    return pitch.accidental;
+  }
+  return KEY_DEFAULT_ACCIDENTALS[keySignature]?.[pitch.step] ?? null;
+}
+
 export function getPitchFrequency(
   pitch: Pitch,
-  keySignature: 'C' | 'G' | 'F' | 'D' | 'Bb' = 'C'
+  keySignature: KeySignature = 'C'
 ): number {
   let semitones = (pitch.octave - 4) * 12 + SEMITONE_OFFSETS[pitch.step] - 9; // A4 is 0
-  let effectiveAccidental = pitch.accidental;
-
-  if (!effectiveAccidental) {
-    if (keySignature === 'G' && pitch.step === 'F') effectiveAccidental = 'sharp';
-    else if (keySignature === 'D' && (pitch.step === 'F' || pitch.step === 'C')) effectiveAccidental = 'sharp';
-    else if (keySignature === 'F' && pitch.step === 'B') effectiveAccidental = 'flat';
-    else if (keySignature === 'Bb' && (pitch.step === 'B' || pitch.step === 'E')) effectiveAccidental = 'flat';
-  }
+  const effectiveAccidental = getEffectiveAccidental(pitch, keySignature);
 
   if (effectiveAccidental === 'sharp') semitones += 1;
   else if (effectiveAccidental === 'flat') semitones -= 1;
@@ -281,6 +304,18 @@ export function cleanMeasureRests(items: NoteItem[], capacity: number): NoteItem
     currentBeat += dur;
   }
 
+  // If there are no notes in the measure at all, standard musical engraving represents
+  // the entire empty bar with a single centered whole rest.
+  if (notes.length === 0) {
+    return [
+      {
+        id: 'rest_' + Math.random().toString(36).substring(2, 9),
+        type: 'rest',
+        duration: 1,
+      },
+    ];
+  }
+
   const resultItems: NoteItem[] = [];
   let cursorBeat = 0;
 
@@ -298,7 +333,13 @@ export function cleanMeasureRests(items: NoteItem[], capacity: number): NoteItem
     resultItems.push(...subdivideRemainingRests(remainingGap));
   }
 
-  return resultItems.length > 0 ? resultItems : subdivideRemainingRests(capacity);
+  return resultItems.length > 0 ? resultItems : [
+    {
+      id: 'rest_' + Math.random().toString(36).substring(2, 9),
+      type: 'rest',
+      duration: 1,
+    },
+  ];
 }
 
 // Helper to determine ledger lines needed
@@ -372,18 +413,28 @@ const FIXED_SOLFEGE: Record<NoteStep, string> = {
 
 const MOVABLE_SOLFEGE_SYLLABLES = ['Do', 'Re', 'Mi', 'Fa', 'Sol', 'La', 'Ti'];
 
-const KEY_TONIC_STEP_INDEX: Record<Score['keySignature'], number> = {
-  C: 0, // C
-  G: 4, // G
-  F: 3, // F
-  D: 1, // D
-  Bb: 6, // B(b)
+export const KEY_TONIC_STEP_INDEX: Record<KeySignature, number> = {
+  C: 0,
+  G: 4,
+  D: 1,
+  A: 5,
+  E: 2,
+  B: 6,
+  'F#': 3,
+  'C#': 0,
+  F: 3,
+  Bb: 6,
+  Eb: 2,
+  Ab: 5,
+  Db: 1,
+  Gb: 4,
+  Cb: 0,
 };
 
 export function getFormattedPitchLabel(
   pitch: Pitch,
   mode: NoteLabelMode,
-  keySignature: Score['keySignature'] = 'C'
+  keySignature: KeySignature = 'C'
 ): string {
   if (mode === 'off') return '';
   if (mode === 'letters') {
@@ -453,32 +504,63 @@ export function getBeatCountingLabel(
 
 export function getMidiNoteNumber(
   pitch: Pitch,
-  keySignature: Score['keySignature'] = 'C'
+  keySignature: KeySignature = 'C'
 ): number {
   let midi = (pitch.octave + 1) * 12 + SEMITONE_OFFSETS[pitch.step];
-  let effectiveAccidental = pitch.accidental;
-
-  if (!effectiveAccidental) {
-    if (keySignature === 'G' && pitch.step === 'F') effectiveAccidental = 'sharp';
-    else if (keySignature === 'D' && (pitch.step === 'F' || pitch.step === 'C'))
-      effectiveAccidental = 'sharp';
-    else if (keySignature === 'F' && pitch.step === 'B') effectiveAccidental = 'flat';
-    else if (keySignature === 'Bb' && (pitch.step === 'B' || pitch.step === 'E'))
-      effectiveAccidental = 'flat';
-  }
+  const effectiveAccidental = getEffectiveAccidental(pitch, keySignature);
 
   if (effectiveAccidental === 'sharp') midi += 1;
   else if (effectiveAccidental === 'flat') midi -= 1;
   return Math.max(0, Math.min(127, midi));
 }
 
+// Classical sheet music standard accidental positions (in LINE_SPACING multiplier from STAFF_TOP_Y)
+// Sharps order: F, C, G, D, A, E, B
+export const SHARP_TREBLE_OFFSETS = [0, 1.5, -0.5, 1.0, 2.5, 0.5, 2.0];
+export const SHARP_BASS_OFFSETS = [1.0, 2.5, 0.5, 2.0, 3.5, 1.5, 3.0];
+
+// Flats order: B, E, A, D, G, C, F
+export const FLAT_TREBLE_OFFSETS = [2.0, 0.5, 2.5, 1.0, 3.0, 1.5, 3.5];
+export const FLAT_BASS_OFFSETS = [3.0, 1.5, 3.5, 2.0, 4.0, 2.5, 4.5];
+
+export function getKeyAccidentalInfo(keySignature: KeySignature): {
+  type: 'sharp' | 'flat' | null;
+  count: number;
+} {
+  switch (keySignature) {
+    case 'G': return { type: 'sharp', count: 1 };
+    case 'D': return { type: 'sharp', count: 2 };
+    case 'A': return { type: 'sharp', count: 3 };
+    case 'E': return { type: 'sharp', count: 4 };
+    case 'B': return { type: 'sharp', count: 5 };
+    case 'F#': return { type: 'sharp', count: 6 };
+    case 'C#': return { type: 'sharp', count: 7 };
+    case 'F': return { type: 'flat', count: 1 };
+    case 'Bb': return { type: 'flat', count: 2 };
+    case 'Eb': return { type: 'flat', count: 3 };
+    case 'Ab': return { type: 'flat', count: 4 };
+    case 'Db': return { type: 'flat', count: 5 };
+    case 'Gb': return { type: 'flat', count: 6 };
+    case 'Cb': return { type: 'flat', count: 7 };
+    case 'C':
+    default:
+      return { type: null, count: 0 };
+  }
+}
+
+export function getScoreHeaderWidth(keySignature: KeySignature): number {
+  const { count } = getKeyAccidentalInfo(keySignature);
+  if (count <= 1) return 90;
+  return 90 + (count - 1) * 9;
+}
+
 /**
- * Expands the measure playback sequence to honor repeat barlines (|: and :|)
- * or loop a single selected measure.
+ * Expands the measure playback sequence to honor repeat barlines (|: and :|),
+ * 1st and 2nd endings (volta brackets), or loop a single selected measure.
  */
 export function expandPlaybackMeasures(
   measureCount: number,
-  measures: { repeatStart?: boolean; repeatEnd?: boolean }[],
+  measures: { repeatStart?: boolean; repeatEnd?: boolean; ending?: VoltaEnding }[],
   loopMeasureIndex?: number | null,
   loopIterations: number = 4
 ): number[] {
@@ -493,15 +575,57 @@ export function expandPlaybackMeasures(
 
   const sequence: number[] = [];
   const triggeredEndRepeats = new Set<number>();
+  const completedEnding1 = new Set<number>(); // tracks starting index of completed 1st ending blocks
   let lastRepeatStart = 0;
 
   let m = 0;
   let safetyCounter = 0;
-  while (m < measureCount && safetyCounter < measureCount * 4) {
+  while (m < measureCount && safetyCounter < measureCount * 8) {
     safetyCounter++;
     if (measures[m]?.repeatStart) {
       lastRepeatStart = m;
     }
+
+    // Handle 1st Ending (Pass 1 plays it and repeats back; Pass 2 skips to 2nd ending)
+    if (measures[m]?.ending === 1) {
+      // Find contiguous block of measures marked as ending 1
+      let blockStart = m;
+      while (blockStart > 0 && measures[blockStart - 1]?.ending === 1) {
+        blockStart--;
+      }
+      let blockEnd = m;
+      while (blockEnd + 1 < measureCount && measures[blockEnd + 1]?.ending === 1) {
+        blockEnd++;
+      }
+
+      if (completedEnding1.has(blockStart)) {
+        // Pass 2: We have already played the 1st ending and taken the repeat.
+        // Skip over the entire 1st ending block straight to the 2nd ending (or next measure)!
+        m = blockEnd + 1;
+        continue;
+      } else {
+        // Pass 1: Play through the 1st ending
+        sequence.push(m);
+
+        const isLastOfEnding1 = m === blockEnd;
+        const hasRepeatEnd = Boolean(measures[m]?.repeatEnd);
+
+        // If explicitly marked with repeatEnd or at the end of the 1st ending block, take the repeat!
+        if (hasRepeatEnd || isLastOfEnding1) {
+          completedEnding1.add(blockStart);
+          if (hasRepeatEnd) {
+            triggeredEndRepeats.add(m);
+          }
+          m = lastRepeatStart;
+          continue;
+        } else {
+          m++;
+          continue;
+        }
+      }
+    }
+
+    // Normal measure or 2nd ending measure
     sequence.push(m);
 
     if (measures[m]?.repeatEnd && !triggeredEndRepeats.has(m)) {

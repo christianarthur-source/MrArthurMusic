@@ -29,7 +29,7 @@ import {
   Users,
   HelpCircle,
 } from 'lucide-react';
-import { CountingMode, NoteLabelMode, ViewLayout } from '../types/music';
+import { CountingMode, KeySignature, NoteLabelMode, ViewLayout } from '../types/music';
 import { BOOMWHACKER_COLORS, getTempoDescription } from '../utils/musicMath';
 import { soundEngine } from '../audio/soundEngine';
 
@@ -51,8 +51,8 @@ interface TransportBarProps {
   onToggleMetronome: () => void;
   timeSignature: [number, number];
   onChangeTimeSignature: (ts: [number, number]) => void;
-  keySignature: 'C' | 'G' | 'F' | 'D' | 'Bb';
-  onChangeKeySignature: (ks: 'C' | 'G' | 'F' | 'D' | 'Bb') => void;
+  keySignature: KeySignature;
+  onChangeKeySignature: (ks: KeySignature) => void;
   onAddMeasure: () => void;
   onOpenTemplates: () => void;
   onOpenEnsembleTemplates?: () => void;
@@ -378,20 +378,33 @@ export const TransportBar: React.FC<TransportBarProps> = ({
             <option value="4/4" className="bg-slate-900 text-white">4/4</option>
             <option value="3/4" className="bg-slate-900 text-white">3/4</option>
             <option value="2/4" className="bg-slate-900 text-white">2/4</option>
+            <option value="5/4" className="bg-slate-900 text-white">5/4</option>
             <option value="6/8" className="bg-slate-900 text-white">6/8</option>
+            <option value="7/8" className="bg-slate-900 text-white">7/8</option>
+            <option value="6/5" className="bg-slate-900 text-white">6/5</option>
           </select>
           <span className="text-slate-600">|</span>
           <select
             value={keySignature}
-            onChange={(e) => onChangeKeySignature(e.target.value as any)}
+            onChange={(e) => onChangeKeySignature(e.target.value as KeySignature)}
             title="Key Signature"
             className="font-bold text-white bg-transparent focus:outline-hidden cursor-pointer"
           >
             <option value="C" className="bg-slate-900 text-white">Key: C</option>
             <option value="G" className="bg-slate-900 text-white">Key: G (1♯)</option>
-            <option value="F" className="bg-slate-900 text-white">Key: F (1♭)</option>
             <option value="D" className="bg-slate-900 text-white">Key: D (2♯)</option>
+            <option value="A" className="bg-slate-900 text-white">Key: A (3♯)</option>
+            <option value="E" className="bg-slate-900 text-white">Key: E (4♯)</option>
+            <option value="B" className="bg-slate-900 text-white">Key: B (5♯)</option>
+            <option value="F#" className="bg-slate-900 text-white">Key: F♯ (6♯)</option>
+            <option value="C#" className="bg-slate-900 text-white">Key: C♯ (7♯)</option>
+            <option value="F" className="bg-slate-900 text-white">Key: F (1♭)</option>
             <option value="Bb" className="bg-slate-900 text-white">Key: B♭ (2♭)</option>
+            <option value="Eb" className="bg-slate-900 text-white">Key: E♭ (3♭)</option>
+            <option value="Ab" className="bg-slate-900 text-white">Key: A♭ (4♭)</option>
+            <option value="Db" className="bg-slate-900 text-white">Key: D♭ (5♭)</option>
+            <option value="Gb" className="bg-slate-900 text-white">Key: G♭ (6♭)</option>
+            <option value="Cb" className="bg-slate-900 text-white">Key: C♭ (7♭)</option>
           </select>
         </div>
       </div>
