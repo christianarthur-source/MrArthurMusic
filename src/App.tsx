@@ -14,6 +14,7 @@ import {
   Track,
   UiMode,
   ViewLayout,
+  VoltaEnding,
 } from './types/music';
 import { DEFAULT_BLANK_SCORE, createEmptyMeasure } from './data/templates';
 import {
@@ -727,6 +728,11 @@ export default function App() {
 
       pushScoreState(nextScore);
 
+      // Automatically disable dynamic marking after a note is placed so subsequent notes don't inherit it
+      if (activeDynamic) {
+        setActiveDynamic(null);
+      }
+
       const newlyAddedIdx = measure.items.findIndex((it) => it.id === newItem.id);
       setSelection({
         trackIndex,
@@ -936,18 +942,22 @@ export default function App() {
     [selection, score, pushScoreState]
   );
 
-  // Change Dynamic handler
+  // Change Dynamic handler: sets/toggles dynamic on selected note and automatically disables tool
   const handleChangeDynamic = useCallback(
     (dyn: DynamicMarking) => {
-      setActiveDynamic(dyn);
       if (selection && selection.itemIndex >= 0) {
         const nextScore: Score = JSON.parse(JSON.stringify(score));
         const item =
           nextScore.tracks[selection.trackIndex]?.measures[selection.measureIndex]?.items[selection.itemIndex];
         if (item) {
-          item.dynamic = dyn;
+          item.dynamic = item.dynamic === dyn ? null : dyn;
           pushScoreState(nextScore);
         }
+        // Automatically disable dynamic marking right after applying to the selected note
+        setActiveDynamic(null);
+      } else {
+        // Arm dynamic marking for the next note placed on staff (or toggle off if re-clicked)
+        setActiveDynamic((prev) => (prev === dyn ? null : dyn));
       }
     },
     [selection, score, pushScoreState]
@@ -979,6 +989,28 @@ export default function App() {
     });
     pushScoreState(nextScore);
   }, [selection, score, pushScoreState]);
+
+  // Toggle 1st or 2nd ending (volta bracket) on the selected measure
+  const handleToggleEnding = useCallback(
+    (ending: 1 | 2) => {
+      const measureIdx = selection?.measureIndex ?? 0;
+      const trackIdx = selection?.trackIndex ?? 0;
+      const nextScore: Score = JSON.parse(JSON.stringify(score));
+      const currentVal = nextScore.tracks[trackIdx]?.measures[measureIdx]?.ending;
+      const newVal = currentVal === ending ? null : ending;
+      nextScore.tracks.forEach((t) => {
+        if (t.measures[measureIdx]) {
+          t.measures[measureIdx].ending = newVal;
+          // When adding 1st ending, ensure repeatEnd is placed if not already set
+          if (newVal === 1 && !t.measures[measureIdx].repeatEnd) {
+            t.measures[measureIdx].repeatEnd = true;
+          }
+        }
+      });
+      pushScoreState(nextScore);
+    },
+    [selection, score, pushScoreState]
+  );
 
   const handleToggleRepeatMeasure = useCallback(() => {
     const measureIdx = selection?.measureIndex ?? 0;
@@ -1012,6 +1044,7 @@ export default function App() {
       t.measures.forEach((m) => {
         m.repeatStart = false;
         m.repeatEnd = false;
+        m.ending = null;
       });
     });
     pushScoreState(nextScore);
@@ -1665,6 +1698,7 @@ export default function App() {
     score.tracks[selection?.trackIndex ?? 0]?.measures[selection?.measureIndex ?? 0];
   const hasRepeatStart = Boolean(selectedMeasure?.repeatStart);
   const hasRepeatEnd = Boolean(selectedMeasure?.repeatEnd);
+  const currentMeasureEnding: VoltaEnding = selectedMeasure?.ending || null;
   const selectedNoteLyric =
     selection && selection.itemIndex >= 0
       ? selectedMeasure?.items[selection.itemIndex]?.lyric || ''
@@ -2135,6 +2169,8 @@ export default function App() {
               onChangeDynamic={handleChangeDynamic}
               currentMeasureHasRepeatStart={hasRepeatStart}
               currentMeasureHasRepeatEnd={hasRepeatEnd}
+              currentMeasureEnding={currentMeasureEnding}
+              onToggleEnding={handleToggleEnding}
               onToggleRepeatStart={handleToggleRepeatStart}
               onToggleRepeatEnd={handleToggleRepeatEnd}
               onToggleRepeatMeasure={handleToggleRepeatMeasure}
@@ -2161,6 +2197,7 @@ export default function App() {
               score={score}
               selection={selection}
               onSelect={setSelection}
+              onUpdateTrack={handleUpdateTrack}
               onNoteInsertOrUpdate={(tIdx, mIdx, iIdx, pitch, targetBeat, isDragUpdate, origPitch) =>
                 handleNoteInsertOrUpdate(tIdx, mIdx, iIdx, pitch, targetBeat, isDragUpdate, origPitch)
               }

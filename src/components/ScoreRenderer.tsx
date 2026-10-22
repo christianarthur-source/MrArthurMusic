@@ -2,6 +2,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   ClefType,
   CountingMode,
+  InstrumentCategory,
+  InstrumentDefinition,
   Measure,
   NoteDuration,
   NoteItem,
@@ -13,16 +15,25 @@ import {
   UiMode,
   ViewLayout,
 } from '../types/music';
+import { INSTRUMENTS } from '../data/instruments';
+import { soundEngine } from '../audio/soundEngine';
+import { Search, X, Volume2, Check, Music } from 'lucide-react';
 import {
   BOOMWHACKER_COLORS,
+  FLAT_BASS_OFFSETS,
+  FLAT_TREBLE_OFFSETS,
   getBeatCountingLabel,
   getFormattedPitchLabel,
   getItemDuration,
+  getKeyAccidentalInfo,
   getLedgerLines,
   getMeasureCapacity,
   getPitchFromY,
   getPitchY,
+  getScoreHeaderWidth,
   LINE_SPACING,
+  SHARP_BASS_OFFSETS,
+  SHARP_TREBLE_OFFSETS,
   STAFF_HEIGHT,
   STAFF_TOP_Y,
   STEP_DIATONIC_OFFSET,
@@ -81,6 +92,7 @@ interface ScoreRendererProps {
   showBeatCounters: boolean;
   playheadPosition: { measureIndex: number; beatFraction: number } | null;
   activePlayingNoteIds: Set<string>;
+  onUpdateTrack?: (trackIndex: number, updates: Partial<Track>) => void;
 }
 
 interface BeamGroupNote {
@@ -320,6 +332,7 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
   showBeatCounters,
   playheadPosition,
   activePlayingNoteIds,
+  onUpdateTrack,
 }) => {
   const isSimpleMode = uiMode === 'simple';
   // In Simple mode: always show Boomwhacker colors & note names.
@@ -332,6 +345,12 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
       ? 'letters'
       : 'off';
   const effectiveShowPitchNames = effectiveNoteLabelMode !== 'off';
+
+  // Minimal Staff Instrument Dropdown state
+  const [pickerTrackIndex, setPickerTrackIndex] = useState<number | null>(null);
+  const [instrumentSearch, setInstrumentSearch] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState<InstrumentCategory | 'All'>('All');
+  const [previewingId, setPreviewingId] = useState<string | null>(null);
   // Ghost note state
   const [ghostNote, setGhostNote] = useState<{
     trackIndex: number;
@@ -360,7 +379,7 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
   // Layout metrics: in 'horizontal' view, all measures are rendered on a single continuous row
   const MEASURES_PER_SYSTEM = viewLayout === 'horizontal' ? Math.max(1, measureCount) : 2;
   const MEASURE_WIDTH = 480;
-  const HEADER_WIDTH = 90;
+  const HEADER_WIDTH = getScoreHeaderWidth(score.keySignature);
   const INSTRUMENT_LABEL_WIDTH = 104;
   const LEFT_PADDING = 8;
   const TRACK_SPACING = 150;
@@ -712,17 +731,28 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
 
                   return (
                     <g key={`${track.id}-s${systemIndex}`}>
-                      {/* Instrument label (1 or 2 lines, no clef text label) */}
-                      <g transform={`translate(${staffStartX - 8}, ${trackTopY + STAFF_TOP_Y})`}>
+                      {/* Instrument label (clickable to change instrument) */}
+                      <g
+                        transform={`translate(${staffStartX - 8}, ${trackTopY + STAFF_TOP_Y})`}
+                        className={onUpdateTrack ? "cursor-pointer group select-none" : "select-none"}
+                        onClick={
+                          onUpdateTrack
+                            ? (e) => {
+                                e.stopPropagation();
+                                setPickerTrackIndex(trackIndex);
+                              }
+                            : undefined
+                        }
+                      >
                         {labelLine2 ? (
                           <text
                             x="0"
-                            y="26"
+                            y="22"
                             fontSize="10.5"
                             fill="#0F172A"
                             fontWeight="700"
                             textAnchor="end"
-                            className="font-sans"
+                            className="font-sans group-hover:fill-indigo-600 transition-colors"
                           >
                             <tspan x="0" dy="0">
                               {labelLine1}
@@ -734,15 +764,41 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
                         ) : (
                           <text
                             x="0"
-                            y="34"
+                            y="30"
                             fontSize={rawName.length > 10 ? '10.5' : '11.5'}
                             fill="#0F172A"
                             fontWeight="700"
                             textAnchor="end"
-                            className="font-sans"
+                            className="font-sans group-hover:fill-indigo-600 transition-colors"
                           >
                             {labelLine1}
                           </text>
+                        )}
+
+                        {/* Minimal Instrument Change Link directly on staff */}
+                        {onUpdateTrack && (
+                          <g className="score-ui-only">
+                            <rect
+                              x="-56"
+                              y={labelLine2 ? 40 : 38}
+                              width="56"
+                              height="15"
+                              rx="4"
+                              fill="#EEF2FF"
+                              className="opacity-75 group-hover:opacity-100 group-hover:fill-indigo-100 transition-all"
+                            />
+                            <text
+                              x="-6"
+                              y={labelLine2 ? 51 : 49}
+                              fontSize="9"
+                              fill="#4F46E5"
+                              fontWeight="700"
+                              textAnchor="end"
+                              className="font-sans group-hover:fill-indigo-700 select-none"
+                            >
+                              switch ▾
+                            </text>
+                          </g>
                         )}
                       </g>
 
@@ -772,58 +828,44 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
                         <BassClefSymbol x={staffStartX + 10} y={trackTopY + STAFF_TOP_Y} color="#0F172A" />
                       )}
 
-                      {/* Key Signature */}
-                      {score.keySignature === 'G' && (
-                        <SharpSymbol
-                          x={staffStartX + 52}
-                          y={trackTopY + (track.clef === 'treble' ? STAFF_TOP_Y : STAFF_TOP_Y + LINE_SPACING)}
-                        />
-                      )}
-                      {score.keySignature === 'F' && (
-                        <FlatSymbol
-                          x={staffStartX + 52}
-                          y={trackTopY + (track.clef === 'treble' ? STAFF_TOP_Y + 2 * LINE_SPACING : STAFF_TOP_Y + 3 * LINE_SPACING)}
-                        />
-                      )}
-                      {score.keySignature === 'D' && (
-                        <>
-                          <SharpSymbol
-                            x={staffStartX + 48}
-                            y={trackTopY + (track.clef === 'treble' ? STAFF_TOP_Y : STAFF_TOP_Y + LINE_SPACING)}
-                          />
-                          <SharpSymbol
-                            x={staffStartX + 58}
-                            y={trackTopY + (track.clef === 'treble' ? STAFF_TOP_Y + 1.5 * LINE_SPACING : STAFF_TOP_Y + 2.5 * LINE_SPACING)}
-                          />
-                        </>
-                      )}
-                      {score.keySignature === 'Bb' && (
-                        <>
-                          <FlatSymbol
-                            x={staffStartX + 48}
-                            y={trackTopY + (track.clef === 'treble' ? STAFF_TOP_Y + 2 * LINE_SPACING : STAFF_TOP_Y + 3 * LINE_SPACING)}
-                          />
-                          <FlatSymbol
-                            x={staffStartX + 58}
-                            y={trackTopY + (track.clef === 'treble' ? STAFF_TOP_Y + 0.5 * LINE_SPACING : STAFF_TOP_Y + 1.5 * LINE_SPACING)}
-                          />
-                        </>
-                      )}
+                      {/* Key Signature (All 12 Keys & Enharmonics) */}
+                      {(() => {
+                        const { type, count } = getKeyAccidentalInfo(score.keySignature);
+                        if (!type || count === 0) return null;
 
-                      {/* Time Signature */}
-                      {systemIndex === 0 && (
-                        <g
-                          transform={`translate(${staffStartX + 70}, ${trackTopY + STAFF_TOP_Y})`}
-                          className="font-bold fill-slate-900"
-                        >
-                          <text x="8" y="24" fontSize="26" textAnchor="middle" fontWeight="bold">
-                            {score.timeSignature[0]}
-                          </text>
-                          <text x="8" y="56" fontSize="26" textAnchor="middle" fontWeight="bold">
-                            {score.timeSignature[1]}
-                          </text>
-                        </g>
-                      )}
+                        const isTreble = track.clef === 'treble';
+                        const offsets = type === 'sharp'
+                          ? (isTreble ? SHARP_TREBLE_OFFSETS : SHARP_BASS_OFFSETS)
+                          : (isTreble ? FLAT_TREBLE_OFFSETS : FLAT_BASS_OFFSETS);
+
+                        const SymbolComponent = type === 'sharp' ? SharpSymbol : FlatSymbol;
+                        const startAccX = staffStartX + 42;
+
+                        return Array.from({ length: count }).map((_, i) => {
+                          const accX = startAccX + i * 9;
+                          const accY = trackTopY + STAFF_TOP_Y + offsets[i] * LINE_SPACING;
+                          return <SymbolComponent key={i} x={accX} y={accY} />;
+                        });
+                      })()}
+
+                      {/* Time Signature (Dynamically Positioned) */}
+                      {systemIndex === 0 && (() => {
+                        const { count } = getKeyAccidentalInfo(score.keySignature);
+                        const timeSigX = staffStartX + (count === 0 ? 56 : 42 + count * 9 + 5);
+                        return (
+                          <g
+                            transform={`translate(${timeSigX}, ${trackTopY + STAFF_TOP_Y})`}
+                            className="font-bold fill-slate-900"
+                          >
+                            <text x="8" y="24" fontSize="26" textAnchor="middle" fontWeight="bold">
+                              {score.timeSignature[0]}
+                            </text>
+                            <text x="8" y="56" fontSize="26" textAnchor="middle" fontWeight="bold">
+                              {score.timeSignature[1]}
+                            </text>
+                          </g>
+                        );
+                      })()}
 
                       {/* Measures in system */}
                       {systemMeasures.map((measureIndex) => {
@@ -970,11 +1012,93 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
                               </g>
                             )}
 
+                            {/* Volta Endings (1st and 2nd Ending Brackets) */}
+                            {trackIndex === 0 && measure.ending && (
+                              <g className="pointer-events-none select-none">
+                                {(() => {
+                                  const endingNum = measure.ending;
+                                  const prevMeasure = track.measures[measureIndex - 1];
+                                  const nextMeasure = track.measures[measureIndex + 1];
+                                  const prevMeasureLayout = measureLayout.get(measureIndex - 1);
+                                  const nextMeasureLayout = measureLayout.get(measureIndex + 1);
+
+                                  // Start of ending if previous measure has different ending or is on a previous system row
+                                  const isStartOfEnding =
+                                    !prevMeasure ||
+                                    prevMeasure.ending !== endingNum ||
+                                    (prevMeasureLayout && prevMeasureLayout.systemIndex !== layout.systemIndex);
+
+                                  // End of ending if next measure has different ending or is on a next system row
+                                  const isEndOfEnding =
+                                    !nextMeasure ||
+                                    nextMeasure.ending !== endingNum ||
+                                    (nextMeasureLayout && nextMeasureLayout.systemIndex !== layout.systemIndex);
+
+                                  const bracketY = trackTopY + STAFF_TOP_Y - 24;
+                                  const startX = layout.x + (isStartOfEnding ? 1 : 0);
+                                  const endX = layout.x + MEASURE_WIDTH;
+                                  const tickHeight = 14;
+
+                                  return (
+                                    <g>
+                                      {/* Top Horizontal Bracket Bar */}
+                                      <line
+                                        x1={startX}
+                                        y1={bracketY}
+                                        x2={endX}
+                                        y2={bracketY}
+                                        stroke="#0F172A"
+                                        strokeWidth="2.2"
+                                      />
+
+                                      {/* Left Downward Start Tick */}
+                                      {isStartOfEnding && (
+                                        <line
+                                          x1={startX}
+                                          y1={bracketY}
+                                          x2={startX}
+                                          y2={bracketY + tickHeight}
+                                          stroke="#0F172A"
+                                          strokeWidth="2.2"
+                                        />
+                                      )}
+
+                                      {/* Volta Number Label ("1." or "2.") */}
+                                      {isStartOfEnding && (
+                                        <text
+                                          x={startX + 7}
+                                          y={bracketY + 11}
+                                          fontSize="13"
+                                          fontFamily="Georgia, serif"
+                                          fontWeight="900"
+                                          fill="#0F172A"
+                                        >
+                                          {endingNum}.
+                                        </text>
+                                      )}
+
+                                      {/* Right Downward End Tick */}
+                                      {(isEndOfEnding && (endingNum === 1 || measure.repeatEnd || !nextMeasure)) && (
+                                        <line
+                                          x1={endX - 2}
+                                          y1={bracketY}
+                                          x2={endX - 2}
+                                          y2={bracketY + tickHeight}
+                                          stroke="#0F172A"
+                                          strokeWidth="2.2"
+                                        />
+                                      )}
+                                    </g>
+                                  );
+                                })()}
+                              </g>
+                            )}
+
                             {/* Measure Number Badge */}
                             {trackIndex === 0 && (
                               <text
                                 x={layout.x + (measure.repeatStart ? 20 : 8)}
-                                y={trackTopY + STAFF_TOP_Y - 12}
+                                y={trackTopY + STAFF_TOP_Y - (measure.ending ? 32 : 12)}
                                 fontSize="13"
                                 fill="#64748B"
                                 fontWeight="700"
@@ -1839,6 +1963,210 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
           />
         </svg>
       </div>
+
+      {/* Interactive Full Instrument Dropdown Modal */}
+      {pickerTrackIndex !== null && onUpdateTrack && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/70 backdrop-blur-xs p-4 score-ui-only"
+          onClick={() => {
+            setPickerTrackIndex(null);
+            setInstrumentSearch('');
+          }}
+        >
+          <div
+            className="bg-slate-900 text-white rounded-3xl shadow-2xl max-w-xl w-full border border-slate-700/90 animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[85vh] overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-900/90">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center text-indigo-400">
+                  <Music className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white leading-tight">
+                    Change Staff Instrument
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Track {pickerTrackIndex + 1}:{' '}
+                    <span className="text-indigo-300 font-semibold">
+                      {score.tracks[pickerTrackIndex]?.name}
+                    </span>
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setPickerTrackIndex(null);
+                  setInstrumentSearch('');
+                }}
+                className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                title="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Search & Categories */}
+            <div className="p-4 border-b border-slate-800 bg-slate-900/50 flex flex-col gap-3">
+              {/* Search Bar */}
+              <div className="relative">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder="Search instruments (e.g. Flute, Violin, Trumpet, Drums)..."
+                  value={instrumentSearch}
+                  onChange={(e) => setInstrumentSearch(e.target.value)}
+                  autoFocus
+                  className="w-full pl-10 pr-4 py-2 bg-slate-800/90 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-400 focus:outline-hidden focus:border-indigo-400 transition-colors"
+                />
+              </div>
+
+              {/* Category Pills */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-[11px] font-semibold">
+                {(
+                  [
+                    'All',
+                    'Woodwinds',
+                    'Brass',
+                    'Strings',
+                    'Popular & World',
+                    'Keyboards',
+                    'Percussion',
+                    'Drums',
+                    'Sound Effects',
+                  ] as (InstrumentCategory | 'All')[]
+                ).map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setSelectedCategory(cat)}
+                    className={`px-2.5 py-1 rounded-lg shrink-0 transition-colors cursor-pointer ${
+                      selectedCategory === cat
+                        ? 'bg-indigo-600 text-white shadow-sm'
+                        : 'bg-slate-800/80 hover:bg-slate-800 text-slate-300 hover:text-white'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Scrollable Instruments List */}
+            <div className="overflow-y-auto p-4 max-h-[50vh] flex flex-col gap-1.5">
+              {(() => {
+                const currentTrackInstId = score.tracks[pickerTrackIndex]?.instrumentId;
+                const allInsts = Object.values(INSTRUMENTS);
+                const filtered = allInsts.filter((inst) => {
+                  if (inst.id === 'piano_bass' && selectedCategory !== 'Keyboards') return false;
+                  const matchesCat =
+                    selectedCategory === 'All' || inst.category === selectedCategory;
+                  const q = instrumentSearch.trim().toLowerCase();
+                  const matchesSearch =
+                    q === '' ||
+                    inst.name.toLowerCase().includes(q) ||
+                    inst.category.toLowerCase().includes(q) ||
+                    (inst.description && inst.description.toLowerCase().includes(q));
+                  return matchesCat && matchesSearch;
+                });
+
+                if (filtered.length === 0) {
+                  return (
+                    <div className="py-12 text-center text-slate-400 text-xs">
+                      No instruments found matching "{instrumentSearch}".
+                    </div>
+                  );
+                }
+
+                return filtered.map((inst) => {
+                  const isCurrent = currentTrackInstId === inst.id;
+                  const isPreviewing = previewingId === inst.id;
+
+                  return (
+                    <div
+                      key={inst.id}
+                      onClick={() => {
+                        onUpdateTrack(pickerTrackIndex, {
+                          instrumentId: inst.id,
+                          name: inst.name,
+                          clef: inst.clef,
+                        });
+                        const previewPitch = {
+                          step: (inst.clef === 'bass' ? 'C' : 'G') as any,
+                          octave: inst.defaultOctave,
+                        };
+                        soundEngine.playNotePreview(previewPitch, inst.id, 0.5);
+                        setPickerTrackIndex(null);
+                        setInstrumentSearch('');
+                      }}
+                      className={`flex items-center justify-between p-2.5 rounded-xl border transition-all cursor-pointer ${
+                        isCurrent
+                          ? 'bg-indigo-600/20 border-indigo-500/60 text-white'
+                          : 'bg-slate-800/50 hover:bg-slate-800 border-slate-700/60 text-slate-200 hover:text-white'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        {/* Clef Badge */}
+                        <span
+                          className={`w-6 h-6 rounded-lg text-xs font-serif font-black flex items-center justify-center shrink-0 ${
+                            inst.clef === 'bass'
+                              ? 'bg-sky-500/20 text-sky-300'
+                              : 'bg-amber-500/20 text-amber-300'
+                          }`}
+                          title={inst.clef === 'bass' ? 'Bass Clef' : 'Treble Clef'}
+                        >
+                          {inst.clef === 'bass' ? '𝄢' : '𝄞'}
+                        </span>
+
+                        <div className="flex flex-col">
+                          <div className="text-xs font-bold leading-tight flex items-center gap-2">
+                            <span>{inst.name}</span>
+                            {isCurrent && (
+                              <span className="text-[10px] bg-indigo-500/30 text-indigo-300 px-1.5 py-0.2 rounded font-semibold">
+                                Current
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[10px] text-slate-400">{inst.category}</div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {/* Audio Preview Button */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPreviewingId(inst.id);
+                            const previewPitch = {
+                              step: (inst.clef === 'bass' ? 'C' : 'G') as any,
+                              octave: inst.defaultOctave,
+                            };
+                            soundEngine.playNotePreview(previewPitch, inst.id, 0.6);
+                            setTimeout(() => {
+                              setPreviewingId(null);
+                            }, 600);
+                          }}
+                          className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
+                            isPreviewing
+                              ? 'bg-emerald-500 text-white border-emerald-400 animate-pulse'
+                              : 'bg-slate-700/70 hover:bg-slate-700 text-slate-300 hover:text-white border-slate-600/60'
+                          }`}
+                          title="Preview instrument sound"
+                        >
+                          <Volume2 className="w-3.5 h-3.5" />
+                        </button>
+
+                        {isCurrent && <Check className="w-4 h-4 text-indigo-400 shrink-0" />}
+                      </div>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

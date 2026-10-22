@@ -273,6 +273,42 @@ function classroomApiPlugin(): Plugin {
             return send(200, { ok: true, newPin: cleanNewPin });
           }
 
+          if (action === 'staff_wars_leaderboard') {
+            const list = ((db as any).staffWarsLeaderboard || []).sort((a: any, b: any) => b.score - a.score);
+            return send(200, { ok: true, leaderboard: list.slice(0, 50) });
+          }
+
+          if (action === 'staff_wars_submit_score') {
+            const name = String(body.name || '').trim();
+            const score = parseInt(body.score, 10);
+            const studentId = body.studentId || null;
+            if (!name || isNaN(score) || score <= 0) {
+              return send(400, { ok: false, error: 'Invalid name or score' });
+            }
+            if (!(db as any).staffWarsLeaderboard) (db as any).staffWarsLeaderboard = [];
+            const existingIdx = (db as any).staffWarsLeaderboard.findIndex(
+              (e: any) => (studentId && e.studentId === studentId) || (!studentId && e.name.toLowerCase() === name.toLowerCase())
+            );
+            if (existingIdx >= 0) {
+              if (score > (db as any).staffWarsLeaderboard[existingIdx].score) {
+                (db as any).staffWarsLeaderboard[existingIdx].score = score;
+                (db as any).staffWarsLeaderboard[existingIdx].name = name;
+                (db as any).staffWarsLeaderboard[existingIdx].updatedAt = new Date().toISOString();
+              }
+            } else {
+              (db as any).staffWarsLeaderboard.push({
+                id: 'sw_' + Math.random().toString(36).substring(2, 9),
+                studentId,
+                name,
+                score,
+                updatedAt: new Date().toISOString(),
+              });
+            }
+            (db as any).staffWarsLeaderboard.sort((a: any, b: any) => b.score - a.score);
+            saveClassroomDb(db);
+            return send(200, { ok: true, leaderboard: (db as any).staffWarsLeaderboard.slice(0, 50) });
+          }
+
           if (action === 'save_project') {
             const { studentId, pin, teacherPin, projectId, score, projectData } = body;
             const appType = body.appType || 'staff-composer';

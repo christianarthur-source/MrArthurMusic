@@ -1,4 +1,5 @@
 import { Score } from '../types/music';
+import { getScoreHeaderWidth } from './musicMath';
 
 /**
  * Generates and downloads a multi-page, print-ready PDF file directly from the rendered score SVG.
@@ -67,8 +68,8 @@ export async function exportScoreToPdf(score: Score, svgElement?: SVGSVGElement 
     const trackCount = score.tracks.length;
     const MEASURES_PER_PDF_SYSTEM = 2;
     const MEASURE_WIDTH = 480;
-    const HEADER_END_X = 112 + 90; // staffStartX (8 + 104 = 112) + HEADER_WIDTH (90) = 202
-    const STANDARD_SYSTEM_SVG_WIDTH = HEADER_END_X + MEASURES_PER_PDF_SYSTEM * MEASURE_WIDTH + 30; // 1192
+    const HEADER_END_X = 112 + getScoreHeaderWidth(score.keySignature); // staffStartX (8 + 104 = 112) + dynamic HEADER_WIDTH
+    const STANDARD_SYSTEM_SVG_WIDTH = HEADER_END_X + MEASURES_PER_PDF_SYSTEM * MEASURE_WIDTH + 30;
     const TRACK_SPACING = 150;
     const TOP_PADDING = 40;
     const SYSTEM_GAP = 55;

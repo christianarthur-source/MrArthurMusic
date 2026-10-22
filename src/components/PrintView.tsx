@@ -86,7 +86,7 @@ export const PrintView: React.FC<PrintViewProps> = ({
           </h1>
           <div className="flex justify-between items-center mt-3 text-sm text-slate-700 font-medium px-4">
             <span>
-              Tempo: {score.tempo} BPM · Meter: {score.timeSignature[0]}/{score.timeSignature[1]}
+              Tempo: {score.tempo} BPM · Meter: {score.timeSignature[0]}/{score.timeSignature[1]} · Key: {score.keySignature} Major
             </span>
             <span className="italic">Arr. & Composed by: {score.composer || 'Student'}</span>
           </div>

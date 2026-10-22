@@ -39,11 +39,14 @@ export interface NoteItem {
   isChallengeBlank?: boolean; // For missing note challenges
 }
 
+export type VoltaEnding = 1 | 2 | null;
+
 export interface Measure {
   id: string;
   items: NoteItem[];
   repeatStart?: boolean;
   repeatEnd?: boolean;
+  ending?: VoltaEnding;
 }
 
 export type InstrumentCategory =
@@ -195,13 +198,30 @@ export interface Track {
   measures: Measure[];
 }
 
+export type KeySignature =
+  | 'C'
+  | 'G'
+  | 'D'
+  | 'A'
+  | 'E'
+  | 'B'
+  | 'F#'
+  | 'C#'
+  | 'F'
+  | 'Bb'
+  | 'Eb'
+  | 'Ab'
+  | 'Db'
+  | 'Gb'
+  | 'Cb';
+
 export interface Score {
   id: string;
   title: string;
   composer: string;
   tempo: number; // BPM (40 - 208)
-  timeSignature: [number, number]; // e.g. [4, 4], [3, 4], [2, 4], [6, 8]
-  keySignature: 'C' | 'G' | 'F' | 'D' | 'Bb';
+  timeSignature: [number, number]; // e.g. [4, 4], [3, 4], [2, 4], [5, 4], [6, 8], [7, 8], [6, 5]
+  keySignature: KeySignature;
   tracks: Track[];
 }
 

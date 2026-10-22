@@ -37,6 +37,119 @@ function makeWarmDriveCurve(amount: number): Float32Array<ArrayBuffer> {
   return curve;
 }
 
+/**
+ * Perceptual loudness normalization multipliers for all 87 instruments.
+ * Balances quiet acoustic, plucked, and woodwind instruments against naturally
+ * hot, dense brass, organs, and saturated overdrive guitars so that all instruments
+ * play at a uniform, comfortable, and professional average listening level with zero distortion.
+ */
+export const INSTRUMENT_NORMALIZATION_SCALE: Record<InstrumentId, number> = {
+  // Woodwinds (Flute, Pan Flute, Recorder and acoustic reeds need clean boost)
+  flute: 1.35,
+  piccolo: 1.05,
+  recorder: 1.35,
+  pan_flute: 1.40,
+  oboe: 1.10,
+  english_horn: 1.15,
+  clarinet: 1.18,
+  bass_clarinet: 1.20,
+  bassoon: 1.18,
+  contrabassoon: 1.20,
+  soprano_sax: 0.88,
+  alto_sax: 0.90,
+  tenor_sax: 0.90,
+  baritone_sax: 0.92,
+
+  // Brass (Naturally powerful GM samples trimmed to prevent overpowering other staves)
+  trumpet: 0.80,
+  cornet: 0.82,
+  flugelhorn: 0.95,
+  muted_trumpet: 1.05,
+  french_horn: 1.12,
+  trombone: 0.80,
+  bass_trombone: 0.80,
+  euphonium: 0.88,
+  tuba: 0.92,
+  brass_section: 0.70,
+
+  // Bowed & Orchestral Strings
+  violin: 1.05,
+  viola: 1.10,
+  cello: 1.08,
+  double_bass: 1.12,
+  string_ensemble: 0.90,
+  pizzicato_strings: 1.45,
+  tremolo_strings: 1.00,
+  harp: 1.35,
+
+  // Popular, Band, Vocals & World
+  acoustic_guitar: 1.38,
+  steel_guitar: 1.25,
+  electric_guitar: 1.05,
+  overdrive_guitar: 0.72,
+  ukulele: 1.40,
+  banjo: 1.15,
+  sitar: 1.20,
+  koto: 1.25,
+  kalimba: 1.45,
+  bagpipes: 0.72,
+  harmonica: 1.05,
+  accordion: 0.85,
+  electric_bass: 1.00,
+  slap_bass: 0.95,
+  synth_bass: 0.85,
+  synth_lead: 0.75,
+  synth_pad: 0.92,
+  choir_aahs: 1.15,
+  voice_oohs: 1.22,
+
+  // Pitched Percussion & Mallets
+  glockenspiel: 1.25,
+  xylophone: 1.20,
+  marimba: 1.25,
+  vibraphone: 1.18,
+  steel_drums: 1.15,
+  timpani: 1.00,
+  tubular_bells: 1.15,
+  taiko_drum: 0.95,
+
+  // Auxiliary Percussion
+  triangle: 0.80,
+  tambourine: 0.85,
+  woodblock: 0.85,
+  cowbell: 0.85,
+  congas: 0.90,
+  djembe: 0.90,
+
+  // Keyboards
+  piano_treble: 0.95,
+  piano_bass: 0.95,
+  electric_piano: 0.95,
+  harpsichord: 1.15,
+  clavinet: 1.05,
+  celesta: 1.45,
+  music_box: 1.40,
+  organ: 0.72,
+  jazz_organ: 0.76,
+
+  // Drums
+  drum_kit: 0.88,
+
+  // Sound Effects
+  sfx_applause: 0.85,
+  sfx_laser: 0.80,
+  sfx_retro_8bit: 0.80,
+  sfx_bird_tweet: 0.85,
+  sfx_ocean_waves: 0.85,
+  sfx_thunder: 0.85,
+  sfx_wind_howl: 0.85,
+  sfx_helicopter: 0.85,
+  sfx_siren: 0.80,
+  sfx_train_whistle: 0.82,
+  sfx_vinyl_scratch: 0.82,
+  sfx_cartoon_boing: 0.85,
+};
+
 class SoundEngine {
   private ctx: AudioContext | null = null;
   private isPlaying: boolean = false;
@@ -69,18 +182,18 @@ class SoundEngine {
     reverbBus.gain.setValueAtTime(0.90, ctx.currentTime);
 
     // Broadcast-quality Mastering Dynamics Compressor
-    // Acts as transparent automatic gain leveling & peak limiter
+    // Acts as transparent automatic gain leveling & peak limiter across all instruments
     const comp = ctx.createDynamicsCompressor();
-    comp.threshold.setValueAtTime(-12, ctx.currentTime);
-    comp.knee.setValueAtTime(10, ctx.currentTime);
-    comp.ratio.setValueAtTime(5.0, ctx.currentTime);
-    comp.attack.setValueAtTime(0.003, ctx.currentTime); // 3ms fast peak protection
-    comp.release.setValueAtTime(0.18, ctx.currentTime);
+    comp.threshold.setValueAtTime(-14, ctx.currentTime);
+    comp.knee.setValueAtTime(12, ctx.currentTime);
+    comp.ratio.setValueAtTime(4.5, ctx.currentTime);
+    comp.attack.setValueAtTime(0.002, ctx.currentTime); // 2ms fast peak protection
+    comp.release.setValueAtTime(0.16, ctx.currentTime);
 
-    // Master Limiting Gain: Boosted from 0.48 (-6.4 dB) to 0.88 (-1.1 dB)
-    // Providing ~+5.5 dB of clean headroom boost with zero digital clipping!
+    // Master Limiting Gain: 0.90 (-0.9 dB)
+    // Clean broadcast headroom with zero digital clipping or distortion
     const masterGain = ctx.createGain();
-    masterGain.gain.setValueAtTime(0.88, ctx.currentTime);
+    masterGain.gain.setValueAtTime(0.90, ctx.currentTime);
 
     dryBus.connect(comp);
 
@@ -1184,6 +1297,13 @@ class SoundEngine {
     if (!ctx) return { stop: () => {} };
     const outTarget = destinationNode || this.getMasterOutput(ctx);
 
+    // Apply perceptual loudness normalization so quiet instruments (acoustic guitar, flute, celesta,
+    // pizzicato strings, kalimba) are cleanly boosted and naturally hot/dense instruments (brass section,
+    // pipe organ, overdrive guitar, synth lead) are trimmed, ensuring a uniform, comfortable average
+    // listening level with zero distortion.
+    const normMultiplier = INSTRUMENT_NORMALIZATION_SCALE[instrumentId] ?? 1.0;
+    const normalizedVolume = Math.min(1.4, volume * normMultiplier);
+
     // 1. Special case: Drum Kit maps notes directly to realistic drum hits!
     if (instrumentId === 'drum_kit') {
       const step = pitch?.step || 'F';
@@ -1202,7 +1322,7 @@ class SoundEngine {
         else if (step === 'B') sound = 'shaker';
         else sound = 'kick';
       }
-      return this.playDrumHit(sound, startTime, volume, ctx, outTarget);
+      return this.playDrumHit(sound, startTime, normalizedVolume, ctx, outTarget);
     }
 
     // 2. Auxiliary unpitched percussion shortcuts
@@ -1211,7 +1331,7 @@ class SoundEngine {
       osc.type = 'sine';
       osc.frequency.setValueAtTime(4200, startTime);
       const gain = ctx.createGain();
-      gain.gain.setValueAtTime(volume * 0.7, startTime);
+      gain.gain.setValueAtTime(normalizedVolume * 0.7, startTime);
       gain.gain.exponentialRampToValueAtTime(0.0001, startTime + Math.max(duration, 0.85));
       osc.connect(gain);
       gain.connect(outTarget);
@@ -1219,19 +1339,19 @@ class SoundEngine {
       osc.stop(startTime + 0.9);
       return { stop: () => gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.01) };
     }
-    if (instrumentId === 'cowbell') return this.playDrumHit('cowbell', startTime, volume, ctx, outTarget);
-    if (instrumentId === 'woodblock') return this.playDrumHit('rimshot', startTime, volume, ctx, outTarget);
-    if (instrumentId === 'tambourine') return this.playDrumHit('shaker', startTime, volume, ctx, outTarget);
+    if (instrumentId === 'cowbell') return this.playDrumHit('cowbell', startTime, normalizedVolume, ctx, outTarget);
+    if (instrumentId === 'woodblock') return this.playDrumHit('rimshot', startTime, normalizedVolume, ctx, outTarget);
+    if (instrumentId === 'tambourine') return this.playDrumHit('shaker', startTime, normalizedVolume, ctx, outTarget);
     if (instrumentId === 'congas') {
-      return this.playDrumHit(freq > 250 ? 'conga_slap' : 'conga_open', startTime, volume, ctx, outTarget);
+      return this.playDrumHit(freq > 250 ? 'conga_slap' : 'conga_open', startTime, normalizedVolume, ctx, outTarget);
     }
     if (instrumentId === 'djembe') {
-      return this.playDrumHit(freq > 260 ? 'conga_slap' : 'kick', startTime, volume, ctx, outTarget);
+      return this.playDrumHit(freq > 260 ? 'conga_slap' : 'kick', startTime, normalizedVolume, ctx, outTarget);
     }
 
     // 3. Sound Effects (sfx_*)
     if (instrumentId.startsWith('sfx_')) {
-      return this.synthesizeSoundEffect(ctx, instrumentId, freq, startTime, duration, volume, outTarget);
+      return this.synthesizeSoundEffect(ctx, instrumentId, freq, startTime, duration, normalizedVolume, outTarget);
     }
 
     const masterGain = ctx.createGain();
@@ -1250,7 +1370,7 @@ class SoundEngine {
       // Velocity/tone shaping filter so soft dynamics sound mellow and loud dynamics sound bright
       const toneFilter = ctx.createBiquadFilter();
       toneFilter.type = 'lowpass';
-      const brightnessCutoff = Math.min(18000, Math.max(1800, freq * (4.5 + volume * 6.5)));
+      const brightnessCutoff = Math.min(18000, Math.max(1800, freq * (4.5 + normalizedVolume * 6.5)));
       toneFilter.frequency.setValueAtTime(brightnessCutoff, startTime);
 
       const sampleGain = ctx.createGain();
@@ -1290,12 +1410,12 @@ class SoundEngine {
       const releaseTail = isPercussiveOrPlucked ? Math.max(2.2, duration + 1.2) : 0.22;
       const stopTime = startTime + duration + releaseTail;
 
-      sampleGain.gain.linearRampToValueAtTime(volume * 0.96, startTime + 0.005);
+      sampleGain.gain.linearRampToValueAtTime(normalizedVolume * 0.96, startTime + 0.005);
       if (isPercussiveOrPlucked) {
         // Allow the natural resonance of harp strings, acoustic guitar, marimba, xylophone, etc. to decay realistically
         sampleGain.gain.exponentialRampToValueAtTime(0.0001, stopTime);
       } else {
-        sampleGain.gain.setValueAtTime(volume * 0.90, startTime + duration * 0.92);
+        sampleGain.gain.setValueAtTime(normalizedVolume * 0.90, startTime + duration * 0.92);
         sampleGain.gain.exponentialRampToValueAtTime(0.0001, stopTime);
       }
 
@@ -1311,7 +1431,7 @@ class SoundEngine {
 
       // Keep real acoustic instruments 100% pure without synthetic oscillator bleed.
       // For sustained orchestral winds/strings, only add a subtle (4%) body hint if needed.
-      const synthBlendVolume = isPercussiveOrPlucked ? 0 : volume * 0.04;
+      const synthBlendVolume = isPercussiveOrPlucked ? 0 : normalizedVolume * 0.04;
       if (synthBlendVolume > 0) {
         const bodyHandle = this.synthesizeFourierPhysicalLayer(
           ctx,
@@ -1346,7 +1466,7 @@ class SoundEngine {
       startTime,
       duration,
       instrumentId,
-      volume,
+      normalizedVolume,
       masterGain
     );
     activeNodes.push(synthHandle);

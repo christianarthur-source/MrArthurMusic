@@ -6,6 +6,7 @@ import {
   NoteDuration,
   SelectionState,
   UiMode,
+  VoltaEnding,
 } from '../types/music';
 import {
   EighthNoteUIIcon,
@@ -59,6 +60,8 @@ interface RhythmicPaletteProps {
   onChangeDynamic: (dyn: DynamicMarking) => void;
   currentMeasureHasRepeatStart?: boolean;
   currentMeasureHasRepeatEnd?: boolean;
+  currentMeasureEnding?: VoltaEnding;
+  onToggleEnding?: (ending: 1 | 2) => void;
   onToggleRepeatStart?: () => void;
   onToggleRepeatEnd?: () => void;
   onToggleRepeatMeasure?: () => void;
@@ -105,6 +108,8 @@ export const RhythmicPalette: React.FC<RhythmicPaletteProps> = ({
   onChangeDynamic,
   currentMeasureHasRepeatStart = false,
   currentMeasureHasRepeatEnd = false,
+  currentMeasureEnding = null,
+  onToggleEnding,
   onToggleRepeatStart,
   onToggleRepeatEnd,
   onToggleRepeatMeasure,
@@ -200,7 +205,9 @@ export const RhythmicPalette: React.FC<RhythmicPaletteProps> = ({
   });
 
   const hasActiveExpression = Boolean(activeArticulation || activeDynamic);
-  const hasActiveRepeat = Boolean(currentMeasureHasRepeatStart || currentMeasureHasRepeatEnd);
+  const hasActiveRepeat = Boolean(
+    currentMeasureHasRepeatStart || currentMeasureHasRepeatEnd || currentMeasureEnding
+  );
 
   return (
     <div
@@ -321,7 +328,7 @@ export const RhythmicPalette: React.FC<RhythmicPaletteProps> = ({
             <div className="relative">
               <button
                 onClick={() => setOpenDropdown((d) => (d === 'repeat' ? null : 'repeat'))}
-                title="Add or remove Repeat Signs (|: and :|) in the music"
+                title="Add or remove Repeat Signs (|: and :|) and 1st/2nd Endings in the music"
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
                   hasActiveRepeat
                     ? 'bg-emerald-500/20 border-emerald-400 text-emerald-200'
@@ -330,6 +337,11 @@ export const RhythmicPalette: React.FC<RhythmicPaletteProps> = ({
               >
                 <span className="font-mono font-black tracking-tighter text-emerald-400">|: :|</span>
                 <span>Repeat</span>
+                {currentMeasureEnding && (
+                  <span className="bg-amber-400 text-slate-950 px-1 py-0.2 rounded text-[10px] font-black leading-none font-serif">
+                    {currentMeasureEnding}.
+                  </span>
+                )}
                 <ChevronDown className="w-3 h-3 opacity-75" />
               </button>
 
@@ -367,6 +379,40 @@ export const RhythmicPalette: React.FC<RhythmicPaletteProps> = ({
                   >
                     <span>End Repeat :| on Measure {targetMeasureNum}</span>
                     {currentMeasureHasRepeatEnd && <Check className="w-3.5 h-3.5 text-sky-400" />}
+                  </button>
+                  <div className="h-px bg-slate-800 my-1" />
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-amber-400/90 px-2.5 pt-1 pb-0.5">
+                    1st & 2nd Endings (Volta)
+                  </div>
+                  <button
+                    onClick={() => {
+                      onToggleEnding?.(1);
+                      setOpenDropdown(null);
+                    }}
+                    className="flex items-center justify-between px-3 py-1.5 rounded-xl hover:bg-slate-800 text-left font-semibold text-slate-200 hover:text-amber-300 transition-colors cursor-pointer"
+                  >
+                    <span className="flex items-center gap-2">
+                      <span className="font-serif font-black border border-amber-400/60 bg-amber-400/10 text-amber-300 rounded px-1.5 py-0.5 text-[11px] leading-none">
+                        1.
+                      </span>
+                      <span>1st Ending on Measure {targetMeasureNum}</span>
+                    </span>
+                    {currentMeasureEnding === 1 && <Check className="w-3.5 h-3.5 text-amber-400" />}
+                  </button>
+                  <button
+                    onClick={() => {
+                      onToggleEnding?.(2);
+                      setOpenDropdown(null);
+                    }}
+                    className="flex items-center justify-between px-3 py-1.5 rounded-xl hover:bg-slate-800 text-left font-semibold text-slate-200 hover:text-amber-300 transition-colors cursor-pointer"
+                  >
+                    <span className="flex items-center gap-2">
+                      <span className="font-serif font-black border border-amber-400/60 bg-amber-400/10 text-amber-300 rounded px-1.5 py-0.5 text-[11px] leading-none">
+                        2.
+                      </span>
+                      <span>2nd Ending on Measure {targetMeasureNum}</span>
+                    </span>
+                    {currentMeasureEnding === 2 && <Check className="w-3.5 h-3.5 text-amber-400" />}
                   </button>
                   <div className="h-px bg-slate-800 my-1" />
                   <button

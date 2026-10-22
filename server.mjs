@@ -244,6 +244,42 @@ const server = http.createServer((req, res) => {
         return send(200, { ok: true, newPin: cleanNewPin });
       }
 
+      if (action === 'staff_wars_leaderboard') {
+        const list = (db.staffWarsLeaderboard || []).sort((a, b) => b.score - a.score);
+        return send(200, { ok: true, leaderboard: list.slice(0, 50) });
+      }
+
+      if (action === 'staff_wars_submit_score') {
+        const name = String(body.name || '').trim();
+        const score = parseInt(body.score, 10);
+        const studentId = body.studentId || null;
+        if (!name || isNaN(score) || score <= 0) {
+          return send(400, { ok: false, error: 'Invalid name or score' });
+        }
+        if (!db.staffWarsLeaderboard) db.staffWarsLeaderboard = [];
+        const existingIdx = db.staffWarsLeaderboard.findIndex(
+          (e) => (studentId && e.studentId === studentId) || (!studentId && e.name.toLowerCase() === name.toLowerCase())
+        );
+        if (existingIdx >= 0) {
+          if (score > db.staffWarsLeaderboard[existingIdx].score) {
+            db.staffWarsLeaderboard[existingIdx].score = score;
+            db.staffWarsLeaderboard[existingIdx].name = name;
+            db.staffWarsLeaderboard[existingIdx].updatedAt = new Date().toISOString();
+          }
+        } else {
+          db.staffWarsLeaderboard.push({
+            id: 'sw_' + Math.random().toString(36).substring(2, 9),
+            studentId,
+            name,
+            score,
+            updatedAt: new Date().toISOString(),
+          });
+        }
+        db.staffWarsLeaderboard.sort((a, b) => b.score - a.score);
+        saveDb(db);
+        return send(200, { ok: true, leaderboard: db.staffWarsLeaderboard.slice(0, 50) });
+      }
+
       if (action === 'save_project') {
         const { studentId, pin, teacherPin, projectId, score, projectData } = body;
         const appType = body.appType || 'staff-composer';

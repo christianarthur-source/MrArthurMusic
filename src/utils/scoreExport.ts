@@ -308,8 +308,18 @@ export function exportScoreToMusicXml(score: Score): void {
     C: 0,
     G: 1,
     D: 2,
+    A: 3,
+    E: 4,
+    B: 5,
+    'F#': 6,
+    'C#': 7,
     F: -1,
     Bb: -2,
+    Eb: -3,
+    Ab: -4,
+    Db: -5,
+    Gb: -6,
+    Cb: -7,
   };
   const fifths = keyFifthsMap[score.keySignature] ?? 0;
   const [beats, beatType] = score.timeSignature;
@@ -340,6 +350,9 @@ export function exportScoreToMusicXml(score: Score): void {
       xml += `    <measure number="${mIdx + 1}">\n`;
       if (measure.repeatStart) {
         xml += `      <barline location="left"><bar-style>heavy-light</bar-style><repeat direction="forward"/></barline>\n`;
+      }
+      if (measure.ending) {
+        xml += `      <barline location="left"><ending number="${measure.ending}" type="start">${measure.ending}.</ending></barline>\n`;
       }
       if (mIdx === 0) {
         const clefSign = track.clef === 'bass' ? 'F' : 'G';
@@ -392,6 +405,9 @@ export function exportScoreToMusicXml(score: Score): void {
         }
       });
 
+      if (measure.ending) {
+        xml += `      <barline location="right"><ending number="${measure.ending}" type="${measure.ending === 1 ? 'stop' : 'discontinue'}"/></barline>\n`;
+      }
       if (measure.repeatEnd) {
         xml += `      <barline location="right"><bar-style>light-heavy</bar-style><repeat direction="backward"/></barline>\n`;
       }
