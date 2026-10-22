@@ -381,7 +381,7 @@ export const TransportBar: React.FC<TransportBarProps> = ({
             <option value="5/4" className="bg-slate-900 text-white">5/4</option>
             <option value="6/8" className="bg-slate-900 text-white">6/8</option>
             <option value="7/8" className="bg-slate-900 text-white">7/8</option>
-            <option value="6/5" className="bg-slate-900 text-white">6/5</option>
+            <option value="6/4" className="bg-slate-900 text-white">6/4</option>
           </select>
           <span className="text-slate-600">|</span>
           <select
