@@ -8,6 +8,7 @@ import {
   UiMode,
   VoltaEnding,
 } from '../types/music';
+import { getSelectedMeasureIndices } from '../utils/musicMath';
 import {
   EighthNoteUIIcon,
   FlatUIIcon,
@@ -133,6 +134,12 @@ export const RhythmicPalette: React.FC<RhythmicPaletteProps> = ({
   const isMeasureSelected = selection !== null && selection.itemIndex === -1;
   const hasSelection = selection !== null;
   const targetMeasureNum = (selection?.measureIndex ?? 0) + 1;
+  const selectedMeasureIndices = getSelectedMeasureIndices(selection);
+  const selectedMeasureCount = selectedMeasureIndices.length;
+  const selectedMeasureRangeText =
+    selectedMeasureCount > 1
+      ? `${selectedMeasureIndices[0] + 1}–${selectedMeasureIndices[selectedMeasureIndices.length - 1] + 1}`
+      : `${targetMeasureNum}`;
 
   const [openDropdown, setOpenDropdown] = useState<'repeat' | 'expressions' | 'lyric' | null>(null);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
@@ -723,24 +730,32 @@ export const RhythmicPalette: React.FC<RhythmicPaletteProps> = ({
       {isMeasureSelected && uiMode !== 'simple' && (
         <div className="flex flex-wrap items-center justify-between gap-2 bg-cyan-950/80 border border-cyan-500/60 px-3 py-1.5 rounded-xl text-xs">
           <span className="font-bold text-cyan-300">
-            Measure {targetMeasureNum} Selected:
+            {selectedMeasureCount > 1
+              ? `Measures ${selectedMeasureRangeText} Selected (${selectedMeasureCount} Measures):`
+              : `Measure ${targetMeasureNum} Selected:`}
           </span>
           <div className="flex flex-wrap items-center gap-1.5">
-            <button
-              onClick={onToggleRepeatMeasure}
-              title="Wrap this measure in Repeat Signs (|: :|)"
-              className="flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold bg-emerald-700/80 text-emerald-100 hover:bg-emerald-600 transition-all cursor-pointer"
-            >
-              <span className="font-mono">|: :|</span>
-              <span>Repeat Measure</span>
-            </button>
+            {selectedMeasureCount <= 1 && (
+              <button
+                onClick={onToggleRepeatMeasure}
+                title="Wrap this measure in Repeat Signs (|: :|)"
+                className="flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold bg-emerald-700/80 text-emerald-100 hover:bg-emerald-600 transition-all cursor-pointer"
+              >
+                <span className="font-mono">|: :|</span>
+                <span>Repeat Measure</span>
+              </button>
+            )}
             <button
               onClick={onCopyMeasure}
-              title="Copy Measure Notes (Ctrl+C)"
+              title={
+                selectedMeasureCount > 1
+                  ? `Copy ${selectedMeasureCount} Measures (Ctrl+C)`
+                  : 'Copy Measure Notes (Ctrl+C)'
+              }
               className="flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold bg-cyan-800 text-cyan-100 hover:bg-cyan-700 transition-all cursor-pointer"
             >
               <Copy className="w-3.5 h-3.5" />
-              <span>Copy</span>
+              <span>Copy{selectedMeasureCount > 1 ? ` (${selectedMeasureCount})` : ''}</span>
             </button>
             <button
               onClick={onPasteMeasure}
@@ -755,25 +770,30 @@ export const RhythmicPalette: React.FC<RhythmicPaletteProps> = ({
               <ClipboardPaste className="w-3.5 h-3.5" />
               <span>Paste</span>
             </button>
-            <button
-              onClick={onMoveMeasureLeft}
-              disabled={(selection?.measureIndex ?? 0) === 0}
-              className="flex items-center gap-1 px-2 py-1 rounded-lg font-bold bg-slate-800 text-slate-200 hover:bg-slate-700 disabled:opacity-40 cursor-pointer"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-            </button>
-            <button
-              onClick={onMoveMeasureRight}
-              className="flex items-center gap-1 px-2 py-1 rounded-lg font-bold bg-slate-800 text-slate-200 hover:bg-slate-700 cursor-pointer"
-            >
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
+            {selectedMeasureCount <= 1 && (
+              <>
+                <button
+                  onClick={onMoveMeasureLeft}
+                  disabled={(selection?.measureIndex ?? 0) === 0}
+                  className="flex items-center gap-1 px-2 py-1 rounded-lg font-bold bg-slate-800 text-slate-200 hover:bg-slate-700 disabled:opacity-40 cursor-pointer"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={onMoveMeasureRight}
+                  className="flex items-center gap-1 px-2 py-1 rounded-lg font-bold bg-slate-800 text-slate-200 hover:bg-slate-700 cursor-pointer"
+                >
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </>
+            )}
             <button
               onClick={onDeleteSelected}
+              title={selectedMeasureCount > 1 ? `Delete ${selectedMeasureCount} Selected Measures` : 'Clear Measure'}
               className="flex items-center gap-1 px-2.5 py-1 rounded-lg font-bold bg-rose-900/70 text-rose-200 hover:bg-rose-800 transition-all cursor-pointer"
             >
               <Trash2 className="w-3.5 h-3.5" />
-              <span>Clear</span>
+              <span>{selectedMeasureCount > 1 ? `Delete (${selectedMeasureCount})` : 'Clear'}</span>
             </button>
           </div>
         </div>

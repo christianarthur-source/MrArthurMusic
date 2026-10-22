@@ -220,7 +220,7 @@ export interface Score {
   title: string;
   composer: string;
   tempo: number; // BPM (40 - 208)
-  timeSignature: [number, number]; // e.g. [4, 4], [3, 4], [2, 4], [5, 4], [6, 8], [7, 8], [6, 5]
+  timeSignature: [number, number]; // e.g. [4, 4], [3, 4], [2, 4], [5, 4], [6, 8], [7, 8], [6, 4]
   keySignature: KeySignature;
   tracks: Track[];
 }
@@ -229,4 +229,5 @@ export interface SelectionState {
   trackIndex: number;
   measureIndex: number;
   itemIndex: number;
+  selectedMeasureIndices?: number[];
 }

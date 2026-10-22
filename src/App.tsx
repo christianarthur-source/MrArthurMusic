@@ -20,8 +20,10 @@ import { DEFAULT_BLANK_SCORE, createEmptyMeasure } from './data/templates';
 import {
   getItemDuration,
   getMeasureCapacity,
+  getSelectedMeasureIndices,
   insertNoteAtBeat,
   cleanMeasureRests,
+  shiftPitchByDiatonicSteps,
   DIATONIC_STEP_ORDER,
   STEP_DIATONIC_OFFSET,
 } from './utils/musicMath';
@@ -162,8 +164,8 @@ export default function App() {
   // Cursor / Select mode (default to false so note addition works immediately upon clicking staff)
   const [isSelectMode, setIsSelectMode] = useState<boolean>(false);
 
-  // Measure clipboard for copy/paste
-  const [measureClipboard, setMeasureClipboard] = useState<NoteItem[] | null>(null);
+  // Measure clipboard for copy/paste (supports multi-measure copy/paste)
+  const [measureClipboard, setMeasureClipboard] = useState<NoteItem[][] | null>(null);
 
   // UI Mode: ALWAYS default to 'standard'
   const [uiMode, setUiMode] = useState<UiMode>('standard');
@@ -566,26 +568,98 @@ export default function App() {
     }
   }, [history, historyIndex]);
 
-  // Copy Measure
+  // Handle cursor/measure/note selection (supports Shift-click multi-measure selection range)
+  const handleSelect = useCallback(
+    (newState: SelectionState | null, isShiftKey?: boolean) => {
+      if (!newState) {
+        setSelection(null);
+        return;
+      }
+
+      if (newState.itemIndex === -1) {
+        if (isShiftKey && selection) {
+          const currentIndices = getSelectedMeasureIndices(selection);
+          const anchor = currentIndices.length > 0 ? currentIndices[0] : selection.measureIndex;
+          const start = Math.min(anchor, newState.measureIndex);
+          const end = Math.max(anchor, newState.measureIndex);
+          const range: number[] = [];
+          for (let i = start; i <= end; i++) {
+            range.push(i);
+          }
+          setSelection({
+            trackIndex: newState.trackIndex,
+            measureIndex: newState.measureIndex,
+            itemIndex: -1,
+            selectedMeasureIndices: range,
+          });
+          return;
+        }
+
+        setSelection({
+          trackIndex: newState.trackIndex,
+          measureIndex: newState.measureIndex,
+          itemIndex: -1,
+          selectedMeasureIndices: [newState.measureIndex],
+        });
+        return;
+      }
+
+      setSelection(newState);
+    },
+    [selection]
+  );
+
+  // Copy Measure(s)
   const handleCopyMeasure = useCallback(() => {
     if (!selection || selection.itemIndex !== -1) return;
     const track = score.tracks[selection.trackIndex];
-    const measure = track?.measures[selection.measureIndex];
-    if (!measure) return;
-    setMeasureClipboard(JSON.parse(JSON.stringify(measure.items)));
+    if (!track) return;
+    const measureIndices = getSelectedMeasureIndices(selection);
+    if (measureIndices.length === 0) return;
+
+    const copied: NoteItem[][] = [];
+    for (const mIdx of measureIndices) {
+      const m = track.measures[mIdx];
+      if (m) {
+        copied.push(JSON.parse(JSON.stringify(m.items)));
+      }
+    }
+    if (copied.length > 0) {
+      setMeasureClipboard(copied);
+    }
   }, [score.tracks, selection]);
 
-  // Paste Measure
+  // Paste Measure(s)
   const handlePasteMeasure = useCallback(() => {
-    if (!selection || selection.itemIndex !== -1 || !measureClipboard) return;
+    if (!selection || selection.itemIndex !== -1 || !measureClipboard || measureClipboard.length === 0) return;
     const nextScore: Score = JSON.parse(JSON.stringify(score));
     const track = nextScore.tracks[selection.trackIndex];
     if (!track) return;
-    const measure = track.measures[selection.measureIndex];
-    if (!measure) return;
 
-    measure.items = JSON.parse(JSON.stringify(measureClipboard));
+    const startMeasure = selection.measureIndex;
+
+    measureClipboard.forEach((measureItems, offset) => {
+      const targetIdx = startMeasure + offset;
+      while (track.measures.length <= targetIdx) {
+        nextScore.tracks.forEach((t) => {
+          t.measures.push(createEmptyMeasure(nextScore.timeSignature));
+        });
+      }
+      const targetMeasure = track.measures[targetIdx];
+      if (targetMeasure) {
+        targetMeasure.items = JSON.parse(JSON.stringify(measureItems));
+      }
+    });
+
     pushScoreState(nextScore);
+
+    const pastedIndices = measureClipboard.map((_, i) => startMeasure + i);
+    setSelection({
+      trackIndex: selection.trackIndex,
+      measureIndex: startMeasure,
+      itemIndex: -1,
+      selectedMeasureIndices: pastedIndices,
+    });
   }, [measureClipboard, pushScoreState, score, selection]);
 
   // Move Measure Left
@@ -1090,10 +1164,56 @@ export default function App() {
     [score.tracks, score.keySignature, selection?.trackIndex]
   );
 
-  // Shift pitch of currently selected note or chord
+  // Transpose all notes in selected measure(s) by diatonic steps
+  const handleTransposeMeasure = useCallback(
+    (trackIndex: number, measureIndices: number[], diatonicDelta: number) => {
+      if (diatonicDelta === 0) return;
+      const nextScore: Score = JSON.parse(JSON.stringify(score));
+      const track = nextScore.tracks[trackIndex];
+      if (!track) return;
+
+      const previewPitches: Pitch[] = [];
+
+      measureIndices.forEach((mIdx) => {
+        const measure = track.measures[mIdx];
+        if (!measure) return;
+
+        measure.items.forEach((item) => {
+          if (item.type === 'note') {
+            if (item.pitches && item.pitches.length > 0) {
+              item.pitches = item.pitches.map((p) =>
+                shiftPitchByDiatonicSteps(p, diatonicDelta)
+              );
+              item.pitch = item.pitches[0];
+              previewPitches.push(...item.pitches);
+            } else if (item.pitch) {
+              item.pitch = shiftPitchByDiatonicSteps(item.pitch, diatonicDelta);
+              previewPitches.push(item.pitch);
+            }
+          }
+        });
+      });
+
+      pushScoreState(nextScore);
+
+      if (previewPitches.length > 0) {
+        handlePlayPreview(previewPitches.slice(0, 3), track.instrumentId);
+      }
+    },
+    [handlePlayPreview, pushScoreState, score]
+  );
+
+  // Shift pitch of currently selected note/chord or transpose selected measure(s)
   const shiftSelectedPitch = useCallback(
     (diatonicDelta: number) => {
-      if (!selection || selection.itemIndex < 0) return;
+      if (!selection) return;
+
+      if (selection.itemIndex === -1) {
+        const selectedIndices = getSelectedMeasureIndices(selection);
+        handleTransposeMeasure(selection.trackIndex, selectedIndices, diatonicDelta);
+        return;
+      }
+
       const { trackIndex, measureIndex, itemIndex } = selection;
       const nextScore: Score = JSON.parse(JSON.stringify(score));
       const item = nextScore.tracks[trackIndex]?.measures[measureIndex]?.items[itemIndex];
@@ -1108,17 +1228,9 @@ export default function App() {
 
       if (itemPitches.length === 0) return;
 
-      const shiftedPitches = itemPitches.map((p) => {
-        const currentDiatonic = p.octave * 7 + STEP_DIATONIC_OFFSET[p.step];
-        const newDiatonic = currentDiatonic + diatonicDelta;
-        const newOctave = Math.floor(newDiatonic / 7);
-        const newStep = DIATONIC_STEP_ORDER[((newDiatonic % 7) + 7) % 7];
-        return {
-          step: newStep,
-          octave: newOctave,
-          accidental: p.accidental,
-        };
-      });
+      const shiftedPitches = itemPitches.map((p) =>
+        shiftPitchByDiatonicSteps(p, diatonicDelta)
+      );
 
       item.pitches = shiftedPitches;
       item.pitch = shiftedPitches[0];
@@ -1126,17 +1238,59 @@ export default function App() {
       pushScoreState(nextScore);
       handlePlayPreview(shiftedPitches, nextScore.tracks[trackIndex].instrumentId);
     },
-    [handlePlayPreview, pushScoreState, score, selection]
+    [handlePlayPreview, handleTransposeMeasure, pushScoreState, score, selection]
   );
 
-  // Delete selected note or clear measure
+  // Delete selected note or clear / delete measure(s)
   const handleDeleteSelected = useCallback(() => {
     if (!selection) return;
 
     const nextScore: Score = JSON.parse(JSON.stringify(score));
 
-    // If full measure selected -> reset measure to empty rest matching time signature
+    // If measure(s) selected
     if (selection.itemIndex === -1) {
+      const selectedIndices = getSelectedMeasureIndices(selection);
+      if (selectedIndices.length > 1) {
+        // Multiple measures selected: delete measures across all tracks
+        const sortedIndices = [...selectedIndices].sort((a, b) => b - a); // delete descending
+        const totalMeasures = nextScore.tracks[0]?.measures.length || 0;
+
+        // If all measures would be deleted, keep 1 empty measure
+        if (sortedIndices.length >= totalMeasures) {
+          nextScore.tracks.forEach((track) => {
+            track.measures = [createEmptyMeasure(nextScore.timeSignature)];
+          });
+          pushScoreState(nextScore);
+          setSelection({
+            trackIndex: selection.trackIndex,
+            measureIndex: 0,
+            itemIndex: -1,
+            selectedMeasureIndices: [0],
+          });
+          return;
+        }
+
+        nextScore.tracks.forEach((track) => {
+          for (const idx of sortedIndices) {
+            if (idx >= 0 && idx < track.measures.length) {
+              track.measures.splice(idx, 1);
+            }
+          }
+        });
+
+        pushScoreState(nextScore);
+        const newMax = (nextScore.tracks[0]?.measures.length || 1) - 1;
+        const newMeasureIdx = Math.min(sortedIndices[sortedIndices.length - 1], newMax);
+        setSelection({
+          trackIndex: selection.trackIndex,
+          measureIndex: newMeasureIdx,
+          itemIndex: -1,
+          selectedMeasureIndices: [newMeasureIdx],
+        });
+        return;
+      }
+
+      // Single measure selected -> reset measure to empty rest matching time signature
       const track = nextScore.tracks[selection.trackIndex];
       if (track) {
         track.measures[selection.measureIndex] = createEmptyMeasure(nextScore.timeSignature);
@@ -2180,7 +2334,7 @@ export default function App() {
               onUpdateSelectedNoteLyric={handleUpdateSelectedNoteLyric}
               onDeleteSelected={handleDeleteSelected}
               selection={selection}
-              hasClipboard={measureClipboard !== null}
+              hasClipboard={measureClipboard !== null && measureClipboard.length > 0}
               onCopyMeasure={handleCopyMeasure}
               onPasteMeasure={handlePasteMeasure}
               onMoveMeasureLeft={handleMoveMeasureLeft}
@@ -2196,13 +2350,14 @@ export default function App() {
           <ScoreRenderer
               score={score}
               selection={selection}
-              onSelect={setSelection}
+              onSelect={handleSelect}
               onUpdateTrack={handleUpdateTrack}
               onNoteInsertOrUpdate={(tIdx, mIdx, iIdx, pitch, targetBeat, isDragUpdate, origPitch) =>
                 handleNoteInsertOrUpdate(tIdx, mIdx, iIdx, pitch, targetBeat, isDragUpdate, origPitch)
               }
               onPlayPreview={handlePlayPreview}
               onShiftSelectedPitch={shiftSelectedPitch}
+              onTransposeMeasure={handleTransposeMeasure}
               onDeleteSelected={handleDeleteSelected}
               onQuickAccidental={handleChangeAccidental}
               isSelectMode={isSelectMode}

@@ -9,6 +9,7 @@ import {
   NoteStep,
   Pitch,
   Score,
+  SelectionState,
   VoltaEnding,
 } from '../types/music';
 
@@ -637,4 +638,35 @@ export function expandPlaybackMeasures(
   }
 
   return sequence.length > 0 ? sequence : [0];
+}
+
+const DIATONIC_STEPS: NoteStep[] = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+
+/**
+ * Shifts a musical pitch up or down by a given number of diatonic steps (lines/spaces).
+ * Preserves existing accidentals (e.g. sharp, flat, natural) and clamps to valid octaves (1 - 8).
+ */
+export function shiftPitchByDiatonicSteps(pitch: Pitch, delta: number): Pitch {
+  if (delta === 0) return { ...pitch };
+  const currentDiatonic = pitch.octave * 7 + (STEP_DIATONIC_OFFSET[pitch.step] ?? 0);
+  const clampedDiatonic = Math.max(7, Math.min(62, currentDiatonic + delta));
+  const newOctave = Math.floor(clampedDiatonic / 7);
+  const stepIdx = ((clampedDiatonic % 7) + 7) % 7;
+  return {
+    step: DIATONIC_STEPS[stepIdx],
+    octave: newOctave,
+    accidental: pitch.accidental,
+  };
+}
+
+/**
+ * Returns a sorted array of selected measure indices from SelectionState.
+ * Supports both single measure selection and multi-measure range selection.
+ */
+export function getSelectedMeasureIndices(selection: SelectionState | null): number[] {
+  if (!selection || selection.itemIndex !== -1) return [];
+  if (selection.selectedMeasureIndices && selection.selectedMeasureIndices.length > 0) {
+    return [...selection.selectedMeasureIndices].sort((a, b) => a - b);
+  }
+  return [selection.measureIndex];
 }

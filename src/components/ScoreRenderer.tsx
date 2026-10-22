@@ -31,9 +31,11 @@ import {
   getPitchFromY,
   getPitchY,
   getScoreHeaderWidth,
+  getSelectedMeasureIndices,
   LINE_SPACING,
   SHARP_BASS_OFFSETS,
   SHARP_TREBLE_OFFSETS,
+  shiftPitchByDiatonicSteps,
   STAFF_HEIGHT,
   STAFF_TOP_Y,
   STEP_DIATONIC_OFFSET,
@@ -62,7 +64,7 @@ import {
 interface ScoreRendererProps {
   score: Score;
   selection: SelectionState | null;
-  onSelect: (state: SelectionState | null) => void;
+  onSelect: (state: SelectionState | null, isShiftKey?: boolean) => void;
   onNoteInsertOrUpdate: (
     trackIndex: number,
     measureIndex: number,
@@ -74,6 +76,7 @@ interface ScoreRendererProps {
   ) => void;
   onPlayPreview: (pitch: Pitch | Pitch[], instrumentId: any) => void;
   onShiftSelectedPitch?: (diatonicDelta: number) => void;
+  onTransposeMeasure?: (trackIndex: number, measureIndices: number[], diatonicDelta: number) => void;
   onDeleteSelected?: () => void;
   onQuickAccidental?: (acc: 'sharp' | 'flat' | 'natural' | null) => void;
   isSelectMode: boolean;
@@ -143,7 +146,8 @@ function computeMeasureBeams(
   clef: ClefType,
   isDrumTrack?: boolean,
   draggingItemIndex?: number | null,
-  draggingPitch?: Pitch | null
+  draggingPitch?: Pitch | null,
+  measureDiatonicDelta?: number
 ): {
   beamGroups: BeamGroup[];
   beamedItemIndices: Set<number>;
@@ -164,7 +168,7 @@ function computeMeasureBeams(
     const itemX = layoutX + 35 + (currentBeatOffset / capacity) * (measureWidth - 60);
     const beatIndex = Math.floor((currentBeatOffset + 0.0001) / beatGroupDuration);
 
-    const rawPitches =
+    let rawPitches =
       draggingItemIndex === itemIndex && draggingPitch
         ? [draggingPitch]
         : item.pitches && item.pitches.length > 0
@@ -172,6 +176,10 @@ function computeMeasureBeams(
         : item.pitch
         ? [item.pitch]
         : [];
+
+    if (measureDiatonicDelta && measureDiatonicDelta !== 0 && rawPitches.length > 0) {
+      rawPitches = rawPitches.map((p) => shiftPitchByDiatonicSteps(p, measureDiatonicDelta));
+    }
 
     const isBeamable = item.type === 'note' && rawPitches.length > 0 && item.duration <= 0.125;
 
@@ -314,6 +322,7 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
   onNoteInsertOrUpdate,
   onPlayPreview,
   onShiftSelectedPitch,
+  onTransposeMeasure,
   onDeleteSelected,
   onQuickAccidental,
   isSelectMode,
@@ -363,7 +372,7 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
     isDrum?: boolean;
   } | null>(null);
 
-  // Dragging note state (supports dragging a single note or a specific notehead within a chord)
+  // Dragging note state (supports dragging a single note or a specific notehead within a chord, or full measure transposition)
   const [draggingNote, setDraggingNote] = useState<{
     trackIndex: number;
     measureIndex: number;
@@ -371,6 +380,7 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
     originalPitch: Pitch;
     currentPitch: Pitch;
     hasMoved?: boolean;
+    isMeasureDrag?: boolean;
   } | null>(null);
 
   const measureCount = Math.max(...score.tracks.map((t) => t.measures.length), 1);
@@ -459,15 +469,32 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
 
     const handleWindowMouseUp = () => {
       if (draggingNote.hasMoved) {
-        onNoteInsertOrUpdate(
-          draggingNote.trackIndex,
-          draggingNote.measureIndex,
-          draggingNote.itemIndex,
-          draggingNote.currentPitch,
-          undefined,
-          true,
-          draggingNote.originalPitch
-        );
+        if (draggingNote.isMeasureDrag && onTransposeMeasure) {
+          const origDia =
+            draggingNote.originalPitch.octave * 7 +
+            (STEP_DIATONIC_OFFSET[draggingNote.originalPitch.step] ?? 0);
+          const currDia =
+            draggingNote.currentPitch.octave * 7 +
+            (STEP_DIATONIC_OFFSET[draggingNote.currentPitch.step] ?? 0);
+          const diatonicDelta = currDia - origDia;
+          if (diatonicDelta !== 0) {
+            const selectedMeasures = getSelectedMeasureIndices(selection);
+            const measuresToTranspose = selectedMeasures.includes(draggingNote.measureIndex)
+              ? selectedMeasures
+              : [draggingNote.measureIndex];
+            onTransposeMeasure(draggingNote.trackIndex, measuresToTranspose, diatonicDelta);
+          }
+        } else {
+          onNoteInsertOrUpdate(
+            draggingNote.trackIndex,
+            draggingNote.measureIndex,
+            draggingNote.itemIndex,
+            draggingNote.currentPitch,
+            undefined,
+            true,
+            draggingNote.originalPitch
+          );
+        }
       }
       setDraggingNote(null);
     };
@@ -478,7 +505,7 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
       window.removeEventListener('mousemove', handleWindowMouseMove);
       window.removeEventListener('mouseup', handleWindowMouseUp);
     };
-  }, [draggingNote, measureLayout, onNoteInsertOrUpdate, onPlayPreview, score.tracks, totalSvgHeight]);
+  }, [draggingNote, measureLayout, onNoteInsertOrUpdate, onPlayPreview, onTransposeMeasure, score.tracks, selection, totalSvgHeight]);
 
   // Handle staff mouse move for ghost note preview
   const handleStaffMouseMove = (
@@ -633,9 +660,9 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
     // Handled by window mouseup listener when draggingNote is active
   };
 
-  const handleMeasureClick = (trackIndex: number, measureIndex: number) => {
+  const handleMeasureClick = (trackIndex: number, measureIndex: number, e?: React.MouseEvent) => {
     if (isSelectMode) {
-      onSelect({ trackIndex, measureIndex, itemIndex: -1 });
+      onSelect({ trackIndex, measureIndex, itemIndex: -1 }, e?.shiftKey);
       return;
     }
 
@@ -875,15 +902,22 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
                         const measureCapacity = getMeasureCapacity(score.timeSignature);
                         let currentMeasureBeat = 0;
 
+                        const selectedMeasureIndices = getSelectedMeasureIndices(selection);
                         const isFullMeasureSelected =
                           selection?.trackIndex === trackIndex &&
-                          selection?.measureIndex === measureIndex &&
-                          selection?.itemIndex === -1;
+                          selection?.itemIndex === -1 &&
+                          selectedMeasureIndices.includes(measureIndex);
 
                         // Compute rhythmic beam groups for this measure
                         const isDraggingInMeasure =
                           draggingNote?.trackIndex === trackIndex &&
                           draggingNote?.measureIndex === measureIndex;
+                        const measureDiatonicDelta =
+                          isDraggingInMeasure && draggingNote?.isMeasureDrag
+                            ? (draggingNote.currentPitch.octave * 7 + (STEP_DIATONIC_OFFSET[draggingNote.currentPitch.step] ?? 0)) -
+                              (draggingNote.originalPitch.octave * 7 + (STEP_DIATONIC_OFFSET[draggingNote.originalPitch.step] ?? 0))
+                            : 0;
+
                         const { beamGroups, beamedItemIndices, beamedStemDownMap } = computeMeasureBeams(
                           measure,
                           layout.x,
@@ -892,15 +926,16 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
                           score.timeSignature,
                           track.clef,
                           isDrumTrack(track),
-                          isDraggingInMeasure ? draggingNote?.itemIndex : null,
-                          isDraggingInMeasure ? draggingNote?.currentPitch : null
+                          isDraggingInMeasure && !draggingNote?.isMeasureDrag ? draggingNote?.itemIndex : null,
+                          isDraggingInMeasure && !draggingNote?.isMeasureDrag ? draggingNote?.currentPitch : null,
+                          measureDiatonicDelta
                         );
 
                         return (
                           <g
                             key={measure.id}
                             onMouseMove={(e) => handleStaffMouseMove(e, trackIndex, measureIndex)}
-                            onClick={() => handleMeasureClick(trackIndex, measureIndex)}
+                            onClick={(e) => handleMeasureClick(trackIndex, measureIndex, e)}
                           >
                             {/* Full Measure Selection Box Overlay */}
                             {isFullMeasureSelected && (
@@ -918,17 +953,19 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
                                   strokeDasharray="6 4"
                                   className="animate-pulse"
                                 />
-                                <g transform={`translate(${layout.x + MEASURE_WIDTH / 2 - 60}, ${trackTopY + STAFF_TOP_Y - 28})`}>
-                                  <rect x="0" y="0" width="120" height="22" rx="6" fill="#0891B2" />
+                                <g transform={`translate(${layout.x + MEASURE_WIDTH / 2 - 75}, ${trackTopY + STAFF_TOP_Y - 28})`}>
+                                  <rect x="0" y="0" width="150" height="22" rx="6" fill="#0891B2" />
                                   <text
-                                    x="60"
+                                    x="75"
                                     y="15"
                                     fontSize="11"
                                     fontWeight="bold"
                                     fill="#FFFFFF"
                                     textAnchor="middle"
                                   >
-                                    Measure {measureIndex + 1} Selected
+                                    {selectedMeasureIndices.length > 1
+                                      ? `Bar ${measureIndex + 1} (${selectedMeasureIndices.length} Selected)`
+                                      : `Measure ${measureIndex + 1} Selected`}
                                   </text>
                                 </g>
                               </g>
@@ -1447,13 +1484,15 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
                                 draggingNote?.measureIndex === measureIndex &&
                                 draggingNote?.itemIndex === itemIndex;
 
-                              const rawPitches = isDraggingThis
+                              const rawPitches = isDraggingThis && !draggingNote?.isMeasureDrag
                                 ? allPitches.map((ap) =>
                                     ap.step === draggingNote.originalPitch.step &&
                                     ap.octave === draggingNote.originalPitch.octave
                                       ? draggingNote.currentPitch
                                       : ap
                                   )
+                                : isDraggingInMeasure && draggingNote?.isMeasureDrag && measureDiatonicDelta !== 0
+                                ? allPitches.map((ap) => shiftPitchByDiatonicSteps(ap, measureDiatonicDelta))
                                 : allPitches;
 
                               // Sort pitches from lowest to highest (diatonic ascending, i.e., bottom notehead to top notehead)
@@ -1546,7 +1585,7 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
                                       <rect
                                         x="0"
                                         y="0"
-                                        width="42"
+                                        width={draggingNote.isMeasureDrag && measureDiatonicDelta !== 0 ? "70" : "42"}
                                         height="22"
                                         rx="6"
                                         fill="#0F172A"
@@ -1554,7 +1593,7 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
                                         strokeWidth="1.5"
                                       />
                                       <text
-                                        x="21"
+                                        x={draggingNote.isMeasureDrag && measureDiatonicDelta !== 0 ? 35 : 21}
                                         y="15"
                                         fontSize="12"
                                         fontWeight="800"
@@ -1568,6 +1607,9 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
                                           ? '♭'
                                           : ''}
                                         {draggingNote.currentPitch.octave}
+                                        {draggingNote.isMeasureDrag && measureDiatonicDelta !== 0 && (
+                                          ` (${measureDiatonicDelta > 0 ? `+${measureDiatonicDelta}` : measureDiatonicDelta})`
+                                        )}
                                       </text>
                                     </g>
                                   )}
@@ -1638,18 +1680,32 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
                                         <g
                                           onClick={(e) => {
                                             e.stopPropagation();
+                                            if (e.shiftKey) {
+                                              handleMeasureClick(trackIndex, measureIndex, e);
+                                              return;
+                                            }
                                             onSelect({ trackIndex, measureIndex, itemIndex });
                                             onPlayPreview(sortedPitches, track.instrumentId);
                                           }}
                                           onMouseDown={(e) => {
                                             e.stopPropagation();
-                                            onSelect({ trackIndex, measureIndex, itemIndex });
+                                            const currentSelectedMeasures = getSelectedMeasureIndices(selection);
+                                            const isParentMeasureSelected =
+                                              selection?.trackIndex === trackIndex &&
+                                              selection?.itemIndex === -1 &&
+                                              currentSelectedMeasures.includes(measureIndex);
+
+                                            if (!isParentMeasureSelected) {
+                                              onSelect({ trackIndex, measureIndex, itemIndex });
+                                            }
+
                                             setDraggingNote({
                                               trackIndex,
                                               measureIndex,
                                               itemIndex,
                                               originalPitch: p,
                                               currentPitch: p,
+                                              isMeasureDrag: isParentMeasureSelected,
                                             });
                                           }}
                                           className="cursor-grab active:cursor-grabbing group"
