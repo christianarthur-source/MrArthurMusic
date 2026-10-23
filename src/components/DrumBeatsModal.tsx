@@ -150,13 +150,13 @@ export const DrumBeatsModal: React.FC<DrumBeatsModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-xs p-3 sm:p-4">
       <div className="bg-slate-900 text-white rounded-2xl sm:rounded-3xl shadow-2xl max-w-4xl w-full border border-slate-700/80 animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[88vh] overflow-hidden">
         {/* Header */}
-        <div className="px-5 py-3.5 border-b border-slate-800 flex items-center justify-between bg-slate-900/95">
-          <div className="flex items-center gap-2.5">
-            <span className="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center justify-center text-base">
+        <div className="px-4 py-2.5 border-b border-slate-800 flex items-center justify-between bg-slate-900/95">
+          <div className="flex items-center gap-2">
+            <span className="w-7 h-7 rounded-lg bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center justify-center text-sm">
               🥁
             </span>
             <div>
-              <h2 className="text-base font-black text-white flex items-center gap-2">
+              <h2 className="text-sm font-black text-white flex items-center gap-1.5">
                 <span>Select Drum Beat</span>
                 <span className="text-xs font-normal text-slate-400">
                   ({filteredGrooves.length} beats)
@@ -169,15 +169,15 @@ export const DrumBeatsModal: React.FC<DrumBeatsModalProps> = ({
               soundEngine.stopDrumPreview();
               onClose();
             }}
-            className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
             title="Close"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Consolidated Style Categories - Flex Wrap with ZERO horizontal scrollbar */}
-        <div className="p-2.5 sm:p-3 bg-slate-950/40 border-b border-slate-800 flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs">
+        <div className="px-3 py-2 bg-slate-950/40 border-b border-slate-800 flex flex-wrap items-center gap-1.5 text-xs">
           {CATEGORIES.map((cat) => {
             const count = DRUM_GROOVES.filter(cat.countPredicate).length;
             const isSelected = selectedCategory === cat.id;
@@ -186,7 +186,7 @@ export const DrumBeatsModal: React.FC<DrumBeatsModalProps> = ({
               <button
                 key={cat.id}
                 onClick={() => setSelectedCategory(cat.id)}
-                className={`px-3 py-1.5 rounded-xl font-bold transition-all flex items-center gap-1.5 ${
+                className={`px-2.5 py-1 rounded-lg font-bold transition-all flex items-center gap-1.5 text-[11px] sm:text-xs ${
                   isSelected
                     ? 'bg-rose-600 text-white shadow-xs'
                     : 'bg-slate-800/80 text-slate-400 hover:text-white hover:bg-slate-800'
@@ -195,7 +195,7 @@ export const DrumBeatsModal: React.FC<DrumBeatsModalProps> = ({
                 <span>{cat.icon}</span>
                 <span>{cat.label}</span>
                 <span
-                  className={`text-[10px] px-1.5 py-0.2 rounded-full font-semibold ${
+                  className={`text-[9px] px-1.5 py-0.2 rounded-full font-semibold ${
                     isSelected ? 'bg-rose-700 text-rose-100' : 'bg-slate-700 text-slate-400'
                   }`}
                 >
@@ -207,8 +207,8 @@ export const DrumBeatsModal: React.FC<DrumBeatsModalProps> = ({
         </div>
 
         {/* Condensed Beats Grid */}
-        <div className="flex-1 overflow-y-auto p-3.5 space-y-2">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+        <div className="flex-1 overflow-y-auto p-3 space-y-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
             {filteredGrooves.map((groove) => {
               const isPlaying = playingGrooveId === groove.id;
               const kitInfo = getKitBadgeInfo(groove.kitType || 'drum_kit');
@@ -216,7 +216,7 @@ export const DrumBeatsModal: React.FC<DrumBeatsModalProps> = ({
               return (
                 <div
                   key={groove.id}
-                  className={`bg-slate-800/70 border rounded-xl p-3 transition-all flex flex-col justify-between gap-2.5 ${
+                  className={`bg-slate-800/70 border rounded-xl p-2.5 transition-all flex flex-col justify-between gap-2 ${
                     isPlaying
                       ? 'border-rose-500 bg-slate-800/95 shadow-md shadow-rose-500/10 ring-1 ring-rose-500/30'
                       : 'border-slate-700/80 hover:border-slate-600 hover:bg-slate-750'
@@ -224,9 +224,9 @@ export const DrumBeatsModal: React.FC<DrumBeatsModalProps> = ({
                 >
                   <div>
                     {/* Top Row: Title & Preview Button */}
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <h3 className="text-xs font-bold text-white truncate" title={groove.name}>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-sm sm:text-[15px] font-black text-white truncate leading-snug" title={groove.name}>
                           {groove.name}
                         </h3>
                       </div>
@@ -234,7 +234,7 @@ export const DrumBeatsModal: React.FC<DrumBeatsModalProps> = ({
                       {/* Mini Preview Button */}
                       <button
                         onClick={() => handleTogglePreview(groove)}
-                        className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all shrink-0 ${
+                        className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold transition-all shrink-0 ${
                           isPlaying
                             ? 'bg-amber-500 text-slate-950 font-black animate-pulse'
                             : 'bg-slate-700/80 text-slate-200 hover:text-white hover:bg-slate-600'
@@ -243,12 +243,12 @@ export const DrumBeatsModal: React.FC<DrumBeatsModalProps> = ({
                       >
                         {isPlaying ? (
                           <>
-                            <Square className="w-3 h-3 fill-current" />
+                            <Square className="w-2.5 h-2.5 fill-current" />
                             <span>Stop</span>
                           </>
                         ) : (
                           <>
-                            <Play className="w-3 h-3 fill-current" />
+                            <Play className="w-2.5 h-2.5 fill-current" />
                             <span>Play</span>
                           </>
                         )}
@@ -256,30 +256,30 @@ export const DrumBeatsModal: React.FC<DrumBeatsModalProps> = ({
                     </div>
 
                     {/* Metadata Badges Row: BPM, Meter, Kit Type */}
-                    <div className="flex flex-wrap items-center gap-1.5 mt-1.5 text-[10px]">
+                    <div className="flex flex-wrap items-center gap-1 mt-1 text-[9px] sm:text-[10px]">
                       {/* Tempo */}
-                      <span className="px-1.5 py-0.5 rounded-md font-mono font-bold bg-amber-500/15 text-amber-300 border border-amber-500/20">
+                      <span className="px-1.5 py-0.2 rounded font-mono font-bold bg-amber-500/15 text-amber-300 border border-amber-500/20">
                         {groove.tempo} BPM
                       </span>
 
                       {/* Meter */}
-                      <span className="px-1.5 py-0.5 rounded-md font-semibold bg-slate-700/60 text-slate-300 border border-slate-600/40">
+                      <span className="px-1.5 py-0.2 rounded font-semibold bg-slate-700/60 text-slate-300 border border-slate-600/40">
                         {groove.timeSignature[0]}/{groove.timeSignature[1]}
                       </span>
 
                       {/* Kit Type */}
-                      <span className={`px-1.5 py-0.5 rounded-md font-semibold border ${kitInfo.className}`}>
+                      <span className={`px-1.5 py-0.2 rounded font-semibold border ${kitInfo.className}`}>
                         {kitInfo.label}
                       </span>
 
                       {/* Style */}
-                      <span className="px-1.5 py-0.5 rounded-md font-medium text-slate-400">
+                      <span className="px-1.5 py-0.2 rounded font-medium text-slate-400">
                         {groove.style}
                       </span>
                     </div>
 
                     {/* Slim 16-Step Visualizer */}
-                    <div className="mt-2.5 h-1.5 w-full bg-slate-950/80 rounded-full overflow-hidden flex gap-0.5 p-0.2">
+                    <div className="mt-1.5 h-1 w-full bg-slate-950/80 rounded-full overflow-hidden flex gap-0.5">
                       {Array.from({ length: 16 }).map((_, stepIdx) => {
                         const isCurrentStep = isPlaying && activeStep === stepIdx;
                         const hasSound = groove.previewPattern.some((ev) => ev.step === stepIdx);
@@ -303,13 +303,13 @@ export const DrumBeatsModal: React.FC<DrumBeatsModalProps> = ({
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="flex items-center gap-1.5 pt-2 border-t border-slate-700/50">
+                  <div className="flex items-center gap-1.5 pt-1.5 border-t border-slate-700/50">
                     <button
                       onClick={() => handleSelectGroove(groove)}
-                      className="flex-1 flex items-center justify-center gap-1 px-2.5 py-1.5 bg-rose-600 hover:bg-rose-500 active:scale-95 text-white text-xs font-bold rounded-lg transition-all shadow-xs"
+                      className="flex-1 flex items-center justify-center gap-1 px-2 py-1 bg-rose-600 hover:bg-rose-500 active:scale-95 text-white text-[11px] font-bold rounded-lg transition-all shadow-xs"
                     >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>Add Track</span>
+                      <Plus className="w-3 h-3" />
+                      <span>Add Beat</span>
                     </button>
 
                     {hasSelectedTrack && onApplyToSelectedTrack && (
@@ -320,7 +320,7 @@ export const DrumBeatsModal: React.FC<DrumBeatsModalProps> = ({
                           onApplyToSelectedTrack(groove);
                           onClose();
                         }}
-                        className="px-2 py-1.5 bg-slate-700/80 hover:bg-slate-700 text-slate-300 hover:text-white text-[11px] font-semibold rounded-lg border border-slate-600/50 transition-all"
+                        className="px-2 py-1 bg-slate-700/80 hover:bg-slate-700 text-slate-300 hover:text-white text-[10px] font-semibold rounded-lg border border-slate-600/50 transition-all"
                         title="Fill the selected staff with this rhythm"
                       >
                         Fill Staff
