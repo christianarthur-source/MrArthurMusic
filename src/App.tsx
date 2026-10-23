@@ -50,7 +50,7 @@ import RhythmRockStarsApp from './rhythm-rockstars/RhythmRockStarsApp';
 import BeatMachineApp from './beat-machine/App';
 import { DawApp } from './daw/App';
 import { StaffWarsApp } from './staff-wars/StaffWarsApp';
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck, ChevronLeft, ChevronRight, Plus, Play, Square } from 'lucide-react';
 import {
   SavedProjectRecord,
   StudentSession,
@@ -174,6 +174,11 @@ export default function App() {
   const [viewLayout, setViewLayout] = useState<ViewLayout>('vertical');
   const [isFullScreen, setIsFullScreen] = useState<boolean>(false);
   const [fullScreenZoom, setFullScreenZoom] = useState<number>(1.35);
+
+  // Big Staff mode state (K/1st grade single-bar view with next-bar peek)
+  const [isBigStaff, setIsBigStaff] = useState<boolean>(false);
+  const [bigStaffMeasureIndex, setBigStaffMeasureIndex] = useState<number>(0);
+  const [bigStaffZoom, setBigStaffZoom] = useState<number>(1.45);
 
   // Profanity filter alert banner state
   const [profanityAlert, setProfanityAlert] = useState<string | null>(null);
@@ -868,10 +873,40 @@ export default function App() {
         // Standard & Advanced: show regular black notes, not labeled in color
         setNoteLabelMode('off');
         setBoomwhackerColors(false);
+        setIsBigStaff(false);
       }
     },
     [activeDuration]
   );
+
+  // Big Staff toggle handler (activates simple mode, Boomwhacker rainbow notes, letters)
+  const handleToggleBigStaff = useCallback(() => {
+    setIsBigStaff((prev) => {
+      const next = !prev;
+      if (next) {
+        setUiMode('simple');
+        setBoomwhackerColors(true);
+        setNoteLabelMode('letters');
+        setIsSelectMode(false);
+        if (selection && selection.measureIndex >= 0) {
+          setBigStaffMeasureIndex(selection.measureIndex);
+        } else {
+          setBigStaffMeasureIndex(0);
+        }
+      }
+      return next;
+    });
+  }, [selection]);
+
+  // Auto-advance Big Staff measure view during playback
+  useEffect(() => {
+    if (isBigStaff && playheadPosition && playheadPosition.measureIndex !== bigStaffMeasureIndex) {
+      const measureCount = Math.max(...score.tracks.map((t) => t.measures.length), 1);
+      if (playheadPosition.measureIndex < measureCount) {
+        setBigStaffMeasureIndex(playheadPosition.measureIndex);
+      }
+    }
+  }, [isBigStaff, playheadPosition, bigStaffMeasureIndex, score.tracks]);
 
   // Red "Reset" handler: erases ALL notes in ALL instruments and shows a totally blank staff
   const handleReset = useCallback(() => {
@@ -2344,7 +2379,182 @@ export default function App() {
               onUndo={handleUndo}
               onRedo={handleRedo}
               onOpenHelp={() => setIsHelpModalOpen(true)}
+              isBigStaff={isBigStaff}
+              onToggleBigStaff={handleToggleBigStaff}
             />
+          )}
+
+          {/* Big Staff K/1st Grade Friendly Navigation & Playback Toolbar */}
+          {isBigStaff && (
+            <div className="w-full max-w-5xl mx-auto my-3 bg-linear-to-r from-slate-900 via-indigo-950 to-slate-900 border-2 border-indigo-400/50 rounded-3xl p-3 sm:p-4 shadow-2xl flex flex-wrap items-center justify-between gap-3 text-white select-none">
+              {/* Left: Bar Navigation */}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setBigStaffMeasureIndex((m) => Math.max(0, m - 1))}
+                  disabled={bigStaffMeasureIndex === 0}
+                  title="Go to Previous Bar"
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-slate-800 hover:bg-slate-700 disabled:opacity-35 text-sky-300 font-black text-sm transition-all cursor-pointer shadow-sm disabled:cursor-not-allowed border border-slate-700"
+                >
+                  <ChevronLeft className="w-4.5 h-4.5" />
+                  <span className="hidden sm:inline">Prev Bar</span>
+                </button>
+
+                <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-indigo-500/25 border border-indigo-400/50 text-amber-300 font-black text-sm sm:text-base shadow-inner">
+                  <span>⭐</span>
+                  <span>
+                    Bar {bigStaffMeasureIndex + 1} of{' '}
+                    {Math.max(...score.tracks.map((t) => t.measures.length), 1)}
+                  </span>
+                  <span>🎈</span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const maxM = Math.max(...score.tracks.map((t) => t.measures.length), 1);
+                    if (bigStaffMeasureIndex + 1 < maxM) {
+                      setBigStaffMeasureIndex((m) => m + 1);
+                    } else {
+                      handleAddMeasure();
+                      setBigStaffMeasureIndex((m) => m + 1);
+                    }
+                  }}
+                  title="Go to Next Bar (or add new bar if at end)"
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-slate-800 hover:bg-slate-700 text-sky-300 font-black text-sm transition-all cursor-pointer shadow-sm border border-slate-700"
+                >
+                  <span className="hidden sm:inline">Next Bar</span>
+                  <ChevronRight className="w-4.5 h-4.5" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleAddMeasure();
+                    const maxM = Math.max(...score.tracks.map((t) => t.measures.length), 1);
+                    setBigStaffMeasureIndex(maxM);
+                  }}
+                  title="Add a new blank bar to your song"
+                  className="flex items-center gap-1 px-3 py-2 rounded-2xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 text-emerald-300 font-black text-sm transition-all cursor-pointer shadow-sm"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Add Bar</span>
+                </button>
+              </div>
+
+              {/* Center: Big Play / Stop Button + Speed Buddies */}
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={handleTogglePlay}
+                  title={isPlaying ? 'Stop Music' : 'Play Music'}
+                  className={`flex items-center gap-2 px-5 py-2.5 rounded-2xl font-black text-base transition-all cursor-pointer shadow-lg transform active:scale-95 ${
+                    isPlaying
+                      ? 'bg-rose-500 hover:bg-rose-600 text-white ring-4 ring-rose-400/40 animate-pulse'
+                      : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 ring-4 ring-emerald-300/40'
+                  }`}
+                >
+                  {isPlaying ? (
+                    <>
+                      <Square className="w-5 h-5 fill-current" />
+                      <span>Stop</span>
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-5 h-5 fill-current" />
+                      <span>Play</span>
+                    </>
+                  )}
+                </button>
+
+                {/* Speed Buddies (Tempo) */}
+                <div className="hidden md:flex items-center gap-1 bg-slate-800/80 p-1 rounded-2xl border border-slate-700/80 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = { ...score, tempo: 72 };
+                      pushScoreState(next);
+                    }}
+                    title="Slow Tempo (Turtle - 72 BPM)"
+                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
+                      score.tempo <= 80
+                        ? 'bg-amber-500 text-slate-950 shadow-sm'
+                        : 'text-slate-300 hover:text-white'
+                    }`}
+                  >
+                    <span>🐢</span>
+                    <span>Slow</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = { ...score, tempo: 96 };
+                      pushScoreState(next);
+                    }}
+                    title="Medium Tempo (Walking - 96 BPM)"
+                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
+                      score.tempo > 80 && score.tempo < 115
+                        ? 'bg-sky-500 text-white shadow-sm'
+                        : 'text-slate-300 hover:text-white'
+                    }`}
+                  >
+                    <span>🚶</span>
+                    <span>Medium</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = { ...score, tempo: 126 };
+                      pushScoreState(next);
+                    }}
+                    title="Fast Tempo (Rabbit - 126 BPM)"
+                    className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl font-bold transition-all cursor-pointer ${
+                      score.tempo >= 115
+                        ? 'bg-pink-500 text-white shadow-sm'
+                        : 'text-slate-300 hover:text-white'
+                    }`}
+                  >
+                    <span>🐰</span>
+                    <span>Fast</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Right: Zoom & Close Big Staff */}
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 bg-slate-800/80 p-1 rounded-2xl border border-slate-700/80">
+                  <button
+                    type="button"
+                    onClick={() => setBigStaffZoom((z) => Math.max(1.1, Math.round((z - 0.1) * 100) / 100))}
+                    title="Zoom Out Big Staff"
+                    className="w-7 h-7 flex items-center justify-center rounded-xl text-slate-300 hover:text-white hover:bg-slate-700 transition-colors cursor-pointer text-sm font-black"
+                  >
+                    −
+                  </button>
+                  <span className="text-[11px] font-bold text-slate-300 px-1">
+                    {Math.round(bigStaffZoom * 100)}%
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setBigStaffZoom((z) => Math.min(1.85, Math.round((z + 0.1) * 100) / 100))}
+                    title="Zoom In Big Staff"
+                    className="w-7 h-7 flex items-center justify-center rounded-xl text-slate-300 hover:text-white hover:bg-slate-700 transition-colors cursor-pointer text-sm font-black"
+                  >
+                    +
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsBigStaff(false)}
+                  title="Exit Big Staff (Return to standard score view)"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs transition-colors cursor-pointer border border-slate-700"
+                >
+                  <span>Normal Staff</span>
+                  <span>✕</span>
+                </button>
+              </div>
+            </div>
           )}
 
           <ScoreRenderer
@@ -2364,7 +2574,7 @@ export default function App() {
               isRestMode={isRestMode}
               uiMode={uiMode}
               viewLayout={viewLayout}
-              scoreZoom={isFullScreen ? fullScreenZoom : 1}
+              scoreZoom={isBigStaff ? bigStaffZoom : isFullScreen ? fullScreenZoom : 1}
               activeDuration={activeDuration}
               activeAccidental={activeAccidental}
               activeDotted={isDotted}
@@ -2376,6 +2586,13 @@ export default function App() {
               countingMode={countingMode}
               playheadPosition={playheadPosition}
               activePlayingNoteIds={activePlayingNoteIds}
+              isBigStaff={isBigStaff}
+              bigStaffMeasureIndex={bigStaffMeasureIndex}
+              onBigStaffMeasureChange={setBigStaffMeasureIndex}
+              onBigStaffAddMeasure={() => {
+                handleAddMeasure();
+                setBigStaffMeasureIndex((prev) => prev + 1);
+              }}
             />
 
           {/* Visible Site Footer with NY Ed Law § 2-d & Parents' Bill of Rights */}

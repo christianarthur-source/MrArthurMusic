@@ -82,11 +82,15 @@ interface RhythmicPaletteProps {
   onUndo: () => void;
   onRedo: () => void;
   onOpenHelp: () => void;
+  isBigStaff?: boolean;
+  onToggleBigStaff?: () => void;
 }
 
 export const RhythmicPalette: React.FC<RhythmicPaletteProps> = ({
   uiMode,
   onChangeUiMode,
+  isBigStaff,
+  onToggleBigStaff,
   onReset,
   onAddMeasure,
   isSelectMode,
@@ -329,6 +333,36 @@ export const RhythmicPalette: React.FC<RhythmicPaletteProps> = ({
               <span>Rest</span>
             </button>
           </div>
+
+          {/* ✨ Big Staff! 🌈 Button (Simple Mode) */}
+          {uiMode === 'simple' && onToggleBigStaff && (
+            <button
+              type="button"
+              onClick={onToggleBigStaff}
+              title={
+                isBigStaff
+                  ? 'Switch back to standard staff view'
+                  : 'Switch to Big Staff view (Single large bar with peek of next bar for K/1st grade!)'
+              }
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer shadow-md select-none ${
+                isBigStaff
+                  ? 'bg-linear-to-r from-amber-400 via-rose-400 to-indigo-400 text-slate-950 ring-2 ring-amber-300 scale-105'
+                  : 'bg-linear-to-r from-pink-500/20 via-purple-500/20 to-sky-500/20 hover:from-pink-500/35 hover:via-purple-500/35 hover:to-sky-500/35 text-white border border-pink-400/40 hover:border-pink-300 hover:scale-105'
+              }`}
+            >
+              <span className="text-sm">✨</span>
+              <span
+                className={
+                  isBigStaff
+                    ? 'font-black tracking-wide'
+                    : 'bg-linear-to-r from-amber-200 via-pink-200 to-sky-200 bg-clip-text text-transparent font-black tracking-wide'
+                }
+              >
+                {isBigStaff ? 'Big Staff Active' : 'Big Staff!'}
+              </span>
+              <span className="text-sm">🌈</span>
+            </button>
+          )}
 
           {/* Repeat Sign Dropdown (Available in Standard & Advanced modes!) */}
           {uiMode !== 'simple' && (

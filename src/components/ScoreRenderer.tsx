@@ -96,6 +96,10 @@ interface ScoreRendererProps {
   playheadPosition: { measureIndex: number; beatFraction: number } | null;
   activePlayingNoteIds: Set<string>;
   onUpdateTrack?: (trackIndex: number, updates: Partial<Track>) => void;
+  isBigStaff?: boolean;
+  bigStaffMeasureIndex?: number;
+  onBigStaffMeasureChange?: (measureIndex: number) => void;
+  onBigStaffAddMeasure?: () => void;
 }
 
 interface BeamGroupNote {
@@ -351,6 +355,10 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
   playheadPosition,
   activePlayingNoteIds,
   onUpdateTrack,
+  isBigStaff = false,
+  bigStaffMeasureIndex = 0,
+  onBigStaffMeasureChange,
+  onBigStaffAddMeasure,
 }) => {
   const isSimpleMode = uiMode === 'simple';
   // In Simple mode: always show Boomwhacker colors & note names.
@@ -392,12 +400,29 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
     isMeasureDrag?: boolean;
   } | null>(null);
 
+  const activeTrackIndex =
+    selection?.trackIndex !== undefined &&
+    selection.trackIndex >= 0 &&
+    selection.trackIndex < score.tracks.length
+      ? selection.trackIndex
+      : 0;
+
+  const visibleTracks = useMemo(() => {
+    if (isBigStaff) {
+      const trk = score.tracks[activeTrackIndex] || score.tracks[0];
+      return trk ? [{ track: trk, trackIndex: activeTrackIndex }] : [];
+    }
+    return score.tracks.map((track, trackIndex) => ({ track, trackIndex }));
+  }, [isBigStaff, score.tracks, activeTrackIndex]);
+
   const measureCount = Math.max(...score.tracks.map((t) => t.measures.length), 1);
-  const trackCount = score.tracks.length;
+  const trackCount = visibleTracks.length;
+  const activeBigStaffMeasure = Math.max(0, Math.min(bigStaffMeasureIndex, measureCount - 1));
 
   // Layout metrics: in 'horizontal' view, all measures are rendered on a single continuous row
-  const MEASURES_PER_SYSTEM = viewLayout === 'horizontal' ? Math.max(1, measureCount) : 2;
-  const MEASURE_WIDTH = 480;
+  const MEASURES_PER_SYSTEM = isBigStaff ? 1 : viewLayout === 'horizontal' ? Math.max(1, measureCount) : 2;
+  const MEASURE_WIDTH = isBigStaff ? 620 : 480;
+  const BIG_STAFF_PEEK_WIDTH = isBigStaff ? 150 : 0;
   const HEADER_WIDTH = getScoreHeaderWidth(score.keySignature);
   const INSTRUMENT_LABEL_WIDTH = 104;
   const LEFT_PADDING = 8;
@@ -406,10 +431,14 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
   const SYSTEM_GAP = 55;
 
   const staffStartX = LEFT_PADDING + INSTRUMENT_LABEL_WIDTH;
-  const systemCount = Math.ceil(measureCount / MEASURES_PER_SYSTEM);
-  const singleSystemHeight = trackCount * TRACK_SPACING + 20;
-  const totalSvgWidth = staffStartX + HEADER_WIDTH + MEASURES_PER_SYSTEM * MEASURE_WIDTH + 30;
-  const totalSvgHeight = TOP_PADDING + systemCount * (singleSystemHeight + SYSTEM_GAP) + 20;
+  const systemCount = isBigStaff ? 1 : Math.ceil(measureCount / MEASURES_PER_SYSTEM);
+  const singleSystemHeight = isBigStaff ? TRACK_SPACING + 30 : trackCount * TRACK_SPACING + 20;
+  const totalSvgWidth = isBigStaff
+    ? staffStartX + HEADER_WIDTH + MEASURE_WIDTH + BIG_STAFF_PEEK_WIDTH
+    : staffStartX + HEADER_WIDTH + MEASURES_PER_SYSTEM * MEASURE_WIDTH + 30;
+  const totalSvgHeight = isBigStaff
+    ? TOP_PADDING + singleSystemHeight + 35
+    : TOP_PADDING + systemCount * (singleSystemHeight + SYSTEM_GAP) + 20;
 
   // Compute bounding boxes for each measure
   const measureLayout = useMemo(() => {
@@ -418,17 +447,38 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
       { systemIndex: number; measureInSystem: number; x: number; systemTopY: number }
     >();
 
-    for (let m = 0; m < measureCount; m++) {
-      const systemIndex = Math.floor(m / MEASURES_PER_SYSTEM);
-      const measureInSystem = m % MEASURES_PER_SYSTEM;
-      const systemTopY = TOP_PADDING + systemIndex * (singleSystemHeight + SYSTEM_GAP);
-      const x = staffStartX + HEADER_WIDTH + measureInSystem * MEASURE_WIDTH;
+    if (isBigStaff) {
+      for (let m = 0; m < measureCount; m++) {
+        const x = staffStartX + HEADER_WIDTH + (m - activeBigStaffMeasure) * MEASURE_WIDTH;
+        map.set(m, {
+          systemIndex: 0,
+          measureInSystem: m - activeBigStaffMeasure,
+          x,
+          systemTopY: TOP_PADDING,
+        });
+      }
+    } else {
+      for (let m = 0; m < measureCount; m++) {
+        const systemIndex = Math.floor(m / MEASURES_PER_SYSTEM);
+        const measureInSystem = m % MEASURES_PER_SYSTEM;
+        const systemTopY = TOP_PADDING + systemIndex * (singleSystemHeight + SYSTEM_GAP);
+        const x = staffStartX + HEADER_WIDTH + measureInSystem * MEASURE_WIDTH;
 
-      map.set(m, { systemIndex, measureInSystem, x, systemTopY });
+        map.set(m, { systemIndex, measureInSystem, x, systemTopY });
+      }
     }
 
     return map;
-  }, [measureCount, singleSystemHeight, staffStartX, MEASURES_PER_SYSTEM, HEADER_WIDTH]);
+  }, [
+    measureCount,
+    singleSystemHeight,
+    staffStartX,
+    MEASURES_PER_SYSTEM,
+    HEADER_WIDTH,
+    isBigStaff,
+    activeBigStaffMeasure,
+    MEASURE_WIDTH,
+  ]);
 
   useEffect(() => {
     (window as any).__SCORE_MEASURE_LAYOUT__ = {
@@ -456,7 +506,9 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
       const rect = svgEl.getBoundingClientRect();
       const scaleY = rect.height > 0 ? totalSvgHeight / rect.height : 1;
       const svgY = (e.clientY - rect.top) * scaleY;
-      const trackTopY = layout.systemTopY + draggingNote.trackIndex * TRACK_SPACING;
+      const trackTopY = isBigStaff
+        ? layout.systemTopY
+        : layout.systemTopY + draggingNote.trackIndex * TRACK_SPACING;
       const staffRelativeY = svgY - trackTopY;
 
       const rawNewPitch = getPitchFromY(staffRelativeY, track.clef);
@@ -539,7 +591,7 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
     const track = score.tracks[trackIndex];
     if (!track) return;
 
-    const trackTopY = layout.systemTopY + trackIndex * TRACK_SPACING;
+    const trackTopY = isBigStaff ? layout.systemTopY : layout.systemTopY + trackIndex * TRACK_SPACING;
     const staffRelativeY = svgY - trackTopY;
 
     // Insert mode ghost note
@@ -687,6 +739,9 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
     if (!isRestMode) {
       onPlayPreview(ghostNote.pitch, track.instrumentId);
     }
+    if (isBigStaff && measureIndex !== activeBigStaffMeasure) {
+      onBigStaffMeasureChange?.(measureIndex);
+    }
   };
 
   const zoomedWidth = Math.round(totalSvgWidth * scoreZoom);
@@ -719,19 +774,33 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
               <feGaussianBlur stdDeviation="3.5" result="blur" />
               <feComposite in="SourceGraphic" in2="blur" operator="over" />
             </filter>
+            {isBigStaff && (
+              <clipPath id="big-staff-clip">
+                <rect x="0" y="0" width={totalSvgWidth} height={totalSvgHeight} />
+              </clipPath>
+            )}
           </defs>
 
-          {/* Render 2-bar system rows */}
+          {/* Render 2-bar system rows (or single large bar with peek in Big Staff mode) */}
           {Array.from({ length: systemCount }).map((_, systemIndex) => {
             const systemTopY = TOP_PADDING + systemIndex * (singleSystemHeight + SYSTEM_GAP);
-            const systemMeasures = Array.from({ length: MEASURES_PER_SYSTEM })
-              .map((_, i) => systemIndex * MEASURES_PER_SYSTEM + i)
-              .filter((m) => m < measureCount);
+            const systemMeasures = isBigStaff
+              ? [
+                  activeBigStaffMeasure,
+                  ...(activeBigStaffMeasure + 1 < measureCount ? [activeBigStaffMeasure + 1] : []),
+                ]
+              : Array.from({ length: MEASURES_PER_SYSTEM })
+                  .map((_, i) => systemIndex * MEASURES_PER_SYSTEM + i)
+                  .filter((m) => m < measureCount);
 
             return (
-              <g key={`system-${systemIndex}`} id={`system-${systemIndex}`}>
+              <g
+                key={`system-${systemIndex}`}
+                id={`system-${systemIndex}`}
+                clipPath={isBigStaff ? 'url(#big-staff-clip)' : undefined}
+              >
                 {/* System Left Bracket connector */}
-                {trackCount > 1 && (
+                {!isBigStaff && trackCount > 1 && (
                   <line
                     x1={staffStartX}
                     y1={systemTopY + STAFF_TOP_Y}
@@ -747,14 +816,19 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
                   x1={staffStartX + 2}
                   y1={systemTopY + STAFF_TOP_Y}
                   x2={staffStartX + 2}
-                  y2={systemTopY + (trackCount - 1) * TRACK_SPACING + STAFF_TOP_Y + STAFF_HEIGHT}
+                  y2={
+                    systemTopY +
+                    (isBigStaff ? 0 : (trackCount - 1) * TRACK_SPACING) +
+                    STAFF_TOP_Y +
+                    STAFF_HEIGHT
+                  }
                   stroke="#475569"
                   strokeWidth="1.8"
                 />
 
                 {/* Render tracks in system */}
-                {score.tracks.map((track, trackIndex) => {
-                  const trackTopY = systemTopY + trackIndex * TRACK_SPACING;
+                {visibleTracks.map(({ track, trackIndex }) => {
+                  const trackTopY = isBigStaff ? systemTopY : systemTopY + trackIndex * TRACK_SPACING;
                   const rawName = (track.name || '').trim();
                   let labelLine1 = rawName;
                   let labelLine2: string | null = null;
@@ -841,8 +915,9 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
                       {/* 5 Horizontal Staff Lines */}
                       {[0, 1, 2, 3, 4].map((lineIndex) => {
                         const lineY = trackTopY + STAFF_TOP_Y + lineIndex * LINE_SPACING;
-                        const systemLineWidth =
-                          staffStartX + HEADER_WIDTH + systemMeasures.length * MEASURE_WIDTH;
+                        const systemLineWidth = isBigStaff
+                          ? staffStartX + HEADER_WIDTH + MEASURE_WIDTH + BIG_STAFF_PEEK_WIDTH
+                          : staffStartX + HEADER_WIDTH + systemMeasures.length * MEASURE_WIDTH;
 
                         return (
                           <line
@@ -1007,15 +1082,17 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
                             />
 
                             {/* Barline at end of measure */}
-                            <line
-                              x1={layout.x + MEASURE_WIDTH}
-                              y1={trackTopY + STAFF_TOP_Y}
-                              x2={layout.x + MEASURE_WIDTH}
-                              y2={trackTopY + STAFF_TOP_Y + STAFF_HEIGHT}
-                              stroke="#334155"
-                              strokeWidth={measureIndex === measureCount - 1 ? '2.0' : '1.5'}
-                            />
-                            {measureIndex === measureCount - 1 && !measure.repeatEnd && (
+                            {(!isBigStaff || measureIndex === activeBigStaffMeasure) && (
+                              <line
+                                x1={layout.x + MEASURE_WIDTH}
+                                y1={trackTopY + STAFF_TOP_Y}
+                                x2={layout.x + MEASURE_WIDTH}
+                                y2={trackTopY + STAFF_TOP_Y + STAFF_HEIGHT}
+                                stroke="#334155"
+                                strokeWidth={!isBigStaff && measureIndex === measureCount - 1 ? '2.0' : '1.8'}
+                              />
+                            )}
+                            {!isBigStaff && measureIndex === measureCount - 1 && !measure.repeatEnd && (
                               <line
                                 x1={layout.x + MEASURE_WIDTH + 6}
                                 y1={trackTopY + STAFF_TOP_Y}
@@ -1157,11 +1234,11 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
                             )}
 
                             {/* Measure Number Badge */}
-                            {trackIndex === 0 && (
+                            {(isBigStaff || trackIndex === 0) && (
                               <text
                                 x={layout.x + (measure.repeatStart ? 20 : 8)}
                                 y={trackTopY + STAFF_TOP_Y - (measure.ending ? 32 : 12)}
-                                fontSize="13"
+                                fontSize={isBigStaff ? '16' : '13'}
                                 fill="#64748B"
                                 fontWeight="700"
                               >
@@ -1722,6 +1799,9 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
                                             }
                                             onSelect({ trackIndex, measureIndex, itemIndex });
                                             onPlayPreview(sortedPitches, track.instrumentId);
+                                            if (isBigStaff && measureIndex !== activeBigStaffMeasure) {
+                                              onBigStaffMeasureChange?.(measureIndex);
+                                            }
                                           }}
                                           onMouseDown={(e) => {
                                             e.stopPropagation();
@@ -1964,6 +2044,58 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
                           </g>
                         );
                       })}
+
+                      {/* Peeking placeholder if at the last measure in Big Staff mode */}
+                      {isBigStaff && activeBigStaffMeasure + 1 >= measureCount && (
+                        <g
+                          className="cursor-pointer group select-none"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onBigStaffAddMeasure?.();
+                          }}
+                        >
+                          {/* Measure Number for next measure */}
+                          <text
+                            x={staffStartX + HEADER_WIDTH + MEASURE_WIDTH + 8}
+                            y={trackTopY + STAFF_TOP_Y - 12}
+                            fontSize="16"
+                            fill="#94A3B8"
+                            fontWeight="700"
+                          >
+                            {activeBigStaffMeasure + 2}
+                          </text>
+
+                          {/* Friendly Add Bar circle button right on the peeking staff */}
+                          <g
+                            transform={`translate(${staffStartX + HEADER_WIDTH + MEASURE_WIDTH + 52}, ${
+                              trackTopY + STAFF_TOP_Y + 28
+                            })`}
+                          >
+                            <circle
+                              cx="0"
+                              cy="0"
+                              r="18"
+                              fill="#38BDF8"
+                              fillOpacity="0.18"
+                              stroke="#0284C7"
+                              strokeWidth="2"
+                              strokeDasharray="3 3"
+                              className="group-hover:fill-sky-400 group-hover:fill-opacity-35 transition-all"
+                            />
+                            <text
+                              x="0"
+                              y="6"
+                              fontSize="22"
+                              fontWeight="bold"
+                              fill="#0284C7"
+                              textAnchor="middle"
+                              className="select-none"
+                            >
+                              +
+                            </text>
+                          </g>
+                        </g>
+                      )}
                     </g>
                   );
                 })}
