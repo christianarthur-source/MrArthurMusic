@@ -440,22 +440,22 @@ const africanHighlifePattern: DrumStepEvent[] = [
 
 // 25. Folk & Country Train Beat
 const folkTrainPattern: DrumStepEvent[] = [
-  { step: 0, sounds: ['kick', 'snare'] },
-  { step: 1, sounds: ['snare'] },
-  { step: 2, sounds: ['snare'] },
-  { step: 3, sounds: ['snare'] },
-  { step: 4, sounds: ['snare', 'rimshot'] }, // Backbeat accent
-  { step: 5, sounds: ['snare'] },
-  { step: 6, sounds: ['snare'] },
-  { step: 7, sounds: ['snare'] },
-  { step: 8, sounds: ['kick', 'snare'] },
-  { step: 9, sounds: ['snare'] },
-  { step: 10, sounds: ['snare'] },
-  { step: 11, sounds: ['snare'] },
-  { step: 12, sounds: ['snare', 'rimshot'] }, // Backbeat accent
-  { step: 13, sounds: ['snare'] },
-  { step: 14, sounds: ['snare', 'hihat_closed'] },
-  { step: 15, sounds: ['snare'] },
+  { step: 0, sounds: ['kick', 'hihat_closed'] },
+  { step: 1, sounds: ['hihat_closed'] },
+  { step: 2, sounds: ['hihat_closed'] },
+  { step: 3, sounds: ['hihat_closed'] },
+  { step: 4, sounds: ['snare', 'hihat_closed'] }, // Backbeat brush accent
+  { step: 5, sounds: ['hihat_closed'] },
+  { step: 6, sounds: ['hihat_closed'] },
+  { step: 7, sounds: ['hihat_closed'] },
+  { step: 8, sounds: ['kick', 'hihat_closed'] },
+  { step: 9, sounds: ['hihat_closed'] },
+  { step: 10, sounds: ['hihat_closed'] },
+  { step: 11, sounds: ['hihat_closed'] },
+  { step: 12, sounds: ['snare', 'hihat_closed'] }, // Backbeat brush accent
+  { step: 13, sounds: ['hihat_closed'] },
+  { step: 14, sounds: ['hihat_closed'] },
+  { step: 15, sounds: ['hihat_closed'] },
 ];
 
 // 26. Folk Waltz in 3/4
@@ -777,7 +777,7 @@ export const DRUM_GROOVES: DrumGroove[] = [
     timeSignature: [4, 4],
     badge: 'Americana',
     kitType: 'drum_jazz',
-    description: 'Fast, chugging snare train rhythm with accents on 2 & 4, supported by an alternating bass drum pulse.',
+    description: 'Brisk, chugging 16th-note train rhythm with closed hi-hats, brush snare on 2 & 4, and an alternating bass drum pulse.',
     measures: patternsToMeasures([folkTrainPattern], [4, 4], 'fk1'),
     previewPattern: folkTrainPattern,
   },

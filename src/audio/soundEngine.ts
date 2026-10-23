@@ -656,6 +656,8 @@ class SoundEngine {
       const soundGain =
         sound === 'ride' && drumType === 'drum_jazz'
           ? 0.72
+          : sound === 'snare' && drumType === 'drum_jazz'
+          ? 0.76
           : sound === 'ride'
           ? 0.85
           : 1.05;

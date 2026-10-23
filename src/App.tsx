@@ -88,10 +88,53 @@ function sanitizeLoadedScore(raw: Score): Score {
   return copy;
 }
 
+export function checkIsBigStaffUrl(): boolean {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const hashContent = (window.location.hash || '').replace(/^#/, '');
+    const hashParams = new URLSearchParams(hashContent);
+    const pathname = (window.location.pathname || '').toLowerCase();
+
+    const appParam = (params.get('app') || hashParams.get('app') || '').toLowerCase();
+    if (appParam === 'big-staff' || appParam === 'bigstaff' || appParam === 'kids') {
+      return true;
+    }
+    if (
+      params.has('bigstaff') ||
+      params.has('big-staff') ||
+      hashParams.has('bigstaff') ||
+      hashParams.has('big-staff') ||
+      params.has('kids') ||
+      hashParams.has('kids')
+    ) {
+      return true;
+    }
+    const modeParam = (params.get('mode') || hashParams.get('mode') || '').toLowerCase();
+    if (
+      (modeParam === 'easy' || modeParam === 'simple') &&
+      (params.get('bigStaff') === '1' ||
+        params.get('bigStaff') === 'true' ||
+        params.has('bigStaff') ||
+        params.has('big-staff'))
+    ) {
+      return true;
+    }
+    if (pathname.endsWith('/big-staff') || pathname.endsWith('/bigstaff') || pathname.endsWith('/kids')) {
+      return true;
+    }
+  } catch {
+    // ignore
+  }
+  return false;
+}
+
 export default function App() {
   // Current active sub-application in Mr. Arthur's Music Lab
   const [currentApp, setCurrentApp] = useState<MusicLabAppId>(() => {
     try {
+      if (checkIsBigStaffUrl()) {
+        return 'staff-composer';
+      }
       const params = new URLSearchParams(window.location.search);
       const appParam = params.get('app');
       if (
@@ -167,8 +210,8 @@ export default function App() {
   // Measure clipboard for copy/paste (supports multi-measure copy/paste)
   const [measureClipboard, setMeasureClipboard] = useState<NoteItem[][] | null>(null);
 
-  // UI Mode: ALWAYS default to 'standard'
-  const [uiMode, setUiMode] = useState<UiMode>('standard');
+  // UI Mode: simple (easy) if opened via Big Staff shortcut, otherwise standard
+  const [uiMode, setUiMode] = useState<UiMode>(() => (checkIsBigStaffUrl() ? 'simple' : 'standard'));
 
   // View Layout ('vertical' page view vs 'horizontal' auto-scroll view) & Full Screen state
   const [viewLayout, setViewLayout] = useState<ViewLayout>('vertical');
@@ -176,7 +219,7 @@ export default function App() {
   const [fullScreenZoom, setFullScreenZoom] = useState<number>(1.35);
 
   // Big Staff mode state (K/1st grade single-bar view with next-bar peek)
-  const [isBigStaff, setIsBigStaff] = useState<boolean>(false);
+  const [isBigStaff, setIsBigStaff] = useState<boolean>(() => checkIsBigStaffUrl());
   const [bigStaffMeasureIndex, setBigStaffMeasureIndex] = useState<number>(0);
   const [bigStaffZoom, setBigStaffZoom] = useState<number>(1.45);
 
@@ -207,8 +250,8 @@ export default function App() {
   const [activeDynamic, setActiveDynamic] = useState<DynamicMarking>(null);
 
   // Pedagogical options
-  const [noteLabelMode, setNoteLabelMode] = useState<NoteLabelMode>('off');
-  const [boomwhackerColors, setBoomwhackerColors] = useState<boolean>(false);
+  const [noteLabelMode, setNoteLabelMode] = useState<NoteLabelMode>(() => (checkIsBigStaffUrl() ? 'letters' : 'off'));
+  const [boomwhackerColors, setBoomwhackerColors] = useState<boolean>(() => checkIsBigStaffUrl());
   const [countingMode, setCountingMode] = useState<CountingMode>('off');
   const showPitchNames = noteLabelMode !== 'off';
   const showBeatCounters = countingMode !== 'off';
@@ -299,6 +342,24 @@ export default function App() {
 
   const handleSelectApp = useCallback((app: MusicLabAppId) => {
     soundEngine.playWelcomeChime();
+    if (app === 'big-staff') {
+      try {
+        if (typeof window !== 'undefined' && window.history && window.history.replaceState) {
+          window.history.replaceState({}, '', `${window.location.pathname}?app=big-staff`);
+        }
+      } catch {
+        // ignore
+      }
+      setUiMode('simple');
+      setBoomwhackerColors(true);
+      setNoteLabelMode('letters');
+      setIsSelectMode(false);
+      setIsBigStaff(true);
+      setBigStaffMeasureIndex(0);
+      setCurrentApp('staff-composer');
+      return;
+    }
+
     try {
       if (typeof window !== 'undefined' && window.history && window.history.replaceState) {
         const nextUrl = app === 'hub' ? window.location.pathname : `${window.location.pathname}?app=${app}`;
@@ -318,11 +379,22 @@ export default function App() {
     } catch {
       // ignore
     }
+    setIsBigStaff(false);
     setCurrentApp('hub');
   }, []);
 
   // Load shared score/song from URL query params or hash on mount
   useEffect(() => {
+    if (checkIsBigStaffUrl()) {
+      setCurrentApp('staff-composer');
+      setUiMode('simple');
+      setBoomwhackerColors(true);
+      setNoteLabelMode('letters');
+      setIsSelectMode(false);
+      setIsBigStaff(true);
+      setBigStaffMeasureIndex(0);
+    }
+
     const params = new URLSearchParams(window.location.search);
     let hashParams: URLSearchParams | null = null;
     if (window.location.hash) {

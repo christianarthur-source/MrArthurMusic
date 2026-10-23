@@ -223,36 +223,14 @@ export const DrumBeatsModal: React.FC<DrumBeatsModalProps> = ({
                   }`}
                 >
                   <div>
-                    {/* Top Row: Title & Preview Button */}
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="min-w-0 flex-1">
-                        <h3 className="text-sm sm:text-[15px] font-black text-white truncate leading-snug" title={groove.name}>
-                          {groove.name}
-                        </h3>
-                      </div>
-
-                      {/* Mini Preview Button */}
-                      <button
-                        onClick={() => handleTogglePreview(groove)}
-                        className={`flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold transition-all shrink-0 ${
-                          isPlaying
-                            ? 'bg-amber-500 text-slate-950 font-black animate-pulse'
-                            : 'bg-slate-700/80 text-slate-200 hover:text-white hover:bg-slate-600'
-                        }`}
-                        title={isPlaying ? 'Stop Preview' : 'Audition Beat'}
+                    {/* Top: Full-Width Prominent Title */}
+                    <div className="min-w-0">
+                      <h3
+                        className="text-base sm:text-[16px] font-black text-white truncate leading-snug tracking-tight"
+                        title={groove.name}
                       >
-                        {isPlaying ? (
-                          <>
-                            <Square className="w-2.5 h-2.5 fill-current" />
-                            <span>Stop</span>
-                          </>
-                        ) : (
-                          <>
-                            <Play className="w-2.5 h-2.5 fill-current" />
-                            <span>Play</span>
-                          </>
-                        )}
-                      </button>
+                        {groove.name}
+                      </h3>
                     </div>
 
                     {/* Metadata Badges Row: BPM, Meter, Kit Type */}
@@ -279,7 +257,7 @@ export const DrumBeatsModal: React.FC<DrumBeatsModalProps> = ({
                     </div>
 
                     {/* Slim 16-Step Visualizer */}
-                    <div className="mt-1.5 h-1 w-full bg-slate-950/80 rounded-full overflow-hidden flex gap-0.5">
+                    <div className="mt-2 h-1.5 w-full bg-slate-950/80 rounded-full overflow-hidden flex gap-0.5">
                       {Array.from({ length: 16 }).map((_, stepIdx) => {
                         const isCurrentStep = isPlaying && activeStep === stepIdx;
                         const hasSound = groove.previewPattern.some((ev) => ev.step === stepIdx);
@@ -302,30 +280,56 @@ export const DrumBeatsModal: React.FC<DrumBeatsModalProps> = ({
                     </div>
                   </div>
 
-                  {/* Action Buttons */}
-                  <div className="flex items-center gap-1.5 pt-1.5 border-t border-slate-700/50">
+                  {/* Balanced Compact Action Bar: Audition on left, Small Add Beat on right */}
+                  <div className="flex items-center justify-between gap-1.5 pt-2 border-t border-slate-700/50">
+                    {/* Audition Button */}
                     <button
-                      onClick={() => handleSelectGroove(groove)}
-                      className="flex-1 flex items-center justify-center gap-1 px-2 py-1 bg-rose-600 hover:bg-rose-500 active:scale-95 text-white text-[11px] font-bold rounded-lg transition-all shadow-xs"
+                      onClick={() => handleTogglePreview(groove)}
+                      className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all shrink-0 ${
+                        isPlaying
+                          ? 'bg-amber-500 text-slate-950 font-black animate-pulse'
+                          : 'bg-slate-750 hover:bg-slate-700 text-slate-200 hover:text-white border border-slate-600/50'
+                      }`}
+                      title={isPlaying ? 'Stop Preview' : 'Audition Beat'}
                     >
-                      <Plus className="w-3 h-3" />
-                      <span>Add Beat</span>
+                      {isPlaying ? (
+                        <>
+                          <Square className="w-2.5 h-2.5 fill-current" />
+                          <span>Stop</span>
+                        </>
+                      ) : (
+                        <>
+                          <Play className="w-2.5 h-2.5 fill-current text-amber-400" />
+                          <span>Play</span>
+                        </>
+                      )}
                     </button>
 
-                    {hasSelectedTrack && onApplyToSelectedTrack && (
+                    <div className="flex items-center gap-1.5">
+                      {hasSelectedTrack && onApplyToSelectedTrack && (
+                        <button
+                          onClick={() => {
+                            soundEngine.stopDrumPreview();
+                            setPlayingGrooveId(null);
+                            onApplyToSelectedTrack(groove);
+                            onClose();
+                          }}
+                          className="px-2 py-1 bg-slate-750 hover:bg-slate-700 text-slate-300 hover:text-white text-[10px] font-semibold rounded-lg border border-slate-600/40 transition-all"
+                          title="Fill the selected staff with this rhythm"
+                        >
+                          Fill Staff
+                        </button>
+                      )}
+
+                      {/* Compact Half-Width Add Beat Button */}
                       <button
-                        onClick={() => {
-                          soundEngine.stopDrumPreview();
-                          setPlayingGrooveId(null);
-                          onApplyToSelectedTrack(groove);
-                          onClose();
-                        }}
-                        className="px-2 py-1 bg-slate-700/80 hover:bg-slate-700 text-slate-300 hover:text-white text-[10px] font-semibold rounded-lg border border-slate-600/50 transition-all"
-                        title="Fill the selected staff with this rhythm"
+                        onClick={() => handleSelectGroove(groove)}
+                        className="flex items-center justify-center gap-1 px-2.5 py-1 bg-rose-600 hover:bg-rose-500 active:scale-95 text-white text-[11px] font-bold rounded-lg transition-all shadow-xs"
                       >
-                        Fill Staff
+                        <Plus className="w-3 h-3" />
+                        <span>Add Beat</span>
                       </button>
-                    )}
+                    </div>
                   </div>
                 </div>
               );

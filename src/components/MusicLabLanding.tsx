@@ -13,7 +13,7 @@ import {
 import { StudentSession } from '../utils/classroomApi';
 import { ClassroomToolBoxModal, ToolId } from './tools/ClassroomToolBoxModal';
 
-export type MusicLabAppId = 'hub' | 'staff-composer' | 'rhythm-rockstars' | 'beat-machine' | 'daw' | 'staff-wars';
+export type MusicLabAppId = 'hub' | 'staff-composer' | 'rhythm-rockstars' | 'beat-machine' | 'daw' | 'staff-wars' | 'big-staff';
 
 interface MusicLabLandingProps {
   onSelectApp: (appId: MusicLabAppId) => void;
@@ -224,7 +224,7 @@ export const MusicLabLanding: React.FC<MusicLabLandingProps> = ({
             </div>
 
             {/* Giant Action Button */}
-            <div className="w-full lg:w-auto shrink-0 flex flex-col items-center gap-2">
+            <div className="w-full lg:w-auto shrink-0 flex flex-col items-center gap-2.5">
               <button
                 type="button"
                 className="w-full sm:w-auto px-8 py-5 rounded-3xl bg-gradient-to-r from-sky-400 via-blue-500 to-indigo-500 group-hover:from-sky-300 group-hover:to-indigo-400 text-slate-950 font-black text-lg sm:text-xl flex items-center justify-center gap-3 shadow-2xl shadow-sky-500/40 group-hover:scale-105 active:scale-95 transition-all cursor-pointer font-['Fredoka',sans-serif] border-2 border-white/20"
@@ -232,6 +232,19 @@ export const MusicLabLanding: React.FC<MusicLabLandingProps> = ({
                 <Play className="w-6 h-6 fill-current" />
                 <span>Open Staff Composer</span>
                 <ArrowRight className="w-6 h-6" />
+              </button>
+
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSelectApp('big-staff');
+                }}
+                className="w-full sm:w-auto px-5 py-2.5 rounded-2xl bg-amber-400 hover:bg-amber-300 active:scale-95 text-slate-950 font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer font-['Fredoka',sans-serif] border border-amber-300"
+                title="Launch Staff Composer directly into Big Staff 1-bar view with Easy Mode for K-1st grade"
+              >
+                <Sparkles className="w-4 h-4 text-slate-950" />
+                <span>Big Staff (K-1st Easy Mode)</span>
               </button>
             </div>
           </div>
