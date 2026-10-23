@@ -424,37 +424,20 @@ export const TransportBar: React.FC<TransportBarProps> = ({
           </span>
         </button>
 
-        {/* 1) Ensemble & Songs Dropdown */}
+        {/* 1) Instruments & Beats Dropdown */}
         <div className="relative">
           <button
             onClick={() => setOpenMenu((m) => (m === 'ensemble' ? null : 'ensemble'))}
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-sky-500/20 hover:bg-sky-500/30 text-sky-200 border border-sky-500/40 transition-all cursor-pointer"
           >
             <Layers className="w-3.5 h-3.5 text-sky-400" />
-            <span>Instruments & Songs</span>
+            <span>Instruments & Beats</span>
             <ChevronDown className="w-3.5 h-3.5 opacity-75" />
           </button>
 
           {openMenu === 'ensemble' && (
             <div className="absolute right-0 mt-2 w-64 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-2 z-50 flex flex-col gap-1 text-xs">
-              {onOpenEnsembleTemplates && (
-                <button
-                  onClick={() => {
-                    setOpenMenu(null);
-                    onOpenEnsembleTemplates();
-                  }}
-                  className="flex items-center justify-between w-full px-3 py-2.5 rounded-xl bg-gradient-to-r from-sky-500/20 to-indigo-500/20 hover:from-sky-500/30 hover:to-indigo-500/30 border border-sky-400/30 hover:border-sky-400/60 text-left font-black text-sky-200 transition-all cursor-pointer shadow-xs"
-                >
-                  <span className="flex items-center gap-2">
-                    <Users className="w-4 h-4 text-sky-400" />
-                    <span>+ Ensemble Templates</span>
-                  </span>
-                  <span className="px-1.5 py-0.5 rounded-md bg-sky-400 text-slate-950 text-[9px] font-black uppercase tracking-wider">
-                    New
-                  </span>
-                </button>
-              )}
-              <div className="h-px bg-slate-800 my-0.5" />
+              {/* 1st: Add Instrument */}
               <button
                 onClick={() => {
                   setOpenMenu(null);
@@ -465,6 +448,8 @@ export const TransportBar: React.FC<TransportBarProps> = ({
                 <Plus className="w-4 h-4 text-sky-400" />
                 <span>Add Instrument Track...</span>
               </button>
+
+              {/* 2nd: Add Beat Pattern */}
               <button
                 onClick={() => {
                   setOpenMenu(null);
@@ -475,22 +460,28 @@ export const TransportBar: React.FC<TransportBarProps> = ({
                 <Drum className="w-4 h-4 text-rose-400" />
                 <span>Add Drum Beat Pattern...</span>
               </button>
-              <button
-                onClick={() => {
-                  setOpenMenu(null);
-                  onToggleMixer();
-                }}
-                className="flex items-center justify-between w-full px-3 py-2 rounded-xl hover:bg-slate-800 text-left font-semibold text-slate-200 transition-colors cursor-pointer"
-              >
-                <span className="flex items-center gap-2.5">
-                  <Layers className="w-4 h-4 text-indigo-400" />
-                  <span>Track Mixer / Mute / Solo</span>
-                </span>
-                <span className="px-1.5 py-0.5 rounded bg-indigo-500/30 text-indigo-300 text-[10px] font-bold">
-                  {trackCount}
-                </span>
-              </button>
+
+              {/* 3rd: Ensembles */}
+              {onOpenEnsembleTemplates && (
+                <button
+                  onClick={() => {
+                    setOpenMenu(null);
+                    onOpenEnsembleTemplates();
+                  }}
+                  className="flex items-center justify-between w-full px-3 py-2.5 rounded-xl bg-gradient-to-r from-sky-500/20 to-indigo-500/20 hover:from-sky-500/30 hover:to-indigo-500/30 border border-sky-400/30 hover:border-sky-400/60 text-left font-black text-sky-200 transition-all cursor-pointer shadow-xs"
+                >
+                  <span className="flex items-center gap-2">
+                    <Users className="w-4 h-4 text-sky-400" />
+                    <span>Ensemble Templates</span>
+                  </span>
+                  <span className="px-1.5 py-0.5 rounded-md bg-sky-400 text-slate-950 text-[9px] font-black uppercase tracking-wider">
+                    Full Band
+                  </span>
+                </button>
+              )}
+
               <div className="h-px bg-slate-800 my-1" />
+
               <button
                 onClick={() => {
                   setOpenMenu(null);

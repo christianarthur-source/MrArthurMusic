@@ -275,8 +275,8 @@ export const InstrumentModal: React.FC<InstrumentModalProps> = ({
             )}
           </div>
 
-          {/* Condensed Category Submenu Tabs */}
-          <div className="flex items-center gap-1 overflow-x-auto pb-0.5 text-xs scrollbar-thin">
+          {/* Condensed Category Submenu Tabs - Flex Wrap with ZERO Horizontal Scrollbar */}
+          <div className="flex flex-wrap items-center gap-1.5 text-xs">
             {CATEGORIES.map((cat) => {
               const count =
                 cat.id === 'All'
@@ -288,7 +288,7 @@ export const InstrumentModal: React.FC<InstrumentModalProps> = ({
                 <button
                   key={cat.id}
                   onClick={() => setSelectedCategory(cat.id)}
-                  className={`px-2.5 py-1 rounded-lg font-bold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 ${
+                  className={`px-2.5 py-1 rounded-lg font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                     isSelected
                       ? 'bg-sky-500 text-white shadow-xs'
                       : 'bg-slate-800/80 text-slate-400 hover:text-white hover:bg-slate-800'
@@ -297,7 +297,7 @@ export const InstrumentModal: React.FC<InstrumentModalProps> = ({
                   <span>{cat.icon}</span>
                   <span>{cat.label}</span>
                   <span
-                    className={`text-[10px] px-1 py-0.2 rounded-full ${
+                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-semibold ${
                       isSelected ? 'bg-sky-600 text-sky-100' : 'bg-slate-700 text-slate-400'
                     }`}
                   >

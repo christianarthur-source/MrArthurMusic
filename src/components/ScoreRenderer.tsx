@@ -2261,8 +2261,8 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
                 />
               </div>
 
-              {/* Category Pills */}
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar text-[11px] font-semibold">
+              {/* Category Pills - Flex Wrap with ZERO Horizontal Scrollbar */}
+              <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-semibold">
                 {(
                   [
                     'All',
@@ -2279,7 +2279,7 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
                   <button
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
-                    className={`px-2.5 py-1 rounded-lg shrink-0 transition-colors cursor-pointer ${
+                    className={`px-2.5 py-1 rounded-lg transition-colors cursor-pointer ${
                       selectedCategory === cat
                         ? 'bg-indigo-600 text-white shadow-sm'
                         : 'bg-slate-800/80 hover:bg-slate-800 text-slate-300 hover:text-white'
