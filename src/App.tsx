@@ -58,7 +58,8 @@ import RhythmRockStarsApp from './rhythm-rockstars/RhythmRockStarsApp';
 import BeatMachineApp from './beat-machine/App';
 import { DawApp } from './daw/App';
 import { StaffWarsApp } from './staff-wars/StaffWarsApp';
-import { ShieldCheck, ChevronLeft, ChevronRight, Plus, Play, Square } from 'lucide-react';
+import { ShieldCheck, Plus, Play, Square } from 'lucide-react';
+import { EighthNoteUIIcon, RestUIIcon } from './components/NotationSymbols';
 import {
   SavedProjectRecord,
   StudentSession,
@@ -2610,46 +2611,144 @@ export default function App() {
           {/* Big Staff K/1st Grade Friendly Navigation & Playback Toolbar */}
           {isBigStaff && (
             <div className="w-full max-w-5xl mx-auto my-3 bg-linear-to-r from-slate-900 via-indigo-950 to-slate-900 border-2 border-indigo-400/50 rounded-3xl p-3 sm:p-4 shadow-2xl flex flex-wrap items-center justify-between gap-3 text-white select-none">
-              {/* Left: Bar Navigation */}
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setBigStaffMeasureIndex((m) => Math.max(0, m - 1))}
-                  disabled={bigStaffMeasureIndex === 0}
-                  title="Go to Previous Bar"
-                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-slate-800 hover:bg-slate-700 disabled:opacity-35 text-sky-300 font-black text-sm transition-all cursor-pointer shadow-sm disabled:cursor-not-allowed border border-slate-700"
-                >
-                  <ChevronLeft className="w-4.5 h-4.5" />
-                  <span className="hidden sm:inline">Prev Bar</span>
-                </button>
+              {/* Left: Kid-Friendly Big Note Selection Menu */}
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                <div className="flex items-center gap-1 sm:gap-1.5 bg-slate-950/80 p-1 sm:p-1.5 rounded-2xl border-2 border-indigo-400/30 shadow-inner">
+                  {/* Quarter Note */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (isSelectMode && (!selection || selection.itemIndex < 0)) {
+                        setIsSelectMode(false);
+                      }
+                      handleChangeDuration(0.25);
+                    }}
+                    title="Quarter Note (Ta - 1 Beat)"
+                    className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl transition-all cursor-pointer select-none active:scale-95 ${
+                      !isRestMode && activeDuration === 0.25
+                        ? 'bg-amber-400 text-slate-950 font-black shadow-lg ring-3 ring-amber-300/60 scale-105'
+                        : 'bg-slate-800/90 hover:bg-slate-700 text-slate-200 font-bold border border-slate-700 hover:text-white'
+                    }`}
+                  >
+                    <div className="w-6 h-7 flex items-center justify-center">
+                      <svg width="24" height="24" viewBox="0 0 24 24" className="stroke-current stroke-[2.5] fill-current">
+                        <ellipse cx="8.5" cy="15.5" rx="5.5" ry="4" transform="rotate(-15 8.5 15.5)" />
+                        <line x1="14" y1="14.5" x2="14" y2="3.5" strokeWidth="2.5" strokeLinecap="round" />
+                      </svg>
+                    </div>
+                    <div className="flex flex-col items-start leading-tight">
+                      <span className="text-xs sm:text-sm font-black">Quarter</span>
+                      <span className="text-[10px] font-bold opacity-75">1 Beat</span>
+                    </div>
+                  </button>
 
-                <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-indigo-500/25 border border-indigo-400/50 text-amber-300 font-black text-sm sm:text-base shadow-inner">
-                  <span>⭐</span>
-                  <span>
-                    Bar {bigStaffMeasureIndex + 1} of{' '}
-                    {Math.max(...score.tracks.map((t) => t.measures.length), 1)}
-                  </span>
-                  <span>🎈</span>
+                  {/* Eighth Note */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (isSelectMode && (!selection || selection.itemIndex < 0)) {
+                        setIsSelectMode(false);
+                      }
+                      handleChangeDuration(0.125);
+                    }}
+                    title="Eighth Note (Ti-Ti - 1/2 Beat)"
+                    className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl transition-all cursor-pointer select-none active:scale-95 ${
+                      !isRestMode && activeDuration === 0.125
+                        ? 'bg-amber-400 text-slate-950 font-black shadow-lg ring-3 ring-amber-300/60 scale-105'
+                        : 'bg-slate-800/90 hover:bg-slate-700 text-slate-200 font-bold border border-slate-700 hover:text-white'
+                    }`}
+                  >
+                    <div className="w-6 h-7 flex items-center justify-center">
+                      <EighthNoteUIIcon className="w-5 h-7 text-current" />
+                    </div>
+                    <div className="flex flex-col items-start leading-tight">
+                      <span className="text-xs sm:text-sm font-black">Eighth</span>
+                      <span className="text-[10px] font-bold opacity-75">½ Beat</span>
+                    </div>
+                  </button>
+
+                  {/* Half Note */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (isSelectMode && (!selection || selection.itemIndex < 0)) {
+                        setIsSelectMode(false);
+                      }
+                      handleChangeDuration(0.5);
+                    }}
+                    title="Half Note (Ta-a - 2 Beats)"
+                    className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl transition-all cursor-pointer select-none active:scale-95 ${
+                      !isRestMode && activeDuration === 0.5
+                        ? 'bg-amber-400 text-slate-950 font-black shadow-lg ring-3 ring-amber-300/60 scale-105'
+                        : 'bg-slate-800/90 hover:bg-slate-700 text-slate-200 font-bold border border-slate-700 hover:text-white'
+                    }`}
+                  >
+                    <div className="w-6 h-7 flex items-center justify-center">
+                      <svg width="24" height="24" viewBox="0 0 24 24" className="stroke-current stroke-[2.5] fill-none">
+                        <ellipse cx="8.5" cy="15.5" rx="5.5" ry="4" transform="rotate(-15 8.5 15.5)" />
+                        <line x1="14" y1="14.5" x2="14" y2="3.5" strokeWidth="2.5" strokeLinecap="round" />
+                      </svg>
+                    </div>
+                    <div className="flex flex-col items-start leading-tight">
+                      <span className="text-xs sm:text-sm font-black">Half</span>
+                      <span className="text-[10px] font-bold opacity-75">2 Beats</span>
+                    </div>
+                  </button>
+
+                  {/* Whole Note */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (isSelectMode && (!selection || selection.itemIndex < 0)) {
+                        setIsSelectMode(false);
+                      }
+                      handleChangeDuration(1);
+                    }}
+                    title="Whole Note (Ta-a-a-a - 4 Beats)"
+                    className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl transition-all cursor-pointer select-none active:scale-95 ${
+                      !isRestMode && activeDuration === 1
+                        ? 'bg-amber-400 text-slate-950 font-black shadow-lg ring-3 ring-amber-300/60 scale-105'
+                        : 'bg-slate-800/90 hover:bg-slate-700 text-slate-200 font-bold border border-slate-700 hover:text-white'
+                    }`}
+                  >
+                    <div className="w-6 h-7 flex items-center justify-center">
+                      <svg width="24" height="24" viewBox="0 0 24 24" className="fill-none stroke-current stroke-[2.5]">
+                        <ellipse cx="12" cy="12" rx="7.5" ry="5.5" transform="rotate(-15 12 12)" />
+                      </svg>
+                    </div>
+                    <div className="flex flex-col items-start leading-tight">
+                      <span className="text-xs sm:text-sm font-black">Whole</span>
+                      <span className="text-[10px] font-bold opacity-75">4 Beats</span>
+                    </div>
+                  </button>
+
+                  {/* Rest Button */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (isSelectMode) {
+                        setIsSelectMode(false);
+                      }
+                      setIsRestMode((v) => !v);
+                    }}
+                    title="Toggle Rest Mode (Silent Beat)"
+                    className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl transition-all cursor-pointer select-none active:scale-95 ${
+                      isRestMode
+                        ? 'bg-rose-500 text-white font-black shadow-lg ring-3 ring-rose-300/60 scale-105'
+                        : 'bg-slate-800/90 hover:bg-slate-700 text-slate-200 font-bold border border-slate-700 hover:text-white'
+                    }`}
+                  >
+                    <div className="w-5 h-7 flex items-center justify-center">
+                      <RestUIIcon className="w-4.5 h-7 text-current" />
+                    </div>
+                    <div className="flex flex-col items-start leading-tight">
+                      <span className="text-xs sm:text-sm font-black">Rest</span>
+                      <span className="text-[10px] font-bold opacity-75">Shh!</span>
+                    </div>
+                  </button>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    const maxM = Math.max(...score.tracks.map((t) => t.measures.length), 1);
-                    if (bigStaffMeasureIndex + 1 < maxM) {
-                      setBigStaffMeasureIndex((m) => m + 1);
-                    } else {
-                      handleAddMeasure();
-                      setBigStaffMeasureIndex((m) => m + 1);
-                    }
-                  }}
-                  title="Go to Next Bar (or add new bar if at end)"
-                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-slate-800 hover:bg-slate-700 text-sky-300 font-black text-sm transition-all cursor-pointer shadow-sm border border-slate-700"
-                >
-                  <span className="hidden sm:inline">Next Bar</span>
-                  <ChevronRight className="w-4.5 h-4.5" />
-                </button>
-
+                {/* Add Bar Button */}
                 <button
                   type="button"
                   onClick={() => {
@@ -2658,10 +2757,10 @@ export default function App() {
                     setBigStaffMeasureIndex(maxM);
                   }}
                   title="Add a new blank bar to your song"
-                  className="flex items-center gap-1 px-3 py-2 rounded-2xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 text-emerald-300 font-black text-sm transition-all cursor-pointer shadow-sm"
+                  className="flex items-center gap-1.5 px-3 sm:px-3.5 py-2 sm:py-2.5 rounded-2xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/40 text-emerald-300 font-black text-xs sm:text-sm transition-all cursor-pointer shadow-sm active:scale-95"
                 >
-                  <Plus className="w-4 h-4" />
-                  <span>Add Bar</span>
+                  <Plus className="w-4.5 h-4.5" />
+                  <span className="hidden sm:inline">Add Bar</span>
                 </button>
               </div>
 
