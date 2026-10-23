@@ -653,7 +653,11 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
     const layout = measureLayout.get(measureIndex);
     if (!layout) return;
 
-    const rect = e.currentTarget.ownerSVGElement?.getBoundingClientRect() || e.currentTarget.getBoundingClientRect();
+    const svgEl =
+      (e.currentTarget.ownerSVGElement as SVGSVGElement | null) ||
+      (document.getElementById('staff-composer-score-svg') as unknown as SVGSVGElement | null) ||
+      e.currentTarget;
+    const rect = svgEl.getBoundingClientRect();
     const scaleX = rect.width > 0 ? totalSvgWidth / rect.width : 1;
     const scaleY = rect.height > 0 ? totalSvgHeight / rect.height : 1;
     const svgY = (e.clientY - rect.top) * scaleY;
@@ -1087,27 +1091,27 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
                         );
                       })()}
 
-                      {/* Measures track (slides horizontally in Big Staff mode) */}
-                      <g
-                        id={isBigStaff ? `big-staff-sliding-track-${trackIndex}` : undefined}
-                        transform={
-                          isBigStaff
-                            ? `translate(${-activeBigStaffMeasure * MEASURE_WIDTH + swipeOffset}, 0)`
-                            : undefined
-                        }
-                        style={
-                          isBigStaff
-                            ? {
-                                transition: isSwiping
-                                  ? 'none'
-                                  : 'transform 0.35s cubic-bezier(0.22, 1, 0.36, 1)',
-                                willChange: 'transform',
-                              }
-                            : undefined
-                        }
-                        clipPath={isBigStaff ? 'url(#big-staff-measures-clip)' : undefined}
-                      >
-                        {systemMeasures.map((measureIndex) => {
+                      {/* Measures track (slides horizontally in Big Staff mode inside a stationary clip window) */}
+                      <g clipPath={isBigStaff ? 'url(#big-staff-measures-clip)' : undefined}>
+                        <g
+                          id={isBigStaff ? `big-staff-sliding-track-${trackIndex}` : undefined}
+                          transform={
+                            isBigStaff
+                              ? `translate(${-activeBigStaffMeasure * MEASURE_WIDTH + swipeOffset}, 0)`
+                              : undefined
+                          }
+                          style={
+                            isBigStaff
+                              ? {
+                                  transition: isSwiping
+                                    ? 'none'
+                                    : 'transform 0.35s cubic-bezier(0.22, 1, 0.36, 1)',
+                                  willChange: 'transform',
+                                }
+                              : undefined
+                          }
+                        >
+                          {systemMeasures.map((measureIndex) => {
                         const measure = track.measures[measureIndex];
                         if (!measure) return null;
                         const layout = measureLayout.get(measureIndex)!;
@@ -2208,6 +2212,7 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
                         )}
                       </g>
                     </g>
+                    </g>
                   );
                 })}
               </g>
@@ -2216,128 +2221,130 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
 
           {/* Ghost Note on Hover (Insert Mode) */}
           {ghostNote && !isSelectMode && (
-            <g
-              transform={
-                isBigStaff
-                  ? `translate(${-activeBigStaffMeasure * MEASURE_WIDTH + swipeOffset}, 0)`
-                  : undefined
-              }
-              clipPath={isBigStaff ? 'url(#big-staff-measures-clip)' : undefined}
-              className="score-ui-only pointer-events-none opacity-85"
-            >
-              <line
-                x1={ghostNote.x - 22}
-                y1={ghostNote.y}
-                x2={ghostNote.x + 22}
-                y2={ghostNote.y}
-                stroke="#0284C7"
-                strokeWidth="2"
-                strokeDasharray="3 3"
-              />
-              {ghostNote.isDrum ? (
-                <g>
-                  {activeDuration >= 0.5 && (
-                    <circle
-                      cx={ghostNote.x}
-                      cy={ghostNote.y}
-                      r="8.5"
-                      fill="none"
-                      stroke="#0284C7"
-                      strokeWidth="2.2"
-                      strokeDasharray="3 2"
-                    />
-                  )}
-                  <line
-                    x1={ghostNote.x - 6.5}
-                    y1={ghostNote.y - 6.5}
-                    x2={ghostNote.x + 6.5}
-                    y2={ghostNote.y + 6.5}
-                    stroke="#0284C7"
-                    strokeWidth="3.0"
-                    strokeLinecap="round"
-                  />
-                  <line
-                    x1={ghostNote.x - 6.5}
-                    y1={ghostNote.y + 6.5}
-                    x2={ghostNote.x + 6.5}
-                    y2={ghostNote.y - 6.5}
-                    stroke="#0284C7"
-                    strokeWidth="3.0"
-                    strokeLinecap="round"
-                  />
-                </g>
-              ) : (
-                <ellipse
-                  cx={ghostNote.x}
-                  cy={ghostNote.y}
-                  rx="9.2"
-                  ry="6.6"
-                  transform={`rotate(-20 ${ghostNote.x} ${ghostNote.y})`}
-                  fill={
-                    activeDuration >= 0.5
-                      ? 'none'
-                      : effectiveBoomwhacker
-                      ? BOOMWHACKER_COLORS[ghostNote.pitch.step].bg
-                      : '#0284C7'
-                  }
-                  stroke={effectiveBoomwhacker ? BOOMWHACKER_COLORS[ghostNote.pitch.step].bg : '#0369A1'}
-                  strokeWidth={activeDuration >= 0.5 ? '3.0' : '2.2'}
+            <g clipPath={isBigStaff ? 'url(#big-staff-measures-clip)' : undefined}>
+              <g
+                transform={
+                  isBigStaff
+                    ? `translate(${-activeBigStaffMeasure * MEASURE_WIDTH + swipeOffset}, 0)`
+                    : undefined
+                }
+                className="score-ui-only pointer-events-none opacity-85"
+              >
+                <line
+                  x1={ghostNote.x - 22}
+                  y1={ghostNote.y}
+                  x2={ghostNote.x + 22}
+                  y2={ghostNote.y}
+                  stroke="#0284C7"
+                  strokeWidth="2"
+                  strokeDasharray="3 3"
                 />
-              )}
-              <g transform={`translate(${ghostNote.x + 13}, ${ghostNote.y - 11})`}>
-                <rect x="0" y="0" width="36" height="20" rx="5" fill="#0284C7" className="shadow-md" />
-                <text
-                  x="18"
-                  y="14"
-                  fontSize="12"
-                  fontWeight="bold"
-                  textAnchor="middle"
-                  fill="#FFFFFF"
-                >
-                  {ghostNote.pitch.step}
-                  {ghostNote.pitch.accidental === 'sharp'
-                    ? '♯'
-                    : ghostNote.pitch.accidental === 'flat'
-                    ? '♭'
-                    : ''}
-                  {ghostNote.pitch.octave}
-                </text>
+                {ghostNote.isDrum ? (
+                  <g>
+                    {activeDuration >= 0.5 && (
+                      <circle
+                        cx={ghostNote.x}
+                        cy={ghostNote.y}
+                        r="8.5"
+                        fill="none"
+                        stroke="#0284C7"
+                        strokeWidth="2.2"
+                        strokeDasharray="3 2"
+                      />
+                    )}
+                    <line
+                      x1={ghostNote.x - 6.5}
+                      y1={ghostNote.y - 6.5}
+                      x2={ghostNote.x + 6.5}
+                      y2={ghostNote.y + 6.5}
+                      stroke="#0284C7"
+                      strokeWidth="3.0"
+                      strokeLinecap="round"
+                    />
+                    <line
+                      x1={ghostNote.x - 6.5}
+                      y1={ghostNote.y + 6.5}
+                      x2={ghostNote.x + 6.5}
+                      y2={ghostNote.y - 6.5}
+                      stroke="#0284C7"
+                      strokeWidth="3.0"
+                      strokeLinecap="round"
+                    />
+                  </g>
+                ) : (
+                  <ellipse
+                    cx={ghostNote.x}
+                    cy={ghostNote.y}
+                    rx="9.2"
+                    ry="6.6"
+                    transform={`rotate(-20 ${ghostNote.x} ${ghostNote.y})`}
+                    fill={
+                      activeDuration >= 0.5
+                        ? 'none'
+                        : effectiveBoomwhacker
+                        ? BOOMWHACKER_COLORS[ghostNote.pitch.step].bg
+                        : '#0284C7'
+                    }
+                    stroke={effectiveBoomwhacker ? BOOMWHACKER_COLORS[ghostNote.pitch.step].bg : '#0369A1'}
+                    strokeWidth={activeDuration >= 0.5 ? '3.0' : '2.2'}
+                  />
+                )}
+                <g transform={`translate(${ghostNote.x + 13}, ${ghostNote.y - 11})`}>
+                  <rect x="0" y="0" width="36" height="20" rx="5" fill="#0284C7" className="shadow-md" />
+                  <text
+                    x="18"
+                    y="14"
+                    fontSize="12"
+                    fontWeight="bold"
+                    textAnchor="middle"
+                    fill="#FFFFFF"
+                  >
+                    {ghostNote.pitch.step}
+                    {ghostNote.pitch.accidental === 'sharp'
+                      ? '♯'
+                      : ghostNote.pitch.accidental === 'flat'
+                      ? '♭'
+                      : ''}
+                    {ghostNote.pitch.octave}
+                  </text>
+                </g>
               </g>
             </g>
           )}
 
           {/* Direct-DOM Animated Playback Cursor Line */}
-          <g
-            id="staff-playhead-group"
-            transform={
-              isBigStaff
-                ? `translate(${-activeBigStaffMeasure * MEASURE_WIDTH + swipeOffset}, 0)`
-                : undefined
-            }
-            style={
-              isBigStaff
-                ? {
-                    transition: isSwiping
-                      ? 'none'
-                      : 'transform 0.35s cubic-bezier(0.22, 1, 0.36, 1)',
-                    willChange: 'transform',
-                  }
-                : undefined
-            }
-            clipPath={isBigStaff ? 'url(#big-staff-measures-clip)' : undefined}
-          >
-            <line
-              id="staff-playhead-cursor-line"
-              x1="0"
-              y1="0"
-              x2="0"
-              y2="0"
-              stroke="#EF4444"
-              strokeWidth="3.5"
-              strokeDasharray="5 3"
-              className="pointer-events-none select-none transition-none"
-              style={{ display: 'none' }}
-            />
+          <g clipPath={isBigStaff ? 'url(#big-staff-measures-clip)' : undefined}>
+            <g
+              id="staff-playhead-group"
+              transform={
+                isBigStaff
+                  ? `translate(${-activeBigStaffMeasure * MEASURE_WIDTH + swipeOffset}, 0)`
+                  : undefined
+              }
+              style={
+                isBigStaff
+                  ? {
+                      transition: isSwiping
+                        ? 'none'
+                        : 'transform 0.35s cubic-bezier(0.22, 1, 0.36, 1)',
+                      willChange: 'transform',
+                    }
+                  : undefined
+              }
+            >
+              <line
+                id="staff-playhead-cursor-line"
+                x1="0"
+                y1="0"
+                x2="0"
+                y2="0"
+                stroke="#EF4444"
+                strokeWidth="3.5"
+                strokeDasharray="5 3"
+                className="pointer-events-none select-none transition-none"
+                style={{ display: 'none' }}
+              />
+            </g>
           </g>
         </svg>
 
