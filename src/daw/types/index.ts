@@ -59,7 +59,16 @@ export interface DawTrack {
 }
 
 export type DawLoopCategory = 'drums' | 'bass' | 'chords' | 'melody' | 'vocals' | 'fx';
-export type DawLoopGenre = 'hiphop' | 'pop' | 'rock' | 'lofi' | 'cinematic' | 'electronic' | 'latin_world';
+export type DawLoopGenre =
+  | 'hiphop'
+  | 'pop'
+  | 'rock'
+  | 'electronic'
+  | 'lofi'
+  | 'folk'
+  | 'jazz'
+  | 'latin_world'
+  | 'cinematic';
 
 export interface DawLoopItem {
   id: string;

@@ -41,6 +41,28 @@ export async function getOrGenerateLoopAudio(
   const cached = loopBufferCache.get(cacheKey);
   if (cached) return cached;
 
+  // 1. Prioritize real high-definition audio loop from public/audio/loops/
+  const audioUrl = loop.audioUrl || `/audio/loops/${loop.id}.mp3`;
+  try {
+    const res = await fetch(audioUrl);
+    if (res.ok) {
+      const arrayBuffer = await res.arrayBuffer();
+      const audioBuffer = await new Promise<AudioBuffer>((resolve, reject) => {
+        audioCtx.decodeAudioData(arrayBuffer, resolve, reject);
+      });
+      const waveform =
+        loop.waveform && loop.waveform.length > 0
+          ? loop.waveform
+          : extractWaveformPeaks(audioBuffer);
+      const result = { buffer: audioBuffer, waveform };
+      loopBufferCache.set(cacheKey, result);
+      return result;
+    }
+  } catch (e) {
+    console.warn(`Could not load real loop audio from ${audioUrl}, falling back to procedural audio:`, e);
+  }
+
+  // 2. Procedural fallback
   // Duration in seconds: (beats / (BPM / 60))
   const beatSec = 60 / effectiveBpm;
   const totalDuration = loop.durationBeats * beatSec;
