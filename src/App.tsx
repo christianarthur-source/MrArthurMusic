@@ -16,6 +16,8 @@ import {
   ViewLayout,
   VoltaEnding,
 } from './types/music';
+import { DrumSound } from './data/drumGrooves';
+import { DrumKitType } from './audio/acousticSamples';
 import { DEFAULT_BLANK_SCORE, createEmptyMeasure } from './data/templates';
 import {
   getItemDuration,
@@ -28,6 +30,12 @@ import {
   STEP_DIATONIC_OFFSET,
 } from './utils/musicMath';
 import { soundEngine } from './audio/soundEngine';
+import {
+  webMidiService,
+  MidiDeviceInfo,
+  getDrumPitchForSound,
+  getDrumSoundForPitch,
+} from './audio/webMidiService';
 import { RhythmicPalette } from './components/RhythmicPalette';
 import { TransportBar } from './components/TransportBar';
 import { FullScreenMiniPalette } from './components/FullScreenMiniPalette';
@@ -285,6 +293,7 @@ export default function App() {
   const [shareUrl, setShareUrl] = useState<string>('');
   const [isGeneratingShareLink, setIsGeneratingShareLink] = useState<boolean>(false);
   const [lastSavedTime, setLastSavedTime] = useState<string | null>('just now');
+  const [midiDevices, setMidiDevices] = useState<MidiDeviceInfo[]>(() => webMidiService.getConnectedDevices());
 
   // Secret "adminbaby" keyboard shortcut tracking (only active when Mr. Arthur's avatar is enlarged)
   const adminKeyBufferRef = useRef<string>('');
@@ -1739,6 +1748,146 @@ export default function App() {
     pushScoreState(nextScore);
   }, [pushScoreState, score]);
 
+  // Web MIDI Controller Keyboard Note Entry for Staff Composer
+  const midiChordBufferRef = useRef<{
+    pitches: Pitch[];
+    timer: number | null;
+  }>({ pitches: [], timer: null });
+
+  useEffect(() => {
+    webMidiService.init().catch(() => {});
+    const unsubDevices = webMidiService.onDevicesChanged((devices) => {
+      setMidiDevices([...devices]);
+    });
+
+    const unsubNoteOn = webMidiService.onNoteOn((midiNumber, velocity, pitch, drumSound) => {
+      if (currentApp !== 'staff-composer') return;
+
+      const trackIdx = selection ? selection.trackIndex : 0;
+      const currentTrack = score.tracks[trackIdx] || score.tracks[0];
+      if (!currentTrack) return;
+      const isDrumTrack = currentTrack.instrumentId.startsWith('drum_');
+
+      // 1. Audio Audition
+      if (isDrumTrack) {
+        const soundToPlay = drumSound || getDrumSoundForPitch(pitch);
+        soundEngine.playDrumHit(
+          soundToPlay,
+          undefined,
+          Math.max(0.7, velocity),
+          undefined,
+          undefined,
+          currentTrack.instrumentId as DrumKitType
+        );
+      } else {
+        soundEngine.playNotePreview(pitch, currentTrack.instrumentId, 0.65, score.keySignature);
+      }
+
+      // If the score is playing, allow jamming/auditioning live along with playback without modifying notes
+      if (isPlaying) {
+        return;
+      }
+
+      // 2. Step-Time Score Entry (with 35ms buffer to capture chords cleanly)
+      const pitchToInsert = isDrumTrack && drumSound ? getDrumPitchForSound(drumSound) : pitch;
+      midiChordBufferRef.current.pitches.push(pitchToInsert);
+
+      if (midiChordBufferRef.current.timer !== null) {
+        window.clearTimeout(midiChordBufferRef.current.timer);
+      }
+
+      midiChordBufferRef.current.timer = window.setTimeout(() => {
+        const chordPitches = [...midiChordBufferRef.current.pitches];
+        midiChordBufferRef.current = { pitches: [], timer: null };
+
+        if (chordPitches.length === 0) return;
+
+        // Deduplicate identical pitches in chord
+        const uniquePitches = chordPitches.filter(
+          (p, i, arr) => arr.findIndex((x) => x.step === p.step && x.octave === p.octave) === i
+        );
+
+        setScore((prevScore) => {
+          const nextScore: Score = JSON.parse(JSON.stringify(prevScore));
+          const tIdx = selection ? selection.trackIndex : 0;
+          const mIdx = selection ? selection.measureIndex : 0;
+          const iIdx = selection ? Math.max(0, selection.itemIndex) : 0;
+
+          const track = nextScore.tracks[tIdx];
+          if (!track) return prevScore;
+          const measure = track.measures[mIdx];
+          if (!measure) return prevScore;
+
+          const capacity = getMeasureCapacity(nextScore.timeSignature);
+          let priorBeat = 0;
+          for (let i = 0; i < iIdx && i < measure.items.length; i++) {
+            priorBeat += getItemDuration(measure.items[i]);
+          }
+
+          const newItem: NoteItem = {
+            id: 'n_' + Math.random().toString(36).substring(2, 9),
+            type: 'note',
+            pitch: uniquePitches[0],
+            pitches: uniquePitches.length > 1 ? uniquePitches : [uniquePitches[0]],
+            duration: activeDuration,
+            isDotted,
+            isTied,
+            isTriplet,
+            articulation: activeArticulation,
+            dynamic: activeDynamic,
+          };
+
+          measure.items = insertNoteAtBeat(measure.items, newItem, priorBeat, capacity);
+
+          // Calculate next cursor position for step-time entry
+          const newlyAddedIdx = measure.items.findIndex((it) => it.id === newItem.id);
+          const nextItemIdx = newlyAddedIdx + 1;
+
+          setTimeout(() => {
+            if (nextItemIdx < measure.items.length) {
+              setSelection({ trackIndex: tIdx, measureIndex: mIdx, itemIndex: nextItemIdx });
+              if (isBigStaff) setBigStaffMeasureIndex(mIdx);
+            } else {
+              // Measure filled: advance to next measure
+              const nextMIdx = mIdx + 1;
+              if (nextMIdx >= track.measures.length) {
+                // Auto-create next measure across tracks
+                handleAddMeasure();
+              }
+              setSelection({ trackIndex: tIdx, measureIndex: nextMIdx, itemIndex: 0 });
+              if (isBigStaff) setBigStaffMeasureIndex(nextMIdx);
+            }
+          }, 0);
+
+          pushScoreState(nextScore);
+          return nextScore;
+        });
+      }, 35);
+    });
+
+    return () => {
+      unsubDevices();
+      unsubNoteOn();
+      if (midiChordBufferRef.current.timer !== null) {
+        window.clearTimeout(midiChordBufferRef.current.timer);
+      }
+    };
+  }, [
+    activeArticulation,
+    activeDuration,
+    activeDynamic,
+    currentApp,
+    handleAddMeasure,
+    isBigStaff,
+    isDotted,
+    isPlaying,
+    isTied,
+    isTriplet,
+    pushScoreState,
+    score,
+    selection,
+  ]);
+
   // Update track properties
   const handleUpdateTrack = useCallback(
     (trackIndex: number, updates: Partial<Track>) => {
@@ -2366,6 +2515,8 @@ export default function App() {
           onExportJson={handleExportJSON}
           onImportJson={handleImportJSON}
           onOpenHelp={() => setIsHelpModalOpen(true)}
+          midiDevices={midiDevices}
+          onInitMidi={() => webMidiService.init()}
         />
       )}
 

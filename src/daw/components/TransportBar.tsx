@@ -17,6 +17,7 @@ import {
   Share2,
 } from 'lucide-react';
 import { DawProject, DawSnapGrid, DawToolMode } from '../types';
+import { MidiDeviceInfo } from '../audio/midiManager';
 
 interface TransportBarProps {
   project: DawProject;
@@ -39,6 +40,8 @@ interface TransportBarProps {
   onUndo: () => void;
   onRedo: () => void;
   isSaving?: boolean;
+  midiDevices?: MidiDeviceInfo[];
+  onInitMidi?: () => void;
 }
 
 export const TransportBar: React.FC<TransportBarProps> = ({
@@ -62,6 +65,8 @@ export const TransportBar: React.FC<TransportBarProps> = ({
   onUndo,
   onRedo,
   isSaving,
+  midiDevices,
+  onInitMidi,
 }) => {
   // Format currentBeat into Measure.Beat.Tick (e.g. 1.1.00)
   const measure = Math.floor(currentBeat / 4) + 1;
@@ -199,6 +204,28 @@ export const TransportBar: React.FC<TransportBarProps> = ({
 
       {/* Right: Drawer Tabs & Cloud Actions */}
       <div className="flex items-center gap-2 flex-wrap">
+        {/* MIDI Keyboard Controller Status Pill */}
+        {midiDevices && midiDevices.length > 0 ? (
+          <div
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-bold transition-all shadow-xs cursor-default"
+            title={`Connected MIDI Devices:\n${midiDevices.map((d) => `• ${d.name} (${d.manufacturer})`).join('\n')}\n\nPlay keys on your keyboard controller to play instruments or record live MIDI!`}
+          >
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+            <span className="hidden sm:inline">🎹</span>
+            <span className="max-w-[130px] truncate">{midiDevices[0]?.name || 'MIDI Controller'}</span>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={onInitMidi}
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-750 text-slate-400 hover:text-slate-200 border border-slate-700/80 text-xs font-medium transition-all cursor-pointer"
+            title="Plug in any USB / Bluetooth MIDI keyboard controller. Click to detect MIDI controllers."
+          >
+            <span>🎹</span>
+            <span className="hidden md:inline text-[11px]">MIDI</span>
+          </button>
+        )}
+
         {/* Loop Library Drawer Toggle */}
         <button
           type="button"
