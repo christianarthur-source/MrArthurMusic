@@ -26,7 +26,8 @@ import {
 import { dawAudioEngine } from './audio/dawAudioEngine';
 import { decodeUploadedAudio, getOrGenerateLoopAudio } from './audio/loopGenerator';
 import { DAW_LOOP_CATALOG } from './data/loopCatalog';
-import { dawMidiManager } from './audio/midiManager';
+import { dawMidiManager, MidiDeviceInfo } from './audio/midiManager';
+import { midiNumberToPitch } from '../audio/webMidiService';
 import { TransportBar } from './components/TransportBar';
 import { TrackHeaderList } from './components/TrackHeaderList';
 import { TimelineArranger } from './components/TimelineArranger';
@@ -167,6 +168,7 @@ export const DawApp: React.FC<DawAppProps> = ({
   const [saveTitleInput, setSaveTitleInput] = useState<string>(project.title);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [notification, setNotification] = useState<string | null>(null);
+  const [midiDevices, setMidiDevices] = useState<MidiDeviceInfo[]>(() => dawMidiManager.getConnectedDevices());
 
   // Undo / Redo history stacks
   const historyRef = useRef<DawProject[]>([]);
@@ -285,13 +287,58 @@ export const DawApp: React.FC<DawAppProps> = ({
       setCurrentBeat(0);
     };
 
-    // Initialize Web MIDI listeners
-    dawMidiManager.init().catch(() => {});
-
     return () => {
       dawAudioEngine.stop();
     };
   }, []);
+
+  // Web MIDI controller listeners for DAW playback and recording
+  useEffect(() => {
+    dawMidiManager.init().catch(() => {});
+    dawMidiManager.onDevicesChanged = (devices) => {
+      setMidiDevices([...devices]);
+    };
+
+    const activeMidiNotes = new Map<number, { startBeat: number; pitch: Pitch }>();
+
+    dawMidiManager.onNoteOn = (midi, velocity) => {
+      const targetTrack =
+        project.tracks.find((t) => t.armRecord && t.type === 'instrument') ||
+        project.tracks.find((t) => t.id === selectedTrackId && t.type === 'instrument') ||
+        project.tracks.find((t) => t.type === 'instrument') ||
+        project.tracks[0];
+
+      const pitch = midiNumberToPitch(midi);
+      const instrumentId = targetTrack?.instrumentId || 'piano_treble';
+
+      // Play audio preview with velocity
+      soundEngine.playNotePreview(pitch, instrumentId, 0.65);
+
+      if (isRecording) {
+        activeMidiNotes.set(midi, { startBeat: currentBeat, pitch });
+      }
+    };
+
+    dawMidiManager.onNoteOff = (midi) => {
+      if (isRecording && activeMidiNotes.has(midi)) {
+        const data = activeMidiNotes.get(midi)!;
+        activeMidiNotes.delete(midi);
+        const durationBeats = Math.max(0.25, Math.round((currentBeat - data.startBeat) * 4) / 4 || 0.25);
+        handleRecordPianoNote({
+          midi,
+          pitch: data.pitch,
+          startBeat: Math.round(data.startBeat * 4) / 4,
+          durationBeats,
+        });
+      }
+    };
+
+    return () => {
+      dawMidiManager.onNoteOn = undefined;
+      dawMidiManager.onNoteOff = undefined;
+      dawMidiManager.onDevicesChanged = undefined;
+    };
+  }, [currentBeat, isRecording, project.tracks, selectedTrackId]);
 
   // Sync track channel strip volumes / FX whenever project changes
   useEffect(() => {
@@ -1165,6 +1212,8 @@ export const DawApp: React.FC<DawAppProps> = ({
           setProject(next);
         }}
         isSaving={isSaving}
+        midiDevices={midiDevices}
+        onInitMidi={() => dawMidiManager.init()}
       />
 
       {/* ========================================================

@@ -1,97 +1,55 @@
-export interface MidiDeviceInfo {
-  id: string;
-  name: string;
-  manufacturer: string;
-  state: string;
-}
+import { webMidiService, MidiDeviceInfo } from '../../audio/webMidiService';
 
-interface MidiInputLike {
-  id: string;
-  name?: string;
-  manufacturer?: string;
-  state: string;
-  onmidimessage?: ((e: { data: Uint8Array | number[] }) => void) | null;
-}
-
-interface MidiAccessLike {
-  inputs: {
-    forEach: (callback: (input: MidiInputLike) => void) => void;
-  };
-  onstatechange?: (() => void) | null;
-}
+export type { MidiDeviceInfo };
 
 export class DawMidiManager {
-  private midiAccess: any = null;
-  private connectedDevices: MidiDeviceInfo[] = [];
+  private _onNoteOn?: (midi: number, velocity: number) => void;
+  private _onNoteOff?: (midi: number) => void;
+  private _onDevicesChanged?: (devices: MidiDeviceInfo[]) => void;
 
-  public onNoteOn?: (midi: number, velocity: number) => void;
-  public onNoteOff?: (midi: number) => void;
-  public onDevicesChanged?: (devices: MidiDeviceInfo[]) => void;
+  private unsubNoteOn?: () => void;
+  private unsubNoteOff?: () => void;
+  private unsubDevices?: () => void;
+
+  public get onNoteOn(): ((midi: number, velocity: number) => void) | undefined {
+    return this._onNoteOn;
+  }
+  public set onNoteOn(fn: ((midi: number, velocity: number) => void) | undefined) {
+    this._onNoteOn = fn;
+    if (this.unsubNoteOn) this.unsubNoteOn();
+    if (fn) {
+      this.unsubNoteOn = webMidiService.onNoteOn((midi, vel) => fn(midi, vel));
+    }
+  }
+
+  public get onNoteOff(): ((midi: number) => void) | undefined {
+    return this._onNoteOff;
+  }
+  public set onNoteOff(fn: ((midi: number) => void) | undefined) {
+    this._onNoteOff = fn;
+    if (this.unsubNoteOff) this.unsubNoteOff();
+    if (fn) {
+      this.unsubNoteOff = webMidiService.onNoteOff((midi) => fn(midi));
+    }
+  }
+
+  public get onDevicesChanged(): ((devices: MidiDeviceInfo[]) => void) | undefined {
+    return this._onDevicesChanged;
+  }
+  public set onDevicesChanged(fn: ((devices: MidiDeviceInfo[]) => void) | undefined) {
+    this._onDevicesChanged = fn;
+    if (this.unsubDevices) this.unsubDevices();
+    if (fn) {
+      this.unsubDevices = webMidiService.onDevicesChanged((devices) => fn(devices));
+    }
+  }
 
   public async init(): Promise<boolean> {
-    if (!navigator.requestMIDIAccess) {
-      return false;
-    }
-
-    try {
-      this.midiAccess = await navigator.requestMIDIAccess({ sysex: false });
-      this.updateDevices();
-
-      this.midiAccess.onstatechange = () => {
-        this.updateDevices();
-      };
-
-      this.setupInputs();
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
-  private updateDevices() {
-    if (!this.midiAccess) return;
-    const devices: MidiDeviceInfo[] = [];
-    this.midiAccess.inputs.forEach((input) => {
-      devices.push({
-        id: input.id,
-        name: input.name || 'USB MIDI Keyboard',
-        manufacturer: input.manufacturer || 'Generic',
-        state: input.state,
-      });
-    });
-    this.connectedDevices = devices;
-    if (this.onDevicesChanged) {
-      this.onDevicesChanged(devices);
-    }
-  }
-
-  private setupInputs() {
-    if (!this.midiAccess) return;
-    this.midiAccess.inputs.forEach((input) => {
-      input.onmidimessage = (e) => this.handleMidiMessage(e);
-    });
-  }
-
-  private handleMidiMessage(e: { data: Uint8Array | number[] }) {
-    if (!e.data || e.data.length < 3) return;
-    const [status, note, velocity] = e.data;
-    const command = status >> 4;
-
-    if (command === 9 && velocity > 0) {
-      // Note On
-      if (this.onNoteOn) {
-        this.onNoteOn(note, velocity / 127);
-      }
-    } else if (command === 8 || (command === 9 && velocity === 0)) {
-      // Note Off
-      if (this.onNoteOff) {
-        this.onNoteOff(note);
-      }
-    }
+    return webMidiService.init();
   }
 
   public getConnectedDevices(): MidiDeviceInfo[] {
-    return this.connectedDevices;
+    return webMidiService.getConnectedDevices();
   }
 }
 

@@ -32,6 +32,7 @@ import {
 import { CountingMode, KeySignature, NoteLabelMode, ViewLayout } from '../types/music';
 import { BOOMWHACKER_COLORS, getTempoDescription } from '../utils/musicMath';
 import { soundEngine } from '../audio/soundEngine';
+import { MidiDeviceInfo } from '../audio/webMidiService';
 
 interface TransportBarProps {
   onBackToHub?: () => void;
@@ -93,6 +94,8 @@ interface TransportBarProps {
   onOpenAvatar: () => void;
   onCloseAvatar: () => void;
   onOpenHelp?: () => void;
+  midiDevices?: MidiDeviceInfo[];
+  onInitMidi?: () => void;
 }
 
 export const TransportBar: React.FC<TransportBarProps> = ({
@@ -152,6 +155,8 @@ export const TransportBar: React.FC<TransportBarProps> = ({
   onOpenAvatar,
   onCloseAvatar,
   onOpenHelp,
+  midiDevices,
+  onInitMidi,
 }) => {
   const tempoInfo = getTempoDescription(tempo);
   const [openMenu, setOpenMenu] = useState<'ensemble' | 'helpers' | 'export' | null>(null);
@@ -411,6 +416,28 @@ export const TransportBar: React.FC<TransportBarProps> = ({
 
       {/* Consolidated Right Dropdown Menus (Minimizing Clutter!) */}
       <div ref={menuContainerRef} className="flex items-center gap-2">
+        {/* MIDI Keyboard Controller Status Pill */}
+        {midiDevices && midiDevices.length > 0 ? (
+          <div
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-bold transition-all shadow-xs cursor-default"
+            title={`Connected MIDI Devices:\n${midiDevices.map((d) => `• ${d.name} (${d.manufacturer})`).join('\n')}\n\nPlay keys on your keyboard controller to enter notes or audition instruments live!`}
+          >
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+            <span className="hidden sm:inline">🎹</span>
+            <span className="max-w-[130px] truncate">{midiDevices[0]?.name || 'MIDI Controller'}</span>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={onInitMidi}
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-750 text-slate-400 hover:text-slate-200 border border-slate-700/80 text-xs font-medium transition-all cursor-pointer"
+            title="Plug in any USB / Bluetooth MIDI keyboard controller. Click to detect MIDI controllers."
+          >
+            <span>🎹</span>
+            <span className="hidden md:inline text-[11px]">MIDI</span>
+          </button>
+        )}
+
         {/* Quick Mixer Button (Replaced + Measure which moved down to the note palette) */}
         <button
           onClick={onToggleMixer}
