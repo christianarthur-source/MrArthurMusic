@@ -419,7 +419,7 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
     }
 
     return map;
-  }, [measureCount, singleSystemHeight, staffStartX, MEASURES_PER_SYSTEM]);
+  }, [measureCount, singleSystemHeight, staffStartX, MEASURES_PER_SYSTEM, HEADER_WIDTH]);
 
   useEffect(() => {
     (window as any).__SCORE_MEASURE_LAYOUT__ = {
@@ -866,10 +866,11 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
                           : (isTreble ? FLAT_TREBLE_OFFSETS : FLAT_BASS_OFFSETS);
 
                         const SymbolComponent = type === 'sharp' ? SharpSymbol : FlatSymbol;
-                        const startAccX = staffStartX + 42;
+                        const startAccX = staffStartX + 80;
+                        const ACC_SPACING = 15;
 
                         return Array.from({ length: count }).map((_, i) => {
-                          const accX = startAccX + i * 9;
+                          const accX = startAccX + i * ACC_SPACING;
                           const accY = trackTopY + STAFF_TOP_Y + offsets[i] * LINE_SPACING;
                           return <SymbolComponent key={i} x={accX} y={accY} />;
                         });
@@ -878,16 +879,31 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
                       {/* Time Signature (Dynamically Positioned) */}
                       {systemIndex === 0 && (() => {
                         const { count } = getKeyAccidentalInfo(score.keySignature);
-                        const timeSigX = staffStartX + (count === 0 ? 56 : 42 + count * 9 + 5);
+                        const timeSigX = staffStartX + (count === 0 ? 90 : 106 + (count - 1) * 15);
                         return (
                           <g
                             transform={`translate(${timeSigX}, ${trackTopY + STAFF_TOP_Y})`}
-                            className="font-bold fill-slate-900"
+                            className="font-bold fill-slate-900 select-none pointer-events-none"
+                            style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
                           >
-                            <text x="8" y="24" fontSize="26" textAnchor="middle" fontWeight="bold">
+                            <text
+                              x="0"
+                              y="18"
+                              fontSize="34"
+                              textAnchor="middle"
+                              dominantBaseline="central"
+                              fontWeight="bold"
+                            >
                               {score.timeSignature[0]}
                             </text>
-                            <text x="8" y="56" fontSize="26" textAnchor="middle" fontWeight="bold">
+                            <text
+                              x="0"
+                              y="54"
+                              fontSize="34"
+                              textAnchor="middle"
+                              dominantBaseline="central"
+                              fontWeight="bold"
+                            >
                               {score.timeSignature[1]}
                             </text>
                           </g>
@@ -1198,6 +1214,10 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
                                   {bg.notes.map((n) => {
                                     const bY = getBeamYAt(n.stemX);
                                     const stemStartY = bg.isStemDown ? n.topNoteY : n.bottomNoteY;
+                                    const isStemSelected =
+                                      selection?.trackIndex === trackIndex &&
+                                      selection?.measureIndex === measureIndex &&
+                                      selection?.itemIndex === n.itemIndex;
                                     return (
                                       <line
                                         key={n.itemIndex}
@@ -1205,8 +1225,8 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
                                         y1={stemStartY}
                                         x2={n.stemX}
                                         y2={bY}
-                                        stroke="#0F172A"
-                                        strokeWidth="2.2"
+                                        stroke={isStemSelected ? '#0284C7' : '#0F172A'}
+                                        strokeWidth={isStemSelected ? '2.8' : '2.2'}
                                       />
                                     );
                                   })}
@@ -1429,19 +1449,19 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
                                     )}
 
                                     {item.duration === 1 && (
-                                      <WholeRestSymbol x={itemX} y={trackTopY + STAFF_TOP_Y} color="#0F172A" />
+                                      <WholeRestSymbol x={itemX} y={trackTopY + STAFF_TOP_Y} color={isSelected ? '#0284C7' : '#0F172A'} />
                                     )}
                                     {item.duration === 0.5 && (
-                                      <HalfRestSymbol x={itemX} y={trackTopY + STAFF_TOP_Y} color="#0F172A" />
+                                      <HalfRestSymbol x={itemX} y={trackTopY + STAFF_TOP_Y} color={isSelected ? '#0284C7' : '#0F172A'} />
                                     )}
                                     {item.duration === 0.25 && (
-                                      <QuarterRestSymbol x={itemX} y={trackTopY + STAFF_TOP_Y} color="#0F172A" />
+                                      <QuarterRestSymbol x={itemX} y={trackTopY + STAFF_TOP_Y} color={isSelected ? '#0284C7' : '#0F172A'} />
                                     )}
                                     {item.duration === 0.125 && (
-                                      <EighthRestSymbol x={itemX} y={trackTopY + STAFF_TOP_Y} color="#0F172A" />
+                                      <EighthRestSymbol x={itemX} y={trackTopY + STAFF_TOP_Y} color={isSelected ? '#0284C7' : '#0F172A'} />
                                     )}
                                     {item.duration === 0.0625 && (
-                                      <SixteenthRestSymbol x={itemX} y={trackTopY + STAFF_TOP_Y} color="#0F172A" />
+                                      <SixteenthRestSymbol x={itemX} y={trackTopY + STAFF_TOP_Y} color={isSelected ? '#0284C7' : '#0F172A'} />
                                     )}
 
                                     {item.isDotted && (
@@ -1449,7 +1469,7 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
                                         cx={itemX + 15}
                                         cy={trackTopY + STAFF_TOP_Y + 27}
                                         r="3.0"
-                                        fill="#0F172A"
+                                        fill={isSelected ? '#0284C7' : '#0F172A'}
                                       />
                                     )}
 
@@ -1567,10 +1587,10 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
                                       height={Math.max(28, bottomY - topY + 28)}
                                       rx="8"
                                       fill="#38BDF8"
-                                      fillOpacity="0.30"
+                                      fillOpacity="0.18"
                                       stroke="#0284C7"
-                                      strokeWidth="2.5"
-                                      className="score-ui-only animate-pulse pointer-events-none"
+                                      strokeWidth="1.8"
+                                      className="score-ui-only pointer-events-none"
                                     />
                                   )}
 
@@ -1636,13 +1656,20 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
                                     const noteX = isDisplaced ? (isStemDown ? itemX - 18 : itemX + 18) : itemX;
 
                                     const bwColor = BOOMWHACKER_COLORS[p.step];
-                                    const noteFill =
-                                      item.duration >= 0.5
-                                        ? 'transparent'
-                                        : effectiveBoomwhacker
-                                        ? bwColor.bg
-                                        : '#0F172A';
-                                    const noteStroke = effectiveBoomwhacker ? bwColor.bg : '#0F172A';
+                                    const noteFill = isSelected
+                                      ? item.duration >= 0.5
+                                        ? '#F0F9FF'
+                                        : '#0284C7'
+                                      : item.duration >= 0.5
+                                      ? 'transparent'
+                                      : effectiveBoomwhacker
+                                      ? bwColor.bg
+                                      : '#0F172A';
+                                    const noteStroke = isSelected
+                                      ? '#0284C7'
+                                      : effectiveBoomwhacker
+                                      ? bwColor.bg
+                                      : '#0F172A';
 
                                     const accidentalOffset = 18 + idx * 11;
                                     const pitchLabelText = effectiveShowPitchNames
@@ -1667,13 +1694,13 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
 
                                         {/* Accidental */}
                                         {p.accidental === 'sharp' && (
-                                          <SharpSymbol x={noteX - accidentalOffset} y={noteY} />
+                                          <SharpSymbol x={noteX - accidentalOffset} y={noteY} color={isSelected ? '#0284C7' : '#0F172A'} />
                                         )}
                                         {p.accidental === 'flat' && (
-                                          <FlatSymbol x={noteX - accidentalOffset} y={noteY} />
+                                          <FlatSymbol x={noteX - accidentalOffset} y={noteY} color={isSelected ? '#0284C7' : '#0F172A'} />
                                         )}
                                         {p.accidental === 'natural' && (
-                                          <NaturalSymbol x={noteX - accidentalOffset} y={noteY} />
+                                          <NaturalSymbol x={noteX - accidentalOffset} y={noteY} color={isSelected ? '#0284C7' : '#0F172A'} />
                                         )}
 
                                         {/* Interactive Notehead: generous hit area + drag support */}
@@ -1721,7 +1748,7 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
                                             style={{ pointerEvents: 'all' }}
                                           />
                                           {isDrum ? (
-                                            <g className="transition-transform group-hover:scale-115">
+                                            <g className="transition-opacity group-hover:opacity-85">
                                               <circle cx={noteX} cy={noteY} r="10.5" fill="transparent" />
                                               {item.duration >= 0.5 && (
                                                 <circle
@@ -1753,18 +1780,33 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
                                               />
                                             </g>
                                           ) : (
-                                            <ellipse
-                                              cx={noteX}
-                                              cy={noteY}
-                                              rx={item.duration === 1 ? '10.6' : '10.0'}
-                                              ry="7.2"
-                                              transform={`rotate(${item.duration === 1 ? -10 : -20} ${noteX} ${noteY})`}
-                                              fill={noteFill}
-                                              stroke={noteStroke}
-                                              strokeWidth={item.duration >= 0.5 ? '3.2' : '1.8'}
-                                              style={{ pointerEvents: 'all' }}
-                                              className="transition-transform group-hover:scale-115"
-                                            />
+                                            <g>
+                                              {/* Subtle hover ring when unselected so the note never moves while giving immediate interactive feedback */}
+                                              {!isSelected && (
+                                                <ellipse
+                                                  cx={noteX}
+                                                  cy={noteY}
+                                                  rx="14"
+                                                  ry="10.5"
+                                                  transform={`rotate(${item.duration === 1 ? -10 : -20} ${noteX} ${noteY})`}
+                                                  fill="#38BDF8"
+                                                  fillOpacity="0"
+                                                  className="transition-all group-hover:fill-opacity-25 pointer-events-none"
+                                                />
+                                              )}
+                                              <ellipse
+                                                cx={noteX}
+                                                cy={noteY}
+                                                rx={item.duration === 1 ? '10.6' : '10.0'}
+                                                ry="7.2"
+                                                transform={`rotate(${item.duration === 1 ? -10 : -20} ${noteX} ${noteY})`}
+                                                fill={noteFill}
+                                                stroke={noteStroke}
+                                                strokeWidth={item.duration >= 0.5 ? '3.2' : isSelected ? '2.0' : '1.8'}
+                                                style={{ pointerEvents: 'all' }}
+                                                className="transition-colors"
+                                              />
+                                            </g>
                                           )}
                                         </g>
 
@@ -1776,7 +1818,7 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
                                             textAnchor={isDrum ? 'middle' : 'start'}
                                             fontSize="12"
                                             fontWeight="800"
-                                            fill="#0F172A"
+                                            fill={isSelected ? '#0369A1' : '#0F172A'}
                                             stroke="#FFFFFF"
                                             strokeWidth="3"
                                             strokeLinejoin="round"
@@ -1797,8 +1839,8 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
                                       y1={stemY1}
                                       x2={stemX}
                                       y2={stemY2}
-                                      stroke="#0F172A"
-                                      strokeWidth="2.2"
+                                      stroke={isSelected ? '#0284C7' : '#0F172A'}
+                                      strokeWidth={isSelected ? '2.8' : '2.2'}
                                       className="pointer-events-none"
                                     />
                                   )}
@@ -1810,7 +1852,7 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
                                       y={stemY2}
                                       isUp={!isStemDown}
                                       isSixteenth={item.duration === 0.0625}
-                                      color="#0F172A"
+                                      color={isSelected ? '#0284C7' : '#0F172A'}
                                     />
                                   )}
 
@@ -1820,7 +1862,7 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
                                       cx={itemX + 16}
                                       cy={bottomY}
                                       r="3.2"
-                                      fill="#0F172A"
+                                      fill={isSelected ? '#0284C7' : '#0F172A'}
                                       className="pointer-events-none"
                                     />
                                   )}
@@ -1838,8 +1880,8 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
                                       <path
                                         d={`M ${tieStartX} ${tieY} Q ${(tieStartX + tieEndX) / 2} ${cpY} ${tieEndX} ${tieY}`}
                                         fill="none"
-                                        stroke="#0F172A"
-                                        strokeWidth="2.2"
+                                        stroke={isSelected ? '#0284C7' : '#0F172A'}
+                                        strokeWidth={isSelected ? '2.8' : '2.2'}
                                         strokeLinecap="round"
                                         className="pointer-events-none"
                                       />
