@@ -551,8 +551,8 @@ export function getKeyAccidentalInfo(keySignature: KeySignature): {
 
 export function getScoreHeaderWidth(keySignature: KeySignature): number {
   const { count } = getKeyAccidentalInfo(keySignature);
-  if (count <= 1) return 90;
-  return 90 + (count - 1) * 9;
+  if (count === 0) return 136;
+  return 152 + (count - 1) * 15;
 }
 
 /**

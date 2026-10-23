@@ -181,19 +181,33 @@ class SoundEngine {
     const reverbBus = ctx.createGain();
     reverbBus.gain.setValueAtTime(0.90, ctx.currentTime);
 
-    // Broadcast-quality Mastering Dynamics Compressor
-    // Acts as transparent automatic gain leveling & peak limiter across all instruments
+    // 1. Broadcast-quality Mastering Dynamics Compressor
+    // Acts as transparent automatic program leveling across multiple instruments & chords
     const comp = ctx.createDynamicsCompressor();
     comp.threshold.setValueAtTime(-14, ctx.currentTime);
     comp.knee.setValueAtTime(12, ctx.currentTime);
-    comp.ratio.setValueAtTime(4.5, ctx.currentTime);
-    comp.attack.setValueAtTime(0.002, ctx.currentTime); // 2ms fast peak protection
-    comp.release.setValueAtTime(0.16, ctx.currentTime);
+    comp.ratio.setValueAtTime(3.8, ctx.currentTime);
+    comp.attack.setValueAtTime(0.003, ctx.currentTime); // 3ms transparent transient preservation
+    comp.release.setValueAtTime(0.15, ctx.currentTime);
 
-    // Master Limiting Gain: 0.90 (-0.9 dB)
-    // Clean broadcast headroom with zero digital clipping or distortion
+    // 2. Studio Master Make-Up Gain: +2.3 dB (1.30x)
+    // Elevates composition playback loudness to match clear solo audition presence
+    const makeupGain = ctx.createGain();
+    makeupGain.gain.setValueAtTime(1.30, ctx.currentTime);
+
+    // 3. Studio Brickwall Peak Limiter
+    // Ultra-fast lookahead peak clamp: catches high-energy ensemble peaks with zero distortion
+    const limiter = ctx.createDynamicsCompressor();
+    limiter.threshold.setValueAtTime(-1.2, ctx.currentTime); // -1.2 dBFS ceiling
+    limiter.knee.setValueAtTime(1.5, ctx.currentTime); // Sharp brickwall knee
+    limiter.ratio.setValueAtTime(20.0, ctx.currentTime); // Brickwall limiting
+    limiter.attack.setValueAtTime(0.0005, ctx.currentTime); // 0.5ms ultra-fast peak catch
+    limiter.release.setValueAtTime(0.04, ctx.currentTime); // 40ms fast recovery without pumping
+
+    // 4. True-Peak Broadcast Output Ceiling (-0.35 dBFS / 0.96x)
+    // Final analog-safe ceiling guaranteeing zero digital overs or speaker clipping
     const masterGain = ctx.createGain();
-    masterGain.gain.setValueAtTime(0.90, ctx.currentTime);
+    masterGain.gain.setValueAtTime(0.96, ctx.currentTime);
 
     dryBus.connect(comp);
 
@@ -215,7 +229,9 @@ class SoundEngine {
       reverbBus.connect(comp);
     }
 
-    comp.connect(masterGain);
+    comp.connect(makeupGain);
+    makeupGain.connect(limiter);
+    limiter.connect(masterGain);
     masterGain.connect(ctx.destination);
 
     const buses = { dryBus, reverbBus };
@@ -381,7 +397,7 @@ class SoundEngine {
     const now = this.ctx.currentTime;
     const hasSoloed = score.tracks.some((t) => t.soloed);
     const activeTracks = score.tracks.filter((t) => !t.muted && (!hasSoloed || t.soloed));
-    const activeTrackCountScale = Math.max(0.65, 1 / Math.pow(Math.max(1, activeTracks.length), 0.35));
+    const activeTrackCountScale = Math.max(0.82, 1 / Math.pow(Math.max(1, activeTracks.length), 0.18));
 
     score.tracks.forEach((track) => {
       const strip = this.liveTrackStrips.get(track.id);
@@ -2172,7 +2188,7 @@ class SoundEngine {
     // 2) Render Tracks directly on liveCtx following playbackSequence (repeats & loops)
     const hasSoloed = score.tracks.some((t) => t.soloed);
     const activeTracks = score.tracks.filter((t) => !t.muted && (!hasSoloed || t.soloed));
-    const activeTrackCountScale = Math.max(0.65, 1 / Math.pow(Math.max(1, activeTracks.length), 0.35));
+    const activeTrackCountScale = Math.max(0.82, 1 / Math.pow(Math.max(1, activeTracks.length), 0.18));
     const noteEvents: { id: string; startTime: number }[] = [];
 
     score.tracks.forEach((track) => {
@@ -2249,7 +2265,7 @@ class SoundEngine {
 
           itemPitches.forEach((p) => {
             // Note: track.volume and activeTrackCountScale are applied by strip.faderGain so live fader changes work!
-            let effectiveVolume = 0.85 * polyphonyScale;
+            let effectiveVolume = 0.96 * polyphonyScale;
             if (item.dynamic) {
               const dynamicScales: Record<string, number> = {
                 pp: 0.35,
@@ -2445,7 +2461,7 @@ class SoundEngine {
 
     const hasSoloed = score.tracks.some((t) => t.soloed);
     const activeTracks = score.tracks.filter((t) => !t.muted && (!hasSoloed || t.soloed));
-    const activeTrackCountScale = Math.max(0.65, 1 / Math.pow(Math.max(1, activeTracks.length), 0.35));
+    const activeTrackCountScale = Math.max(0.82, 1 / Math.pow(Math.max(1, activeTracks.length), 0.18));
 
     score.tracks.forEach((track) => {
       if (track.muted) return;
@@ -2511,7 +2527,7 @@ class SoundEngine {
           const polyphonyScale = 1 / Math.sqrt(Math.max(1, itemPitches.length));
 
           itemPitches.forEach((p) => {
-            let effectiveVolume = 0.85 * polyphonyScale;
+            let effectiveVolume = 0.96 * polyphonyScale;
             if (item.dynamic) {
               const dynamicScales: Record<string, number> = {
                 pp: 0.35,
