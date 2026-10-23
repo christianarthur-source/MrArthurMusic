@@ -592,16 +592,24 @@ class SoundEngine {
   public async playHighQualityNotePreview(
     pitch: Pitch | Pitch[],
     instrumentId: InstrumentId = 'piano_treble',
-    durationSeconds: number = 0.55,
+    durationSeconds: number = 0.65,
     keySignature: Score['keySignature'] = 'C'
   ): Promise<void> {
     const ctx = this.ensureContext();
+    if (instrumentId === 'drum_kit' || instrumentId === 'drum_808') {
+      await preloadInstrumentSamples(ctx, instrumentId);
+      const now = ctx.currentTime + 0.005;
+      this.playDrumHit('kick', now, 0.95, ctx, undefined, instrumentId);
+      this.playDrumHit('snare', now + 0.22, 0.9, ctx, undefined, instrumentId);
+      this.playDrumHit('hihat_closed', now + 0.44, 0.82, ctx, undefined, instrumentId);
+      return;
+    }
     const pitches = Array.isArray(pitch) ? pitch : [pitch];
     await preloadPitches(ctx, instrumentId, pitches);
     const startTime = ctx.currentTime + 0.002;
     pitches.forEach((p) => {
       const freq = getPitchFrequency(p, keySignature);
-      this.synthesizeInstrumentNote(freq, startTime, durationSeconds, instrumentId, 0.85, p, ctx);
+      this.synthesizeInstrumentNote(freq, startTime, durationSeconds, instrumentId, 0.88, p, ctx);
     });
   }
 
@@ -609,17 +617,10 @@ class SoundEngine {
   public playNotePreview(
     pitch: Pitch | Pitch[],
     instrumentId: InstrumentId = 'piano_treble',
-    durationSeconds: number = 0.45,
+    durationSeconds: number = 0.55,
     keySignature: Score['keySignature'] = 'C'
   ) {
-    const ctx = this.ensureContext();
-    void preloadInstrumentSamples(ctx, instrumentId);
-    const pitches = Array.isArray(pitch) ? pitch : [pitch];
-    const startTime = ctx.currentTime + 0.002;
-    pitches.forEach((p) => {
-      const freq = getPitchFrequency(p, keySignature);
-      this.synthesizeInstrumentNote(freq, startTime, durationSeconds, instrumentId, 0.8, p, ctx);
-    });
+    void this.playHighQualityNotePreview(pitch, instrumentId, durationSeconds, keySignature);
   }
 
   // Synthesize realistic acoustic drum hit via Web Audio
@@ -859,19 +860,19 @@ class SoundEngine {
   }
 
   // Play a drum groove loop preview
-  public playDrumGroove(
+  public async playDrumGroove(
     pattern: DrumStepEvent[],
     tempo: number,
     bars: number = 2,
     onStep?: (step: number) => void,
-    onComplete?: () => void
+    onComplete?: () => void,
+    drumType: 'drum_kit' | 'drum_808' = 'drum_kit'
   ) {
     this.stopDrumPreview();
-    this.initContext();
-    if (!this.ctx) return;
+    const ctx = this.ensureContext();
+    await preloadInstrumentSamples(ctx, drumType);
 
     this.isDrumPreviewPlaying = true;
-    const ctx = this.ctx;
     const secondsPer16th = 60 / tempo / 4;
     const totalSteps = 16 * bars;
     const startTime = ctx.currentTime + 0.05;
@@ -881,7 +882,7 @@ class SoundEngine {
         const stepIndex = bar * 16 + event.step;
         const hitTime = startTime + stepIndex * secondsPer16th;
         event.sounds.forEach((snd) => {
-          const handle = this.playDrumHit(snd, hitTime, 0.8);
+          const handle = this.playDrumHit(snd, hitTime, 0.85, ctx, undefined, drumType);
           this.drumPreviewSources.push(handle);
         });
       });
