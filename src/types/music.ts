@@ -142,6 +142,7 @@ export type InstrumentId =
   | 'jazz_organ'
   // Drums
   | 'drum_kit'
+  | 'drum_808'
   // Sound Effects
   | 'sfx_applause'
   | 'sfx_laser'

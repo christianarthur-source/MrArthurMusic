@@ -89,19 +89,14 @@ export const SOUNDFONT_INSTRUMENT_MAP: Partial<Record<InstrumentId, string>> = {
 };
 
 const NOTE_NAMES_FLAT = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'];
+const NOTE_NAMES_SHARP = ['C', 'Cs', 'D', 'Ds', 'E', 'F', 'Fs', 'G', 'Gs', 'A', 'As', 'B'];
 
-/**
- * Anchor MIDI notes spaced every 3 semitones (minor 3rds: C, Eb, Gb, A) across octaves 2 to 6.
- * Pitch-shifting at most +/- 1.5 semitones preserves natural acoustic formants while keeping
- * memory and bandwidth tiny.
- */
-const ANCHOR_MIDI_NOTES = [
-  36, 39, 42, 45, // Octave 2
-  48, 51, 54, 57, // Octave 3
-  60, 63, 66, 69, // Octave 4
-  72, 75, 78, 81, // Octave 5
-  84, 87, 90, 93, // Octave 6
-];
+export function midiToSharpNoteName(midi: number): string {
+  const clamped = Math.max(21, Math.min(108, Math.round(midi)));
+  const noteName = NOTE_NAMES_SHARP[clamped % 12];
+  const octave = Math.floor(clamped / 12) - 1;
+  return `${noteName}${octave}`;
+}
 
 export function midiToSoundfontNoteName(midi: number): string {
   const clamped = Math.max(21, Math.min(108, Math.round(midi)));
@@ -113,6 +108,89 @@ export function midiToSoundfontNoteName(midi: number): string {
 export function freqToMidi(freq: number): number {
   return Math.round(69 + 12 * Math.log2(Math.max(20, freq) / 440));
 }
+
+/**
+ * Maps instrument IDs directly to bundled local studio sample folders under /public/audio/samples/
+ */
+export const LOCAL_SAMPLE_INSTRUMENT_MAP: Partial<Record<InstrumentId, string>> = {
+  piano_treble: 'piano',
+  piano_bass: 'piano',
+  electric_piano: 'electric_piano',
+  organ: 'organ',
+  jazz_organ: 'organ',
+  flute: 'flute',
+  piccolo: 'piccolo',
+  clarinet: 'clarinet',
+  bass_clarinet: 'bass_clarinet',
+  bassoon: 'bassoon',
+  contrabassoon: 'bassoon',
+  alto_sax: 'alto_sax',
+  tenor_sax: 'tenor_sax',
+  baritone_sax: 'baritone_sax',
+  trumpet: 'trumpet',
+  cornet: 'trumpet',
+  flugelhorn: 'trumpet',
+  french_horn: 'french_horn',
+  trombone: 'trombone',
+  bass_trombone: 'trombone',
+  tuba: 'tuba',
+  euphonium: 'tuba',
+  violin: 'violin',
+  viola: 'viola',
+  cello: 'cello',
+  double_bass: 'double_bass',
+  harp: 'harp',
+  acoustic_guitar: 'acoustic_guitar',
+  ukulele: 'acoustic_guitar',
+  electric_guitar: 'electric_guitar',
+  electric_bass: 'electric_bass',
+  slap_bass: 'electric_bass',
+  glockenspiel: 'glockenspiel',
+  xylophone: 'xylophone',
+  vibraphone: 'vibraphone',
+};
+
+/**
+ * Available anchor note MIDI numbers for each local sample folder.
+ */
+export const LOCAL_INSTRUMENT_ANCHORS: Record<string, number[]> = {
+  acoustic_guitar: [39, 42, 45, 48, 51, 54, 57, 60, 63, 66, 69, 72],
+  alto_sax: [48, 51, 54, 57, 60, 63, 66, 69, 72, 75, 78, 81],
+  baritone_sax: [36, 39, 42, 45, 48, 51, 54, 57, 60, 63, 66, 69],
+  bass_clarinet: [36, 39, 42, 45, 48, 51, 54, 57, 60, 63, 66, 69],
+  bassoon: [24, 27, 30, 33, 36, 39, 42, 45, 48, 51, 54, 57, 60, 63, 69],
+  cello: [36, 39, 45, 48, 51, 54, 57, 60, 63, 66, 69, 72],
+  clarinet: [48, 51, 54, 57, 60, 63, 66, 69, 72, 75, 78, 81, 84],
+  double_bass: [30, 36, 42, 45],
+  electric_bass: [24, 27, 30, 33, 36, 39, 42, 45, 48, 51, 54, 57, 60],
+  electric_guitar: [42, 45, 48, 51, 54, 57, 60, 63, 66, 69, 72],
+  electric_piano: [36, 39, 42, 45, 48, 51, 54, 57, 60, 63, 66, 69, 72, 75, 78, 81, 84],
+  flute: [60, 69, 72, 81, 84, 93, 96],
+  french_horn: [36, 39, 42, 45, 48, 51, 54, 57, 60, 63, 66, 69],
+  glockenspiel: [72, 75, 78, 81, 84, 87, 90, 93, 96, 99, 102, 105, 108],
+  harp: [45, 48, 69, 72],
+  organ: [36, 39, 42, 45, 48, 51, 54, 57, 60, 63, 66, 69, 72],
+  piano: [21, 24, 27, 30, 33, 36, 39, 42, 45, 48, 51, 54, 57, 60, 63, 66, 69, 72, 75, 78, 81, 84, 87, 90, 93, 96, 99, 102, 105, 108],
+  piccolo: [72, 75, 78, 81, 84, 87, 90, 93, 96, 99, 102, 105, 108],
+  tenor_sax: [36, 39, 42, 45, 48, 51, 54, 57, 60, 63, 66, 69, 72],
+  trombone: [36, 39, 42, 45, 48, 51, 54, 57, 60, 63, 66, 69],
+  trumpet: [48, 51, 54, 57, 60, 63, 66, 69, 72, 75, 78, 81],
+  tuba: [24, 27, 30, 33, 36, 39, 42, 45, 48, 51, 54, 57],
+  vibraphone: [48, 51, 54, 57, 60, 63, 66, 69, 72, 75, 78, 81, 84],
+  viola: [48, 51, 54, 57, 60, 63, 66, 69, 72, 75, 78, 81, 84],
+  violin: [57, 60, 69, 72, 81, 84, 93, 96],
+  xylophone: [60, 63, 66, 69, 72, 75, 78, 81, 84, 87, 90, 93, 96],
+};
+
+const ANCHOR_MIDI_NOTES = [
+  21, 24, 27, 30, 33,
+  36, 39, 42, 45,
+  48, 51, 54, 57,
+  60, 63, 66, 69,
+  72, 75, 78, 81,
+  84, 87, 90, 93,
+  96, 99, 102, 105, 108
+];
 
 export function getNearestAnchorMidi(midi: number): number {
   let best = ANCHOR_MIDI_NOTES[0];
@@ -127,19 +205,126 @@ export function getNearestAnchorMidi(midi: number): number {
   return best;
 }
 
-// Cache of decoded AudioBuffers keyed by `${sfInstrumentName}:${anchorMidi}`
+export function getNearestLocalAnchorMidi(folder: string, midi: number): number {
+  const anchors = LOCAL_INSTRUMENT_ANCHORS[folder];
+  if (!anchors || anchors.length === 0) return getNearestAnchorMidi(midi);
+  let best = anchors[0];
+  let bestDist = Math.abs(midi - best);
+  for (let i = 1; i < anchors.length; i++) {
+    const d = Math.abs(midi - anchors[i]);
+    if (d < bestDist) {
+      bestDist = d;
+      best = anchors[i];
+    }
+  }
+  return best;
+}
+
+// Acoustic Drum Kit and 808 mapping (bundled in /public/audio/samples/drum_kit/ and /public/audio/samples/drum_808/)
+export type DrumKitType = 'drum_kit' | 'drum_808';
+
+const drumSampleBufferCache = new Map<string, AudioBuffer>();
+const pendingDrumFetchCache = new Map<string, Promise<AudioBuffer | null>>();
+
+const DRUM_FILE_MAP: Record<string, string> = {
+  kick: 'kick.mp3',
+  snare: 'snare.mp3',
+  hihat_closed: 'hihat.mp3',
+  hihat_open: 'hihat.mp3',
+  shaker: 'hihat.mp3',
+  tom_high: 'tom1.mp3',
+  tom_low: 'tom2.mp3',
+  tom_floor: 'tom3.mp3',
+};
+
+export async function loadAcousticDrumSample(
+  ctx: BaseAudioContext,
+  sound: string,
+  drumType: DrumKitType = 'drum_kit'
+): Promise<AudioBuffer | null> {
+  const fileName = DRUM_FILE_MAP[sound];
+  if (!fileName) return null;
+
+  const key = `${drumType}:${sound}`;
+  const existing = drumSampleBufferCache.get(key);
+  if (existing) return existing;
+
+  const pending = pendingDrumFetchCache.get(key);
+  if (pending) return pending;
+
+  const promise = (async () => {
+    try {
+      const res = await fetch(`/audio/samples/${drumType}/${fileName}`);
+      if (!res.ok) return null;
+      const arrayBuffer = await res.arrayBuffer();
+      const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+      drumSampleBufferCache.set(key, audioBuffer);
+      return audioBuffer;
+    } catch {
+      return null;
+    } finally {
+      pendingDrumFetchCache.delete(key);
+    }
+  })();
+
+  pendingDrumFetchCache.set(key, promise);
+  return promise;
+}
+
+export function getAcousticDrumSample(
+  ctx: BaseAudioContext,
+  sound: string,
+  drumType: DrumKitType = 'drum_kit'
+): AudioBuffer | null {
+  const key = `${drumType}:${sound}`;
+  const cached = drumSampleBufferCache.get(key);
+  if (cached) return cached;
+  void loadAcousticDrumSample(ctx, sound, drumType);
+  return null;
+}
+
+// Cache of decoded AudioBuffers keyed by `local:${folder}:${anchorMidi}` or `sf:${sfName}:${anchorMidi}`
 const sampleBufferCache = new Map<string, AudioBuffer>();
 const pendingFetchCache = new Map<string, Promise<AudioBuffer | null>>();
 
-/**
- * Fetches and decodes a single anchor note MP3 from the MusyngKite SoundFont CDN.
- */
-export async function loadSampleAnchor(
+export async function loadLocalSampleAnchor(
+  ctx: BaseAudioContext,
+  folder: string,
+  anchorMidi: number
+): Promise<AudioBuffer | null> {
+  const key = `local:${folder}:${anchorMidi}`;
+  const existing = sampleBufferCache.get(key);
+  if (existing) return existing;
+
+  const pending = pendingFetchCache.get(key);
+  if (pending) return pending;
+
+  const sharpNote = midiToSharpNoteName(anchorMidi);
+  const promise = (async () => {
+    try {
+      const res = await fetch(`/audio/samples/${folder}/${sharpNote}.mp3`);
+      if (!res.ok) return null;
+      const arrayBuffer = await res.arrayBuffer();
+      const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+      sampleBufferCache.set(key, audioBuffer);
+      return audioBuffer;
+    } catch {
+      return null;
+    } finally {
+      pendingFetchCache.delete(key);
+    }
+  })();
+
+  pendingFetchCache.set(key, promise);
+  return promise;
+}
+
+export async function loadSoundfontSampleAnchor(
   ctx: BaseAudioContext,
   sfName: string,
   anchorMidi: number
 ): Promise<AudioBuffer | null> {
-  const key = `${sfName}:${anchorMidi}`;
+  const key = `sf:${sfName}:${anchorMidi}`;
   const existing = sampleBufferCache.get(key);
   if (existing) return existing;
 
@@ -147,10 +332,9 @@ export async function loadSampleAnchor(
   if (pending) return pending;
 
   const noteName = midiToSoundfontNoteName(anchorMidi);
-  const url = `${SOUNDFONT_CDN_BASE}/${sfName}-mp3/${noteName}.mp3`;
-
   const promise = (async () => {
     try {
+      const url = `${SOUNDFONT_CDN_BASE}/${sfName}-mp3/${noteName}.mp3`;
       const response = await fetch(url, { mode: 'cors' });
       if (!response.ok) return null;
       const arrayBuffer = await response.arrayBuffer();
@@ -169,21 +353,49 @@ export async function loadSampleAnchor(
 }
 
 /**
+ * Backward compatibility alias for single-sample anchor fetch
+ */
+export async function loadSampleAnchor(
+  ctx: BaseAudioContext,
+  sfName: string,
+  anchorMidi: number
+): Promise<AudioBuffer | null> {
+  if (sfName === 'acoustic_grand_piano') {
+    return loadLocalSampleAnchor(ctx, 'piano', anchorMidi);
+  }
+  return loadSoundfontSampleAnchor(ctx, sfName, anchorMidi);
+}
+
+/**
  * Looks up a cached acoustic sample buffer for an instrument + frequency.
- * If not yet cached, triggers a non-blocking background fetch for the nearest anchor note
- * and returns null so the engine can seamlessly play the Fourier/physical model immediately.
+ * Checks fast local studio samples first, falling back to SoundFont CDN and physical synthesis.
  */
 export function getAcousticSampleForFreq(
   ctx: BaseAudioContext,
   instrumentId: InstrumentId,
   freq: number
 ): { buffer: AudioBuffer; playbackRate: number } | null {
+  const targetMidi = 69 + 12 * Math.log2(Math.max(20, freq) / 440);
+  const localFolder = LOCAL_SAMPLE_INSTRUMENT_MAP[instrumentId];
+
+  if (localFolder) {
+    const anchorMidi = getNearestLocalAnchorMidi(localFolder, Math.round(targetMidi));
+    const key = `local:${localFolder}:${anchorMidi}`;
+    const cached = sampleBufferCache.get(key);
+    if (cached) {
+      const semitoneDiff = targetMidi - anchorMidi;
+      const playbackRate = Math.pow(2, semitoneDiff / 12);
+      return { buffer: cached, playbackRate };
+    }
+    void loadLocalSampleAnchor(ctx, localFolder, anchorMidi);
+    return null;
+  }
+
   const sfName = SOUNDFONT_INSTRUMENT_MAP[instrumentId];
   if (!sfName) return null;
 
-  const targetMidi = 69 + 12 * Math.log2(Math.max(20, freq) / 440);
   const anchorMidi = getNearestAnchorMidi(Math.round(targetMidi));
-  const key = `${sfName}:${anchorMidi}`;
+  const key = `sf:${sfName}:${anchorMidi}`;
   const cached = sampleBufferCache.get(key);
 
   if (cached) {
@@ -192,8 +404,7 @@ export function getAcousticSampleForFreq(
     return { buffer: cached, playbackRate };
   }
 
-  // Trigger background load of this anchor + adjacent anchors
-  void loadSampleAnchor(ctx, sfName, anchorMidi);
+  void loadSoundfontSampleAnchor(ctx, sfName, anchorMidi);
   return null;
 }
 
@@ -204,11 +415,16 @@ export function isAcousticSampleLoaded(
   instrumentId: InstrumentId,
   freq: number
 ): boolean {
+  const targetMidi = 69 + 12 * Math.log2(Math.max(20, freq) / 440);
+  const localFolder = LOCAL_SAMPLE_INSTRUMENT_MAP[instrumentId];
+  if (localFolder) {
+    const anchorMidi = getNearestLocalAnchorMidi(localFolder, Math.round(targetMidi));
+    return sampleBufferCache.has(`local:${localFolder}:${anchorMidi}`);
+  }
   const sfName = SOUNDFONT_INSTRUMENT_MAP[instrumentId];
   if (!sfName) return false;
-  const targetMidi = 69 + 12 * Math.log2(Math.max(20, freq) / 440);
   const anchorMidi = getNearestAnchorMidi(Math.round(targetMidi));
-  return sampleBufferCache.has(`${sfName}:${anchorMidi}`);
+  return sampleBufferCache.has(`sf:${sfName}:${anchorMidi}`);
 }
 
 /**
@@ -219,8 +435,10 @@ export async function preloadPitches(
   instrumentId: InstrumentId,
   pitches: Pitch[]
 ): Promise<void> {
+  if (pitches.length === 0) return;
+  const localFolder = LOCAL_SAMPLE_INSTRUMENT_MAP[instrumentId];
   const sfName = SOUNDFONT_INSTRUMENT_MAP[instrumentId];
-  if (!sfName || pitches.length === 0) return;
+  if (!localFolder && !sfName) return;
 
   const semitoneMap: Record<string, number> = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
   const neededAnchors = new Set<number>();
@@ -229,12 +447,21 @@ export async function preloadPitches(
     let midi = (p.octave + 1) * 12 + (semitoneMap[p.step] || 0);
     if (p.accidental === 'sharp') midi += 1;
     if (p.accidental === 'flat') midi -= 1;
-    neededAnchors.add(getNearestAnchorMidi(midi));
+    const anchor = localFolder
+      ? getNearestLocalAnchorMidi(localFolder, midi)
+      : getNearestAnchorMidi(midi);
+    neededAnchors.add(anchor);
   }
 
-  await Promise.allSettled(
-    Array.from(neededAnchors).map((anchor) => loadSampleAnchor(ctx, sfName, anchor))
-  );
+  if (localFolder) {
+    await Promise.allSettled(
+      Array.from(neededAnchors).map((anchor) => loadLocalSampleAnchor(ctx, localFolder, anchor))
+    );
+  } else if (sfName) {
+    await Promise.allSettled(
+      Array.from(neededAnchors).map((anchor) => loadSoundfontSampleAnchor(ctx, sfName, anchor))
+    );
+  }
 }
 
 /**
@@ -245,37 +472,27 @@ export async function preloadInstrumentSamples(
   ctx: BaseAudioContext,
   instrumentId: InstrumentId
 ): Promise<void> {
+  if (instrumentId === 'drum_kit' || instrumentId === 'drum_808') {
+    await Promise.allSettled(
+      ['kick', 'snare', 'hihat_closed', 'tom_high', 'tom_low', 'tom_floor'].map((s) =>
+        loadAcousticDrumSample(ctx, s, instrumentId)
+      )
+    );
+    return;
+  }
+
+  const localFolder = LOCAL_SAMPLE_INSTRUMENT_MAP[instrumentId];
+  if (localFolder) {
+    const anchors = LOCAL_INSTRUMENT_ANCHORS[localFolder] || [];
+    await Promise.allSettled(anchors.map((m) => loadLocalSampleAnchor(ctx, localFolder, m)));
+    return;
+  }
+
   const sfName = SOUNDFONT_INSTRUMENT_MAP[instrumentId];
   if (!sfName) return;
 
-  const lowInstruments: InstrumentId[] = [
-    'tuba',
-    'cello',
-    'double_bass',
-    'contrabassoon',
-    'bassoon',
-    'electric_bass',
-    'synth_bass',
-    'timpani',
-    'piano_bass',
-  ];
-
-  const highInstruments: InstrumentId[] = [
-    'piccolo',
-    'glockenspiel',
-    'xylophone',
-  ];
-
-  let priorityAnchors: number[];
-  if (lowInstruments.includes(instrumentId)) {
-    priorityAnchors = [36, 39, 42, 45, 48, 51, 54, 57, 60];
-  } else if (highInstruments.includes(instrumentId)) {
-    priorityAnchors = [66, 69, 72, 75, 78, 81, 84, 87, 90];
-  } else {
-    priorityAnchors = [48, 54, 60, 63, 66, 69, 72, 75, 78];
-  }
-
-  await Promise.allSettled(priorityAnchors.map((midi) => loadSampleAnchor(ctx, sfName, midi)));
+  const priorityAnchors = [48, 54, 60, 63, 66, 69, 72, 75, 78];
+  await Promise.allSettled(priorityAnchors.map((midi) => loadSoundfontSampleAnchor(ctx, sfName, midi)));
 }
 
 /**

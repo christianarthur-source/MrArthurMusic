@@ -65,7 +65,9 @@ export const BeatGrid: React.FC<BeatGridProps> = ({
   onSelectPreset,
 }) => {
   const [selectedTrackIndexForSound, setSelectedTrackIndexForSound] = useState<number | null>(null);
-  const [soundCategoryFilter, setSoundCategoryFilter] = useState<'all' | 'drums' | 'silly' | 'melody'>('all');
+  const [soundCategoryFilter, setSoundCategoryFilter] = useState<
+    'all' | 'drums' | 'electronic' | 'percussion' | 'melody'
+  >('all');
   const [isMouseDown, setIsMouseDown] = useState(false);
   const [dragMode, setDragMode] = useState<boolean | null>(null);
   const [isPackDropdownOpen, setIsPackDropdownOpen] = useState(false);
@@ -643,10 +645,11 @@ export const BeatGrid: React.FC<BeatGridProps> = ({
             <div className="mt-4 flex items-center gap-1.5 rounded-xl bg-slate-950 p-1 border border-slate-800">
               {(
                 [
-                  { id: 'all', label: 'All Sounds' },
-                  { id: 'drums', label: '🥁 Beats' },
-                  { id: 'silly', label: '🤪 Silly FX' },
-                  { id: 'melody', label: '🌈 Xylo' },
+                  { id: 'all', label: 'All' },
+                  { id: 'drums', label: '🥁 Acoustic' },
+                  { id: 'electronic', label: '⚡ 808 Kit' },
+                  { id: 'percussion', label: '🪘 World' },
+                  { id: 'melody', label: '🌈 Melody' },
                 ] as const
               ).map((tab) => (
                 <button

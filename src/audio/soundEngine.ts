@@ -3,6 +3,7 @@ import { expandPlaybackMeasures, getItemDuration, getPitchFrequency } from '../u
 import { DrumSound, DrumStepEvent } from '../data/drumGrooves';
 import {
   createConcertHallImpulse,
+  getAcousticDrumSample,
   getAcousticSampleForFreq,
   getHarmonicPeriodicWave,
   isAcousticSampleLoaded,
@@ -134,6 +135,7 @@ export const INSTRUMENT_NORMALIZATION_SCALE: Record<InstrumentId, number> = {
 
   // Drums
   drum_kit: 0.88,
+  drum_808: 0.90,
 
   // Sound Effects
   sfx_applause: 0.85,
@@ -626,7 +628,8 @@ class SoundEngine {
     startTime: number,
     volume: number = 0.8,
     targetCtx?: BaseAudioContext,
-    destinationNode?: AudioNode
+    destinationNode?: AudioNode,
+    drumType: 'drum_kit' | 'drum_808' = 'drum_kit'
   ): { stop: () => void } {
     const ctx = targetCtx || this.ensureContext();
     const outGain = ctx.createGain();
@@ -635,6 +638,25 @@ class SoundEngine {
     outGain.connect(destinationNode || this.getMasterOutput(ctx));
 
     const cleanupNodes: { stop?: (t: number) => void }[] = [];
+
+    // Prioritize high-definition acoustic/808 studio drum sample if available
+    const acousticBuf = getAcousticDrumSample(ctx, sound, drumType);
+    if (acousticBuf) {
+      const src = ctx.createBufferSource();
+      src.buffer = acousticBuf;
+      outGain.gain.setValueAtTime(volume * 1.05, hitTime);
+      src.connect(outGain);
+      src.start(hitTime);
+      return {
+        stop: () => {
+          try {
+            src.stop(0);
+          } catch {
+            // ignore
+          }
+        },
+      };
+    }
 
     switch (sound) {
       case 'kick': {
@@ -1320,14 +1342,15 @@ class SoundEngine {
     const normMultiplier = INSTRUMENT_NORMALIZATION_SCALE[instrumentId] ?? 1.0;
     const normalizedVolume = Math.min(1.4, volume * normMultiplier);
 
-    // 1. Special case: Drum Kit maps notes directly to realistic drum hits!
-    if (instrumentId === 'drum_kit') {
+    // 1. Special case: Drum Kit and 808 Electronic Drum Machine map notes directly to realistic drum hits!
+    if (instrumentId === 'drum_kit' || instrumentId === 'drum_808') {
       const step = pitch?.step || 'F';
       const octave = pitch?.octave || 4;
       let sound: DrumSound = 'kick';
       if (octave >= 5) {
         if (step === 'G') sound = 'hihat_closed';
         else if (step === 'A') sound = 'hihat_open';
+        else if (step === 'B') sound = 'crash';
         else if (step === 'F') sound = 'ride';
         else if (step === 'E') sound = 'rimshot';
         else if (step === 'D') sound = 'tom_high';
@@ -1336,9 +1359,12 @@ class SoundEngine {
         if (step === 'F' || step === 'C') sound = 'kick';
         else if (step === 'A') sound = 'tom_low';
         else if (step === 'B') sound = 'shaker';
+        else if (step === 'D') sound = 'cowbell';
+        else if (step === 'E') sound = 'conga_open';
+        else if (step === 'G') sound = 'conga_slap';
         else sound = 'kick';
       }
-      return this.playDrumHit(sound, startTime, normalizedVolume, ctx, outTarget);
+      return this.playDrumHit(sound, startTime, normalizedVolume, ctx, outTarget, instrumentId);
     }
 
     // 2. Auxiliary unpitched percussion shortcuts
