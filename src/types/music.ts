@@ -143,6 +143,8 @@ export type InstrumentId =
   // Drums
   | 'drum_kit'
   | 'drum_808'
+  | 'drum_jazz'
+  | 'drum_latin'
   // Sound Effects
   | 'sfx_applause'
   | 'sfx_laser'

@@ -103,6 +103,8 @@ const INSTRUMENT_ICON_MAP: Record<string, string> = {
   // Drums
   drum_kit: '🥁',
   drum_808: '🎛️',
+  drum_jazz: '🎷',
+  drum_latin: '🌴',
 
   // Sound Effects
   applause: '👏',

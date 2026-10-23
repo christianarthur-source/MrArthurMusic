@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { DRUM_GROOVES, DrumGroove, DrumStyle } from '../data/drumGrooves';
-import { X, Play, Square, Plus, Drum } from 'lucide-react';
+import { DRUM_GROOVES, DrumGroove } from '../data/drumGrooves';
+import { DrumKitType } from '../audio/acousticSamples';
+import { X, Play, Square, Plus } from 'lucide-react';
 import { soundEngine } from '../audio/soundEngine';
 
 interface DrumBeatsModalProps {
@@ -11,17 +12,71 @@ interface DrumBeatsModalProps {
   hasSelectedTrack?: boolean;
 }
 
-const STYLES: { id: DrumStyle | 'All'; label: string; icon: string }[] = [
-  { id: 'All', label: 'All Beats', icon: '🌟' },
-  { id: 'Rock', label: 'Rock', icon: '🎸' },
-  { id: 'Pop', label: 'Pop', icon: '🎧' },
-  { id: 'Indie', label: 'Indie', icon: '🛹' },
-  { id: 'Jazz', label: 'Jazz', icon: '🎷' },
-  { id: 'World', label: 'World', icon: '🌍' },
-  { id: 'Latin', label: 'Latin', icon: '💃' },
-  { id: 'African', label: 'African', icon: '🪘' },
-  { id: 'Folk', label: 'Folk', icon: '🪕' },
+export type DrumCategory = 'all' | 'rock_pop' | 'hiphop_808' | 'jazz_folk' | 'latin_world';
+
+const CATEGORIES: {
+  id: DrumCategory;
+  label: string;
+  icon: string;
+  countPredicate: (g: DrumGroove) => boolean;
+}[] = [
+  {
+    id: 'all',
+    label: 'All Beats',
+    icon: '🌟',
+    countPredicate: () => true,
+  },
+  {
+    id: 'rock_pop',
+    label: 'Rock & Pop',
+    icon: '🎸',
+    countPredicate: (g) => g.kitType === 'drum_kit',
+  },
+  {
+    id: 'hiphop_808',
+    label: 'Hip-Hop & 808',
+    icon: '🎛️',
+    countPredicate: (g) => g.kitType === 'drum_808',
+  },
+  {
+    id: 'jazz_folk',
+    label: 'Jazz & Folk',
+    icon: '🎷',
+    countPredicate: (g) => g.kitType === 'drum_jazz',
+  },
+  {
+    id: 'latin_world',
+    label: 'Latin & World',
+    icon: '🌴',
+    countPredicate: (g) => g.kitType === 'drum_latin',
+  },
 ];
+
+function getKitBadgeInfo(kitType: DrumKitType) {
+  switch (kitType) {
+    case 'drum_808':
+      return {
+        label: '🎛️ 808 Machine',
+        className: 'bg-purple-500/15 text-purple-300 border-purple-500/30',
+      };
+    case 'drum_jazz':
+      return {
+        label: '🎷 Jazz & Folk',
+        className: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
+      };
+    case 'drum_latin':
+      return {
+        label: '🌴 Latin & World',
+        className: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
+      };
+    case 'drum_kit':
+    default:
+      return {
+        label: '🎸 Rock Kit',
+        className: 'bg-rose-500/15 text-rose-300 border-rose-500/30',
+      };
+  }
+}
 
 export const DrumBeatsModal: React.FC<DrumBeatsModalProps> = ({
   isOpen,
@@ -30,15 +85,17 @@ export const DrumBeatsModal: React.FC<DrumBeatsModalProps> = ({
   onApplyToSelectedTrack,
   hasSelectedTrack,
 }) => {
-  const [selectedStyle, setSelectedStyle] = useState<DrumStyle | 'All'>('All');
+  const [selectedCategory, setSelectedCategory] = useState<DrumCategory>('all');
   const [playingGrooveId, setPlayingGrooveId] = useState<string | null>(null);
   const [activeStep, setActiveStep] = useState<number>(0);
 
-  // Preload drum kit and 808 samples on modal mount
+  // Preload all 4 specialized drum kits on modal mount
   useEffect(() => {
     if (isOpen) {
       soundEngine.preloadInstrument('drum_kit');
       soundEngine.preloadInstrument('drum_808');
+      soundEngine.preloadInstrument('drum_jazz');
+      soundEngine.preloadInstrument('drum_latin');
     } else {
       soundEngine.stopDrumPreview();
       setPlayingGrooveId(null);
@@ -46,11 +103,14 @@ export const DrumBeatsModal: React.FC<DrumBeatsModalProps> = ({
     }
   }, [isOpen]);
 
+  const activeCategoryConfig = useMemo(
+    () => CATEGORIES.find((c) => c.id === selectedCategory) || CATEGORIES[0],
+    [selectedCategory]
+  );
+
   const filteredGrooves = useMemo(() => {
-    return DRUM_GROOVES.filter(
-      (g) => selectedStyle === 'All' || g.style === selectedStyle
-    );
-  }, [selectedStyle]);
+    return DRUM_GROOVES.filter(activeCategoryConfig.countPredicate);
+  }, [activeCategoryConfig]);
 
   if (!isOpen) return null;
 
@@ -62,7 +122,7 @@ export const DrumBeatsModal: React.FC<DrumBeatsModalProps> = ({
     } else {
       setPlayingGrooveId(groove.id);
       setActiveStep(0);
-      const drumType = groove.badge === '808 Machine' ? 'drum_808' : 'drum_kit';
+      const drumType = groove.kitType || 'drum_kit';
       soundEngine.playDrumGroove(
         groove.previewPattern,
         groove.tempo,
@@ -116,29 +176,26 @@ export const DrumBeatsModal: React.FC<DrumBeatsModalProps> = ({
           </button>
         </div>
 
-        {/* Style / Genre Categories */}
-        <div className="p-3 bg-slate-950/40 border-b border-slate-800 flex items-center gap-1.5 overflow-x-auto text-xs scrollbar-thin">
-          {STYLES.map((st) => {
-            const count =
-              st.id === 'All'
-                ? DRUM_GROOVES.length
-                : DRUM_GROOVES.filter((g) => g.style === st.id).length;
-            const isSelected = selectedStyle === st.id;
+        {/* Consolidated Style Categories - Flex Wrap with ZERO horizontal scrollbar */}
+        <div className="p-2.5 sm:p-3 bg-slate-950/40 border-b border-slate-800 flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs">
+          {CATEGORIES.map((cat) => {
+            const count = DRUM_GROOVES.filter(cat.countPredicate).length;
+            const isSelected = selectedCategory === cat.id;
 
             return (
               <button
-                key={st.id}
-                onClick={() => setSelectedStyle(st.id)}
-                className={`px-3 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all flex items-center gap-1.5 shrink-0 ${
+                key={cat.id}
+                onClick={() => setSelectedCategory(cat.id)}
+                className={`px-3 py-1.5 rounded-xl font-bold transition-all flex items-center gap-1.5 ${
                   isSelected
                     ? 'bg-rose-600 text-white shadow-xs'
                     : 'bg-slate-800/80 text-slate-400 hover:text-white hover:bg-slate-800'
                 }`}
               >
-                <span>{st.icon}</span>
-                <span>{st.label}</span>
+                <span>{cat.icon}</span>
+                <span>{cat.label}</span>
                 <span
-                  className={`text-[10px] px-1 py-0.2 rounded-full ${
+                  className={`text-[10px] px-1.5 py-0.2 rounded-full font-semibold ${
                     isSelected ? 'bg-rose-700 text-rose-100' : 'bg-slate-700 text-slate-400'
                   }`}
                 >
@@ -154,7 +211,7 @@ export const DrumBeatsModal: React.FC<DrumBeatsModalProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
             {filteredGrooves.map((groove) => {
               const isPlaying = playingGrooveId === groove.id;
-              const is808 = groove.badge === '808 Machine';
+              const kitInfo = getKitBadgeInfo(groove.kitType || 'drum_kit');
 
               return (
                 <div
@@ -211,14 +268,8 @@ export const DrumBeatsModal: React.FC<DrumBeatsModalProps> = ({
                       </span>
 
                       {/* Kit Type */}
-                      <span
-                        className={`px-1.5 py-0.5 rounded-md font-semibold border ${
-                          is808
-                            ? 'bg-purple-500/15 text-purple-300 border-purple-500/20'
-                            : 'bg-rose-500/15 text-rose-300 border-rose-500/20'
-                        }`}
-                      >
-                        {is808 ? '🎛️ 808' : '🥁 Kit'}
+                      <span className={`px-1.5 py-0.5 rounded-md font-semibold border ${kitInfo.className}`}>
+                        {kitInfo.label}
                       </span>
 
                       {/* Style */}
