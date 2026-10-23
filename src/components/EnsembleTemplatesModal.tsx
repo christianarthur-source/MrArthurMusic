@@ -121,14 +121,14 @@ export const EnsembleTemplatesModal: React.FC<EnsembleTemplatesModalProps> = ({
           </div>
         </div>
 
-        {/* Category Tabs */}
-        <div className="px-4 py-2 border-b border-slate-800 bg-slate-900/50 flex items-center gap-1.5 overflow-x-auto scrollbar-none">
+        {/* Category Tabs - Flex Wrap with ZERO Horizontal Scrollbar */}
+        <div className="px-4 py-2 border-b border-slate-800 bg-slate-900/50 flex flex-wrap items-center gap-1.5 text-xs">
           {CATEGORY_TABS.map((tab) => (
             <button
               key={tab.id}
               type="button"
               onClick={() => setSelectedCategory(tab.id)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex items-center gap-1.5 cursor-pointer ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                 selectedCategory === tab.id
                   ? 'bg-gradient-to-r from-sky-500 to-indigo-500 text-white shadow-md'
                   : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800 hover:text-white'
