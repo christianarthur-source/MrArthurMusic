@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import {
   ClefType,
   CountingMode,
@@ -17,7 +17,7 @@ import {
 } from '../types/music';
 import { INSTRUMENTS } from '../data/instruments';
 import { soundEngine } from '../audio/soundEngine';
-import { Search, X, Volume2, Check, Music } from 'lucide-react';
+import { Search, X, Volume2, Check, Music, ChevronLeft, ChevronRight } from 'lucide-react';
 import {
   BOOMWHACKER_COLORS,
   FLAT_BASS_OFFSETS,
@@ -449,10 +449,10 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
 
     if (isBigStaff) {
       for (let m = 0; m < measureCount; m++) {
-        const x = staffStartX + HEADER_WIDTH + (m - activeBigStaffMeasure) * MEASURE_WIDTH;
+        const x = staffStartX + HEADER_WIDTH + m * MEASURE_WIDTH;
         map.set(m, {
           systemIndex: 0,
-          measureInSystem: m - activeBigStaffMeasure,
+          measureInSystem: m,
           x,
           systemTopY: TOP_PADDING,
         });
@@ -476,7 +476,6 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
     MEASURES_PER_SYSTEM,
     HEADER_WIDTH,
     isBigStaff,
-    activeBigStaffMeasure,
     MEASURE_WIDTH,
   ]);
 
@@ -488,8 +487,9 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
       totalSvgWidth,
       totalSvgHeight,
       viewLayout,
+      isBigStaff,
     };
-  }, [measureLayout, MEASURE_WIDTH, singleSystemHeight, totalSvgWidth, totalSvgHeight, viewLayout]);
+  }, [measureLayout, MEASURE_WIDTH, singleSystemHeight, totalSvgWidth, totalSvgHeight, viewLayout, isBigStaff]);
 
   // Window-level mousemove and mouseup listeners while dragging a notehead so dragging
   // works smoothly even when moving above/below the staff or releasing outside the measure
@@ -568,6 +568,77 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
     };
   }, [draggingNote, measureLayout, onNoteInsertOrUpdate, onPlayPreview, onTransposeMeasure, score.tracks, selection, totalSvgHeight]);
 
+  // Big Staff Horizontal Swipe & Wheel Navigation State
+  const [swipeOffset, setSwipeOffset] = useState<number>(0);
+  const [isSwiping, setIsSwiping] = useState<boolean>(false);
+  const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+  const wheelTimeoutRef = useRef<number | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (!isBigStaff || e.touches.length !== 1) return;
+    touchStartRef.current = {
+      x: e.touches[0].clientX,
+      y: e.touches[0].clientY,
+      time: Date.now(),
+    };
+    setIsSwiping(true);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isBigStaff || !touchStartRef.current || e.touches.length !== 1) return;
+    const dx = e.touches[0].clientX - touchStartRef.current.x;
+    const dy = e.touches[0].clientY - touchStartRef.current.y;
+
+    if (Math.abs(dx) > Math.abs(dy)) {
+      const isAtStart = activeBigStaffMeasure === 0 && dx > 0;
+      const isAtEnd = activeBigStaffMeasure >= measureCount - 1 && dx < 0;
+      const resistance = isAtStart || isAtEnd ? 0.25 : 1;
+      setSwipeOffset(dx * resistance);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (!isBigStaff || !touchStartRef.current) return;
+    const currentOffset = swipeOffset;
+    setIsSwiping(false);
+    setSwipeOffset(0);
+    touchStartRef.current = null;
+
+    if (currentOffset < -50) {
+      // Swiped left -> Next Measure
+      if (activeBigStaffMeasure + 1 < measureCount) {
+        onBigStaffMeasureChange?.(activeBigStaffMeasure + 1);
+      } else {
+        onBigStaffAddMeasure?.();
+      }
+    } else if (currentOffset > 50) {
+      // Swiped right -> Previous Measure
+      if (activeBigStaffMeasure > 0) {
+        onBigStaffMeasureChange?.(activeBigStaffMeasure - 1);
+      }
+    }
+  };
+
+  const handleWheel = (e: React.WheelEvent) => {
+    if (!isBigStaff) return;
+    if (Math.abs(e.deltaX) > 25 && !wheelTimeoutRef.current) {
+      if (e.deltaX > 25) {
+        if (activeBigStaffMeasure + 1 < measureCount) {
+          onBigStaffMeasureChange?.(activeBigStaffMeasure + 1);
+        } else {
+          onBigStaffAddMeasure?.();
+        }
+      } else if (e.deltaX < -25) {
+        if (activeBigStaffMeasure > 0) {
+          onBigStaffMeasureChange?.(activeBigStaffMeasure - 1);
+        }
+      }
+      wheelTimeoutRef.current = window.setTimeout(() => {
+        wheelTimeoutRef.current = null;
+      }, 300);
+    }
+  };
+
   // Handle staff mouse move for ghost note preview
   const handleStaffMouseMove = (
     e: React.MouseEvent<SVGElement>,
@@ -586,7 +657,12 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
     const scaleX = rect.width > 0 ? totalSvgWidth / rect.width : 1;
     const scaleY = rect.height > 0 ? totalSvgHeight / rect.height : 1;
     const svgY = (e.clientY - rect.top) * scaleY;
-    const svgX = (e.clientX - rect.left) * scaleX;
+    let svgX = (e.clientX - rect.left) * scaleX;
+
+    if (isBigStaff) {
+      const slideOffset = -activeBigStaffMeasure * MEASURE_WIDTH + swipeOffset;
+      svgX = svgX - slideOffset;
+    }
 
     const track = score.tracks[trackIndex];
     if (!track) return;
@@ -751,7 +827,17 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
     <div className="w-full flex justify-center py-4 print:py-2 select-none relative">
       <div
         id="staff-composer-scroll-container"
-        className="bg-white text-slate-900 border border-slate-300 rounded-3xl p-3 sm:p-5 shadow-2xl max-w-full overflow-x-auto print:border-none print:shadow-none print:p-0 print:overflow-visible print:w-full relative"
+        className={`bg-white text-slate-900 border border-slate-300 rounded-3xl p-3 sm:p-5 shadow-2xl max-w-full print:border-none print:shadow-none print:p-0 print:overflow-visible print:w-full relative ${
+          isBigStaff ? 'overflow-hidden' : 'overflow-x-auto'
+        }`}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
+        onWheel={handleWheel}
+        style={{
+          touchAction: isBigStaff ? 'pan-y' : 'auto',
+        }}
       >
         <svg
           id="staff-composer-score-svg"
@@ -775,9 +861,19 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
               <feComposite in="SourceGraphic" in2="blur" operator="over" />
             </filter>
             {isBigStaff && (
-              <clipPath id="big-staff-clip">
-                <rect x="0" y="0" width={totalSvgWidth} height={totalSvgHeight} />
-              </clipPath>
+              <>
+                <clipPath id="big-staff-clip">
+                  <rect x="0" y="0" width={totalSvgWidth} height={totalSvgHeight} />
+                </clipPath>
+                <clipPath id="big-staff-measures-clip">
+                  <rect
+                    x={staffStartX + HEADER_WIDTH}
+                    y="0"
+                    width={MEASURE_WIDTH + BIG_STAFF_PEEK_WIDTH + 60}
+                    height={totalSvgHeight}
+                  />
+                </clipPath>
+              </>
             )}
           </defs>
 
@@ -785,10 +881,7 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
           {Array.from({ length: systemCount }).map((_, systemIndex) => {
             const systemTopY = TOP_PADDING + systemIndex * (singleSystemHeight + SYSTEM_GAP);
             const systemMeasures = isBigStaff
-              ? [
-                  activeBigStaffMeasure,
-                  ...(activeBigStaffMeasure + 1 < measureCount ? [activeBigStaffMeasure + 1] : []),
-                ]
+              ? Array.from({ length: measureCount }).map((_, i) => i)
               : Array.from({ length: MEASURES_PER_SYSTEM })
                   .map((_, i) => systemIndex * MEASURES_PER_SYSTEM + i)
                   .filter((m) => m < measureCount);
@@ -994,8 +1087,27 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
                         );
                       })()}
 
-                      {/* Measures in system */}
-                      {systemMeasures.map((measureIndex) => {
+                      {/* Measures track (slides horizontally in Big Staff mode) */}
+                      <g
+                        id={isBigStaff ? `big-staff-sliding-track-${trackIndex}` : undefined}
+                        transform={
+                          isBigStaff
+                            ? `translate(${-activeBigStaffMeasure * MEASURE_WIDTH + swipeOffset}, 0)`
+                            : undefined
+                        }
+                        style={
+                          isBigStaff
+                            ? {
+                                transition: isSwiping
+                                  ? 'none'
+                                  : 'transform 0.35s cubic-bezier(0.22, 1, 0.36, 1)',
+                                willChange: 'transform',
+                              }
+                            : undefined
+                        }
+                        clipPath={isBigStaff ? 'url(#big-staff-measures-clip)' : undefined}
+                      >
+                        {systemMeasures.map((measureIndex) => {
                         const measure = track.measures[measureIndex];
                         if (!measure) return null;
                         const layout = measureLayout.get(measureIndex)!;
@@ -1082,16 +1194,14 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
                             />
 
                             {/* Barline at end of measure */}
-                            {(!isBigStaff || measureIndex === activeBigStaffMeasure) && (
-                              <line
-                                x1={layout.x + MEASURE_WIDTH}
-                                y1={trackTopY + STAFF_TOP_Y}
-                                x2={layout.x + MEASURE_WIDTH}
-                                y2={trackTopY + STAFF_TOP_Y + STAFF_HEIGHT}
-                                stroke="#334155"
-                                strokeWidth={!isBigStaff && measureIndex === measureCount - 1 ? '2.0' : '1.8'}
-                              />
-                            )}
+                            <line
+                              x1={layout.x + MEASURE_WIDTH}
+                              y1={trackTopY + STAFF_TOP_Y}
+                              x2={layout.x + MEASURE_WIDTH}
+                              y2={trackTopY + STAFF_TOP_Y + STAFF_HEIGHT}
+                              stroke="#334155"
+                              strokeWidth={!isBigStaff && measureIndex === measureCount - 1 ? '2.0' : '1.8'}
+                            />
                             {!isBigStaff && measureIndex === measureCount - 1 && !measure.repeatEnd && (
                               <line
                                 x1={layout.x + MEASURE_WIDTH + 6}
@@ -2045,57 +2155,58 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
                         );
                       })}
 
-                      {/* Peeking placeholder if at the last measure in Big Staff mode */}
-                      {isBigStaff && activeBigStaffMeasure + 1 >= measureCount && (
-                        <g
-                          className="cursor-pointer group select-none"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onBigStaffAddMeasure?.();
-                          }}
-                        >
-                          {/* Measure Number for next measure */}
-                          <text
-                            x={staffStartX + HEADER_WIDTH + MEASURE_WIDTH + 8}
-                            y={trackTopY + STAFF_TOP_Y - 12}
-                            fontSize="16"
-                            fill="#94A3B8"
-                            fontWeight="700"
-                          >
-                            {activeBigStaffMeasure + 2}
-                          </text>
-
-                          {/* Friendly Add Bar circle button right on the peeking staff */}
+                        {/* Peeking placeholder at end of score in Big Staff mode */}
+                        {isBigStaff && (
                           <g
-                            transform={`translate(${staffStartX + HEADER_WIDTH + MEASURE_WIDTH + 52}, ${
-                              trackTopY + STAFF_TOP_Y + 28
-                            })`}
+                            className="cursor-pointer group select-none"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onBigStaffAddMeasure?.();
+                            }}
                           >
-                            <circle
-                              cx="0"
-                              cy="0"
-                              r="18"
-                              fill="#38BDF8"
-                              fillOpacity="0.18"
-                              stroke="#0284C7"
-                              strokeWidth="2"
-                              strokeDasharray="3 3"
-                              className="group-hover:fill-sky-400 group-hover:fill-opacity-35 transition-all"
-                            />
+                            {/* Measure Number for next measure */}
                             <text
-                              x="0"
-                              y="6"
-                              fontSize="22"
-                              fontWeight="bold"
-                              fill="#0284C7"
-                              textAnchor="middle"
-                              className="select-none"
+                              x={staffStartX + HEADER_WIDTH + measureCount * MEASURE_WIDTH + 8}
+                              y={trackTopY + STAFF_TOP_Y - 12}
+                              fontSize="16"
+                              fill="#94A3B8"
+                              fontWeight="700"
                             >
-                              +
+                              {measureCount + 1}
                             </text>
+
+                            {/* Friendly Add Bar circle button right on the peeking staff */}
+                            <g
+                              transform={`translate(${staffStartX + HEADER_WIDTH + measureCount * MEASURE_WIDTH + 52}, ${
+                                trackTopY + STAFF_TOP_Y + 28
+                              })`}
+                            >
+                              <circle
+                                cx="0"
+                                cy="0"
+                                r="18"
+                                fill="#38BDF8"
+                                fillOpacity="0.18"
+                                stroke="#0284C7"
+                                strokeWidth="2"
+                                strokeDasharray="3 3"
+                                className="group-hover:fill-sky-400 group-hover:fill-opacity-35 transition-all"
+                              />
+                              <text
+                                x="0"
+                                y="6"
+                                fontSize="22"
+                                fontWeight="bold"
+                                fill="#0284C7"
+                                textAnchor="middle"
+                                className="select-none"
+                              >
+                                +
+                              </text>
+                            </g>
                           </g>
-                        </g>
-                      )}
+                        )}
+                      </g>
                     </g>
                   );
                 })}
@@ -2105,7 +2216,15 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
 
           {/* Ghost Note on Hover (Insert Mode) */}
           {ghostNote && !isSelectMode && (
-            <g transform={`translate(0, 0)`} className="score-ui-only pointer-events-none opacity-85">
+            <g
+              transform={
+                isBigStaff
+                  ? `translate(${-activeBigStaffMeasure * MEASURE_WIDTH + swipeOffset}, 0)`
+                  : undefined
+              }
+              clipPath={isBigStaff ? 'url(#big-staff-measures-clip)' : undefined}
+              className="score-ui-only pointer-events-none opacity-85"
+            >
               <line
                 x1={ghostNote.x - 22}
                 y1={ghostNote.y}
@@ -2188,19 +2307,90 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
           )}
 
           {/* Direct-DOM Animated Playback Cursor Line */}
-          <line
-            id="staff-playhead-cursor-line"
-            x1="0"
-            y1="0"
-            x2="0"
-            y2="0"
-            stroke="#EF4444"
-            strokeWidth="3.5"
-            strokeDasharray="5 3"
-            className="pointer-events-none select-none transition-none"
-            style={{ display: 'none' }}
-          />
+          <g
+            id="staff-playhead-group"
+            transform={
+              isBigStaff
+                ? `translate(${-activeBigStaffMeasure * MEASURE_WIDTH + swipeOffset}, 0)`
+                : undefined
+            }
+            style={
+              isBigStaff
+                ? {
+                    transition: isSwiping
+                      ? 'none'
+                      : 'transform 0.35s cubic-bezier(0.22, 1, 0.36, 1)',
+                    willChange: 'transform',
+                  }
+                : undefined
+            }
+            clipPath={isBigStaff ? 'url(#big-staff-measures-clip)' : undefined}
+          >
+            <line
+              id="staff-playhead-cursor-line"
+              x1="0"
+              y1="0"
+              x2="0"
+              y2="0"
+              stroke="#EF4444"
+              strokeWidth="3.5"
+              strokeDasharray="5 3"
+              className="pointer-events-none select-none transition-none"
+              style={{ display: 'none' }}
+            />
+          </g>
         </svg>
+
+        {/* Floating tactile measure navigation buttons for Big Staff */}
+        {isBigStaff && (
+          <>
+            {/* Prev Bar Arrow Button */}
+            {activeBigStaffMeasure > 0 && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onBigStaffMeasureChange?.(activeBigStaffMeasure - 1);
+                }}
+                className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 sm:w-13 sm:h-13 rounded-2xl bg-white/95 hover:bg-sky-50 active:scale-90 shadow-xl border-2 border-sky-300 text-sky-600 flex items-center justify-center cursor-pointer transition-all score-ui-only group"
+                title={`Previous Bar (Bar ${activeBigStaffMeasure})`}
+                aria-label="Previous Measure"
+              >
+                <ChevronLeft className="w-7 h-7 sm:w-8 sm:h-8 stroke-[2.5] group-hover:-translate-x-0.5 transition-transform" />
+              </button>
+            )}
+
+            {/* Next / Add Bar Arrow Button */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (activeBigStaffMeasure + 1 < measureCount) {
+                  onBigStaffMeasureChange?.(activeBigStaffMeasure + 1);
+                } else {
+                  onBigStaffAddMeasure?.();
+                }
+              }}
+              className={`absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-20 w-11 h-11 sm:w-13 sm:h-13 rounded-2xl active:scale-90 shadow-xl flex items-center justify-center cursor-pointer transition-all score-ui-only group ${
+                activeBigStaffMeasure + 1 < measureCount
+                  ? 'bg-sky-500 hover:bg-sky-600 border-2 border-sky-400 text-white shadow-sky-500/30'
+                  : 'bg-emerald-500 hover:bg-emerald-600 border-2 border-emerald-400 text-white shadow-emerald-500/30'
+              }`}
+              title={
+                activeBigStaffMeasure + 1 < measureCount
+                  ? `Next Bar (Bar ${activeBigStaffMeasure + 2})`
+                  : 'Add New Bar'
+              }
+              aria-label={activeBigStaffMeasure + 1 < measureCount ? 'Next Measure' : 'Add Bar'}
+            >
+              {activeBigStaffMeasure + 1 < measureCount ? (
+                <ChevronRight className="w-7 h-7 sm:w-8 sm:h-8 stroke-[2.5] group-hover:translate-x-0.5 transition-transform" />
+              ) : (
+                <span className="text-2xl sm:text-3xl font-black leading-none mb-0.5">+</span>
+              )}
+            </button>
+          </>
+        )}
       </div>
 
       {/* Interactive Full Instrument Dropdown Modal */}

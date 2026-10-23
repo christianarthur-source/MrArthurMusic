@@ -2442,8 +2442,9 @@ class SoundEngine {
               const svgScaleY = svgEl.clientHeight / Math.max(1, layoutData.totalSvgHeight || 1);
 
               if (
-                layoutData.viewLayout === 'horizontal' ||
-                scrollContainer.scrollWidth > scrollContainer.clientWidth + 8
+                !layoutData.isBigStaff &&
+                (layoutData.viewLayout === 'horizontal' ||
+                  scrollContainer.scrollWidth > scrollContainer.clientWidth + 8)
               ) {
                 const continuousSvgX = mLayout.x + beatFraction * layoutData.measureWidth;
                 const playheadPxX = continuousSvgX * svgScaleX;
