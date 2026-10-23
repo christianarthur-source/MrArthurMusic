@@ -211,11 +211,13 @@ export const LoopBrowser: React.FC<LoopBrowserProps> = ({
         <div className="flex items-center gap-1.5 flex-nowrap shrink-0">
           {[
             { id: 'all', label: 'All Genres' },
-            { id: 'hiphop', label: '🔥 Hip-Hop' },
+            { id: 'hiphop', label: '🔥 Hip-Hop & Trap' },
             { id: 'pop', label: '🪩 Pop & Dance' },
-            { id: 'electronic', label: '⚡ EDM & Electro' },
+            { id: 'rock', label: '🎸 Rock & Indie' },
+            { id: 'electronic', label: '⚡ Electronic' },
             { id: 'lofi', label: '☕ Lo-Fi & Chill' },
-            { id: 'rock', label: '🎸 Rock & Funk' },
+            { id: 'folk', label: '🪕 Folk & Country' },
+            { id: 'jazz', label: '🎷 Jazz & Blues' },
             { id: 'latin_world', label: '🌴 Latin & World' },
             { id: 'cinematic', label: '🎻 Cinematic' },
           ].map((g) => (

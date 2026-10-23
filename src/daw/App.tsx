@@ -25,6 +25,7 @@ import {
 } from './types';
 import { dawAudioEngine } from './audio/dawAudioEngine';
 import { decodeUploadedAudio, getOrGenerateLoopAudio } from './audio/loopGenerator';
+import { DAW_LOOP_CATALOG } from './data/loopCatalog';
 import { dawMidiManager } from './audio/midiManager';
 import { TransportBar } from './components/TransportBar';
 import { TrackHeaderList } from './components/TrackHeaderList';
@@ -177,6 +178,53 @@ export const DawApp: React.FC<DawAppProps> = ({
     setProject(nextProject);
   }, [project]);
 
+  // Hydrates audio buffers for loop clips when projects are loaded or shared
+  const hydrateProjectClips = useCallback(async (baseProject: DawProject) => {
+    const audioCtx = dawAudioEngine.ensureContext();
+    let hasAnyUpdates = false;
+
+    const nextTracks = await Promise.all(
+      baseProject.tracks.map(async (t) => {
+        let trackChanged = false;
+        const nextClips = await Promise.all(
+          t.clips.map(async (c) => {
+            if (c.type === 'audio' && !c.audioBuffer && c.loopId) {
+              const loopItem = DAW_LOOP_CATALOG.find((l) => l.id === c.loopId);
+              if (loopItem) {
+                try {
+                  const { buffer, waveform } = await getOrGenerateLoopAudio(
+                    loopItem,
+                    audioCtx,
+                    baseProject.bpm
+                  );
+                  trackChanged = true;
+                  hasAnyUpdates = true;
+                  return {
+                    ...c,
+                    audioBuffer: buffer,
+                    waveform: c.waveform && c.waveform.length > 0 ? c.waveform : waveform,
+                    originalBpm: c.originalBpm || loopItem.bpm,
+                  };
+                } catch (e) {
+                  console.warn('Could not hydrate clip audio for loop:', c.loopId, e);
+                }
+              }
+            }
+            return c;
+          })
+        );
+        if (trackChanged) {
+          return { ...t, clips: nextClips };
+        }
+        return t;
+      })
+    );
+
+    if (hasAnyUpdates) {
+      setProject((curr) => ({ ...curr, tracks: nextTracks }));
+    }
+  }, []);
+
   // Check URL query parameters or hash on mount to load shared project if present
   useEffect(() => {
     try {
@@ -193,6 +241,7 @@ export const DawApp: React.FC<DawAppProps> = ({
           })),
         };
         setProject(merged);
+        void hydrateProjectClips(merged);
         setSaveTitleInput(merged.title || 'Shared Studio Song');
         setNotification(`🎉 Loaded shared Studio DAW song: "${merged.title}"! 🎛️`);
         setTimeout(() => setNotification(null), 4500);
@@ -200,7 +249,7 @@ export const DawApp: React.FC<DawAppProps> = ({
     } catch (e) {
       console.warn('Could not load DAW project from URL param', e);
     }
-  }, []);
+  }, [hydrateProjectClips]);
 
   // Load project passed from Classroom Saved Songs list
   useEffect(() => {
@@ -216,6 +265,7 @@ export const DawApp: React.FC<DawAppProps> = ({
         })),
       };
       setProject(merged);
+      void hydrateProjectClips(merged);
       setSaveTitleInput(merged.title || 'My Studio Beat');
       setNotification(`🎉 Loaded "${merged.title || 'Studio Song'}" into DAW! 🎛️`);
       setTimeout(() => setNotification(null), 4000);
@@ -223,7 +273,7 @@ export const DawApp: React.FC<DawAppProps> = ({
         onClearLoadedProjectData();
       }
     }
-  }, [loadedProjectData, onClearLoadedProjectData]);
+  }, [loadedProjectData, onClearLoadedProjectData, hydrateProjectClips]);
 
   // Sync Audio Engine Playhead
   useEffect(() => {
