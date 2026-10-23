@@ -121,10 +121,18 @@ interface BeamGroup {
 
 // Helper to identify drum / percussion tracks
 export function isDrumTrack(track: Track): boolean {
-  if (track.instrumentId === 'drum_kit' || track.instrumentId === 'drum_808') return true;
+  if (
+    track.instrumentId === 'drum_kit' ||
+    track.instrumentId === 'drum_808' ||
+    track.instrumentId === 'drum_jazz' ||
+    track.instrumentId === 'drum_latin'
+  )
+    return true;
   const drumPercussionIds = [
     'drum_kit',
     'drum_808',
+    'drum_jazz',
+    'drum_latin',
     'triangle',
     'tambourine',
     'woodblock',

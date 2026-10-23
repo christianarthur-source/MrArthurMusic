@@ -220,8 +220,8 @@ export function getNearestLocalAnchorMidi(folder: string, midi: number): number 
   return best;
 }
 
-// Acoustic Drum Kit and 808 mapping (bundled in /public/audio/samples/drum_kit/ and /public/audio/samples/drum_808/)
-export type DrumKitType = 'drum_kit' | 'drum_808';
+// Acoustic Drum Kit, 808, Jazz Brush Kit, and Latin Percussion mapping (bundled under /public/audio/samples/)
+export type DrumKitType = 'drum_kit' | 'drum_808' | 'drum_jazz' | 'drum_latin';
 
 const drumSampleBufferCache = new Map<string, AudioBuffer>();
 const pendingDrumFetchCache = new Map<string, Promise<AudioBuffer | null>>();
@@ -230,11 +230,17 @@ const DRUM_FILE_MAP: Record<string, string> = {
   kick: 'kick.mp3',
   snare: 'snare.mp3',
   hihat_closed: 'hihat.mp3',
-  hihat_open: 'hihat.mp3',
-  shaker: 'hihat.mp3',
+  hihat_open: 'hihat_open.mp3',
+  ride: 'ride.mp3',
+  crash: 'crash.mp3',
+  shaker: 'shaker.mp3',
+  cowbell: 'cowbell.mp3',
+  rimshot: 'rimshot.mp3',
   tom_high: 'tom1.mp3',
   tom_low: 'tom2.mp3',
   tom_floor: 'tom3.mp3',
+  conga_open: 'conga_open.mp3',
+  conga_slap: 'conga_slap.mp3',
 };
 
 export async function loadAcousticDrumSample(
@@ -472,11 +478,15 @@ export async function preloadInstrumentSamples(
   ctx: BaseAudioContext,
   instrumentId: InstrumentId
 ): Promise<void> {
-  if (instrumentId === 'drum_kit' || instrumentId === 'drum_808') {
+  if (
+    instrumentId === 'drum_kit' ||
+    instrumentId === 'drum_808' ||
+    instrumentId === 'drum_jazz' ||
+    instrumentId === 'drum_latin'
+  ) {
+    const sounds = Object.keys(DRUM_FILE_MAP);
     await Promise.allSettled(
-      ['kick', 'snare', 'hihat_closed', 'tom_high', 'tom_low', 'tom_floor'].map((s) =>
-        loadAcousticDrumSample(ctx, s, instrumentId)
-      )
+      sounds.map((s) => loadAcousticDrumSample(ctx, s, instrumentId as DrumKitType))
     );
     return;
   }

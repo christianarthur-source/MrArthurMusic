@@ -774,6 +774,26 @@ export const INSTRUMENTS: Record<InstrumentId, InstrumentDefinition> = {
     color: '#8B5CF6',
     description: 'Iconic Roland TR-808 kit with booming sub-bass kick (F4), snappy snare (C5), and crisp hats (G5).',
   },
+  drum_jazz: {
+    id: 'drum_jazz',
+    name: 'Jazz & Folk Acoustic Drums',
+    clef: 'treble',
+    category: 'Drums',
+    iconName: 'Disc',
+    defaultOctave: 4,
+    color: '#F59E0B',
+    description: 'Soft warm Gretsch acoustic drum kit with brush snare (C5), warm round kick (F4), and shimmering ride cymbal (F5).',
+  },
+  drum_latin: {
+    id: 'drum_latin',
+    name: 'Latin & World Percussion',
+    clef: 'treble',
+    category: 'Drums',
+    iconName: 'Disc',
+    defaultOctave: 4,
+    color: '#10B981',
+    description: 'Authentic world percussion with congas, bongos, timbales, clave, cowbell, and shaker.',
+  },
 
   // ================= SOUND EFFECTS =================
   sfx_applause: {

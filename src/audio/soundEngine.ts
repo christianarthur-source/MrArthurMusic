@@ -3,6 +3,7 @@ import { expandPlaybackMeasures, getItemDuration, getPitchFrequency } from '../u
 import { DrumSound, DrumStepEvent } from '../data/drumGrooves';
 import {
   createConcertHallImpulse,
+  DrumKitType,
   getAcousticDrumSample,
   getAcousticSampleForFreq,
   getHarmonicPeriodicWave,
@@ -136,6 +137,8 @@ export const INSTRUMENT_NORMALIZATION_SCALE: Record<InstrumentId, number> = {
   // Drums
   drum_kit: 0.88,
   drum_808: 0.90,
+  drum_jazz: 0.86,
+  drum_latin: 0.88,
 
   // Sound Effects
   sfx_applause: 0.85,
@@ -596,7 +599,12 @@ class SoundEngine {
     keySignature: Score['keySignature'] = 'C'
   ): Promise<void> {
     const ctx = this.ensureContext();
-    if (instrumentId === 'drum_kit' || instrumentId === 'drum_808') {
+    if (
+      instrumentId === 'drum_kit' ||
+      instrumentId === 'drum_808' ||
+      instrumentId === 'drum_jazz' ||
+      instrumentId === 'drum_latin'
+    ) {
       await preloadInstrumentSamples(ctx, instrumentId);
       const now = ctx.currentTime + 0.005;
       this.playDrumHit('kick', now, 0.95, ctx, undefined, instrumentId);
@@ -630,7 +638,7 @@ class SoundEngine {
     volume: number = 0.8,
     targetCtx?: BaseAudioContext,
     destinationNode?: AudioNode,
-    drumType: 'drum_kit' | 'drum_808' = 'drum_kit'
+    drumType: DrumKitType = 'drum_kit'
   ): { stop: () => void } {
     const ctx = targetCtx || this.ensureContext();
     const outGain = ctx.createGain();
@@ -866,7 +874,7 @@ class SoundEngine {
     bars: number = 2,
     onStep?: (step: number) => void,
     onComplete?: () => void,
-    drumType: 'drum_kit' | 'drum_808' = 'drum_kit'
+    drumType: DrumKitType = 'drum_kit'
   ) {
     this.stopDrumPreview();
     const ctx = this.ensureContext();
@@ -1343,8 +1351,13 @@ class SoundEngine {
     const normMultiplier = INSTRUMENT_NORMALIZATION_SCALE[instrumentId] ?? 1.0;
     const normalizedVolume = Math.min(1.4, volume * normMultiplier);
 
-    // 1. Special case: Drum Kit and 808 Electronic Drum Machine map notes directly to realistic drum hits!
-    if (instrumentId === 'drum_kit' || instrumentId === 'drum_808') {
+    // 1. Special case: Drum Kits (Rock, 808 Machine, Jazz/Folk, Latin/World) map notes directly to realistic drum hits!
+    if (
+      instrumentId === 'drum_kit' ||
+      instrumentId === 'drum_808' ||
+      instrumentId === 'drum_jazz' ||
+      instrumentId === 'drum_latin'
+    ) {
       const step = pitch?.step || 'F';
       const octave = pitch?.octave || 4;
       let sound: DrumSound = 'kick';
@@ -1365,7 +1378,7 @@ class SoundEngine {
         else if (step === 'G') sound = 'conga_slap';
         else sound = 'kick';
       }
-      return this.playDrumHit(sound, startTime, normalizedVolume, ctx, outTarget, instrumentId);
+      return this.playDrumHit(sound, startTime, normalizedVolume, ctx, outTarget, instrumentId as DrumKitType);
     }
 
     // 2. Auxiliary unpitched percussion shortcuts

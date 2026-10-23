@@ -1754,7 +1754,7 @@ export default function App() {
       const newTrack: Track = {
         id: 'track_drum_' + Math.random().toString(36).substring(2, 9),
         name: `Drums (${groove.name})`,
-        instrumentId: 'drum_kit',
+        instrumentId: groove.kitType || 'drum_kit',
         clef: 'treble',
         volume: 0.85,
         muted: false,
@@ -1789,7 +1789,7 @@ export default function App() {
       if (!targetTrack) return;
 
       targetTrack.name = `Drums (${groove.name})`;
-      targetTrack.instrumentId = 'drum_kit';
+      targetTrack.instrumentId = groove.kitType || 'drum_kit';
       targetTrack.clef = 'treble';
 
       targetTrack.measures = targetTrack.measures.map((m, mIdx) => {
