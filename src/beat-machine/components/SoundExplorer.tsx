@@ -23,7 +23,7 @@ interface SoundExplorerProps {
   onTogglePlay?: () => void;
 }
 
-type CategoryFilter = 'all' | 'drums' | 'melody' | 'silly' | 'custom';
+type CategoryFilter = 'all' | 'drums' | 'electronic' | 'percussion' | 'melody' | 'custom';
 
 export const SoundExplorer: React.FC<SoundExplorerProps> = ({
   onAssignToTrack,
@@ -42,21 +42,27 @@ export const SoundExplorer: React.FC<SoundExplorerProps> = ({
     { id: 'all', label: 'All Sounds', icon: '🌟', count: ALL_AVAILABLE_SAMPLES.length },
     {
       id: 'drums',
-      label: 'Drums & Beats',
+      label: 'Acoustic Drums',
       icon: '🥁',
       count: ALL_AVAILABLE_SAMPLES.filter((s) => s.category === 'drums').length,
     },
     {
-      id: 'melody',
-      label: 'Melodies & Chimes',
-      icon: '🌈',
-      count: ALL_AVAILABLE_SAMPLES.filter((s) => s.category === 'melody').length,
+      id: 'electronic',
+      label: '808 & Electronic',
+      icon: '⚡',
+      count: ALL_AVAILABLE_SAMPLES.filter((s) => s.category === 'electronic').length,
     },
     {
-      id: 'silly',
-      label: 'Cartoon & Silly FX',
-      icon: '🤪',
-      count: ALL_AVAILABLE_SAMPLES.filter((s) => s.category === 'silly').length,
+      id: 'percussion',
+      label: 'World Percussion',
+      icon: '🪘',
+      count: ALL_AVAILABLE_SAMPLES.filter((s) => s.category === 'percussion').length,
+    },
+    {
+      id: 'melody',
+      label: 'Melodies & Keys',
+      icon: '🌈',
+      count: ALL_AVAILABLE_SAMPLES.filter((s) => s.category === 'melody').length,
     },
     {
       id: 'custom',

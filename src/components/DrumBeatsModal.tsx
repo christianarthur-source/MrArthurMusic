@@ -35,11 +35,13 @@ export const DrumBeatsModal: React.FC<DrumBeatsModalProps> = ({
   const styles: (DrumStyle | 'All')[] = [
     'All',
     'Rock',
-    'Jazz',
-    'Folk',
     'Pop',
+    'Indie',
+    'Jazz',
+    'World',
     'Latin',
     'African',
+    'Folk',
   ];
 
   const filteredGrooves = DRUM_GROOVES.filter(
@@ -93,7 +95,7 @@ export const DrumBeatsModal: React.FC<DrumBeatsModalProps> = ({
                 </span>
               </div>
               <p className="text-xs text-slate-400 mt-0.5">
-                Authentic drum rhythms for Rock, Jazz, Folk, Pop, Latin, and African music.
+                Authentic drum rhythms for Rock, Pop, Indie, Jazz, World, Latin, African, and Folk music.
               </p>
             </div>
           </div>

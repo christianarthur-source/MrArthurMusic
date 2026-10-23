@@ -764,6 +764,16 @@ export const INSTRUMENTS: Record<InstrumentId, InstrumentDefinition> = {
     color: '#E11D48',
     description: 'Full drum kit with Kick (F4), Snare (C5), Hi-Hat (G5), Toms, and Cymbals.',
   },
+  drum_808: {
+    id: 'drum_808',
+    name: '808 Electronic Drum Machine',
+    clef: 'treble',
+    category: 'Drums',
+    iconName: 'Disc',
+    defaultOctave: 4,
+    color: '#8B5CF6',
+    description: 'Iconic Roland TR-808 kit with booming sub-bass kick (F4), snappy snare (C5), and crisp hats (G5).',
+  },
 
   // ================= SOUND EFFECTS =================
   sfx_applause: {

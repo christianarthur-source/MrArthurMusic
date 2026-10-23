@@ -1,46 +1,55 @@
 export type SoundType =
+  // Studio Acoustic Kit
   | 'kick'
   | 'snare'
   | 'hihat'
+  | 'open-hat'
   | 'clap'
   | 'tom'
-  | 'plop'
-  | 'boing'
-  | 'zap'
-  | 'coin'
-  | 'quack'
+  | 'tom-high'
+  | 'tom-floor'
+  | 'crash'
+  | 'ride'
+  | 'acoustic-kick'
+  | 'acoustic-snare'
+  | 'closed-hat'
+  // Roland TR-808 Kit
+  | '808-kick'
+  | '808-snare'
+  | '808-hihat'
+  | '808-tom'
+  | '808-clap'
+  // World & Auxiliary Percussion
   | 'cowbell'
-  | 'robot'
-  | 'fart'
-  | 'baby-cry'
-  | 'dog-bark'
-  | 'cat-meow'
-  | 'vroom'
-  | 'siren'
-  | 'cow-moo'
+  | 'shaker'
+  | 'tambourine'
+  | 'conga'
+  | 'bongo'
+  // Melodic Mallets & Keys
   | 'xylo-c'
   | 'xylo-d'
   | 'xylo-e'
   | 'xylo-g'
   | 'xylo-a'
   | 'xylo-c2'
+  | 'glockenspiel'
+  | 'vibraphone'
+  | 'rhodes'
+  | 'grand-piano'
   | 'bass-wobble'
-  | 'acoustic-kick'
-  | 'acoustic-snare'
-  | 'closed-hat'
-  | 'open-hat'
-  | 'crash'
-  | 'ride'
-  | 'conga'
-  | 'bongo'
-  | 'shaker'
-  | 'tambourine'
+  // Retro Synth FX
+  | 'zap'
+  | 'coin'
+  | 'boing'
+  | 'plop'
+  | 'robot'
+  // Custom User Recording
   | 'custom-mic';
 
 export interface SoundSample {
   id: string;
   name: string;
-  category: 'drums' | 'silly' | 'melody' | 'custom';
+  category: 'drums' | 'electronic' | 'percussion' | 'melody' | 'custom';
   icon: string;
   color: string;
   soundType: SoundType;

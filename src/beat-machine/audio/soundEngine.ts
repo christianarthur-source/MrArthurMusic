@@ -30,6 +30,75 @@ class SoundEngine {
   private recordedChunks: Blob[] = [];
   private isRecordingSong: boolean = false;
 
+  // Real Studio Audio Buffer Cache (Acoustic Ludwig Kit, Roland TR-808, Mallets, Grand Piano, Rhodes)
+  private sampleBufferCache = new Map<string, AudioBuffer>();
+  private pendingSampleLoads = new Map<string, Promise<AudioBuffer | null>>();
+
+  private sampleUrlMap: Partial<Record<SoundType, string>> = {
+    kick: '/audio/samples/drum_kit/kick.mp3',
+    'acoustic-kick': '/audio/samples/drum_kit/kick.mp3',
+    snare: '/audio/samples/drum_kit/snare.mp3',
+    'acoustic-snare': '/audio/samples/drum_kit/snare.mp3',
+    hihat: '/audio/samples/drum_kit/hihat.mp3',
+    'closed-hat': '/audio/samples/drum_kit/hihat.mp3',
+    'open-hat': '/audio/samples/drum_kit/hihat.mp3',
+    tom: '/audio/samples/drum_kit/tom2.mp3',
+    'tom-high': '/audio/samples/drum_kit/tom1.mp3',
+    'tom-floor': '/audio/samples/drum_kit/tom3.mp3',
+    crash: '/audio/samples/drum_kit/hihat.mp3',
+    ride: '/audio/samples/drum_kit/hihat.mp3',
+    '808-kick': '/audio/samples/drum_808/kick.mp3',
+    '808-snare': '/audio/samples/drum_808/snare.mp3',
+    '808-hihat': '/audio/samples/drum_808/hihat.mp3',
+    '808-tom': '/audio/samples/drum_808/tom1.mp3',
+    '808-clap': '/audio/samples/drum_808/snare.mp3',
+    'xylo-c': '/audio/samples/xylophone/C4.mp3',
+    'xylo-d': '/audio/samples/xylophone/C4.mp3',
+    'xylo-e': '/audio/samples/xylophone/C4.mp3',
+    'xylo-g': '/audio/samples/xylophone/C4.mp3',
+    'xylo-a': '/audio/samples/xylophone/C4.mp3',
+    'xylo-c2': '/audio/samples/xylophone/C5.mp3',
+    glockenspiel: '/audio/samples/glockenspiel/C6.mp3',
+    vibraphone: '/audio/samples/vibraphone/C4.mp3',
+    rhodes: '/audio/samples/electric_piano/C4.mp3',
+    'grand-piano': '/audio/samples/piano/C4.mp3',
+  };
+
+  public async preloadSample(url: string): Promise<AudioBuffer | null> {
+    this.initContext();
+    if (!this.ctx) return null;
+    const existing = this.sampleBufferCache.get(url);
+    if (existing) return existing;
+    const pending = this.pendingSampleLoads.get(url);
+    if (pending) return pending;
+
+    const promise = (async () => {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) return null;
+        const arrayBuffer = await res.arrayBuffer();
+        const audioBuffer = await this.ctx!.decodeAudioData(arrayBuffer);
+        this.sampleBufferCache.set(url, audioBuffer);
+        return audioBuffer;
+      } catch {
+        return null;
+      } finally {
+        this.pendingSampleLoads.delete(url);
+      }
+    })();
+
+    this.pendingSampleLoads.set(url, promise);
+    return promise;
+  }
+
+  public preloadAllCoreSamples() {
+    if (!this.ctx) return;
+    const urls = Array.from(new Set(Object.values(this.sampleUrlMap)));
+    urls.forEach((url) => {
+      if (url) void this.preloadSample(url);
+    });
+  }
+
   // Generate synthetic impulse response for cathedral reverb with balanced decay & soft resonance
   private createImpulseResponse(duration: number = 2.4, decay: number = 3.0): AudioBuffer | null {
     if (!this.ctx) return null;
@@ -124,6 +193,7 @@ class SoundEngine {
     if (this.ctx.state === 'suspended') {
       this.ctx.resume();
     }
+    this.preloadAllCoreSamples();
   }
 
   private makeDistortionCurve(amount: number = 25) {
@@ -768,102 +838,69 @@ class SoundEngine {
       reverbSend.connect(this.reverbNode);
     }
 
+    // Check if we have a real high-definition studio audio buffer ready
+    const sampleUrl = this.sampleUrlMap[type];
+    if (sampleUrl) {
+      const buffer = this.sampleBufferCache.get(sampleUrl);
+      if (buffer) {
+        let rate = pitchRate;
+        if (type === 'xylo-d') rate *= 1.122;
+        if (type === 'xylo-e') rate *= 1.26;
+        if (type === 'xylo-g') rate *= 1.498;
+        if (type === 'xylo-a') rate *= 1.682;
+        if (type === 'open-hat') rate *= 0.88;
+        if (type === 'crash') rate *= 0.75;
+        if (type === 'ride') rate *= 1.15;
+        this.playAudioBuffer(buffer, startTime, soundGain, rate);
+        return;
+      }
+      // Trigger background load for future hits
+      void this.preloadSample(sampleUrl);
+    }
+
     switch (type) {
       case 'kick':
+      case 'acoustic-kick':
         this.synthKick(startTime, soundGain, pitchRate);
         break;
+      case '808-kick':
+        this.synthKick(startTime, soundGain, pitchRate * 0.75);
+        break;
       case 'snare':
+      case 'acoustic-snare':
         this.synthSnare(startTime, soundGain, pitchRate);
         break;
+      case '808-snare':
+        this.synthSnare(startTime, soundGain, pitchRate * 1.25);
+        break;
       case 'hihat':
-        this.synthHiHat(startTime, soundGain, pitchRate);
-        break;
-      case 'clap':
-        this.synthClap(startTime, soundGain, pitchRate);
-        break;
-      case 'tom':
-        this.synthTom(startTime, soundGain, pitchRate);
-        break;
-      case 'plop':
-        this.synthPlop(startTime, soundGain, pitchRate);
-        break;
-      case 'boing':
-        this.synthBoing(startTime, soundGain, pitchRate);
-        break;
-      case 'zap':
-        this.synthZap(startTime, soundGain, pitchRate);
-        break;
-      case 'coin':
-        this.synthCoin(startTime, soundGain, pitchRate);
-        break;
-      case 'quack':
-        this.synthQuack(startTime, soundGain, pitchRate);
-        break;
-      case 'cowbell':
-        this.synthCowbell(startTime, soundGain, pitchRate);
-        break;
-      case 'robot':
-        this.synthRobot(startTime, soundGain, pitchRate);
-        break;
-      case 'fart':
-        this.synthFart(startTime, soundGain, pitchRate);
-        break;
-      case 'baby-cry':
-        this.synthBabyCry(startTime, soundGain, pitchRate);
-        break;
-      case 'dog-bark':
-        this.synthDogBark(startTime, soundGain, pitchRate);
-        break;
-      case 'cat-meow':
-        this.synthCatMeow(startTime, soundGain, pitchRate);
-        break;
-      case 'vroom':
-        this.synthVroom(startTime, soundGain, pitchRate);
-        break;
-      case 'siren':
-        this.synthSiren(startTime, soundGain, pitchRate);
-        break;
-      case 'cow-moo':
-        this.synthCowMoo(startTime, soundGain, pitchRate);
-        break;
-      case 'xylo-c':
-        this.synthXylophone(261.63, startTime, soundGain, pitchRate); // C4
-        break;
-      case 'xylo-d':
-        this.synthXylophone(293.66, startTime, soundGain, pitchRate); // D4
-        break;
-      case 'xylo-e':
-        this.synthXylophone(329.63, startTime, soundGain, pitchRate); // E4
-        break;
-      case 'xylo-g':
-        this.synthXylophone(392.0, startTime, soundGain, pitchRate); // G4
-        break;
-      case 'xylo-a':
-        this.synthXylophone(440.0, startTime, soundGain, pitchRate); // A4
-        break;
-      case 'xylo-c2':
-        this.synthXylophone(523.25, startTime, soundGain, pitchRate); // C5
-        break;
-      case 'bass-wobble':
-        this.synthBassWobble(startTime, soundGain, pitchRate);
-        break;
-      case 'acoustic-kick':
-        this.synthKick(startTime, soundGain, pitchRate * 0.9);
-        break;
-      case 'acoustic-snare':
-        this.synthSnare(startTime, soundGain, pitchRate * 1.1);
-        break;
       case 'closed-hat':
-        this.synthHiHat(startTime, soundGain, pitchRate * 1.4);
+      case '808-hihat':
+        this.synthHiHat(startTime, soundGain, pitchRate * 1.2);
         break;
       case 'open-hat':
         this.synthHiHat(startTime, soundGain, pitchRate * 0.7);
+        break;
+      case 'clap':
+      case '808-clap':
+        this.synthClap(startTime, soundGain, pitchRate);
+        break;
+      case 'tom':
+      case 'tom-floor':
+      case '808-tom':
+        this.synthTom(startTime, soundGain, pitchRate * 0.85);
+        break;
+      case 'tom-high':
+        this.synthTom(startTime, soundGain, pitchRate * 1.35);
         break;
       case 'crash':
         this.synthSnare(startTime, soundGain, pitchRate * 0.5);
         break;
       case 'ride':
         this.synthHiHat(startTime, soundGain, pitchRate * 0.9);
+        break;
+      case 'cowbell':
+        this.synthCowbell(startTime, soundGain, pitchRate);
         break;
       case 'conga':
         this.synthTom(startTime, soundGain, pitchRate * 1.3);
@@ -877,12 +914,53 @@ class SoundEngine {
       case 'tambourine':
         this.synthClap(startTime, soundGain, pitchRate * 1.2);
         break;
+      case 'xylo-c':
+        this.synthXylophone(261.63, startTime, soundGain, pitchRate);
+        break;
+      case 'xylo-d':
+        this.synthXylophone(293.66, startTime, soundGain, pitchRate);
+        break;
+      case 'xylo-e':
+        this.synthXylophone(329.63, startTime, soundGain, pitchRate);
+        break;
+      case 'xylo-g':
+        this.synthXylophone(392.0, startTime, soundGain, pitchRate);
+        break;
+      case 'xylo-a':
+        this.synthXylophone(440.0, startTime, soundGain, pitchRate);
+        break;
+      case 'xylo-c2':
+      case 'glockenspiel':
+        this.synthXylophone(523.25, startTime, soundGain, pitchRate);
+        break;
+      case 'vibraphone':
+      case 'rhodes':
+      case 'grand-piano':
+        this.synthXylophone(329.63, startTime, soundGain, pitchRate * 0.8);
+        break;
+      case 'bass-wobble':
+        this.synthBassWobble(startTime, soundGain, pitchRate);
+        break;
+      case 'zap':
+        this.synthZap(startTime, soundGain, pitchRate);
+        break;
+      case 'coin':
+        this.synthCoin(startTime, soundGain, pitchRate);
+        break;
+      case 'robot':
+        this.synthRobot(startTime, soundGain, pitchRate);
+        break;
+      case 'boing':
+        this.synthBoing(startTime, soundGain, pitchRate);
+        break;
+      case 'plop':
+        this.synthPlop(startTime, soundGain, pitchRate);
+        break;
       case 'custom-mic': {
         const bufferToPlay = customOverrideBuffer || this.customBuffer;
         if (bufferToPlay) {
           this.playAudioBuffer(bufferToPlay, startTime, soundGain, pitchRate);
         } else {
-          // Fallback playful pop if no mic recording yet
           this.synthPlop(startTime, soundGain, pitchRate);
         }
         break;

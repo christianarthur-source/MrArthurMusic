@@ -15,14 +15,14 @@ const PAD_CONFIG: { soundType: SoundType; key: string }[] = [
   { soundType: 'snare', key: '2' },
   { soundType: 'hihat', key: '3' },
   { soundType: 'clap', key: '4' },
-  { soundType: 'tom', key: 'Q' },
-  { soundType: 'cowbell', key: 'W' },
-  { soundType: 'plop', key: 'E' },
-  { soundType: 'boing', key: 'R' },
-  { soundType: 'zap', key: 'A' },
-  { soundType: 'coin', key: 'S' },
-  { soundType: 'quack', key: 'D' },
-  { soundType: 'robot', key: 'F' },
+  { soundType: '808-kick', key: 'Q' },
+  { soundType: '808-snare', key: 'W' },
+  { soundType: '808-hihat', key: 'E' },
+  { soundType: 'open-hat', key: 'R' },
+  { soundType: 'tom', key: 'A' },
+  { soundType: 'crash', key: 'S' },
+  { soundType: 'shaker', key: 'D' },
+  { soundType: 'cowbell', key: 'F' },
 ];
 
 export const LivePads: React.FC<LivePadsProps> = ({

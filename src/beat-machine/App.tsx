@@ -59,7 +59,7 @@ export default function BeatMachineApp({
   onProjectSaved,
 }: BeatMachineAppProps = {}) {
   const [activeMode, setActiveMode] = useState<AppMode>('both');
-  const [currentPackId, setCurrentPackId] = useState<string>('space-disco');
+  const [currentPackId, setCurrentPackId] = useState<string>('studio-acoustic');
   const [bpm, setBpm] = useState<number>(115);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [currentStep, setCurrentStep] = useState<number>(0);

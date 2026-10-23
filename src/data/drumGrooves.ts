@@ -1,6 +1,6 @@
-import { Measure, NoteItem } from '../types/music';
+import { Measure, NoteItem, Pitch } from '../types/music';
 
-export type DrumStyle = 'Rock' | 'Jazz' | 'Folk' | 'Pop' | 'Latin' | 'African' | 'Funk';
+export type DrumStyle = 'Rock' | 'Pop' | 'Indie' | 'Jazz' | 'World' | 'Latin' | 'African' | 'Folk';
 
 export type DrumSound =
   | 'kick'
@@ -11,6 +11,7 @@ export type DrumSound =
   | 'crash'
   | 'tom_high'
   | 'tom_low'
+  | 'tom_floor'
   | 'rimshot'
   | 'shaker'
   | 'cowbell'
@@ -18,7 +19,7 @@ export type DrumSound =
   | 'conga_slap';
 
 export interface DrumStepEvent {
-  step: number; // 0 to 15 for 16th notes in 4/4 bar
+  step: number; // 0 to 15 for 16th notes in 4/4 bar (or 0 to 11 in 3/4 bar)
   sounds: DrumSound[];
 }
 
@@ -31,26 +32,440 @@ export interface DrumGroove {
   description: string;
   badge: string;
   measures: Measure[];
-  previewPattern: DrumStepEvent[]; // 16 steps (1 bar) of drum sounds for real-time audio synthesizer preview
+  previewPattern: DrumStepEvent[];
 }
 
-// Helper to create uniquely ID'd note item
-function makeDrumNote(step: 'C' | 'D' | 'E' | 'F' | 'G' | 'A' | 'B', octave: number, duration: 0.25 | 0.125 | 0.0625 | 0.5 | 1): NoteItem {
-  return {
-    id: 'dr_' + Math.random().toString(36).substring(2, 9),
-    type: 'note',
-    pitch: { step, octave },
-    duration,
-  };
+/**
+ * Standard staff note mapping for drum sounds on a percussion staff:
+ * F4 / C4 = Bass Drum Kick
+ * C5 = Snare Drum
+ * G5 = Closed Hi-Hat
+ * A5 = Open Hi-Hat
+ * B5 = Crash Cymbal
+ * F5 = Ride Cymbal
+ * E5 = Rimshot / Handclap
+ * D5 = High Tom
+ * A4 = Low Tom / Floor Tom
+ * B4 = Percussion Shaker
+ * D4 = Cowbell
+ * E4 = Conga Open Tone
+ * G4 = Conga Slap
+ */
+export const DRUM_SOUND_PITCH_MAP: Record<DrumSound, Pitch> = {
+  kick: { step: 'F', octave: 4 },
+  snare: { step: 'C', octave: 5 },
+  hihat_closed: { step: 'G', octave: 5 },
+  hihat_open: { step: 'A', octave: 5 },
+  crash: { step: 'B', octave: 5 },
+  ride: { step: 'F', octave: 5 },
+  rimshot: { step: 'E', octave: 5 },
+  tom_high: { step: 'D', octave: 5 },
+  tom_low: { step: 'A', octave: 4 },
+  tom_floor: { step: 'F', octave: 4 },
+  shaker: { step: 'B', octave: 4 },
+  cowbell: { step: 'D', octave: 4 },
+  conga_open: { step: 'E', octave: 4 },
+  conga_slap: { step: 'G', octave: 4 },
+};
+
+/**
+ * Generates Measure objects directly from bar patterns so the sheet music playback
+ * and notation match the audio preview 100% identically with multi-note chord voicings.
+ */
+export function patternsToMeasures(
+  barPatterns: DrumStepEvent[][],
+  timeSignature: [number, number] = [4, 4],
+  idPrefix: string = 'dr'
+): Measure[] {
+  const beatsPerMeasure = timeSignature[0];
+  const totalStepsPerMeasure = beatsPerMeasure === 3 ? 12 : 16;
+
+  return barPatterns.map((pattern, bIdx) => {
+    const stepMap = new Map<number, DrumSound[]>();
+    pattern.forEach((ev) => {
+      if (ev.sounds.length > 0 && ev.step < totalStepsPerMeasure) {
+        stepMap.set(ev.step, ev.sounds);
+      }
+    });
+
+    const has16ths = pattern.some((ev) => ev.step % 2 !== 0 && ev.step < totalStepsPerMeasure);
+    const stepIncrement = has16ths ? 1 : 2;
+    const duration = has16ths ? (0.0625 as const) : (0.125 as const);
+
+    const items: NoteItem[] = [];
+    for (let s = 0; s < totalStepsPerMeasure; s += stepIncrement) {
+      const sounds = stepMap.get(s);
+      if (!sounds || sounds.length === 0) {
+        items.push({
+          id: `dr_${idPrefix}_${bIdx}_r_${s}`,
+          type: 'rest',
+          duration,
+        });
+      } else {
+        const pitches: Pitch[] = sounds.map((snd) => DRUM_SOUND_PITCH_MAP[snd] || ({ step: 'F', octave: 4 } as Pitch));
+        items.push({
+          id: `dr_${idPrefix}_${bIdx}_n_${s}`,
+          type: 'note',
+          pitch: pitches[0],
+          pitches: pitches.length > 1 ? pitches : undefined,
+          duration,
+        });
+      }
+    }
+
+    return {
+      id: `m_${idPrefix}_${bIdx + 1}`,
+      items,
+    };
+  });
 }
 
-function makeDrumRest(duration: 0.25 | 0.125 | 0.0625 | 0.5 | 1): NoteItem {
-  return {
-    id: 'dr_r_' + Math.random().toString(36).substring(2, 9),
-    type: 'rest',
-    duration,
-  };
-}
+// ============================================================================
+// DRUM PATTERN DEFINITIONS (100% PREVIEW & SCORE ALIGNMENT)
+// ============================================================================
+
+// 1. Classic 8-Beat Rock
+const rockClassicPattern1: DrumStepEvent[] = [
+  { step: 0, sounds: ['kick', 'hihat_closed'] },
+  { step: 2, sounds: ['hihat_closed'] },
+  { step: 4, sounds: ['snare', 'hihat_closed'] },
+  { step: 6, sounds: ['hihat_closed'] },
+  { step: 8, sounds: ['kick', 'hihat_closed'] },
+  { step: 10, sounds: ['hihat_closed'] },
+  { step: 12, sounds: ['snare', 'hihat_closed'] },
+  { step: 14, sounds: ['hihat_closed'] },
+];
+
+const rockClassicPattern2: DrumStepEvent[] = [
+  { step: 0, sounds: ['kick', 'hihat_closed'] },
+  { step: 2, sounds: ['hihat_closed'] },
+  { step: 4, sounds: ['snare', 'hihat_closed'] },
+  { step: 6, sounds: ['hihat_closed'] },
+  { step: 8, sounds: ['kick'] },
+  { step: 10, sounds: ['kick', 'hihat_closed'] },
+  { step: 12, sounds: ['snare', 'hihat_closed'] },
+  { step: 14, sounds: ['hihat_open'] },
+];
+
+// 2. Hard Rock Driving Beat
+const rockHardPattern: DrumStepEvent[] = [
+  { step: 0, sounds: ['kick', 'ride', 'crash'] },
+  { step: 2, sounds: ['ride'] },
+  { step: 4, sounds: ['kick', 'snare', 'ride'] },
+  { step: 6, sounds: ['ride'] },
+  { step: 8, sounds: ['kick', 'ride'] },
+  { step: 10, sounds: ['ride'] },
+  { step: 12, sounds: ['kick', 'snare', 'ride'] },
+  { step: 14, sounds: ['ride', 'hihat_open'] },
+];
+
+// 3. Fast Punk Rock (Straight 8ths)
+const rockPunkPattern: DrumStepEvent[] = [
+  { step: 0, sounds: ['kick', 'hihat_open', 'crash'] },
+  { step: 2, sounds: ['hihat_open'] },
+  { step: 4, sounds: ['snare', 'hihat_open'] },
+  { step: 6, sounds: ['kick', 'hihat_open'] },
+  { step: 8, sounds: ['kick', 'hihat_open'] },
+  { step: 10, sounds: ['hihat_open'] },
+  { step: 12, sounds: ['snare', 'hihat_open'] },
+  { step: 14, sounds: ['kick', 'hihat_open'] },
+];
+
+// 4. 90s Grunge & Alternative Rock
+const rockGrungePattern: DrumStepEvent[] = [
+  { step: 0, sounds: ['kick', 'hihat_closed'] },
+  { step: 2, sounds: ['hihat_closed'] },
+  { step: 4, sounds: ['snare', 'hihat_closed'] },
+  { step: 6, sounds: ['kick', 'hihat_closed'] },
+  { step: 8, sounds: ['hihat_closed'] },
+  { step: 10, sounds: ['kick', 'hihat_closed'] },
+  { step: 12, sounds: ['snare', 'hihat_open'] },
+  { step: 14, sounds: ['tom_high'] },
+];
+
+// 5. Four-on-the-Floor Pop Dance
+const popFourOnFloorPattern: DrumStepEvent[] = [
+  { step: 0, sounds: ['kick', 'hihat_closed'] },
+  { step: 2, sounds: ['hihat_open'] },
+  { step: 4, sounds: ['kick', 'snare', 'hihat_closed'] },
+  { step: 6, sounds: ['hihat_open'] },
+  { step: 8, sounds: ['kick', 'hihat_closed'] },
+  { step: 10, sounds: ['hihat_open'] },
+  { step: 12, sounds: ['kick', 'snare', 'hihat_closed'] },
+  { step: 14, sounds: ['hihat_open'] },
+];
+
+// 6. Modern Trap & Hip-Hop 808
+const popTrapPattern: DrumStepEvent[] = [
+  { step: 0, sounds: ['kick', 'hihat_closed'] },
+  { step: 2, sounds: ['hihat_closed'] },
+  { step: 4, sounds: ['hihat_closed'] },
+  { step: 6, sounds: ['kick', 'hihat_closed'] },
+  { step: 8, sounds: ['snare', 'hihat_closed'] },
+  { step: 10, sounds: ['hihat_closed'] },
+  { step: 12, sounds: ['hihat_closed'] },
+  { step: 13, sounds: ['hihat_closed'] },
+  { step: 14, sounds: ['hihat_closed'] },
+  { step: 15, sounds: ['hihat_closed'] },
+];
+
+// 7. 80s Retro Synthwave / Synthpop
+const popSynthwavePattern: DrumStepEvent[] = [
+  { step: 0, sounds: ['kick', 'hihat_closed'] },
+  { step: 2, sounds: ['hihat_closed'] },
+  { step: 4, sounds: ['snare', 'rimshot', 'hihat_closed'] },
+  { step: 6, sounds: ['hihat_closed'] },
+  { step: 8, sounds: ['kick', 'hihat_closed'] },
+  { step: 10, sounds: ['kick', 'hihat_closed'] },
+  { step: 12, sounds: ['snare', 'rimshot', 'hihat_closed'] },
+  { step: 14, sounds: ['hihat_closed'] },
+];
+
+// 8. Pop & R&B Slow Groove (6/8 feel represented across 4/4 triplet pulses)
+const popSlowJamPattern: DrumStepEvent[] = [
+  { step: 0, sounds: ['kick', 'ride'] },
+  { step: 2, sounds: ['ride'] },
+  { step: 4, sounds: ['ride'] },
+  { step: 6, sounds: ['snare', 'ride'] },
+  { step: 8, sounds: ['ride'] },
+  { step: 10, sounds: ['kick', 'ride'] },
+  { step: 12, sounds: ['snare', 'ride'] },
+  { step: 14, sounds: ['ride', 'hihat_open'] },
+];
+
+// 9. Acoustic Stomp & Handclap (Folk / Indie Roots) - Fully synchronized!
+const indieFolkStompPattern: DrumStepEvent[] = [
+  { step: 0, sounds: ['kick', 'shaker'] },
+  { step: 2, sounds: ['shaker'] },
+  { step: 4, sounds: ['rimshot', 'snare', 'shaker'] },
+  { step: 6, sounds: ['shaker'] },
+  { step: 8, sounds: ['kick', 'shaker'] },
+  { step: 10, sounds: ['shaker'] },
+  { step: 12, sounds: ['rimshot', 'snare', 'shaker'] },
+  { step: 14, sounds: ['shaker'] },
+];
+
+// 10. Indie Pop Dance Beat
+const indiePopDiscoPattern: DrumStepEvent[] = [
+  { step: 0, sounds: ['kick', 'shaker'] },
+  { step: 2, sounds: ['hihat_open', 'shaker'] },
+  { step: 4, sounds: ['kick', 'snare', 'shaker'] },
+  { step: 6, sounds: ['hihat_open', 'shaker'] },
+  { step: 8, sounds: ['kick', 'shaker'] },
+  { step: 10, sounds: ['hihat_open', 'shaker'] },
+  { step: 12, sounds: ['kick', 'snare', 'shaker'] },
+  { step: 14, sounds: ['hihat_open', 'shaker'] },
+];
+
+// 11. Indie Garage Rock 16ths
+const indieGaragePattern: DrumStepEvent[] = [
+  { step: 0, sounds: ['kick', 'hihat_closed'] },
+  { step: 2, sounds: ['hihat_closed'] },
+  { step: 3, sounds: ['kick'] },
+  { step: 4, sounds: ['snare', 'hihat_closed'] },
+  { step: 6, sounds: ['hihat_closed'] },
+  { step: 8, sounds: ['kick', 'hihat_closed'] },
+  { step: 10, sounds: ['hihat_closed'] },
+  { step: 12, sounds: ['snare', 'hihat_closed'] },
+  { step: 14, sounds: ['tom_high', 'hihat_open'] },
+];
+
+// 12. Lo-Fi Indie Chill Hop
+const indieChillHopPattern: DrumStepEvent[] = [
+  { step: 0, sounds: ['kick', 'shaker'] },
+  { step: 2, sounds: ['hihat_closed', 'shaker'] },
+  { step: 4, sounds: ['rimshot', 'shaker'] },
+  { step: 6, sounds: ['kick', 'shaker'] },
+  { step: 8, sounds: ['shaker'] },
+  { step: 10, sounds: ['kick', 'shaker'] },
+  { step: 12, sounds: ['rimshot', 'shaker'] },
+  { step: 14, sounds: ['hihat_open', 'shaker'] },
+];
+
+// 13. Traditional Jazz Swing
+const jazzSwingPattern1: DrumStepEvent[] = [
+  { step: 0, sounds: ['ride', 'kick'] },
+  { step: 4, sounds: ['ride', 'hihat_closed'] },
+  { step: 6, sounds: ['ride'] },
+  { step: 8, sounds: ['ride'] },
+  { step: 12, sounds: ['ride', 'hihat_closed'] },
+  { step: 14, sounds: ['ride'] },
+];
+
+const jazzSwingPattern2: DrumStepEvent[] = [
+  { step: 0, sounds: ['ride', 'kick'] },
+  { step: 4, sounds: ['ride', 'snare', 'hihat_closed'] },
+  { step: 6, sounds: ['ride'] },
+  { step: 8, sounds: ['ride', 'kick'] },
+  { step: 12, sounds: ['ride', 'hihat_closed'] },
+  { step: 14, sounds: ['ride'] },
+];
+
+// 14. Upbeat Bebop Swing
+const jazzBebopPattern: DrumStepEvent[] = [
+  { step: 0, sounds: ['ride', 'kick'] },
+  { step: 4, sounds: ['ride', 'hihat_closed', 'snare'] },
+  { step: 6, sounds: ['ride'] },
+  { step: 8, sounds: ['ride', 'kick'] },
+  { step: 10, sounds: ['snare'] },
+  { step: 12, sounds: ['ride', 'hihat_closed'] },
+  { step: 14, sounds: ['ride'] },
+];
+
+// 15. Smoky Jazz Ballad (Brushes)
+const jazzBalladPattern: DrumStepEvent[] = [
+  { step: 0, sounds: ['kick', 'snare'] },
+  { step: 2, sounds: ['snare'] },
+  { step: 4, sounds: ['snare', 'hihat_closed'] },
+  { step: 6, sounds: ['snare'] },
+  { step: 8, sounds: ['kick', 'snare'] },
+  { step: 10, sounds: ['snare'] },
+  { step: 12, sounds: ['snare', 'hihat_closed'] },
+  { step: 14, sounds: ['snare', 'ride'] },
+];
+
+// 16. New Orleans Jazz-Funk / Boogaloo
+const jazzFunkBoogalooPattern: DrumStepEvent[] = [
+  { step: 0, sounds: ['kick', 'hihat_closed'] },
+  { step: 2, sounds: ['hihat_closed'] },
+  { step: 4, sounds: ['snare', 'rimshot', 'hihat_closed'] },
+  { step: 6, sounds: ['kick', 'hihat_closed'] },
+  { step: 8, sounds: ['hihat_closed'] },
+  { step: 10, sounds: ['kick', 'hihat_closed'] },
+  { step: 12, sounds: ['snare', 'hihat_closed'] },
+  { step: 14, sounds: ['cowbell', 'hihat_open'] },
+];
+
+// 17. Reggae One Drop
+const worldReggaePattern: DrumStepEvent[] = [
+  { step: 0, sounds: ['hihat_closed'] },
+  { step: 2, sounds: ['hihat_closed'] },
+  { step: 4, sounds: ['hihat_closed'] },
+  { step: 6, sounds: ['hihat_closed'] },
+  { step: 8, sounds: ['kick', 'rimshot', 'snare', 'hihat_closed'] }, // The One Drop!
+  { step: 10, sounds: ['hihat_closed'] },
+  { step: 12, sounds: ['hihat_closed'] },
+  { step: 14, sounds: ['hihat_open'] },
+];
+
+// 18. Bossa Nova Groove
+const latinBossaPattern: DrumStepEvent[] = [
+  { step: 0, sounds: ['rimshot', 'kick', 'hihat_closed'] },
+  { step: 2, sounds: ['hihat_closed'] },
+  { step: 4, sounds: ['hihat_closed'] },
+  { step: 6, sounds: ['rimshot', 'kick', 'hihat_closed'] },
+  { step: 8, sounds: ['hihat_closed'] },
+  { step: 10, sounds: ['rimshot', 'hihat_closed'] },
+  { step: 12, sounds: ['kick', 'hihat_closed'] },
+  { step: 14, sounds: ['rimshot', 'hihat_closed'] },
+];
+
+// 19. Cha-Cha-Cha & Conga
+const latinChaChaPattern: DrumStepEvent[] = [
+  { step: 0, sounds: ['cowbell', 'conga_open', 'kick'] },
+  { step: 2, sounds: ['cowbell'] },
+  { step: 4, sounds: ['cowbell', 'conga_slap'] },
+  { step: 6, sounds: ['cowbell'] },
+  { step: 8, sounds: ['cowbell', 'conga_open'] },
+  { step: 10, sounds: ['cowbell', 'conga_open'] },
+  { step: 12, sounds: ['cowbell', 'conga_slap'] },
+  { step: 14, sounds: ['conga_open'] },
+];
+
+// 20. Salsa (2-3 Son Clave)
+const latinSalsaPattern1: DrumStepEvent[] = [
+  { step: 0, sounds: ['hihat_closed', 'conga_open'] },
+  { step: 4, sounds: ['rimshot', 'hihat_closed', 'conga_slap'] }, // Clave 2
+  { step: 8, sounds: ['rimshot', 'hihat_closed', 'conga_open'] }, // Clave 3
+  { step: 12, sounds: ['hihat_closed', 'conga_slap'] },
+];
+
+const latinSalsaPattern2: DrumStepEvent[] = [
+  { step: 0, sounds: ['rimshot', 'hihat_closed', 'conga_open'] }, // Clave 1
+  { step: 4, sounds: ['hihat_closed', 'conga_slap'] },
+  { step: 6, sounds: ['rimshot', 'conga_open'] }, // Clave 2&
+  { step: 8, sounds: ['hihat_closed', 'conga_open'] },
+  { step: 12, sounds: ['rimshot', 'hihat_closed', 'conga_slap'] }, // Clave 4
+];
+
+// 21. Latin Cumbia Groove
+const worldCumbiaPattern: DrumStepEvent[] = [
+  { step: 0, sounds: ['kick', 'shaker'] },
+  { step: 2, sounds: ['shaker'] },
+  { step: 4, sounds: ['conga_slap', 'shaker'] },
+  { step: 6, sounds: ['shaker'] },
+  { step: 8, sounds: ['kick', 'shaker'] },
+  { step: 10, sounds: ['shaker'] },
+  { step: 12, sounds: ['conga_slap', 'shaker'] },
+  { step: 14, sounds: ['cowbell', 'shaker'] },
+];
+
+// 22. Afrobeat Polyrhythmic Groove (Fela Kuti Style)
+const africanAfrobeatPattern1: DrumStepEvent[] = [
+  { step: 0, sounds: ['kick', 'shaker'] },
+  { step: 2, sounds: ['shaker'] },
+  { step: 4, sounds: ['rimshot', 'shaker'] },
+  { step: 6, sounds: ['kick', 'shaker'] },
+  { step: 8, sounds: ['rimshot', 'shaker'] },
+  { step: 10, sounds: ['kick', 'shaker'] },
+  { step: 12, sounds: ['rimshot', 'shaker'] },
+  { step: 14, sounds: ['kick', 'hihat_open'] },
+];
+
+// 23. West African Djembe & Dunun
+const africanDjembePattern: DrumStepEvent[] = [
+  { step: 0, sounds: ['conga_open', 'cowbell', 'kick'] },
+  { step: 2, sounds: ['cowbell'] },
+  { step: 4, sounds: ['conga_slap', 'cowbell'] },
+  { step: 6, sounds: ['cowbell'] },
+  { step: 8, sounds: ['conga_open', 'cowbell', 'kick'] },
+  { step: 10, sounds: ['cowbell', 'conga_open'] },
+  { step: 12, sounds: ['conga_slap', 'cowbell'] },
+  { step: 14, sounds: ['cowbell', 'conga_open'] },
+];
+
+// 24. West African Highlife
+const africanHighlifePattern: DrumStepEvent[] = [
+  { step: 0, sounds: ['kick', 'rimshot', 'hihat_closed'] },
+  { step: 3, sounds: ['rimshot'] },
+  { step: 4, sounds: ['hihat_closed'] },
+  { step: 6, sounds: ['kick', 'rimshot'] },
+  { step: 8, sounds: ['rimshot', 'hihat_closed'] },
+  { step: 10, sounds: ['snare'] },
+  { step: 12, sounds: ['rimshot', 'hihat_closed'] },
+  { step: 14, sounds: ['kick'] },
+];
+
+// 25. Folk & Country Train Beat
+const folkTrainPattern: DrumStepEvent[] = [
+  { step: 0, sounds: ['kick', 'snare'] },
+  { step: 1, sounds: ['snare'] },
+  { step: 2, sounds: ['snare'] },
+  { step: 3, sounds: ['snare'] },
+  { step: 4, sounds: ['snare', 'rimshot'] }, // Backbeat accent
+  { step: 5, sounds: ['snare'] },
+  { step: 6, sounds: ['snare'] },
+  { step: 7, sounds: ['snare'] },
+  { step: 8, sounds: ['kick', 'snare'] },
+  { step: 9, sounds: ['snare'] },
+  { step: 10, sounds: ['snare'] },
+  { step: 11, sounds: ['snare'] },
+  { step: 12, sounds: ['snare', 'rimshot'] }, // Backbeat accent
+  { step: 13, sounds: ['snare'] },
+  { step: 14, sounds: ['snare', 'hihat_closed'] },
+  { step: 15, sounds: ['snare'] },
+];
+
+// 26. Folk Waltz in 3/4
+const folkWaltzPattern: DrumStepEvent[] = [
+  { step: 0, sounds: ['kick', 'hihat_closed'] },
+  { step: 4, sounds: ['snare', 'hihat_closed'] },
+  { step: 8, sounds: ['snare', 'hihat_closed'] },
+];
+
+// ============================================================================
+// EXPORTED DRUM GROOVES LIST
+// ============================================================================
 
 export const DRUM_GROOVES: DrumGroove[] = [
   // ================= ROCK =================
@@ -62,47 +477,9 @@ export const DRUM_GROOVES: DrumGroove[] = [
     timeSignature: [4, 4],
     badge: 'Standard 4/4',
     description: 'The foundation of rock music: steady 8th-note hi-hat, punchy kick on 1 & 3, and crisp snare on 2 & 4.',
-    measures: [
-      {
-        id: 'm_rk1_1',
-        items: [
-          makeDrumNote('F', 4, 0.125), // Kick (1)
-          makeDrumNote('G', 5, 0.125), // Hat (&)
-          makeDrumNote('C', 5, 0.125), // Snare (2)
-          makeDrumNote('G', 5, 0.125), // Hat (&)
-          makeDrumNote('F', 4, 0.125), // Kick (3)
-          makeDrumNote('G', 5, 0.125), // Hat (&)
-          makeDrumNote('C', 5, 0.125), // Snare (4)
-          makeDrumNote('G', 5, 0.125), // Hat (&)
-        ],
-      },
-      {
-        id: 'm_rk1_2',
-        items: [
-          makeDrumNote('F', 4, 0.125), // Kick (1)
-          makeDrumNote('G', 5, 0.125), // Hat (&)
-          makeDrumNote('C', 5, 0.125), // Snare (2)
-          makeDrumNote('G', 5, 0.125), // Hat (&)
-          makeDrumNote('F', 4, 0.0625), // Double Kick (3)
-          makeDrumNote('F', 4, 0.0625), // Double Kick (e)
-          makeDrumNote('G', 5, 0.125), // Hat (&)
-          makeDrumNote('C', 5, 0.125), // Snare (4)
-          makeDrumNote('A', 5, 0.125), // Open Hat / Crash (&)
-        ],
-      },
-    ],
-    previewPattern: [
-      { step: 0, sounds: ['kick', 'hihat_closed'] },
-      { step: 2, sounds: ['hihat_closed'] },
-      { step: 4, sounds: ['snare', 'hihat_closed'] },
-      { step: 6, sounds: ['hihat_closed'] },
-      { step: 8, sounds: ['kick', 'hihat_closed'] },
-      { step: 10, sounds: ['hihat_closed'] },
-      { step: 12, sounds: ['snare', 'hihat_closed'] },
-      { step: 14, sounds: ['hihat_closed'] },
-    ],
+    measures: patternsToMeasures([rockClassicPattern1, rockClassicPattern2], [4, 4], 'rk1'),
+    previewPattern: rockClassicPattern1,
   },
-
   {
     id: 'rock_hard_driving',
     name: 'Hard Rock Driving Beat',
@@ -111,208 +488,30 @@ export const DRUM_GROOVES: DrumGroove[] = [
     timeSignature: [4, 4],
     badge: 'Heavy Energy',
     description: 'Driving four-on-the-floor kick, accented backbeat snare on 2 & 4, and heavy ride cymbal eighths.',
-    measures: [
-      {
-        id: 'm_rkh_1',
-        items: [
-          makeDrumNote('F', 4, 0.125), // Kick (1)
-          makeDrumNote('F', 5, 0.125), // Ride (&)
-          makeDrumNote('C', 5, 0.125), // Snare (2)
-          makeDrumNote('F', 5, 0.125), // Ride (&)
-          makeDrumNote('F', 4, 0.125), // Kick (3)
-          makeDrumNote('F', 5, 0.125), // Ride (&)
-          makeDrumNote('C', 5, 0.125), // Snare (4)
-          makeDrumNote('A', 5, 0.125), // Crash (&)
-        ],
-      },
-    ],
-    previewPattern: [
-      { step: 0, sounds: ['kick', 'ride', 'crash'] },
-      { step: 2, sounds: ['ride'] },
-      { step: 4, sounds: ['kick', 'snare', 'ride'] },
-      { step: 6, sounds: ['ride'] },
-      { step: 8, sounds: ['kick', 'ride'] },
-      { step: 10, sounds: ['ride'] },
-      { step: 12, sounds: ['kick', 'snare', 'ride'] },
-      { step: 14, sounds: ['ride', 'hihat_open'] },
-    ],
+    measures: patternsToMeasures([rockHardPattern], [4, 4], 'rkh'),
+    previewPattern: rockHardPattern,
   },
-
-  // ================= JAZZ =================
   {
-    id: 'jazz_swing_classic',
-    name: 'Traditional Jazz Swing',
-    style: 'Jazz',
-    tempo: 124,
+    id: 'rock_punk_fast',
+    name: 'Fast Punk Rock (Straight 8ths)',
+    style: 'Rock',
+    tempo: 165,
     timeSignature: [4, 4],
-    badge: 'Swing Feel',
-    description: 'Iconic jazz ride cymbal spang-a-lang pattern with snappy hi-hat foot chicks on beats 2 & 4.',
-    measures: [
-      {
-        id: 'm_jz1_1',
-        items: [
-          makeDrumNote('F', 5, 0.25),  // Ride (1)
-          makeDrumNote('G', 5, 0.125), // Hi-hat foot chick (2)
-          makeDrumNote('F', 5, 0.125), // Ride swing (&)
-          makeDrumNote('F', 5, 0.25),  // Ride (3)
-          makeDrumNote('G', 5, 0.125), // Hi-hat foot chick (4)
-          makeDrumNote('F', 5, 0.125), // Ride swing (&)
-        ],
-      },
-      {
-        id: 'm_jz1_2',
-        items: [
-          makeDrumNote('F', 5, 0.25),  // Ride (1)
-          makeDrumNote('C', 5, 0.125), // Snare comp (2)
-          makeDrumNote('F', 5, 0.125), // Ride swing (&)
-          makeDrumNote('F', 5, 0.25),  // Ride (3)
-          makeDrumNote('G', 5, 0.125), // Hi-hat chick (4)
-          makeDrumNote('F', 5, 0.125), // Ride swing (&)
-        ],
-      },
-    ],
-    previewPattern: [
-      { step: 0, sounds: ['ride', 'kick'] },
-      { step: 4, sounds: ['ride', 'hihat_closed'] },
-      { step: 6, sounds: ['ride'] },
-      { step: 8, sounds: ['ride'] },
-      { step: 12, sounds: ['ride', 'hihat_closed'] },
-      { step: 14, sounds: ['ride'] },
-    ],
+    badge: 'High Octane',
+    description: 'High-speed punk energy with open hi-hat sizzle, frantic driving kick drum, and cracking snare accents.',
+    measures: patternsToMeasures([rockPunkPattern], [4, 4], 'rkp'),
+    previewPattern: rockPunkPattern,
   },
-
   {
-    id: 'jazz_bebop_fast',
-    name: 'Upbeat Bebop Swing',
-    style: 'Jazz',
-    tempo: 160,
+    id: 'rock_grunge_alt',
+    name: '90s Grunge & Alternative Rock',
+    style: 'Rock',
+    tempo: 104,
     timeSignature: [4, 4],
-    badge: 'Fast Tempo',
-    description: 'Fast, articulate ride cymbal work with syncopated snare feathering and walking pulse.',
-    measures: [
-      {
-        id: 'm_jzb_1',
-        items: [
-          makeDrumNote('F', 5, 0.25),  // Ride
-          makeDrumNote('C', 5, 0.125), // Snare syncopation
-          makeDrumNote('F', 5, 0.125), // Ride
-          makeDrumNote('F', 4, 0.25),  // Kick
-          makeDrumNote('G', 5, 0.125), // Hi-hat foot
-          makeDrumNote('F', 5, 0.125), // Ride
-        ],
-      },
-    ],
-    previewPattern: [
-      { step: 0, sounds: ['ride', 'kick'] },
-      { step: 4, sounds: ['ride', 'hihat_closed', 'snare'] },
-      { step: 6, sounds: ['ride'] },
-      { step: 8, sounds: ['ride', 'kick'] },
-      { step: 10, sounds: ['snare'] },
-      { step: 12, sounds: ['ride', 'hihat_closed'] },
-      { step: 14, sounds: ['ride'] },
-    ],
-  },
-
-  // ================= FOLK =================
-  {
-    id: 'folk_train_beat',
-    name: 'Folk & Country Train Beat',
-    style: 'Folk',
-    tempo: 112,
-    timeSignature: [4, 4],
-    badge: 'Americana',
-    description: 'Fast, chugging snare train rhythm with accents on 2 & 4, supported by an alternating bass drum pulse.',
-    measures: [
-      {
-        id: 'm_fk1_1',
-        items: [
-          makeDrumNote('F', 4, 0.125), // Kick (1)
-          makeDrumNote('C', 5, 0.0625), // Snare chug (e)
-          makeDrumNote('C', 5, 0.0625), // Snare chug (&)
-          makeDrumNote('C', 5, 0.125), // Snare Accent (2)
-          makeDrumNote('C', 5, 0.125), // Snare chug (&)
-          makeDrumNote('F', 4, 0.125), // Kick (3)
-          makeDrumNote('C', 5, 0.0625), // Snare chug (e)
-          makeDrumNote('C', 5, 0.0625), // Snare chug (&)
-          makeDrumNote('C', 5, 0.125), // Snare Accent (4)
-          makeDrumNote('G', 5, 0.125), // Hat (&)
-        ],
-      },
-    ],
-    previewPattern: [
-      { step: 0, sounds: ['kick', 'snare'] },
-      { step: 1, sounds: ['snare'] },
-      { step: 2, sounds: ['snare'] },
-      { step: 3, sounds: ['snare'] },
-      { step: 4, sounds: ['snare', 'rimshot'] }, // Accent
-      { step: 5, sounds: ['snare'] },
-      { step: 6, sounds: ['snare'] },
-      { step: 7, sounds: ['snare'] },
-      { step: 8, sounds: ['kick', 'snare'] },
-      { step: 9, sounds: ['snare'] },
-      { step: 10, sounds: ['snare'] },
-      { step: 11, sounds: ['snare'] },
-      { step: 12, sounds: ['snare', 'rimshot'] }, // Accent
-      { step: 13, sounds: ['snare'] },
-      { step: 14, sounds: ['snare', 'hihat_closed'] },
-      { step: 15, sounds: ['snare'] },
-    ],
-  },
-
-  {
-    id: 'folk_stomp_clap',
-    name: 'Acoustic Stomp & Handclap',
-    style: 'Folk',
-    tempo: 100,
-    timeSignature: [4, 4],
-    badge: 'Acoustic Roots',
-    description: 'Resonant bass drum foot stomp on 1 & 3 with handclaps / rimshots on 2 & 4 and shaker pulse.',
-    measures: [
-      {
-        id: 'm_fks_1',
-        items: [
-          makeDrumNote('F', 4, 0.25),  // Stomp Kick (1)
-          makeDrumNote('E', 5, 0.25),  // Handclap / Rimshot (2)
-          makeDrumNote('F', 4, 0.25),  // Stomp Kick (3)
-          makeDrumNote('E', 5, 0.25),  // Handclap / Rimshot (4)
-        ],
-      },
-    ],
-    previewPattern: [
-      { step: 0, sounds: ['kick', 'shaker'] },
-      { step: 2, sounds: ['shaker'] },
-      { step: 4, sounds: ['rimshot', 'snare', 'shaker'] },
-      { step: 6, sounds: ['shaker'] },
-      { step: 8, sounds: ['kick', 'shaker'] },
-      { step: 10, sounds: ['shaker'] },
-      { step: 12, sounds: ['rimshot', 'snare', 'shaker'] },
-      { step: 14, sounds: ['shaker'] },
-    ],
-  },
-
-  {
-    id: 'folk_waltz_34',
-    name: 'Folk Waltz in 3/4',
-    style: 'Folk',
-    tempo: 96,
-    timeSignature: [3, 4],
-    badge: '3/4 Waltz',
-    description: 'Classic 3/4 oom-pah-pah waltz pulse with bass drum on 1 and light brushed snare on 2 and 3.',
-    measures: [
-      {
-        id: 'm_fkw_1',
-        items: [
-          makeDrumNote('F', 4, 0.25), // Beat 1: Kick
-          makeDrumNote('C', 5, 0.25), // Beat 2: Snare brush
-          makeDrumNote('C', 5, 0.25), // Beat 3: Snare brush
-        ],
-      },
-    ],
-    previewPattern: [
-      { step: 0, sounds: ['kick', 'hihat_closed'] },
-      { step: 4, sounds: ['snare', 'hihat_closed'] },
-      { step: 8, sounds: ['snare', 'hihat_closed'] },
-    ],
+    badge: 'Alternative',
+    description: 'Heavy syncopated grunge groove with deep pocket kick, gritty snare crack, and dynamic tom accents.',
+    measures: patternsToMeasures([rockGrungePattern], [4, 4], 'rkg'),
+    previewPattern: rockGrungePattern,
   },
 
   // ================= POP =================
@@ -324,71 +523,147 @@ export const DRUM_GROOVES: DrumGroove[] = [
     timeSignature: [4, 4],
     badge: 'Dance Hit',
     description: 'Pumping bass drum on every beat (1, 2, 3, 4), snappy snare on 2 & 4, and offbeat open hi-hat sizzle.',
-    measures: [
-      {
-        id: 'm_pp1_1',
-        items: [
-          makeDrumNote('F', 4, 0.125), // Kick (1)
-          makeDrumNote('A', 5, 0.125), // Open Hat (&)
-          makeDrumNote('C', 5, 0.125), // Snare + Kick (2)
-          makeDrumNote('A', 5, 0.125), // Open Hat (&)
-          makeDrumNote('F', 4, 0.125), // Kick (3)
-          makeDrumNote('A', 5, 0.125), // Open Hat (&)
-          makeDrumNote('C', 5, 0.125), // Snare + Kick (4)
-          makeDrumNote('A', 5, 0.125), // Open Hat (&)
-        ],
-      },
-    ],
-    previewPattern: [
-      { step: 0, sounds: ['kick', 'hihat_closed'] },
-      { step: 2, sounds: ['hihat_open'] },
-      { step: 4, sounds: ['kick', 'snare', 'hihat_closed'] },
-      { step: 6, sounds: ['hihat_open'] },
-      { step: 8, sounds: ['kick', 'hihat_closed'] },
-      { step: 10, sounds: ['hihat_open'] },
-      { step: 12, sounds: ['kick', 'snare', 'hihat_closed'] },
-      { step: 14, sounds: ['hihat_open'] },
-    ],
+    measures: patternsToMeasures([popFourOnFloorPattern], [4, 4], 'pp1'),
+    previewPattern: popFourOnFloorPattern,
   },
-
   {
     id: 'pop_trap_hiphop',
-    name: 'Modern Trap & Hip-Hop Beat',
+    name: 'Modern Trap & Hip-Hop 808',
     style: 'Pop',
     tempo: 88,
     timeSignature: [4, 4],
     badge: 'Boom-Bap / Trap',
-    description: 'Heavy syncopated sub-kick, crisp snappy snare on beat 3, and rolling 16th hi-hat textures.',
-    measures: [
-      {
-        id: 'm_ppt_1',
-        items: [
-          makeDrumNote('F', 4, 0.125), // Kick (1)
-          makeDrumNote('G', 5, 0.125), // Hat (&)
-          makeDrumRest(0.125),         // Rest (2)
-          makeDrumNote('F', 4, 0.125), // Syncopated Kick (&)
-          makeDrumNote('C', 5, 0.25),  // Snare on 3
-          makeDrumNote('G', 5, 0.0625),// Fast hat
-          makeDrumNote('G', 5, 0.0625),// Fast hat
-          makeDrumNote('G', 5, 0.125), // Hat (&)
-        ],
-      },
-    ],
-    previewPattern: [
-      { step: 0, sounds: ['kick', 'hihat_closed'] },
-      { step: 2, sounds: ['hihat_closed'] },
-      { step: 4, sounds: ['hihat_closed'] },
-      { step: 6, sounds: ['kick', 'hihat_closed'] },
-      { step: 8, sounds: ['snare', 'hihat_closed'] },
-      { step: 10, sounds: ['hihat_closed'] },
-      { step: 12, sounds: ['hihat_closed'] },
-      { step: 13, sounds: ['hihat_closed'] },
-      { step: 14, sounds: ['hihat_closed'] },
-      { step: 15, sounds: ['hihat_closed'] },
-    ],
+    description: 'Heavy syncopated sub-kick, crisp snappy snare on beat 3, and rapid rolling 16th hi-hat textures.',
+    measures: patternsToMeasures([popTrapPattern], [4, 4], 'ppt'),
+    previewPattern: popTrapPattern,
+  },
+  {
+    id: 'pop_synthwave_80s',
+    name: '80s Retro Synthwave / Synthpop',
+    style: 'Pop',
+    tempo: 118,
+    timeSignature: [4, 4],
+    badge: 'Retro Neon',
+    description: 'Punchy gated electro kicks, huge backbeat snare claps, and steady rhythmic hats reminiscent of iconic 80s hits.',
+    measures: patternsToMeasures([popSynthwavePattern], [4, 4], 'pps'),
+    previewPattern: popSynthwavePattern,
+  },
+  {
+    id: 'pop_rnb_slow_groove',
+    name: 'R&B / Soul Slow Jam (6/8 Ballad)',
+    style: 'Pop',
+    tempo: 75,
+    timeSignature: [4, 4],
+    badge: 'Slow Dance',
+    description: 'Lush, emotional slow dance pocket groove featuring soft feathering bass, brushed snare, and sparkling cymbals.',
+    measures: patternsToMeasures([popSlowJamPattern], [4, 4], 'ppj'),
+    previewPattern: popSlowJamPattern,
   },
 
-  // ================= LATIN =================
+  // ================= INDIE =================
+  {
+    id: 'indie_folk_stomp_clap',
+    name: 'Acoustic Stomp & Handclap',
+    style: 'Indie',
+    tempo: 100,
+    timeSignature: [4, 4],
+    badge: 'Acoustic Roots',
+    description: 'Resonant bass drum foot stomp on 1 & 3 with handclaps / rimshots on 2 & 4 and continuous shaker pulse.',
+    measures: patternsToMeasures([indieFolkStompPattern], [4, 4], 'fks'),
+    previewPattern: indieFolkStompPattern,
+  },
+  {
+    id: 'indie_pop_disco',
+    name: 'Indie Pop Dance Beat',
+    style: 'Indie',
+    tempo: 114,
+    timeSignature: [4, 4],
+    badge: 'Festival Anthem',
+    description: 'Catchy festival indie dance groove combining four-on-the-floor kick, bouncy offbeat hats, and continuous shaker.',
+    measures: patternsToMeasures([indiePopDiscoPattern], [4, 4], 'ipd'),
+    previewPattern: indiePopDiscoPattern,
+  },
+  {
+    id: 'indie_garage_rock',
+    name: 'Garage Rock Driving Beat',
+    style: 'Indie',
+    tempo: 128,
+    timeSignature: [4, 4],
+    badge: 'Lo-Fi Rock',
+    description: 'Raw, punchy indie garage rock groove with tight closed hats and sudden syncopated tom-snare push.',
+    measures: patternsToMeasures([indieGaragePattern], [4, 4], 'igr'),
+    previewPattern: indieGaragePattern,
+  },
+  {
+    id: 'indie_chill_hop',
+    name: 'Lo-Fi Indie Chill Hop',
+    style: 'Indie',
+    tempo: 82,
+    timeSignature: [4, 4],
+    badge: 'Chill Beats',
+    description: 'Laid-back boom-bap swing featuring a relaxed sub kick, wooden rimshot backbeat, and cozy vinyl shaker pulse.',
+    measures: patternsToMeasures([indieChillHopPattern], [4, 4], 'ich'),
+    previewPattern: indieChillHopPattern,
+  },
+
+  // ================= JAZZ =================
+  {
+    id: 'jazz_swing_classic',
+    name: 'Traditional Jazz Swing',
+    style: 'Jazz',
+    tempo: 124,
+    timeSignature: [4, 4],
+    badge: 'Swing Feel',
+    description: 'Iconic jazz ride cymbal spang-a-lang pattern with snappy hi-hat foot chicks on beats 2 & 4.',
+    measures: patternsToMeasures([jazzSwingPattern1, jazzSwingPattern2], [4, 4], 'jz1'),
+    previewPattern: jazzSwingPattern1,
+  },
+  {
+    id: 'jazz_bebop_fast',
+    name: 'Upbeat Bebop Swing',
+    style: 'Jazz',
+    tempo: 160,
+    timeSignature: [4, 4],
+    badge: 'Fast Tempo',
+    description: 'Fast, articulate ride cymbal work with syncopated snare feathering and walking pulse.',
+    measures: patternsToMeasures([jazzBebopPattern], [4, 4], 'jzb'),
+    previewPattern: jazzBebopPattern,
+  },
+  {
+    id: 'jazz_brush_ballad',
+    name: 'Smoky Jazz Ballad (Brushes)',
+    style: 'Jazz',
+    tempo: 68,
+    timeSignature: [4, 4],
+    badge: 'Late Night',
+    description: 'Gentle brushed snare swishes on 2 & 4, soft acoustic kick feathering, and delicate ride cymbal warmth.',
+    measures: patternsToMeasures([jazzBalladPattern], [4, 4], 'jba'),
+    previewPattern: jazzBalladPattern,
+  },
+  {
+    id: 'jazz_funk_boogaloo',
+    name: 'New Orleans Jazz-Funk / Boogaloo',
+    style: 'Jazz',
+    tempo: 108,
+    timeSignature: [4, 4],
+    badge: 'Boogaloo Pocket',
+    description: 'Super funky syncopated New Orleans second-line rhythm with crisp rimshots and cowbell syncopation.',
+    measures: patternsToMeasures([jazzFunkBoogalooPattern], [4, 4], 'jfb'),
+    previewPattern: jazzFunkBoogalooPattern,
+  },
+
+  // ================= WORLD & LATIN =================
+  {
+    id: 'world_reggae_one_drop',
+    name: 'Reggae One Drop',
+    style: 'World',
+    tempo: 78,
+    timeSignature: [4, 4],
+    badge: 'Jamaican Roots',
+    description: 'Classic Kingston one-drop groove: beat 1 is dropped silent, while kick and rimshot crack together on beat 3.',
+    measures: patternsToMeasures([worldReggaePattern], [4, 4], 'wro'),
+    previewPattern: worldReggaePattern,
+  },
   {
     id: 'latin_bossa_nova',
     name: 'Bossa Nova Groove',
@@ -397,33 +672,9 @@ export const DRUM_GROOVES: DrumGroove[] = [
     timeSignature: [4, 4],
     badge: 'Brazilian',
     description: 'Delicate cross-stick rimshot pattern with syncopated bass drum pulse and smooth ride/shaker 8ths.',
-    measures: [
-      {
-        id: 'm_ltb_1',
-        items: [
-          makeDrumNote('E', 5, 0.125), // Rimshot (1)
-          makeDrumNote('G', 5, 0.125), // Shaker (&)
-          makeDrumRest(0.125),         // Rest (2)
-          makeDrumNote('E', 5, 0.125), // Rimshot (&)
-          makeDrumRest(0.125),         // Rest (3)
-          makeDrumNote('E', 5, 0.125), // Rimshot (&)
-          makeDrumNote('F', 4, 0.125), // Kick (4)
-          makeDrumNote('G', 5, 0.125), // Shaker (&)
-        ],
-      },
-    ],
-    previewPattern: [
-      { step: 0, sounds: ['rimshot', 'kick', 'hihat_closed'] },
-      { step: 2, sounds: ['hihat_closed'] },
-      { step: 4, sounds: ['hihat_closed'] },
-      { step: 6, sounds: ['rimshot', 'kick', 'hihat_closed'] },
-      { step: 8, sounds: ['hihat_closed'] },
-      { step: 10, sounds: ['rimshot', 'hihat_closed'] },
-      { step: 12, sounds: ['kick', 'hihat_closed'] },
-      { step: 14, sounds: ['rimshot', 'hihat_closed'] },
-    ],
+    measures: patternsToMeasures([latinBossaPattern], [4, 4], 'ltb'),
+    previewPattern: latinBossaPattern,
   },
-
   {
     id: 'latin_chachacha',
     name: 'Cha-Cha-Cha & Conga',
@@ -432,28 +683,9 @@ export const DRUM_GROOVES: DrumGroove[] = [
     timeSignature: [4, 4],
     badge: 'Afro-Cuban',
     description: 'Iconic cowbell rhythm with syncopated conga slaps and tumbao defining classic Latin ballroom cadence.',
-    measures: [
-      {
-        id: 'm_ltc_1',
-        items: [
-          makeDrumNote('F', 5, 0.25),  // Cowbell (1)
-          makeDrumNote('F', 5, 0.25),  // Cowbell (2)
-          makeDrumNote('F', 5, 0.125), // Cowbell (3)
-          makeDrumNote('F', 5, 0.125), // Cowbell (&)
-          makeDrumNote('F', 5, 0.25),  // Cowbell (4)
-        ],
-      },
-    ],
-    previewPattern: [
-      { step: 0, sounds: ['cowbell', 'conga_open', 'kick'] },
-      { step: 4, sounds: ['cowbell', 'conga_slap'] },
-      { step: 8, sounds: ['cowbell', 'conga_open'] },
-      { step: 10, sounds: ['cowbell', 'conga_open'] },
-      { step: 12, sounds: ['cowbell', 'conga_slap'] },
-      { step: 14, sounds: ['conga_open'] },
-    ],
+    measures: patternsToMeasures([latinChaChaPattern], [4, 4], 'ltc'),
+    previewPattern: latinChaChaPattern,
   },
-
   {
     id: 'latin_salsa_clave',
     name: 'Salsa (2-3 Son Clave)',
@@ -461,39 +693,21 @@ export const DRUM_GROOVES: DrumGroove[] = [
     tempo: 160,
     timeSignature: [4, 4],
     badge: 'Son Clave',
-    description: 'Essential 2-3 Son Clave rhythm on woodblock/rim with driving conga slaps and timbales cascara.',
-    measures: [
-      {
-        id: 'm_lts_1',
-        items: [
-          makeDrumRest(0.25),          // (1)
-          makeDrumNote('E', 5, 0.25),  // Clave on 2
-          makeDrumNote('E', 5, 0.25),  // Clave on 3
-          makeDrumRest(0.25),          // (4)
-        ],
-      },
-      {
-        id: 'm_lts_2',
-        items: [
-          makeDrumNote('E', 5, 0.125), // Clave on 1
-          makeDrumRest(0.125),
-          makeDrumRest(0.125),
-          makeDrumNote('E', 5, 0.125), // Clave on 2&
-          makeDrumRest(0.25),
-          makeDrumNote('E', 5, 0.25),  // Clave on 4
-        ],
-      },
-    ],
-    previewPattern: [
-      // Measure 1 (2 side of clave)
-      { step: 0, sounds: ['hihat_closed', 'conga_open'] },
-      { step: 4, sounds: ['rimshot', 'hihat_closed', 'conga_slap'] }, // Clave 2
-      { step: 8, sounds: ['rimshot', 'hihat_closed', 'conga_open'] }, // Clave 3
-      { step: 12, sounds: ['hihat_closed', 'conga_slap'] },
-    ],
+    description: 'Essential 2-3 Son Clave rhythm on rimshot with driving conga slaps and steady open tones.',
+    measures: patternsToMeasures([latinSalsaPattern1, latinSalsaPattern2], [4, 4], 'lts'),
+    previewPattern: latinSalsaPattern1,
   },
-
-  // ================= AFRICAN =================
+  {
+    id: 'world_cumbia',
+    name: 'Latin Cumbia Groove',
+    style: 'World',
+    tempo: 96,
+    timeSignature: [4, 4],
+    badge: 'Colombian',
+    description: 'Hypnotic Colombian cumbia groove with continuous 8th-note shaker pulse, syncopated conga slaps, and cowbell.',
+    measures: patternsToMeasures([worldCumbiaPattern], [4, 4], 'wcu'),
+    previewPattern: worldCumbiaPattern,
+  },
   {
     id: 'african_afrobeat',
     name: 'Afrobeat Polyrhythmic Groove',
@@ -502,46 +716,9 @@ export const DRUM_GROOVES: DrumGroove[] = [
     timeSignature: [4, 4],
     badge: 'Fela Kuti Style',
     description: 'High-energy West African Afrobeat with interlocking syncopated kick, sharp snare rimshot, and rapid shaker.',
-    measures: [
-      {
-        id: 'm_af1_1',
-        items: [
-          makeDrumNote('F', 4, 0.125), // Kick (1)
-          makeDrumNote('G', 5, 0.125), // Shaker (&)
-          makeDrumRest(0.125),         // (2)
-          makeDrumNote('F', 4, 0.125), // Kick (&)
-          makeDrumNote('E', 5, 0.125), // Rimshot (3)
-          makeDrumNote('G', 5, 0.125), // Shaker (&)
-          makeDrumRest(0.125),         // (4)
-          makeDrumNote('F', 4, 0.125), // Kick (&)
-        ],
-      },
-      {
-        id: 'm_af1_2',
-        items: [
-          makeDrumNote('E', 5, 0.125), // Rimshot (1)
-          makeDrumNote('G', 5, 0.125), // Shaker (&)
-          makeDrumNote('F', 4, 0.125), // Kick (2)
-          makeDrumNote('E', 5, 0.125), // Rimshot (&)
-          makeDrumNote('F', 4, 0.125), // Kick (3)
-          makeDrumNote('G', 5, 0.125), // Shaker (&)
-          makeDrumNote('C', 5, 0.125), // Snare (4)
-          makeDrumNote('A', 5, 0.125), // Open Hat (&)
-        ],
-      },
-    ],
-    previewPattern: [
-      { step: 0, sounds: ['kick', 'shaker'] },
-      { step: 2, sounds: ['shaker'] },
-      { step: 4, sounds: ['rimshot', 'shaker'] },
-      { step: 6, sounds: ['kick', 'shaker'] },
-      { step: 8, sounds: ['rimshot', 'shaker'] },
-      { step: 10, sounds: ['kick', 'shaker'] },
-      { step: 12, sounds: ['rimshot', 'shaker'] },
-      { step: 14, sounds: ['kick', 'hihat_open'] },
-    ],
+    measures: patternsToMeasures([africanAfrobeatPattern1], [4, 4], 'af1'),
+    previewPattern: africanAfrobeatPattern1,
   },
-
   {
     id: 'african_djembe_dunun',
     name: 'West African Djembe & Dunun',
@@ -550,33 +727,9 @@ export const DRUM_GROOVES: DrumGroove[] = [
     timeSignature: [4, 4],
     badge: 'Hand Percussion',
     description: 'Deep resonant Dunun bass pulses on 1 & 3 with crackling high Djembe slaps on 2 & 4 and iron bell ostinato.',
-    measures: [
-      {
-        id: 'm_afd_1',
-        items: [
-          makeDrumNote('F', 4, 0.125), // Low Dunun Bass (1)
-          makeDrumNote('F', 5, 0.125), // Bell (&)
-          makeDrumNote('C', 5, 0.125), // Djembe Slap (2)
-          makeDrumNote('F', 5, 0.125), // Bell (&)
-          makeDrumNote('F', 4, 0.125), // Low Dunun Bass (3)
-          makeDrumNote('F', 5, 0.125), // Bell (&)
-          makeDrumNote('C', 5, 0.125), // Djembe Slap (4)
-          makeDrumNote('E', 5, 0.125), // Djembe Tone (&)
-        ],
-      },
-    ],
-    previewPattern: [
-      { step: 0, sounds: ['conga_open', 'cowbell', 'kick'] },
-      { step: 2, sounds: ['cowbell'] },
-      { step: 4, sounds: ['conga_slap', 'cowbell'] },
-      { step: 6, sounds: ['cowbell'] },
-      { step: 8, sounds: ['conga_open', 'cowbell', 'kick'] },
-      { step: 10, sounds: ['cowbell', 'conga_open'] },
-      { step: 12, sounds: ['conga_slap', 'cowbell'] },
-      { step: 14, sounds: ['cowbell', 'conga_open'] },
-    ],
+    measures: patternsToMeasures([africanDjembePattern], [4, 4], 'afd'),
+    previewPattern: africanDjembePattern,
   },
-
   {
     id: 'african_highlife',
     name: 'West African Highlife',
@@ -585,28 +738,31 @@ export const DRUM_GROOVES: DrumGroove[] = [
     timeSignature: [4, 4],
     badge: 'Ghana & Nigeria',
     description: 'Bouncy Ghanaian highlife guitar-band groove with interlocking wooden claves, light snare, and syncopated kick.',
-    measures: [
-      {
-        id: 'm_afh_1',
-        items: [
-          makeDrumNote('F', 4, 0.25),  // Kick
-          makeDrumNote('E', 5, 0.125), // Clave rim
-          makeDrumNote('F', 4, 0.125), // Kick
-          makeDrumNote('E', 5, 0.125), // Clave rim
-          makeDrumNote('C', 5, 0.125), // Snare
-          makeDrumNote('G', 5, 0.25),  // Hat
-        ],
-      },
-    ],
-    previewPattern: [
-      { step: 0, sounds: ['kick', 'rimshot', 'hihat_closed'] },
-      { step: 3, sounds: ['rimshot'] },
-      { step: 4, sounds: ['hihat_closed'] },
-      { step: 6, sounds: ['kick', 'rimshot'] },
-      { step: 8, sounds: ['rimshot', 'hihat_closed'] },
-      { step: 10, sounds: ['snare'] },
-      { step: 12, sounds: ['rimshot', 'hihat_closed'] },
-      { step: 14, sounds: ['kick'] },
-    ],
+    measures: patternsToMeasures([africanHighlifePattern], [4, 4], 'afh'),
+    previewPattern: africanHighlifePattern,
+  },
+
+  // ================= FOLK =================
+  {
+    id: 'folk_train_beat',
+    name: 'Folk & Country Train Beat',
+    style: 'Folk',
+    tempo: 112,
+    timeSignature: [4, 4],
+    badge: 'Americana',
+    description: 'Fast, chugging snare train rhythm with accents on 2 & 4, supported by an alternating bass drum pulse.',
+    measures: patternsToMeasures([folkTrainPattern], [4, 4], 'fk1'),
+    previewPattern: folkTrainPattern,
+  },
+  {
+    id: 'folk_waltz_34',
+    name: 'Folk Waltz in 3/4',
+    style: 'Folk',
+    tempo: 96,
+    timeSignature: [3, 4],
+    badge: '3/4 Waltz',
+    description: 'Classic 3/4 oom-pah-pah waltz pulse with bass drum on 1 and light brushed snare on 2 and 3.',
+    measures: patternsToMeasures([folkWaltzPattern], [3, 4], 'fkw'),
+    previewPattern: folkWaltzPattern,
   },
 ];

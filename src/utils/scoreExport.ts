@@ -83,6 +83,7 @@ const GM_PROGRAM_MAP: Record<InstrumentId, number> = {
   congas: 117,
   djembe: 116,
   drum_kit: 0,
+  drum_808: 0,
   // Sound Effects
   sfx_applause: 126,
   sfx_laser: 127,
@@ -162,7 +163,7 @@ export function exportScoreToMidi(score: Score): void {
   // Instrument Tracks
   score.tracks.forEach((track, tIdx) => {
     if (track.muted) return;
-    const isDrum = track.instrumentId === 'drum_kit';
+    const isDrum = track.instrumentId === 'drum_kit' || track.instrumentId === 'drum_808';
     const channel = isDrum ? 9 : tIdx % 9; // Channel 10 (index 9) reserved for drums
     const program = GM_PROGRAM_MAP[track.instrumentId] ?? 0;
 
