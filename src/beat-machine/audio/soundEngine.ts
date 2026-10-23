@@ -33,6 +33,7 @@ class SoundEngine {
   // Real Studio Audio Buffer Cache (Acoustic Ludwig Kit, Roland TR-808, Mallets, Grand Piano, Rhodes)
   private sampleBufferCache = new Map<string, AudioBuffer>();
   private pendingSampleLoads = new Map<string, Promise<AudioBuffer | null>>();
+  private isPreloadingCore: boolean = false;
 
   private sampleUrlMap: Partial<Record<SoundType, string>> = {
     kick: '/audio/samples/drum_kit/kick.mp3',
@@ -65,7 +66,6 @@ class SoundEngine {
   };
 
   public async preloadSample(url: string): Promise<AudioBuffer | null> {
-    this.initContext();
     if (!this.ctx) return null;
     const existing = this.sampleBufferCache.get(url);
     if (existing) return existing;
@@ -77,10 +77,13 @@ class SoundEngine {
         const res = await fetch(url);
         if (!res.ok) return null;
         const arrayBuffer = await res.arrayBuffer();
-        const audioBuffer = await this.ctx!.decodeAudioData(arrayBuffer);
+        const audioBuffer = await new Promise<AudioBuffer>((resolve, reject) => {
+          this.ctx!.decodeAudioData(arrayBuffer, resolve, reject);
+        });
         this.sampleBufferCache.set(url, audioBuffer);
         return audioBuffer;
-      } catch {
+      } catch (err) {
+        console.warn('Failed to load sample:', url, err);
         return null;
       } finally {
         this.pendingSampleLoads.delete(url);
@@ -92,7 +95,8 @@ class SoundEngine {
   }
 
   public preloadAllCoreSamples() {
-    if (!this.ctx) return;
+    if (!this.ctx || this.isPreloadingCore) return;
+    this.isPreloadingCore = true;
     const urls = Array.from(new Set(Object.values(this.sampleUrlMap)));
     urls.forEach((url) => {
       if (url) void this.preloadSample(url);
@@ -188,12 +192,14 @@ class SoundEngine {
       } catch (err) {
         console.warn('MediaStreamDestination not supported', err);
       }
+
+      // Schedule background sample caching once without blocking context
+      setTimeout(() => this.preloadAllCoreSamples(), 50);
     }
 
-    if (this.ctx.state === 'suspended') {
+    if (this.ctx && this.ctx.state === 'suspended') {
       this.ctx.resume();
     }
-    this.preloadAllCoreSamples();
   }
 
   private makeDistortionCurve(amount: number = 25) {
