@@ -652,8 +652,13 @@ class SoundEngine {
     const acousticBuf = getAcousticDrumSample(ctx, sound, drumType);
     if (acousticBuf) {
       const src = ctx.createBufferSource();
-      src.buffer = acousticBuf;
-      outGain.gain.setValueAtTime(volume * 1.05, hitTime);
+      const soundGain =
+        sound === 'ride' && drumType === 'drum_jazz'
+          ? 0.72
+          : sound === 'ride'
+          ? 0.85
+          : 1.05;
+      outGain.gain.setValueAtTime(volume * soundGain, hitTime);
       src.connect(outGain);
       src.start(hitTime);
       return {
