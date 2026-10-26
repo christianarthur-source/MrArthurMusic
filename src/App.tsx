@@ -297,7 +297,7 @@ export default function App() {
   const [lastSavedTime, setLastSavedTime] = useState<string | null>('just now');
   const [midiDevices, setMidiDevices] = useState<MidiDeviceInfo[]>(() => webMidiService.getConnectedDevices());
 
-  // Secret "adminbaby" and "secretsauce" keyboard shortcut tracking (only active when Mr. Arthur's avatar is enlarged)
+  // Secret "adminbaby" and "secret" keyboard shortcut tracking (only active when Mr. Arthur's avatar is enlarged)
   const adminKeyBufferRef = useRef<string>('');
   const secretKeyBufferRef = useRef<string>('');
   const [isHalloweenTheme, setIsHalloweenTheme] = useState<boolean>(false);
@@ -1546,7 +1546,7 @@ export default function App() {
       // When Mr. Arthur's avatar popup is enlarged:
       // Keyboard input has NO effect on composition at all, but ONLY listens for secret shortcuts:
       // - "adminbaby" -> Teacher / Classroom Admin mode
-      // - "secretsauce" -> Secret Halloween Theme
+      // - "secret" -> Secret Halloween Theme
       if (isAvatarOpen) {
         e.preventDefault();
         e.stopPropagation();
@@ -1579,11 +1579,11 @@ export default function App() {
             adminKeyBufferRef.current = '';
           }
 
-          // 2. Check for "secretsauce"
-          const secretCand = (secretKeyBufferRef.current + ch).slice(-11);
-          if ('secretsauce'.startsWith(secretCand)) {
+          // 2. Check for "secret"
+          const secretCand = (secretKeyBufferRef.current + ch).slice(-6);
+          if ('secret'.startsWith(secretCand)) {
             secretKeyBufferRef.current = secretCand;
-            if (secretCand === 'secretsauce') {
+            if (secretCand === 'secret') {
               secretKeyBufferRef.current = '';
               adminKeyBufferRef.current = '';
               setIsAvatarOpen(false);
