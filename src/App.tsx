@@ -54,6 +54,7 @@ import { ClassroomModal } from './components/ClassroomModal';
 import { EdLawPrivacyModal } from './components/EdLawPrivacyModal';
 import { MusicLabLanding, MusicLabAppId } from './components/MusicLabLanding';
 import { ClassroomToolBoxModal, ToolId } from './components/tools/ClassroomToolBoxModal';
+import { HalloweenThemeOverlay } from './components/HalloweenThemeOverlay';
 import RhythmRockStarsApp from './rhythm-rockstars/RhythmRockStarsApp';
 import BeatMachineApp from './beat-machine/App';
 import { DawApp } from './daw/App';
@@ -296,8 +297,10 @@ export default function App() {
   const [lastSavedTime, setLastSavedTime] = useState<string | null>('just now');
   const [midiDevices, setMidiDevices] = useState<MidiDeviceInfo[]>(() => webMidiService.getConnectedDevices());
 
-  // Secret "adminbaby" keyboard shortcut tracking (only active when Mr. Arthur's avatar is enlarged)
+  // Secret "adminbaby" and "secretsauce" keyboard shortcut tracking (only active when Mr. Arthur's avatar is enlarged)
   const adminKeyBufferRef = useRef<string>('');
+  const secretKeyBufferRef = useRef<string>('');
+  const [isHalloweenTheme, setIsHalloweenTheme] = useState<boolean>(false);
 
   // Student Login & Teacher Project Editing State
   const [studentSession, setStudentSession] = useState<StudentSession | null>(() =>
@@ -1541,7 +1544,9 @@ export default function App() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // When Mr. Arthur's avatar popup is enlarged:
-      // Keyboard input has NO effect on composition at all, but ONLY listens for the secret "adminbaby" shortcut!
+      // Keyboard input has NO effect on composition at all, but ONLY listens for secret shortcuts:
+      // - "adminbaby" -> Teacher / Classroom Admin mode
+      // - "secretsauce" -> Secret Halloween Theme
       if (isAvatarOpen) {
         e.preventDefault();
         e.stopPropagation();
@@ -1549,24 +1554,47 @@ export default function App() {
         if (e.key === 'Escape') {
           setIsAvatarOpen(false);
           adminKeyBufferRef.current = '';
+          secretKeyBufferRef.current = '';
           return;
         }
 
         if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
           const ch = e.key.toLowerCase();
-          const candidate = (adminKeyBufferRef.current + ch).slice(-9);
-          if ('adminbaby'.startsWith(candidate)) {
-            adminKeyBufferRef.current = candidate;
-            if (candidate === 'adminbaby') {
+
+          // 1. Check for "adminbaby"
+          const adminCand = (adminKeyBufferRef.current + ch).slice(-9);
+          if ('adminbaby'.startsWith(adminCand)) {
+            adminKeyBufferRef.current = adminCand;
+            if (adminCand === 'adminbaby') {
               adminKeyBufferRef.current = '';
+              secretKeyBufferRef.current = '';
               setIsAvatarOpen(false);
               setOpenInTeacherMode(true);
               setIsClassroomModalOpen(true);
+              return;
             }
           } else if (ch === 'a') {
             adminKeyBufferRef.current = 'a';
           } else {
             adminKeyBufferRef.current = '';
+          }
+
+          // 2. Check for "secretsauce"
+          const secretCand = (secretKeyBufferRef.current + ch).slice(-11);
+          if ('secretsauce'.startsWith(secretCand)) {
+            secretKeyBufferRef.current = secretCand;
+            if (secretCand === 'secretsauce') {
+              secretKeyBufferRef.current = '';
+              adminKeyBufferRef.current = '';
+              setIsAvatarOpen(false);
+              setIsHalloweenTheme(true);
+              soundEngine.playWelcomeChime();
+              return;
+            }
+          } else if (ch === 's') {
+            secretKeyBufferRef.current = 's';
+          } else {
+            secretKeyBufferRef.current = '';
           }
         }
         return; // Completely suppress all composition keystrokes while avatar is enlarged!
@@ -2140,6 +2168,7 @@ export default function App() {
           onClick={() => {
             setIsAvatarOpen(false);
             adminKeyBufferRef.current = '';
+            secretKeyBufferRef.current = '';
           }}
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-xs animate-in fade-in duration-150 cursor-pointer"
         >
@@ -2393,7 +2422,9 @@ export default function App() {
     <div
       className={`${
         isFullScreen ? 'fixed inset-0 z-50' : 'min-h-screen'
-      } bg-[#0B0F19] flex flex-col font-sans select-none text-slate-100`}
+      } bg-[#0B0F19] flex flex-col font-sans select-none text-slate-100 ${
+        isHalloweenTheme ? 'halloween-theme' : ''
+      }`}
     >
       <input
         type="file"
@@ -2508,6 +2539,7 @@ export default function App() {
           onCloseAvatar={() => {
             setIsAvatarOpen(false);
             adminKeyBufferRef.current = '';
+            secretKeyBufferRef.current = '';
           }}
           onExportPdf={() => exportScoreToPdf(score)}
           onExportWav={() => soundEngine.exportWav(score)}
@@ -2518,6 +2550,7 @@ export default function App() {
           onOpenHelp={() => setIsHelpModalOpen(true)}
           midiDevices={midiDevices}
           onInitMidi={() => webMidiService.init()}
+          isHalloweenTheme={isHalloweenTheme}
         />
       )}
 
@@ -3013,6 +3046,10 @@ export default function App() {
         shareUrl={shareUrl}
         isLoading={isGeneratingShareLink}
       />
+
+      {isHalloweenTheme && currentApp === 'staff-composer' && (
+        <HalloweenThemeOverlay onClose={() => setIsHalloweenTheme(false)} />
+      )}
 
       {renderSharedAuthAndModals()}
     </div>

@@ -6,6 +6,28 @@
   }
 }
 
+/* Secret Halloween Theme Styling */
+.halloween-theme {
+  --halloween-orange: #f97316;
+  --halloween-purple: #9333ea;
+  --halloween-green: #84cc16;
+}
+
+.halloween-theme #staff-composer-main-scroll {
+  background: radial-gradient(circle at 50% 10%, #2e1065 0%, #0f051d 45%, #05020a 100%) !important;
+}
+
+.halloween-theme header {
+  background: linear-gradient(90deg, #180828 0%, #2e1065 50%, #180828 100%) !important;
+  border-bottom-color: rgba(249, 115, 22, 0.4) !important;
+}
+
+.halloween-theme #staff-composer-scroll-container {
+  background-color: #fffdf5 !important;
+  border: 3px solid rgba(249, 115, 22, 0.5) !important;
+  box-shadow: 0 0 35px rgba(249, 115, 22, 0.25), 0 25px 50px -12px rgba(0, 0, 0, 0.7) !important;
+}
+
 @media print {
   @page {
     size: landscape;
