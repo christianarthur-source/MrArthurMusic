@@ -14,7 +14,7 @@
 }
 
 .halloween-theme #staff-composer-main-scroll {
-  background: radial-gradient(circle at 50% 10%, #2e1065 0%, #0f051d 45%, #05020a 100%) !important;
+  background: radial-gradient(circle at 50% 10%, #230847 0%, #0c0217 50%, #030008 100%) !important;
 }
 
 .halloween-theme header {
@@ -22,10 +22,77 @@
   border-bottom-color: rgba(249, 115, 22, 0.4) !important;
 }
 
+/* Invert staff score: Pitch Black background with crisp White notes, lines, clefs, and symbols */
 .halloween-theme #staff-composer-scroll-container {
-  background-color: #fffdf5 !important;
-  border: 3px solid rgba(249, 115, 22, 0.5) !important;
-  box-shadow: 0 0 35px rgba(249, 115, 22, 0.25), 0 25px 50px -12px rgba(0, 0, 0, 0.7) !important;
+  background-color: #0b0c10 !important;
+  color: #f8fafc !important;
+  border: 3px solid rgba(249, 115, 22, 0.65) !important;
+  box-shadow: 0 0 45px rgba(249, 115, 22, 0.3), 0 0 20px rgba(168, 85, 247, 0.25), 0 25px 50px -12px rgba(0, 0, 0, 0.9) !important;
+}
+
+/* Staff lines & barlines inversion */
+.halloween-theme #staff-composer-score-svg line {
+  stroke: #e2e8f0;
+}
+.halloween-theme #staff-composer-score-svg line[stroke="#94A3B8"],
+.halloween-theme #staff-composer-score-svg line[stroke="#64748B"],
+.halloween-theme #staff-composer-score-svg line[stroke="#334155"],
+.halloween-theme #staff-composer-score-svg line[stroke="#0F172A"] {
+  stroke: #cbd5e1 !important;
+}
+
+/* Noteheads, dots, stems, beams & clefs inversion: black fills and strokes become white */
+.halloween-theme #staff-composer-score-svg path[fill="#0F172A"],
+.halloween-theme #staff-composer-score-svg path[fill="#000000"],
+.halloween-theme #staff-composer-score-svg path[fill="#1E293B"],
+.halloween-theme #staff-composer-score-svg path[fill="#020617"],
+.halloween-theme #staff-composer-score-svg path[fill="#334155"] {
+  fill: #ffffff !important;
+}
+.halloween-theme #staff-composer-score-svg polygon[fill="#0F172A"],
+.halloween-theme #staff-composer-score-svg polygon[fill="#000000"] {
+  fill: #ffffff !important;
+}
+.halloween-theme #staff-composer-score-svg circle[fill="#0F172A"],
+.halloween-theme #staff-composer-score-svg circle[fill="#000000"],
+.halloween-theme #staff-composer-score-svg circle[fill="#1E293B"],
+.halloween-theme #staff-composer-score-svg circle[fill="#020617"],
+.halloween-theme #staff-composer-score-svg circle[fill="#334155"] {
+  fill: #ffffff !important;
+}
+.halloween-theme #staff-composer-score-svg ellipse[fill="#0F172A"],
+.halloween-theme #staff-composer-score-svg ellipse[fill="#000000"],
+.halloween-theme #staff-composer-score-svg ellipse[fill="#1E293B"],
+.halloween-theme #staff-composer-score-svg ellipse[fill="#020617"],
+.halloween-theme #staff-composer-score-svg ellipse[fill="#334155"] {
+  fill: #ffffff !important;
+}
+/* Half and whole note open notehead strokes */
+.halloween-theme #staff-composer-score-svg ellipse[stroke="#0F172A"],
+.halloween-theme #staff-composer-score-svg ellipse[stroke="#000000"],
+.halloween-theme #staff-composer-score-svg ellipse[stroke="#334155"] {
+  stroke: #ffffff !important;
+}
+.halloween-theme #staff-composer-score-svg circle[stroke="#0F172A"],
+.halloween-theme #staff-composer-score-svg circle[stroke="#000000"] {
+  stroke: #ffffff !important;
+}
+
+/* Time signature, Clef numbers, Text typography */
+.halloween-theme #staff-composer-score-svg text {
+  fill: #f8fafc;
+}
+.halloween-theme #staff-composer-score-svg text[fill="#64748B"],
+.halloween-theme #staff-composer-score-svg text[fill="#94A3B8"] {
+  fill: #fb923c !important;
+}
+.halloween-theme #staff-composer-score-svg text[fill="#0F172A"] {
+  fill: #fed7aa !important;
+}
+/* Pitch name label outline on notes */
+.halloween-theme #staff-composer-score-svg text[stroke="#FFFFFF"] {
+  stroke: #090a0f !important;
+  fill: #facc15 !important;
 }
 
 @media print {
