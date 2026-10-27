@@ -439,6 +439,12 @@ export default function App() {
             setHistoryIndex(0);
           }
           if (data.uiMode) setUiMode(data.uiMode);
+          if (data.isBigStaff !== undefined) {
+            setIsBigStaff(Boolean(data.isBigStaff));
+            if (data.isBigStaff) {
+              setBigStaffMeasureIndex(0);
+            }
+          }
           if (data.viewLayout) setViewLayout(data.viewLayout);
           if (data.noteLabelMode) {
             setNoteLabelMode(data.noteLabelMode);
@@ -510,6 +516,7 @@ export default function App() {
     const shareData = {
       score,
       uiMode,
+      isBigStaff,
       viewLayout,
       noteLabelMode,
       showPitchNames,
@@ -528,7 +535,8 @@ export default function App() {
       console.error('Failed to generate fallback share link', e);
     }
 
-    setShareUrl(fallbackUrl);
+    // Do NOT set long fallbackUrl initially so the user is never exposed to giant URLs while short link generates
+    setShareUrl('');
     setIsShareModalOpen(true);
     setIsGeneratingShareLink(true);
 
@@ -538,17 +546,19 @@ export default function App() {
         setShareUrl(res.shortUrl);
         navigator.clipboard.writeText(res.shortUrl).catch(() => {});
       } else if (fallbackUrl) {
+        setShareUrl(fallbackUrl);
         navigator.clipboard.writeText(fallbackUrl).catch(() => {});
       }
     } catch (e) {
       console.error('Failed to generate short link', e);
       if (fallbackUrl) {
+        setShareUrl(fallbackUrl);
         navigator.clipboard.writeText(fallbackUrl).catch(() => {});
       }
     } finally {
       setIsGeneratingShareLink(false);
     }
-  }, [score, uiMode, viewLayout, noteLabelMode, showPitchNames, boomwhackerColors, countingMode, showBeatCounters, metronome]);
+  }, [score, uiMode, isBigStaff, viewLayout, noteLabelMode, showPitchNames, boomwhackerColors, countingMode, showBeatCounters, metronome]);
 
   // Auto-save to localStorage
   useEffect(() => {

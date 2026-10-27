@@ -35,15 +35,21 @@ export const ShareModal: React.FC<ShareModalProps> = ({
     setIsGenerating(true);
 
     const fallback = createShareableSongUrl(songData);
-    setShareableUrl(fallback);
+    setShareableUrl('');
 
     createShortLink('beat-machine', songData.title || "Mr. Arthur's Beat", songData)
       .then((res) => {
         if (!isCancelled && res?.shortUrl) {
           setShareableUrl(res.shortUrl);
+        } else if (!isCancelled && fallback) {
+          setShareableUrl(fallback);
         }
       })
-      .catch(() => {})
+      .catch(() => {
+        if (!isCancelled && fallback) {
+          setShareableUrl(fallback);
+        }
+      })
       .finally(() => {
         if (!isCancelled) setIsGenerating(false);
       });

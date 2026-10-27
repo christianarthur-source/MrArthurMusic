@@ -26,15 +26,21 @@ export const DawShareModal: React.FC<DawShareModalProps> = ({
     setIsGenerating(true);
 
     const fallback = createShareableDawUrl(project);
-    setShareableUrl(fallback);
+    setShareableUrl('');
 
     createShortLink('daw', project.title || 'Studio DAW Song', project)
       .then((res) => {
         if (!isCancelled && res?.shortUrl) {
           setShareableUrl(res.shortUrl);
+        } else if (!isCancelled && fallback) {
+          setShareableUrl(fallback);
         }
       })
-      .catch(() => {})
+      .catch(() => {
+        if (!isCancelled && fallback) {
+          setShareableUrl(fallback);
+        }
+      })
       .finally(() => {
         if (!isCancelled) setIsGenerating(false);
       });
