@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { DEFAULT_TRACK_FX, Track, TrackFxSettings } from '../types/music';
+import { DEFAULT_TRACK_FX, HALLOWEEN_TRACK_FX_FIRST, HALLOWEEN_TRACK_FX_MELODIC, HALLOWEEN_TRACK_FX_DRUMS, Track, TrackFxSettings } from '../types/music';
 import { INSTRUMENTS } from '../data/instruments';
 import {
   Volume2,
@@ -29,6 +29,10 @@ const INSTRUMENTS_BY_CATEGORY = Object.values(INSTRUMENTS).reduce((acc, inst) =>
 }, {} as Record<string, (typeof INSTRUMENTS)[keyof typeof INSTRUMENTS][]>);
 
 const FX_PRESETS: { name: string; fx: TrackFxSettings }[] = [
+  {
+    name: '🎃 Spooky Haunted',
+    fx: { reverb: 0.90, delay: 0.45, chorus: 0.25, eqBass: 1, eqTreble: 2, drive: 0 },
+  },
   {
     name: 'Studio Clean',
     fx: { reverb: 0.18, delay: 0, chorus: 0, eqBass: 0, eqTreble: 0, drive: 0 },
