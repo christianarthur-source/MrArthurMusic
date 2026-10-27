@@ -57,7 +57,13 @@ export function getCleanBaseUrl(): string {
  */
 export function formatShortUrl(slug: string): string {
   const base = getCleanBaseUrl();
-  const pathname = typeof window !== 'undefined' ? window.location.pathname : '/';
+  let pathname = typeof window !== 'undefined' ? window.location.pathname : '/';
+  
+  // Clean off trailing filename like index.html if present
+  if (pathname.endsWith('/index.html') || pathname === 'index.html') {
+    pathname = pathname.replace(/\/index\.html$/, '/');
+  }
+  
   const cleanPath = pathname.endsWith('/') ? pathname : `${pathname}/`;
   return `${base}${cleanPath}?s=${slug}`;
 }
