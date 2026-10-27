@@ -37,6 +37,7 @@ import {
   getDrumSoundForPitch,
 } from './audio/webMidiService';
 import { RhythmicPalette } from './components/RhythmicPalette';
+import { FloatingToolPalette } from './components/FloatingToolPalette';
 import { TransportBar } from './components/TransportBar';
 import { FullScreenMiniPalette } from './components/FullScreenMiniPalette';
 import { ScoreRenderer } from './components/ScoreRenderer';
@@ -620,6 +621,41 @@ export default function App() {
 
     return () => window.clearTimeout(timer);
   }, [score, studentSession, editingAsTeacher, currentProjectId]);
+
+  // Floating Tool Palette visibility state (triggers when scrolled down past the standard top palette)
+  const [isFloatingPaletteVisible, setIsFloatingPaletteVisible] = useState<boolean>(false);
+  const standardPaletteAnchorRef = useRef<HTMLDivElement | null>(null);
+
+  // Track scroll position on #staff-composer-main-scroll or window
+  useEffect(() => {
+    const scrollContainer = document.getElementById('staff-composer-main-scroll');
+    const handleScroll = () => {
+      if (isFullScreen) {
+        setIsFloatingPaletteVisible(false);
+        return;
+      }
+
+      if (standardPaletteAnchorRef.current) {
+        const rect = standardPaletteAnchorRef.current.getBoundingClientRect();
+        // If bottom of standard palette is scrolled out of view (above the viewport), show floating palette
+        setIsFloatingPaletteVisible(rect.bottom < 60);
+      } else if (scrollContainer) {
+        setIsFloatingPaletteVisible(scrollContainer.scrollTop > 180);
+      }
+    };
+
+    if (scrollContainer) {
+      scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => {
+      if (scrollContainer) {
+        scrollContainer.removeEventListener('scroll', handleScroll);
+      }
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, [isFullScreen]);
 
   // Keep metronome state synced with audio engine dynamically during playback
   useEffect(() => {
@@ -2276,8 +2312,30 @@ export default function App() {
           handleSelectApp('staff-composer');
         }}
         onManualSaveCurrentSong={async (customTitle) => {
-          if (!studentSession) return;
           const nextTitle = (customTitle || score.title || '').trim();
+          if (editingAsTeacher) {
+            const nextScore: Score = {
+              ...score,
+              title: nextTitle,
+            };
+            setScore(nextScore);
+            const res = await saveStudentProject({
+              studentId: editingAsTeacher.studentId,
+              isTeacher: true,
+              teacherPin: editingAsTeacher.teacherPin,
+              projectId: currentProjectId,
+              title: nextTitle,
+              score: nextScore,
+              appType: 'staff-composer',
+            });
+            if (res.saved && res.project) {
+              setCurrentProjectId(res.project.id);
+              setCloudSaveStatus('saved');
+            }
+            return;
+          }
+
+          if (!studentSession) return;
           const nextScore: Score = {
             ...score,
             title: nextTitle,
@@ -2590,55 +2648,57 @@ export default function App() {
               onExitFullScreen={handleExitFullScreen}
             />
           ) : (
-            <RhythmicPalette
-              uiMode={uiMode}
-              onChangeUiMode={handleChangeUiMode}
-              onReset={handleReset}
-              onAddMeasure={handleAddMeasure}
-              isSelectMode={isSelectMode}
-              onToggleSelectMode={() => setIsSelectMode((v) => !v)}
-              activeDuration={activeDuration}
-              onChangeDuration={handleChangeDuration}
-              isRestMode={isRestMode}
-              onToggleRestMode={() => setIsRestMode((v) => !v)}
-              isDotted={isDotted}
-              onToggleDotted={handleToggleDotted}
-              isTied={isTied}
-              onToggleTied={handleToggleTied}
-              isTriplet={isTriplet}
-              onToggleTriplet={handleToggleTriplet}
-              activeAccidental={activeAccidental}
-              onChangeAccidental={handleChangeAccidental}
-              activeArticulation={activeArticulation}
-              onChangeArticulation={handleChangeArticulation}
-              activeDynamic={activeDynamic}
-              onChangeDynamic={handleChangeDynamic}
-              currentMeasureHasRepeatStart={hasRepeatStart}
-              currentMeasureHasRepeatEnd={hasRepeatEnd}
-              currentMeasureEnding={currentMeasureEnding}
-              onToggleEnding={handleToggleEnding}
-              onToggleRepeatStart={handleToggleRepeatStart}
-              onToggleRepeatEnd={handleToggleRepeatEnd}
-              onToggleRepeatMeasure={handleToggleRepeatMeasure}
-              onRepeatWholeSong={handleRepeatWholeSong}
-              onClearAllRepeats={handleClearAllRepeats}
-              selectedNoteLyric={selectedNoteLyric}
-              onUpdateSelectedNoteLyric={handleUpdateSelectedNoteLyric}
-              onDeleteSelected={handleDeleteSelected}
-              selection={selection}
-              hasClipboard={measureClipboard !== null && measureClipboard.length > 0}
-              onCopyMeasure={handleCopyMeasure}
-              onPasteMeasure={handlePasteMeasure}
-              onMoveMeasureLeft={handleMoveMeasureLeft}
-              onMoveMeasureRight={handleMoveMeasureRight}
-              canUndo={historyIndex > 0}
-              canRedo={historyIndex < history.length - 1}
-              onUndo={handleUndo}
-              onRedo={handleRedo}
-              onOpenHelp={() => setIsHelpModalOpen(true)}
-              isBigStaff={isBigStaff}
-              onToggleBigStaff={handleToggleBigStaff}
-            />
+            <div ref={standardPaletteAnchorRef} className="w-full">
+              <RhythmicPalette
+                uiMode={uiMode}
+                onChangeUiMode={handleChangeUiMode}
+                onReset={handleReset}
+                onAddMeasure={handleAddMeasure}
+                isSelectMode={isSelectMode}
+                onToggleSelectMode={() => setIsSelectMode((v) => !v)}
+                activeDuration={activeDuration}
+                onChangeDuration={handleChangeDuration}
+                isRestMode={isRestMode}
+                onToggleRestMode={() => setIsRestMode((v) => !v)}
+                isDotted={isDotted}
+                onToggleDotted={handleToggleDotted}
+                isTied={isTied}
+                onToggleTied={handleToggleTied}
+                isTriplet={isTriplet}
+                onToggleTriplet={handleToggleTriplet}
+                activeAccidental={activeAccidental}
+                onChangeAccidental={handleChangeAccidental}
+                activeArticulation={activeArticulation}
+                onChangeArticulation={handleChangeArticulation}
+                activeDynamic={activeDynamic}
+                onChangeDynamic={handleChangeDynamic}
+                currentMeasureHasRepeatStart={hasRepeatStart}
+                currentMeasureHasRepeatEnd={hasRepeatEnd}
+                currentMeasureEnding={currentMeasureEnding}
+                onToggleEnding={handleToggleEnding}
+                onToggleRepeatStart={handleToggleRepeatStart}
+                onToggleRepeatEnd={handleToggleRepeatEnd}
+                onToggleRepeatMeasure={handleToggleRepeatMeasure}
+                onRepeatWholeSong={handleRepeatWholeSong}
+                onClearAllRepeats={handleClearAllRepeats}
+                selectedNoteLyric={selectedNoteLyric}
+                onUpdateSelectedNoteLyric={handleUpdateSelectedNoteLyric}
+                onDeleteSelected={handleDeleteSelected}
+                selection={selection}
+                hasClipboard={measureClipboard !== null && measureClipboard.length > 0}
+                onCopyMeasure={handleCopyMeasure}
+                onPasteMeasure={handlePasteMeasure}
+                onMoveMeasureLeft={handleMoveMeasureLeft}
+                onMoveMeasureRight={handleMoveMeasureRight}
+                canUndo={historyIndex > 0}
+                canRedo={historyIndex < history.length - 1}
+                onUndo={handleUndo}
+                onRedo={handleRedo}
+                onOpenHelp={() => setIsHelpModalOpen(true)}
+                isBigStaff={isBigStaff}
+                onToggleBigStaff={handleToggleBigStaff}
+              />
+            </div>
           )}
 
           {/* Big Staff K/1st Grade Friendly Navigation & Playback Toolbar */}
@@ -2981,6 +3041,47 @@ export default function App() {
           )}
         </div>
       </main>
+
+      {/* Floating Tool Palette Bar (appears automatically when scrolling down past top palette) */}
+      <FloatingToolPalette
+        isVisible={!isFullScreen && currentApp === 'staff-composer' && isFloatingPaletteVisible}
+        uiMode={uiMode}
+        onChangeUiMode={handleChangeUiMode}
+        activeDuration={activeDuration}
+        onChangeDuration={handleChangeDuration}
+        isRestMode={isRestMode}
+        onToggleRestMode={() => setIsRestMode((v) => !v)}
+        isSelectMode={isSelectMode}
+        onToggleSelectMode={() => setIsSelectMode((v) => !v)}
+        isDotted={isDotted}
+        onToggleDotted={handleToggleDotted}
+        isTied={isTied}
+        onToggleTied={handleToggleTied}
+        isTriplet={isTriplet}
+        onToggleTriplet={handleToggleTriplet}
+        activeAccidental={activeAccidental}
+        onChangeAccidental={handleChangeAccidental}
+        activeArticulation={activeArticulation}
+        onChangeArticulation={handleChangeArticulation}
+        activeDynamic={activeDynamic}
+        onChangeDynamic={handleChangeDynamic}
+        onAddMeasure={handleAddMeasure}
+        onDeleteSelected={handleDeleteSelected}
+        canUndo={historyIndex > 0}
+        canRedo={historyIndex < history.length - 1}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
+        isPlaying={isPlaying}
+        onTogglePlay={handleTogglePlay}
+        onScrollToTop={() => {
+          const scrollContainer = document.getElementById('staff-composer-main-scroll');
+          if (scrollContainer) {
+            scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
+          } else {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }
+        }}
+      />
 
       <TrackStrip
         tracks={score.tracks}

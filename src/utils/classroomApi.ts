@@ -77,6 +77,10 @@ export interface SavedProjectRecord {
   score?: Score;
   appType?: MusicLabAppType;
   projectData?: any;
+  isAssignment?: boolean;
+  assignmentInstructions?: string;
+  assignmentSourceTitle?: string;
+  assignedByTeacher?: string;
 }
 
 export interface TeacherPortalData {
@@ -725,6 +729,77 @@ function executeLocalFallback(payload: Record<string, any>): any {
     };
   }
 
+  if (action === 'teacher_assign_project') {
+    const { teacher, isMaster } = verifyTeacher();
+    const sourceProject = payload.sourceProject as SavedProjectRecord | undefined;
+    const targetStudentIds = (payload.targetStudentIds as string[]) || [];
+    const instructions = String(payload.instructions || '').trim();
+    const teacherName = teacher?.name || (isMaster ? 'Mr. Arthur' : 'Teacher');
+
+    if (!sourceProject) {
+      throw new Error('Please select or provide a song to assign.');
+    }
+    if (!targetStudentIds || targetStudentIds.length === 0) {
+      throw new Error('Please select at least one student or classroom to assign this song to.');
+    }
+
+    const now = new Date().toISOString();
+    const createdProjects: SavedProjectRecord[] = [];
+
+    for (const studentId of targetStudentIds) {
+      const student = db.students.find((s) => s.id === studentId);
+      if (!student) continue;
+
+      // Deep copy score/projectData
+      const clonedScore = sourceProject.score
+        ? JSON.parse(JSON.stringify(sourceProject.score))
+        : undefined;
+      const clonedProjectData = sourceProject.projectData
+        ? JSON.parse(JSON.stringify(sourceProject.projectData))
+        : undefined;
+
+      const assignmentTitle = sourceProject.title;
+      if (clonedScore) {
+        clonedScore.title = assignmentTitle;
+      }
+
+      // Check if student already has this exact project title
+      let existingIndex = db.projects.findIndex(
+        (p) => p.studentId === studentId && p.title.toLowerCase() === assignmentTitle.toLowerCase()
+      );
+
+      const assignedRecord: SavedProjectRecord = {
+        id: existingIndex >= 0 ? db.projects[existingIndex].id : 'proj_' + Math.random().toString(36).slice(2, 12),
+        studentId: student.id,
+        studentName: student.firstName,
+        title: assignmentTitle,
+        appType: sourceProject.appType || 'staff-composer',
+        score: clonedScore,
+        projectData: clonedProjectData,
+        isAssignment: true,
+        assignmentInstructions: instructions,
+        assignmentSourceTitle: sourceProject.title,
+        assignedByTeacher: teacherName,
+        createdAt: existingIndex >= 0 ? db.projects[existingIndex].createdAt : now,
+        updatedAt: now,
+      };
+
+      if (existingIndex >= 0) {
+        db.projects[existingIndex] = assignedRecord;
+      } else {
+        db.projects.push(assignedRecord);
+      }
+      createdProjects.push(assignedRecord);
+    }
+
+    writeLocalDb(db);
+    return {
+      ok: true,
+      assignedCount: createdProjects.length,
+      projects: db.projects,
+    };
+  }
+
   throw new Error('Unknown classroom action: ' + action);
 }
 
@@ -868,6 +943,10 @@ async function executeSupabaseRequest(payload: Record<string, any>): Promise<any
         appType: p.app_type,
         score: p.score,
         projectData: p.project_data,
+        isAssignment: Boolean(p.project_data?._assignment?.isAssignment),
+        assignmentInstructions: p.project_data?._assignment?.instructions || '',
+        assignmentSourceTitle: p.project_data?._assignment?.sourceTitle || p.title,
+        assignedByTeacher: p.project_data?._assignment?.assignedByTeacher || '',
         createdAt: p.created_at,
         updatedAt: p.updated_at,
       }));
@@ -952,6 +1031,10 @@ async function executeSupabaseRequest(payload: Record<string, any>): Promise<any
       appType: p.app_type,
       score: p.score,
       projectData: p.project_data,
+      isAssignment: Boolean(p.project_data?._assignment?.isAssignment),
+      assignmentInstructions: p.project_data?._assignment?.instructions || '',
+      assignmentSourceTitle: p.project_data?._assignment?.sourceTitle || p.title,
+      assignedByTeacher: p.project_data?._assignment?.assignedByTeacher || '',
       createdAt: p.created_at,
       updatedAt: p.updated_at,
     }));
@@ -1165,6 +1248,10 @@ async function executeSupabaseRequest(payload: Record<string, any>): Promise<any
         appType: p.app_type,
         score: p.score,
         projectData: p.project_data,
+        isAssignment: Boolean(p.project_data?._assignment?.isAssignment),
+        assignmentInstructions: p.project_data?._assignment?.instructions || '',
+        assignmentSourceTitle: p.project_data?._assignment?.sourceTitle || p.title,
+        assignedByTeacher: p.project_data?._assignment?.assignedByTeacher || '',
         createdAt: p.created_at,
         updatedAt: p.updated_at,
       })),
@@ -1402,6 +1489,102 @@ async function executeSupabaseRequest(payload: Record<string, any>): Promise<any
         pin: t.pin,
         schoolName: t.school_name,
         isMasterAdmin: Boolean(t.is_master_admin),
+      })),
+    };
+  }
+
+  // 17. TEACHER ASSIGN PROJECT TO STUDENTS / CLASSROOM
+  if (action === 'teacher_assign_project') {
+    const teacherPin = String(payload.teacherPin || '').trim();
+    const isMaster = teacherPin === '1138' || teacherPin === 'adminbaby';
+    const teachers = await supabaseFetch('teachers?select=*').catch(() => []);
+    const matchedTeacher = (teachers || []).find((t: any) => String(t.pin).trim() === teacherPin);
+    if (!isMaster && !matchedTeacher) {
+      throw new Error('Invalid Teacher PIN.');
+    }
+    const teacherName = matchedTeacher?.name || (isMaster ? 'Mr. Arthur' : 'Teacher');
+    const sourceProject = payload.sourceProject as SavedProjectRecord | undefined;
+    const targetStudentIds = (payload.targetStudentIds as string[]) || [];
+    const instructions = String(payload.instructions || '').trim();
+
+    if (!sourceProject) throw new Error('Source project is required.');
+    if (!targetStudentIds || targetStudentIds.length === 0) {
+      throw new Error('Please select at least one student or classroom to assign this song to.');
+    }
+
+    // Fetch target students to get their names
+    const allStudents = await supabaseFetch('students?select=id,first_name').catch(() => []);
+    const studentMap = new Map((allStudents || []).map((s: any) => [s.id, s.first_name]));
+
+    const now = new Date().toISOString();
+    const rowsToUpsert: any[] = [];
+
+    for (const studentId of targetStudentIds) {
+      const studentName = studentMap.get(studentId) || 'Student';
+      const assignmentTitle = sourceProject.title;
+
+      // Check if project with this title already exists for student
+      const existing = await supabaseFetch(
+        `projects?student_id=eq.${studentId}&title=ilike.${encodeURIComponent(assignmentTitle)}`
+      ).catch(() => []);
+
+      const projectId = existing && existing.length > 0 ? existing[0].id : 'proj_' + Math.random().toString(36).slice(2, 12);
+      const clonedScore = sourceProject.score ? JSON.parse(JSON.stringify(sourceProject.score)) : null;
+      let clonedProjectData = sourceProject.projectData ? JSON.parse(JSON.stringify(sourceProject.projectData)) : null;
+      if (!clonedProjectData && (instructions || assignmentTitle)) {
+        clonedProjectData = {};
+      }
+      if (clonedProjectData && typeof clonedProjectData === 'object') {
+        clonedProjectData._assignment = {
+          isAssignment: true,
+          instructions,
+          sourceTitle: assignmentTitle,
+          assignedByTeacher: teacherName,
+          assignedAt: now,
+        };
+      }
+      if (clonedScore) {
+        clonedScore.title = assignmentTitle;
+      }
+
+      rowsToUpsert.push({
+        id: projectId,
+        student_id: studentId,
+        student_name: studentName,
+        title: assignmentTitle,
+        app_type: sourceProject.appType || 'staff-composer',
+        score: clonedScore,
+        project_data: clonedProjectData,
+        updated_at: now,
+      });
+    }
+
+    if (rowsToUpsert.length > 0) {
+      await supabaseFetch('projects', {
+        method: 'POST',
+        headers: { Prefer: 'resolution=merge-duplicates' },
+        body: JSON.stringify(rowsToUpsert),
+      });
+    }
+
+    const updatedProjects = await supabaseFetch('projects?select=*&order=updated_at.desc');
+    return {
+      ok: true,
+      assignedCount: rowsToUpsert.length,
+      projects: (updatedProjects || []).map((p: any) => ({
+        id: p.id,
+        studentId: p.student_id,
+        studentName: p.student_name,
+        title: p.title,
+        appType: p.app_type,
+        score: p.score,
+        projectData: p.project_data,
+        isAssignment: Boolean(p.project_data?._assignment?.isAssignment),
+        assignmentInstructions: p.project_data?._assignment?.instructions || '',
+        assignmentSourceTitle: p.project_data?._assignment?.sourceTitle || p.title,
+        assignedByTeacher: p.project_data?._assignment?.assignedByTeacher || '',
+        createdAt: p.created_at,
+        updatedAt: p.updated_at,
       })),
     };
   }
@@ -1785,3 +1968,21 @@ export async function teacherUpdateSettings(params: {
     teacherPin: res.teacherPin || params.newTeacherPin || params.teacherPin,
   };
 }
+
+export async function teacherAssignProject(params: {
+  teacherPin: string;
+  sourceProject: SavedProjectRecord;
+  targetStudentIds: string[];
+  instructions?: string;
+}): Promise<{ ok: boolean; assignedCount: number; projects: SavedProjectRecord[] }> {
+  const res = await callClassroomBackend({
+    action: 'teacher_assign_project',
+    ...params,
+  });
+  return {
+    ok: Boolean(res.ok),
+    assignedCount: Number(res.assignedCount || 0),
+    projects: res.projects || [],
+  };
+}
+
