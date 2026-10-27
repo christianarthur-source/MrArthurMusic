@@ -589,6 +589,73 @@ const server = http.createServer((req, res) => {
         });
       }
 
+      if (action === 'teacher_assign_project') {
+        const pin = String(body.teacherPin || '').trim();
+        const teacher = findTeacher(pin);
+        if (!teacher) return send(401, { ok: false, error: 'Unauthorized' });
+        const sourceProject = body.sourceProject;
+        const targetStudentIds = Array.isArray(body.targetStudentIds) ? body.targetStudentIds : [];
+        const instructions = String(body.instructions || '').trim();
+        if (!sourceProject) return send(400, { ok: false, error: 'Missing source project' });
+        if (targetStudentIds.length === 0) return send(400, { ok: false, error: 'No target students selected' });
+
+        const now = new Date().toISOString();
+        const teacherName = teacher.name || 'Teacher';
+
+        for (const studentId of targetStudentIds) {
+          const student = db.students.find((s) => s.id === studentId);
+          if (!student) continue;
+
+          const assignmentTitle = sourceProject.title;
+          const clonedScore = sourceProject.score ? JSON.parse(JSON.stringify(sourceProject.score)) : null;
+          let clonedProjectData = sourceProject.projectData ? JSON.parse(JSON.stringify(sourceProject.projectData)) : null;
+          if (!clonedProjectData && (instructions || assignmentTitle)) {
+            clonedProjectData = {};
+          }
+          if (clonedProjectData && typeof clonedProjectData === 'object') {
+            clonedProjectData._assignment = {
+              isAssignment: true,
+              instructions,
+              sourceTitle: assignmentTitle,
+              assignedByTeacher: teacherName,
+              assignedAt: now,
+            };
+          }
+          if (clonedScore) {
+            clonedScore.title = assignmentTitle;
+          }
+
+          let existingIndex = db.projects.findIndex(
+            (p) => p.studentId === studentId && p.title.toLowerCase() === assignmentTitle.toLowerCase()
+          );
+
+          const assignedRecord = {
+            id: existingIndex >= 0 ? db.projects[existingIndex].id : makeId('proj'),
+            studentId: student.id,
+            studentName: student.firstName,
+            title: assignmentTitle,
+            appType: sourceProject.appType || 'staff-composer',
+            score: clonedScore,
+            projectData: clonedProjectData,
+            isAssignment: true,
+            assignmentInstructions: instructions,
+            assignmentSourceTitle: assignmentTitle,
+            assignedByTeacher: teacherName,
+            createdAt: existingIndex >= 0 ? db.projects[existingIndex].createdAt : now,
+            updatedAt: now,
+          };
+
+          if (existingIndex >= 0) {
+            db.projects[existingIndex] = assignedRecord;
+          } else {
+            db.projects.push(assignedRecord);
+          }
+        }
+
+        saveDb(db);
+        return send(200, { ok: true, assignedCount: targetStudentIds.length, projects: db.projects });
+      }
+
       return send(400, { ok: false, error: 'Unknown action' });
     });
     return;

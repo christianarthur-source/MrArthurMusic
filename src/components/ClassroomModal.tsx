@@ -27,6 +27,11 @@ import {
   ChevronLeft,
   ChevronRight,
   UserPlus,
+  Share2,
+  BookOpen,
+  Send,
+  Eye,
+  CheckCircle2,
 } from 'lucide-react';
 import { EdLawPrivacyModal } from './EdLawPrivacyModal';
 import { Score } from '../types/music';
@@ -54,11 +59,13 @@ import {
   teacherDeleteClassroom,
   teacherSaveTeacher,
   teacherDeleteTeacher,
+  teacherAssignProject,
   normalizeStudentName,
   formatStudentDisplayName,
   changeStudentPin,
   saveStudentSession,
 } from '../utils/classroomApi';
+import { createShortLink } from '../utils/shortLinkService';
 import { containsProfanity } from '../utils/profanityFilter';
 
 function getAppDescriptor(appType?: MusicLabAppType) {
@@ -233,8 +240,22 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
   const [renamingProjectId, setRenamingProjectId] = useState<string | null>(null);
   const [renameTitleInput, setRenameTitleInput] = useState<string>('');
 
-  // Teacher - Settings state
-  const [newTeacherPinField, setNewTeacherPinField] = useState<string>('');
+  // Teacher - Classrooms Drill-down View state
+  const [selectedClassroomForView, setSelectedClassroomForView] = useState<ClassroomRecord | null>(null);
+
+  // Teacher - Student Works Inspector Modal/Drawer state
+  const [inspectedStudent, setInspectedStudent] = useState<StudentRecord | null>(null);
+
+  // Teacher - Assignment Feature state
+  const [showAssignModal, setShowAssignModal] = useState<boolean>(false);
+  const [assignSourceProject, setAssignSourceProject] = useState<SavedProjectRecord | null>(null);
+  const [assignInstructions, setAssignInstructions] = useState<string>('Add an ostinato pattern and 2 additional instruments to this composition!');
+  const [assignTargetClassId, setAssignTargetClassId] = useState<string>('ALL');
+  const [assignSelectedStudentIds, setAssignSelectedStudentIds] = useState<string[]>([]);
+  const [isAssigning, setIsAssigning] = useState<boolean>(false);
+
+  // Teacher - Quick Share Copied Feedback
+  const [copiedShareLinkProjId, setCopiedShareLinkProjId] = useState<string | null>(null);
 
   // Refresh data when modal opens
   useEffect(() => {
@@ -860,6 +881,110 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
     }
   };
 
+  // Quick Share Song link generator for Teacher/Admin
+  const handleTeacherShareProject = async (proj: SavedProjectRecord) => {
+    try {
+      let shareUrl = '';
+      if (proj.appType === 'beat-machine') {
+        const payload = proj.projectData || { title: proj.title };
+        const res = await createShortLink('beat-machine', proj.title, payload);
+        shareUrl = res.shortUrl;
+      } else if (proj.appType === 'daw') {
+        const payload = proj.projectData || { title: proj.title };
+        const res = await createShortLink('daw', proj.title, payload);
+        shareUrl = res.shortUrl;
+      } else {
+        const shareData = {
+          score: proj.score,
+          title: proj.title,
+        };
+        const res = await createShortLink('staff-composer', proj.title, shareData);
+        shareUrl = res.shortUrl;
+      }
+
+      if (shareUrl) {
+        await navigator.clipboard.writeText(shareUrl);
+        setCopiedShareLinkProjId(proj.id);
+        setTeacherNotice(`Copied public share link for "${proj.title}" to clipboard!`);
+        window.setTimeout(() => {
+          setCopiedShareLinkProjId(null);
+          setTeacherNotice(null);
+        }, 3000);
+      }
+    } catch {
+      setTeacherError('Could not create share link.');
+    }
+  };
+
+  // Open Assignment Modal with chosen source project (or current active song)
+  const handleOpenAssignModal = (sourceProj?: SavedProjectRecord) => {
+    const projToAssign: SavedProjectRecord = sourceProj || {
+      id: currentProjectId || 'current_active',
+      studentId: 'teacher_master',
+      studentName: 'Mr. Arthur',
+      title: currentScore.title.trim() && !isUntitledScore ? currentScore.title.trim() : 'Class Melody Assignment',
+      score: currentScore,
+      appType: 'staff-composer',
+      updatedAt: new Date().toISOString(),
+    };
+
+    setAssignSourceProject(projToAssign);
+    setAssignInstructions('Add an ostinato pattern and 2 additional instruments to complete this song!');
+
+    // Default target: if teacher has a selected classroom, pre-select it
+    if (selectedClassroomForView) {
+      setAssignTargetClassId(selectedClassroomForView.id);
+      const studentIdsInClass = allStudents
+        .filter((s) => s.classId === selectedClassroomForView.id || s.classGroup === selectedClassroomForView.name)
+        .map((s) => s.id);
+      setAssignSelectedStudentIds(studentIdsInClass);
+    } else {
+      setAssignTargetClassId('ALL');
+      setAssignSelectedStudentIds(allStudents.map((s) => s.id));
+    }
+
+    setShowAssignModal(true);
+  };
+
+  // Execute assignment dispatch to student accounts
+  const handleExecuteAssignment = async () => {
+    if (!assignSourceProject) return;
+    if (assignSelectedStudentIds.length === 0) {
+      setTeacherError('Please select at least one student or classroom to receive this assignment.');
+      return;
+    }
+
+    setIsAssigning(true);
+    setTeacherError(null);
+    try {
+      const res = await teacherAssignProject({
+        teacherPin: activeTeacherPin,
+        sourceProject: assignSourceProject,
+        targetStudentIds: assignSelectedStudentIds,
+        instructions: assignInstructions,
+      });
+
+      if (res.projects && res.projects.length > 0) {
+        setAllProjects(res.projects);
+      } else {
+        // Refresh overview
+        const refreshed = await loginTeacher(activeTeacherPin);
+        setAllProjects(refreshed.projects);
+        setAllStudents(refreshed.students);
+      }
+
+      setShowAssignModal(false);
+      setTeacherNotice(
+        `Assigned "${assignSourceProject.title}" to ${res.assignedCount || assignSelectedStudentIds.length} students! Each student can now load and edit their own copy.`
+      );
+      window.setTimeout(() => setTeacherNotice(null), 4500);
+    } catch (err: any) {
+      setTeacherError(err.message || 'Failed to dispatch assignment.');
+    } finally {
+      setIsAssigning(false);
+    }
+  };
+
   const handleExportClassroomBackup = () => {
     const payload = {
       exportedAt: new Date().toISOString(),
@@ -990,6 +1115,22 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
+            {mode === 'student' && (
+              <button
+                type="button"
+                onClick={() => {
+                  setTeacherPinInput('');
+                  setTeacherError(null);
+                  setTeacherNotice(null);
+                  setMode('teacher_auth');
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 cursor-pointer transition-colors"
+                title="Teacher / Admin portal login"
+              >
+                <Shield className="w-3.5 h-3.5 text-amber-400" />
+                <span>Teacher / Admin</span>
+              </button>
+            )}
             {mode !== 'student' && (
               <button
                 type="button"
@@ -1459,7 +1600,19 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                                     Open Now
                                   </span>
                                 )}
+                                {proj.isAssignment && (
+                                  <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-purple-500/20 text-purple-300 border border-purple-500/40 flex items-center gap-1">
+                                    <BookOpen className="w-2.5 h-2.5 text-purple-300" />
+                                    <span>Class Assignment</span>
+                                  </span>
+                                )}
                               </div>
+                              {proj.assignmentInstructions && (
+                                <div className="mt-1 px-2.5 py-1 rounded-lg bg-purple-500/10 border border-purple-500/30 text-[11px] text-purple-200 flex items-start gap-1.5">
+                                  <span className="font-bold shrink-0">📝 Task:</span>
+                                  <span>{proj.assignmentInstructions}</span>
+                                </div>
+                              )}
                               <div className="text-[11px] text-slate-400 flex items-center gap-1.5 flex-wrap mt-0.5">
                                 <span>
                                   Saved{' '}
@@ -1689,8 +1842,11 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                   </button>
                   <button
                     type="button"
-                    onClick={() => setTeacherTab('classrooms')}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer ${
+                    onClick={() => {
+                      setTeacherTab('classrooms');
+                      setSelectedClassroomForView(null);
+                    }}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition-all ${
                       teacherTab === 'classrooms'
                         ? 'bg-amber-400 text-slate-950 shadow-sm'
                         : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
@@ -1725,6 +1881,17 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                       <span>Teachers &amp; Schools ({teachers.length})</span>
                     </button>
                   )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleOpenAssignModal();
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-400 hover:to-indigo-400 text-white shadow-sm cursor-pointer"
+                    title="Send an assignment copy of a song to a classroom or students"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    <span>Assign Song</span>
+                  </button>
                   <button
                     type="button"
                     onClick={() => setTeacherTab('settings')}
@@ -1908,6 +2075,66 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                     </div>
                   )}
 
+                  {/* Student Quick Filter Tabs by Classroom */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                      <span>Browse By Classroom:</span>
+                      {teacherClassFilter !== 'ALL' && (
+                        <button
+                          type="button"
+                          onClick={() => setTeacherClassFilter('ALL')}
+                          className="text-amber-400 hover:underline cursor-pointer"
+                        >
+                          Show All Classes ({allStudents.length})
+                        </button>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTeacherClassFilter('ALL');
+                          setTeacherGradeFilter('ALL');
+                        }}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold shrink-0 cursor-pointer transition-colors ${
+                          teacherClassFilter === 'ALL'
+                            ? 'bg-amber-400 text-slate-950 shadow-sm'
+                            : 'bg-slate-950/80 border border-slate-800 text-slate-300 hover:bg-slate-800'
+                        }`}
+                      >
+                        All Classes ({allStudents.length})
+                      </button>
+                      {classrooms.map((cls) => {
+                        const inClassCount = allStudents.filter(
+                          (s) => s.classId === cls.id || (cls.name && s.classGroup === cls.name)
+                        ).length;
+                        const isSelected = teacherClassFilter === cls.id;
+                        return (
+                          <button
+                            key={cls.id}
+                            type="button"
+                            onClick={() => {
+                              setTeacherClassFilter(cls.id);
+                              setTeacherGradeFilter(cls.grade || 'ALL');
+                            }}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold shrink-0 flex items-center gap-1.5 cursor-pointer transition-colors ${
+                              isSelected
+                                ? 'bg-sky-400 text-slate-950 shadow-sm'
+                                : 'bg-slate-950/80 border border-slate-800 text-slate-300 hover:border-sky-500/50 hover:bg-slate-800'
+                            }`}
+                          >
+                            <span>{cls.name}</span>
+                            <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+                              isSelected ? 'bg-slate-900 text-sky-200' : 'bg-slate-800 text-slate-400'
+                            }`}>
+                              {inClassCount}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
                   {/* Filter & Search Bar */}
                   <div className="flex flex-wrap items-center gap-2">
                     <div className="relative flex-1 min-w-[160px]">
@@ -2034,13 +2261,12 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                                 )}
                                 <button
                                   type="button"
-                                  onClick={() => {
-                                    setProjectStudentFilter(stu.id);
-                                    setTeacherTab('projects');
-                                  }}
-                                  className="text-sky-400 hover:underline cursor-pointer"
+                                  onClick={() => setInspectedStudent(stu)}
+                                  className="flex items-center gap-1 px-2 py-1 rounded-md bg-sky-500/15 hover:bg-sky-500/30 text-sky-300 border border-sky-500/30 font-bold text-[11px] cursor-pointer"
+                                  title="View and monitor student's saved compositions"
                                 >
-                                  {songCount} song{songCount === 1 ? '' : 's'}
+                                  <Eye className="w-3 h-3" />
+                                  <span>{songCount} song{songCount === 1 ? '' : 's'}</span>
                                 </button>
                               </div>
 
@@ -2199,73 +2425,207 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                     </form>
                   )}
 
-                  {/* Classrooms List */}
-                  <div className="space-y-2">
-                    {classrooms.map((cls) => {
-                      const studentCount = allStudents.filter(
-                        (s) => s.classId === cls.id || (cls.name && s.classGroup === cls.name)
-                      ).length;
-                      return (
-                        <div
-                          key={cls.id}
-                          className="p-3 rounded-xl bg-slate-950/70 border border-slate-800 flex items-center justify-between gap-3 text-xs"
-                        >
-                          <div className="flex items-center gap-3 flex-wrap">
-                            <span className="px-2 py-0.5 rounded-md bg-sky-500/20 text-sky-300 font-bold border border-sky-500/30">
-                              {cls.grade}
-                            </span>
-                            <span className="font-bold text-sm text-white">{cls.name}</span>
-                            {cls.teacherName && (
-                              <span className="text-slate-400">Teacher: {cls.teacherName}</span>
-                            )}
-                            <span className="px-2 py-0.5 rounded-md bg-slate-800 text-slate-300 font-mono">
-                              {studentCount} student{studentCount === 1 ? '' : 's'}
-                            </span>
-                            {cls.allowSelfRegister !== false ? (
-                              <span className="text-[10px] text-emerald-400 font-semibold">
-                                ✓ Self-Register Open
+                  {/* Classrooms List / Drill-down View */}
+                  {selectedClassroomForView ? (
+                    <div className="space-y-3">
+                      {/* Classroom Drill-down Banner */}
+                      <div className="p-3.5 rounded-xl bg-slate-950 border border-sky-500/40 flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2.5">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedClassroomForView(null)}
+                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center gap-1 text-xs font-bold cursor-pointer"
+                          >
+                            <ChevronLeft className="w-4 h-4" />
+                            <span>All Classrooms</span>
+                          </button>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-extrabold text-sm text-white">
+                                {selectedClassroomForView.name}
                               </span>
-                            ) : (
-                              <span className="text-[10px] text-amber-400 font-semibold">
-                                🔒 Self-Register Closed
+                              <span className="px-2 py-0.5 rounded-md bg-sky-500/20 text-sky-300 font-bold border border-sky-500/30 text-[11px]">
+                                {selectedClassroomForView.grade}
                               </span>
-                            )}
-                          </div>
-
-                          <div className="flex items-center gap-1.5 shrink-0">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setEditingClassId(cls.id);
-                                setClassFormName(cls.name);
-                                setClassFormGrade(cls.grade);
-                                setClassFormTeacher(cls.teacherName || '');
-                                setClassFormSelfRegister(cls.allowSelfRegister !== false);
-                                setShowAddClassroom(true);
-                              }}
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 cursor-pointer"
-                              title="Edit classroom"
-                            >
-                              <Edit3 className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteClassroom(cls)}
-                              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800 cursor-pointer"
-                              title="Delete classroom"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+                            </div>
+                            <p className="text-[11px] text-slate-400">
+                              {selectedClassroomForView.teacherName ? `Teacher: ${selectedClassroomForView.teacherName} • ` : ''}
+                              Click any student to monitor, load, or share their saved compositions
+                            </p>
                           </div>
                         </div>
-                      );
-                    })}
-                    {classrooms.length === 0 && (
-                      <div className="p-6 rounded-xl bg-slate-950/40 border border-slate-800 text-center text-xs text-slate-400">
-                        No classrooms created yet. Click "+ Add Classroom" to start organizing grades and classes.
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenAssignModal()}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-500 hover:bg-purple-400 text-white font-bold text-xs cursor-pointer shadow-sm"
+                          >
+                            <Send className="w-3.5 h-3.5" />
+                            <span>Assign Song to Class</span>
+                          </button>
+                        </div>
                       </div>
-                    )}
-                  </div>
+
+                      {/* Clickable List of Students in this Classroom */}
+                      <div className="space-y-2">
+                        {allStudents
+                          .filter(
+                            (s) =>
+                              s.classId === selectedClassroomForView.id ||
+                              (selectedClassroomForView.name && s.classGroup === selectedClassroomForView.name)
+                          )
+                          .map((stu) => {
+                            const studentWorks = allProjects.filter((p) => p.studentId === stu.id);
+                            return (
+                              <div
+                                key={stu.id}
+                                className="p-3 rounded-xl bg-slate-950/70 border border-slate-800 hover:border-sky-500/50 transition-all flex items-center justify-between gap-3 text-xs"
+                              >
+                                <div
+                                  onClick={() => setInspectedStudent(stu)}
+                                  className="flex items-center gap-3 flex-wrap cursor-pointer flex-1"
+                                >
+                                  <div className="w-8 h-8 rounded-lg bg-sky-500/20 border border-sky-400/40 flex items-center justify-center font-bold text-sky-300 text-xs shrink-0">
+                                    {stu.firstName.charAt(0)}
+                                  </div>
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-extrabold text-sm text-white hover:text-sky-300 transition-colors">
+                                        {stu.firstName}
+                                      </span>
+                                      <span className="px-2 py-0.5 rounded-md bg-slate-800 font-mono text-amber-300 font-bold text-[11px]">
+                                        PIN: {stu.pin}
+                                      </span>
+                                    </div>
+                                    <div className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
+                                      <span>{studentWorks.length} song{studentWorks.length === 1 ? '' : 's'} saved</span>
+                                      {studentWorks.length > 0 && (
+                                        <span>• Latest: &quot;{studentWorks[0].title}&quot;</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <button
+                                    type="button"
+                                    onClick={() => setInspectedStudent(stu)}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 text-sky-300 border border-sky-500/40 font-bold text-xs cursor-pointer"
+                                  >
+                                    <Eye className="w-3.5 h-3.5" />
+                                    <span>View Student Work ({studentWorks.length})</span>
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })}
+
+                        {allStudents.filter(
+                          (s) =>
+                            s.classId === selectedClassroomForView.id ||
+                            (selectedClassroomForView.name && s.classGroup === selectedClassroomForView.name)
+                        ).length === 0 && (
+                          <div className="p-6 rounded-xl bg-slate-950/40 border border-slate-800 text-center text-xs text-slate-400">
+                            No students registered in {selectedClassroomForView.name} yet.
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between gap-2">
+                        <div className="text-xs text-amber-200">
+                          <span className="font-bold">👉 Interactive Classroom Selector:</span> Click any classroom below or use its <strong className="text-white">View Students</strong> button to see all students enrolled in that class, inspect their compositions, or share work.
+                        </div>
+                      </div>
+                      {classrooms.map((cls) => {
+                        const studentCount = allStudents.filter(
+                          (s) => s.classId === cls.id || (cls.name && s.classGroup === cls.name)
+                        ).length;
+                        return (
+                          <div
+                            key={cls.id}
+                            onClick={() => setSelectedClassroomForView(cls)}
+                            className="group p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 hover:border-amber-400/70 hover:bg-slate-900/90 transition-all flex items-center justify-between gap-3 text-xs cursor-pointer shadow-sm"
+                          >
+                            <div className="flex items-center gap-3 flex-wrap flex-1">
+                              <span className="px-2.5 py-1 rounded-md bg-sky-500/20 text-sky-300 font-extrabold border border-sky-500/30 text-xs">
+                                {cls.grade}
+                              </span>
+                              <div className="flex items-center gap-2">
+                                <span className="font-extrabold text-sm text-white group-hover:text-amber-300 transition-colors">
+                                  {cls.name}
+                                </span>
+                                <span className="text-[11px] text-sky-400 group-hover:underline font-semibold flex items-center gap-1">
+                                  <span>(Click to Open Roster)</span>
+                                  <ChevronRight className="w-3.5 h-3.5" />
+                                </span>
+                              </div>
+                              {cls.teacherName && (
+                                <span className="text-slate-400">Teacher: {cls.teacherName}</span>
+                              )}
+                              <span className="px-2.5 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-bold font-mono">
+                                {studentCount} student{studentCount === 1 ? '' : 's'}
+                              </span>
+                              {cls.allowSelfRegister !== false ? (
+                                <span className="text-[10px] text-emerald-400 font-semibold">
+                                  ✓ Self-Register Open
+                                </span>
+                              ) : (
+                                <span className="text-[10px] text-amber-400 font-semibold">
+                                  🔒 Self-Register Closed
+                                </span>
+                              )}
+                            </div>
+
+                            <div
+                              className="flex items-center gap-1.5 shrink-0"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <button
+                                type="button"
+                                onClick={() => setSelectedClassroomForView(cls)}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs cursor-pointer shadow-sm transition-all"
+                                title="Open this classroom's student roster"
+                              >
+                                <Users className="w-3.5 h-3.5" />
+                                <span>View Students ({studentCount})</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setEditingClassId(cls.id);
+                                  setClassFormName(cls.name);
+                                  setClassFormGrade(cls.grade);
+                                  setClassFormTeacher(cls.teacherName || '');
+                                  setClassFormSelfRegister(cls.allowSelfRegister !== false);
+                                  setShowAddClassroom(true);
+                                }}
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 cursor-pointer"
+                                title="Edit classroom"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteClassroom(cls)}
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800 cursor-pointer"
+                                title="Delete classroom"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {classrooms.length === 0 && (
+                        <div className="p-6 rounded-xl bg-slate-950/40 border border-slate-800 text-center text-xs text-slate-400">
+                          No classrooms created yet. Click "+ Add Classroom" to start organizing grades and classes.
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -2550,7 +2910,18 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                                     <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-bold text-[11px]">
                                       by {proj.studentName}
                                     </span>
+                                    {proj.isAssignment && (
+                                      <span className="px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 font-bold text-[10px] border border-purple-500/30 flex items-center gap-1">
+                                        <BookOpen className="w-2.5 h-2.5" />
+                                        <span>Assignment</span>
+                                      </span>
+                                    )}
                                   </div>
+                                  {proj.assignmentInstructions && (
+                                    <div className="mt-1 px-2.5 py-1 rounded-lg bg-purple-500/10 border border-purple-500/25 text-[11px] text-purple-200">
+                                      📝 <span className="font-semibold">Instructions:</span> {proj.assignmentInstructions}
+                                    </div>
+                                  )}
                                   <div className="text-[11px] text-slate-400 flex items-center gap-1.5 flex-wrap mt-0.5">
                                     <span>
                                       Updated{' '}
@@ -2595,6 +2966,26 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                                   >
                                     <FolderOpen className="w-3.5 h-3.5" />
                                     <span>Open in {appMeta.shortName}</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleTeacherShareProject(proj)}
+                                    title="Copy public share link"
+                                    className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-300 hover:bg-slate-800 cursor-pointer"
+                                  >
+                                    {copiedShareLinkProjId === proj.id ? (
+                                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                                    ) : (
+                                      <Share2 className="w-3.5 h-3.5" />
+                                    )}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenAssignModal(proj)}
+                                    title="Assign this song to students or classrooms"
+                                    className="p-1.5 rounded-lg text-slate-400 hover:text-purple-300 hover:bg-slate-800 cursor-pointer"
+                                  >
+                                    <Send className="w-3.5 h-3.5" />
                                   </button>
                                   <button
                                     type="button"
@@ -2759,6 +3150,364 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
         isOpen={isPrivacyModalOpen}
         onClose={() => setIsPrivacyModalOpen(false)}
       />
+
+      {/* STUDENT WORK INSPECTOR MODAL */}
+      {inspectedStudent && (
+        <div
+          className="fixed inset-0 z-60 bg-slate-950/85 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in"
+          onClick={() => setInspectedStudent(null)}
+        >
+          <div
+            className="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-xl max-h-[85vh] flex flex-col overflow-hidden text-white"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Inspector Header */}
+            <div className="px-5 py-3.5 bg-slate-950/80 border-b border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-sky-500/20 border border-sky-400/40 flex items-center justify-center font-bold text-sky-300 text-sm">
+                  {inspectedStudent.firstName.charAt(0)}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-extrabold text-white">
+                      {inspectedStudent.firstName}&apos;s Saved Compositions
+                    </h3>
+                    <span className="px-2 py-0.5 rounded-md bg-slate-800 font-mono text-amber-300 font-bold text-xs">
+                      PIN: {inspectedStudent.pin}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-400">
+                    {inspectedStudent.grade ? `${inspectedStudent.grade} • ` : ''}
+                    {inspectedStudent.classGroup || 'General Music'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setInspectedStudent(null)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Student Projects List */}
+            <div className="p-4 overflow-y-auto space-y-2.5 flex-1">
+              {allProjects.filter((p) => p.studentId === inspectedStudent.id).length === 0 ? (
+                <div className="p-8 rounded-xl bg-slate-950/40 border border-slate-800 text-center text-xs text-slate-400">
+                  <Music className="w-8 h-8 text-slate-600 mx-auto mb-2" />
+                  <p className="font-semibold">{inspectedStudent.firstName} hasn&apos;t saved any songs yet.</p>
+                  <p className="text-slate-500 mt-1">
+                    Songs they name and work on will automatically show up here.
+                  </p>
+                </div>
+              ) : (
+                allProjects
+                  .filter((p) => p.studentId === inspectedStudent.id)
+                  .map((proj) => {
+                    const appMeta = getAppDescriptor(proj.appType);
+                    return (
+                      <div
+                        key={proj.id}
+                        className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 flex items-center justify-between gap-3 text-xs"
+                      >
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-extrabold text-sm text-white">
+                              {proj.title}
+                            </span>
+                            <span
+                              className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border flex items-center gap-1 font-['Fredoka',sans-serif] ${appMeta.badgeClass}`}
+                            >
+                              <span>{appMeta.emoji}</span>
+                              <span>{appMeta.name}</span>
+                            </span>
+                            {proj.isAssignment && (
+                              <span className="px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 font-bold text-[10px] border border-purple-500/30 flex items-center gap-1">
+                                <BookOpen className="w-2.5 h-2.5" />
+                                <span>Assignment</span>
+                              </span>
+                            )}
+                          </div>
+                          {proj.assignmentInstructions && (
+                            <div className="mt-1 px-2.5 py-1 rounded-lg bg-purple-500/10 border border-purple-500/25 text-[11px] text-purple-200">
+                              📝 <span className="font-semibold">Task:</span> {proj.assignmentInstructions}
+                            </div>
+                          )}
+                          <div className="text-[11px] text-slate-400 flex items-center gap-1.5 flex-wrap mt-1">
+                            <span>
+                              Updated{' '}
+                              {new Date(proj.updatedAt).toLocaleDateString([], {
+                                month: 'short',
+                                day: 'numeric',
+                              })}{' '}
+                              at{' '}
+                              {new Date(proj.updatedAt).toLocaleTimeString([], {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                            </span>
+                            <span>•</span>
+                            {proj.appType === 'beat-machine' ? (
+                              <span>
+                                🥁 {proj.projectData?.measures || 1} bar(s) • {proj.projectData?.bpm || 115} BPM
+                              </span>
+                            ) : (
+                              <span>
+                                🎼 {proj.score?.tracks?.length || 1} track(s) • {proj.score?.tempo || 108} BPM
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              onLoadProject(proj, {
+                                teacherPin: activeTeacherPin,
+                                studentName: proj.studentName,
+                                studentId: proj.studentId,
+                              });
+                              setInspectedStudent(null);
+                              onClose();
+                            }}
+                            className={`flex items-center gap-1 px-3 py-1.5 rounded-lg font-bold cursor-pointer font-['Fredoka',sans-serif] ${appMeta.openColor}`}
+                            title={`Load and monitor ${proj.studentName}'s song`}
+                          >
+                            <FolderOpen className="w-3.5 h-3.5" />
+                            <span>Load Work</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleTeacherShareProject(proj)}
+                            title="Share student work (copy link)"
+                            className="p-2 rounded-lg text-slate-400 hover:text-emerald-300 hover:bg-slate-800 cursor-pointer"
+                          >
+                            {copiedShareLinkProjId === proj.id ? (
+                              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                            ) : (
+                              <Share2 className="w-4 h-4" />
+                            )}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleTeacherDeleteSong(proj)}
+                            title="Delete project"
+                            className="p-2 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800 cursor-pointer"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ASSIGNMENT DISPATCH MODAL */}
+      {showAssignModal && assignSourceProject && (
+        <div
+          className="fixed inset-0 z-60 bg-slate-950/85 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in"
+          onClick={() => setShowAssignModal(false)}
+        >
+          <div
+            className="bg-slate-900 border border-purple-500/40 rounded-2xl shadow-2xl w-full max-w-xl max-h-[88vh] flex flex-col overflow-hidden text-white"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Assignment Header */}
+            <div className="px-5 py-4 bg-slate-950 border-b border-purple-500/30 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-purple-500/20 border border-purple-400/40 flex items-center justify-center text-purple-300">
+                  <Send className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-white">
+                    Assign Song to Students
+                  </h3>
+                  <p className="text-xs text-purple-300/80">
+                    Creates an individual editable copy for every selected student in their account
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAssignModal(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Assignment Body */}
+            <div className="p-5 overflow-y-auto space-y-4 text-xs flex-1">
+              {/* Song to Assign */}
+              <div className="p-3 rounded-xl bg-slate-950/70 border border-slate-800 space-y-1">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                  Song / Template To Assign:
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="font-extrabold text-white text-sm">
+                    {assignSourceProject.title}
+                  </span>
+                  <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-sky-500/20 text-sky-300 border border-sky-500/30 font-['Fredoka',sans-serif]">
+                    {getAppDescriptor(assignSourceProject.appType).name}
+                  </span>
+                </div>
+              </div>
+
+              {/* Instructions */}
+              <div className="space-y-1.5">
+                <label className="block text-[10px] font-bold uppercase text-slate-400">
+                  Assignment Instructions (Visible to Students)
+                </label>
+                <textarea
+                  rows={3}
+                  value={assignInstructions}
+                  onChange={(e) => setAssignInstructions(e.target.value)}
+                  placeholder="e.g. Listen to the unfinished melody, add an ostinato pattern, and add 2 additional instruments!"
+                  className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-700 focus:border-purple-400 focus:outline-hidden text-xs text-white"
+                />
+              </div>
+
+              {/* Classroom / Target Selection */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] font-bold uppercase text-slate-400">
+                    Assign To Classroom:
+                  </label>
+                  <span className="text-[11px] text-purple-300 font-semibold">
+                    {assignSelectedStudentIds.length} student{assignSelectedStudentIds.length === 1 ? '' : 's'} selected
+                  </span>
+                </div>
+
+                <select
+                  value={assignTargetClassId}
+                  onChange={(e) => {
+                    const classId = e.target.value;
+                    setAssignTargetClassId(classId);
+                    if (classId === 'ALL') {
+                      setAssignSelectedStudentIds(allStudents.map((s) => s.id));
+                    } else {
+                      const matchedClass = classrooms.find((c) => c.id === classId);
+                      const inClass = allStudents
+                        .filter((s) => s.classId === classId || (matchedClass && s.classGroup === matchedClass.name))
+                        .map((s) => s.id);
+                      setAssignSelectedStudentIds(inClass);
+                    }
+                  }}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-xs text-white"
+                >
+                  <option value="ALL">Entire Music School (All Classrooms &amp; Students)</option>
+                  {classrooms.map((cls) => {
+                    const count = allStudents.filter(
+                      (s) => s.classId === cls.id || s.classGroup === cls.name
+                    ).length;
+                    return (
+                      <option key={cls.id} value={cls.id}>
+                        {cls.grade} — {cls.name} ({count} students)
+                      </option>
+                    );
+                  })}
+                </select>
+
+                {/* Individual Checkbox Toggle for Fine-Grained Control */}
+                <div className="p-3 rounded-xl bg-slate-950/70 border border-slate-800 space-y-2 max-h-40 overflow-y-auto">
+                  <div className="flex items-center justify-between text-[11px] border-b border-slate-800 pb-1.5">
+                    <span className="font-semibold text-slate-300">Individual Student Toggles</span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const relevant = assignTargetClassId === 'ALL'
+                            ? allStudents
+                            : allStudents.filter(
+                                (s) =>
+                                  s.classId === assignTargetClassId ||
+                                  s.classGroup === classrooms.find((c) => c.id === assignTargetClassId)?.name
+                              );
+                          setAssignSelectedStudentIds(relevant.map((s) => s.id));
+                        }}
+                        className="text-purple-300 hover:underline cursor-pointer"
+                      >
+                        Select All
+                      </button>
+                      <span>•</span>
+                      <button
+                        type="button"
+                        onClick={() => setAssignSelectedStudentIds([])}
+                        className="text-slate-400 hover:underline cursor-pointer"
+                      >
+                        Deselect All
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 pt-1">
+                    {(assignTargetClassId === 'ALL'
+                      ? allStudents
+                      : allStudents.filter(
+                          (s) =>
+                            s.classId === assignTargetClassId ||
+                            s.classGroup === classrooms.find((c) => c.id === assignTargetClassId)?.name
+                        )
+                    ).map((stu) => {
+                      const isChecked = assignSelectedStudentIds.includes(stu.id);
+                      return (
+                        <label
+                          key={stu.id}
+                          className="flex items-center gap-2 cursor-pointer p-1.5 rounded-lg hover:bg-slate-900 transition-colors"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setAssignSelectedStudentIds((prev) => [...prev, stu.id]);
+                              } else {
+                                setAssignSelectedStudentIds((prev) => prev.filter((id) => id !== stu.id));
+                              }
+                            }}
+                            className="w-4 h-4 accent-purple-500 rounded-sm"
+                          />
+                          <span className="truncate font-semibold text-white">{stu.firstName}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="p-4 bg-slate-950 border-t border-purple-500/30 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => setShowAssignModal(false)}
+                className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 hover:text-white font-semibold text-xs cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isAssigning || assignSelectedStudentIds.length === 0}
+                onClick={handleExecuteAssignment}
+                className="flex items-center gap-1.5 px-5 py-2 rounded-xl bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-400 hover:to-indigo-400 disabled:opacity-50 text-white font-bold text-xs shadow-lg cursor-pointer"
+              >
+                <Send className="w-3.5 h-3.5" />
+                <span>
+                  {isAssigning
+                    ? 'Dispatching Assignment...'
+                    : `Assign to ${assignSelectedStudentIds.length} Student${assignSelectedStudentIds.length === 1 ? '' : 's'}`}
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
