@@ -15,6 +15,9 @@ import {
   UiMode,
   ViewLayout,
   VoltaEnding,
+  HALLOWEEN_TRACK_FX_FIRST,
+  HALLOWEEN_TRACK_FX_MELODIC,
+  HALLOWEEN_TRACK_FX_DRUMS,
 } from './types/music';
 import { DrumSound } from './data/drumGrooves';
 import { DrumKitType } from './audio/acousticSamples';
@@ -1635,6 +1638,27 @@ export default function App() {
               setIsAvatarOpen(false);
               setIsHalloweenTheme(true);
               soundEngine.playWelcomeChime();
+
+              // Spookify FX: Boost reverb & echo across all instruments, heavily on main/first track, and reverb on drums
+              setScore((prev) => {
+                const updatedTracks = prev.tracks.map((track, idx) => {
+                  const isDrums = track.instrumentId.startsWith('drum_');
+                  const spookyFx = isDrums
+                    ? { ...HALLOWEEN_TRACK_FX_DRUMS }
+                    : idx === 0
+                    ? { ...HALLOWEEN_TRACK_FX_FIRST }
+                    : { ...HALLOWEEN_TRACK_FX_MELODIC };
+
+                  return {
+                    ...track,
+                    fx: {
+                      ...(track.fx || {}),
+                      ...spookyFx,
+                    },
+                  };
+                });
+                return { ...prev, tracks: updatedTracks };
+              });
               return;
             }
           } else if (ch === 's') {
@@ -2007,12 +2031,19 @@ export default function App() {
         muted: false,
         soloed: false,
         measures: newMeasures,
+        ...(isHalloweenTheme
+          ? {
+              fx: {
+                ...(nextScore.tracks.length === 0 ? HALLOWEEN_TRACK_FX_FIRST : HALLOWEEN_TRACK_FX_MELODIC),
+              },
+            }
+          : {}),
       };
 
       nextScore.tracks.push(newTrack);
       pushScoreState(nextScore);
     },
-    [pushScoreState, score]
+    [pushScoreState, score, isHalloweenTheme]
   );
 
   // Add Grand Staff
@@ -2031,6 +2062,11 @@ export default function App() {
       measures: Array.from({ length: measureCount }).map(() =>
         createEmptyMeasure(nextScore.timeSignature)
       ),
+      ...(isHalloweenTheme
+        ? {
+            fx: { ...HALLOWEEN_TRACK_FX_FIRST },
+          }
+        : {}),
     };
 
     const lhTrack: Track = {
@@ -2044,11 +2080,16 @@ export default function App() {
       measures: Array.from({ length: measureCount }).map(() =>
         createEmptyMeasure(nextScore.timeSignature)
       ),
+      ...(isHalloweenTheme
+        ? {
+            fx: { ...HALLOWEEN_TRACK_FX_MELODIC },
+          }
+        : {}),
     };
 
     nextScore.tracks.push(rhTrack, lhTrack);
     pushScoreState(nextScore);
-  }, [pushScoreState, score]);
+  }, [pushScoreState, score, isHalloweenTheme]);
 
   // Reset to single blank treble staff
   const handleNewBlankScore = useCallback(() => {
@@ -2056,13 +2097,16 @@ export default function App() {
     if (studentSession) {
       blank.composer = studentSession.firstName;
     }
+    if (isHalloweenTheme && blank.tracks && blank.tracks[0]) {
+      blank.tracks[0].fx = { ...HALLOWEEN_TRACK_FX_FIRST };
+    }
     setCurrentProjectId(null);
     setEditingAsTeacher(null);
     setScore(blank);
     setHistory([JSON.parse(JSON.stringify(blank))]);
     setHistoryIndex(0);
     setSelection({ trackIndex: 0, measureIndex: 0, itemIndex: 0 });
-  }, [studentSession]);
+  }, [studentSession, isHalloweenTheme]);
 
   // Add Drum Track with selected beat
   const handleAddDrumTrack = useCallback(
@@ -2091,6 +2135,11 @@ export default function App() {
         muted: false,
         soloed: false,
         measures: newMeasures,
+        ...(isHalloweenTheme
+          ? {
+              fx: { ...HALLOWEEN_TRACK_FX_DRUMS },
+            }
+          : {}),
       };
 
       nextScore.tracks.push(newTrack);
@@ -2108,7 +2157,7 @@ export default function App() {
         itemIndex: 0,
       });
     },
-    [pushScoreState, score]
+    [pushScoreState, score, isHalloweenTheme]
   );
 
   // Apply Drum Beat to currently selected track
@@ -2122,6 +2171,12 @@ export default function App() {
       targetTrack.name = `Drums (${groove.name})`;
       targetTrack.instrumentId = groove.kitType || 'drum_kit';
       targetTrack.clef = 'treble';
+      if (isHalloweenTheme) {
+        targetTrack.fx = {
+          ...(targetTrack.fx || {}),
+          ...HALLOWEEN_TRACK_FX_DRUMS,
+        };
+      }
 
       targetTrack.measures = targetTrack.measures.map((m, mIdx) => {
         const patternMeasure = groove.measures[mIdx % groove.measures.length];
@@ -2136,7 +2191,7 @@ export default function App() {
 
       pushScoreState(nextScore);
     },
-    [pushScoreState, score, selection]
+    [pushScoreState, score, selection, isHalloweenTheme]
   );
 
   // Export JSON file

@@ -188,6 +188,34 @@ export const DEFAULT_TRACK_FX: TrackFxSettings = {
   drive: 0,
 };
 
+// Spooky Halloween FX defaults: expansive eerie hall reverb + subtle ghostly echo reflections
+export const HALLOWEEN_TRACK_FX_FIRST: TrackFxSettings = {
+  reverb: 0.90, // Almost full reverb for maximum spooky cathedral/haunted atmosphere
+  delay: 0.45,  // Prominent eerie echo
+  chorus: 0.25, // Eerie stereo widening
+  eqBass: 1,
+  eqTreble: 2,
+  drive: 0,
+};
+
+export const HALLOWEEN_TRACK_FX_MELODIC: TrackFxSettings = {
+  reverb: 0.85, // Almost full reverb
+  delay: 0.35,  // Ghostly echo
+  chorus: 0.15,
+  eqBass: 0,
+  eqTreble: 1,
+  drive: 0,
+};
+
+export const HALLOWEEN_TRACK_FX_DRUMS: TrackFxSettings = {
+  reverb: 0.80, // Heavy cavernous reverb for the beat without muddy echo
+  delay: 0,
+  chorus: 0,
+  eqBass: 2,
+  eqTreble: 1,
+  drive: 0,
+};
+
 export interface Track {
   id: string;
   name: string;
