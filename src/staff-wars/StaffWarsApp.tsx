@@ -152,6 +152,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
   const [status, setStatus] = useState<GameStatus>('menu');
   const [score, setScore] = useState<number>(0);
   const [lives, setLives] = useState<number>(3);
+  const [wrongPressCount, setWrongPressCount] = useState<number>(0);
   const [level, setLevel] = useState<number>(1);
   const [streak, setStreak] = useState<number>(0);
   const [maxStreak, setMaxStreak] = useState<number>(0);
@@ -598,13 +599,45 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
         setStreak(0);
         setNotesMissed((prev) => prev + 1);
 
-        setLastFeedback({
-          text: `Missed! You entered ${letter}, but target is ${targetStep}`,
-          isCorrect: false,
-        });
+        // In Button / Arcade mode: deduct 1 life for every 3 wrong keys pressed
+        if (inputMode === 'buttons') {
+          const nextCount = wrongPressCount + 1;
+          if (nextCount >= 3) {
+            setWrongPressCount(0);
+            staffWarsAudio.playShieldHit();
+            setLastFeedback({
+              text: `⚠️ 3 Wrong Guesses! Lost 1 Shield! Target is ${targetStep}`,
+              isCorrect: false,
+            });
+            setLives((prevLives) => {
+              const remaining = prevLives - 1;
+              if (remaining <= 0) {
+                setStatus('gameover');
+                staffWarsAudio.playGameOver();
+                if (score > 0) {
+                  submitHighScore(score, level);
+                }
+                return 0;
+              }
+              return remaining;
+            });
+          } else {
+            setWrongPressCount(nextCount);
+            setLastFeedback({
+              text: `Missed! You entered ${letter}, but target is ${targetStep} (${nextCount}/3 strikes)`,
+              isCorrect: false,
+            });
+          }
+        } else {
+          // Leave live mic mode as is
+          setLastFeedback({
+            text: `Missed! You entered ${letter}, but target is ${targetStep}`,
+            isCorrect: false,
+          });
+        }
       }
     },
-    [status, activeNote, streak, score, highScore, notesHit, level, triggerExplosion, spawnNote, submitHighScore]
+    [status, activeNote, streak, score, highScore, notesHit, level, triggerExplosion, spawnNote, submitHighScore, inputMode, wrongPressCount]
   );
 
 
@@ -676,6 +709,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
     }
     setScore(0);
     setLives(3);
+    setWrongPressCount(0);
     setLevel(1);
     setStreak(0);
     setMaxStreak(0);
@@ -1156,6 +1190,11 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
                     </span>
                   ))}
                 </div>
+                {inputMode === 'buttons' && wrongPressCount > 0 && (
+                  <span className="text-[10px] font-bold text-rose-400 bg-rose-500/20 px-2 py-0.5 rounded-full border border-rose-500/40">
+                    Strike {wrongPressCount}/3
+                  </span>
+                )}
               </div>
 
               {/* Level & Speed Escalation */}
