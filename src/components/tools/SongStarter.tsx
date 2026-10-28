@@ -17,7 +17,87 @@ import {
   playCardFlipSound,
 } from './toolboxAudio';
 
-// Sound Blocks for Little Kids (K-2)
+// ----------------------------------------------------
+// ACCOMPANYING BEAT PRESETS ("BEATS!")
+// ----------------------------------------------------
+export interface AccompanyingBeat {
+  id: string;
+  name: string;
+  emoji: string;
+  bgGradient: string;
+  borderColor: string;
+  description: string;
+  kickBeats: number[]; // e.g. [0, 2, 4]
+  snareBeats: number[]; // e.g. [1, 3, 5]
+  hihatBeats: number[]; // e.g. [0, 1, 2, 3, 4, 5]
+  bassNoteFreqs?: number[];
+}
+
+export const ACCOMPANYING_BEATS: AccompanyingBeat[] = [
+  {
+    id: 'beat-none',
+    name: 'Quiet Beat',
+    emoji: '🤫',
+    bgGradient: 'from-slate-800 to-slate-900',
+    borderColor: 'border-slate-700',
+    description: 'No drums, just sounds',
+    kickBeats: [],
+    snareBeats: [],
+    hihatBeats: [],
+  },
+  {
+    id: 'beat-pop',
+    name: 'Sunny Pop',
+    emoji: '☀️',
+    bgGradient: 'from-amber-400 to-orange-500',
+    borderColor: 'border-amber-300',
+    description: 'Happy boom-clap bounce',
+    kickBeats: [0, 2, 4],
+    snareBeats: [1, 3, 5],
+    hihatBeats: [0, 1, 2, 3, 4, 5],
+    bassNoteFreqs: [130.81, 130.81, 164.81, 164.81, 196.0, 196.0], // C3, E3, G3
+  },
+  {
+    id: 'beat-dance',
+    name: 'Disco Party',
+    emoji: '🎉',
+    bgGradient: 'from-fuchsia-500 to-pink-500',
+    borderColor: 'border-fuchsia-300',
+    description: 'Fast 4-on-the-floor groove',
+    kickBeats: [0, 1, 2, 3, 4, 5],
+    snareBeats: [1, 3, 5],
+    hihatBeats: [0, 1, 2, 3, 4, 5],
+    bassNoteFreqs: [110.0, 130.81, 146.83, 110.0, 164.81, 196.0],
+  },
+  {
+    id: 'beat-robot',
+    name: 'Robot Funk',
+    emoji: '🤖',
+    bgGradient: 'from-cyan-500 to-blue-600',
+    borderColor: 'border-cyan-300',
+    description: 'Blippy space electro',
+    kickBeats: [0, 3],
+    snareBeats: [2, 5],
+    hihatBeats: [1, 3, 4],
+    bassNoteFreqs: [98.0, 110.0, 146.83, 98.0, 130.81, 146.83],
+  },
+  {
+    id: 'beat-train',
+    name: 'Chugga Train',
+    emoji: '🚂',
+    bgGradient: 'from-lime-400 to-emerald-600',
+    borderColor: 'border-lime-300',
+    description: 'Rocking train chug',
+    kickBeats: [0, 1, 2, 3, 4, 5],
+    snareBeats: [0, 2, 4],
+    hihatBeats: [1, 3, 5],
+    bassNoteFreqs: [130.81, 146.83, 164.81, 130.81, 146.83, 196.0],
+  },
+];
+
+// ----------------------------------------------------
+// SOUND BLOCKS FOR LITTLE KIDS (K-2)
+// ----------------------------------------------------
 export interface SoundBlockDef {
   id: string;
   name: string;
@@ -29,7 +109,7 @@ export interface SoundBlockDef {
 }
 
 export const SOUND_BLOCKS: SoundBlockDef[] = [
-  // --- Moods / Feelings ---
+  // --- Moods / Feelings (Warm chords and textures) ---
   {
     id: 'mood-sunny',
     name: 'Sunny',
@@ -131,7 +211,7 @@ export const SOUND_BLOCKS: SoundBlockDef[] = [
     bgGradient: 'from-pink-400 to-rose-500',
     borderClass: 'border-pink-300',
     category: 'instrument',
-    description: 'Meow meow high pitch',
+    description: 'High happy pitch',
   },
   {
     id: 'inst-frog',
@@ -140,7 +220,7 @@ export const SOUND_BLOCKS: SoundBlockDef[] = [
     bgGradient: 'from-emerald-400 to-green-600',
     borderClass: 'border-emerald-300',
     category: 'instrument',
-    description: 'Ribbit low notes',
+    description: 'Low bouncy pitch',
   },
   {
     id: 'inst-bells',
@@ -182,40 +262,52 @@ export const SOUND_BLOCKS: SoundBlockDef[] = [
   },
 ];
 
-// Presets that toddlers/kindergarteners can pick in 1 tap
-const FUN_PRESETS: { name: string; emoji: string; blockIds: string[] }[] = [
+// Multi-Track Track Definition
+interface TrackLaneMeta {
+  id: string;
+  title: string;
+  emoji: string;
+  accentColor: string;
+  tagColor: string;
+}
+
+const TRACK_LANES: TrackLaneMeta[] = [
   {
-    name: 'Sunny Day',
-    emoji: '☀️',
-    blockIds: ['mood-sunny', 'beat-boom', 'inst-piano', 'fx-sparkle', 'beat-clap', 'inst-xylophone'],
+    id: 'lane-1',
+    title: 'Track 1: Melody Stars',
+    emoji: '⭐',
+    accentColor: 'border-amber-400/50 bg-amber-950/20',
+    tagColor: 'bg-amber-400 text-slate-950',
   },
   {
-    name: 'Dance Party',
-    emoji: '🎉',
-    blockIds: ['mood-party', 'beat-boom', 'beat-clap', 'inst-bells', 'beat-robot', 'fx-rocket'],
+    id: 'lane-2',
+    title: 'Track 2: Fun Sounds',
+    emoji: '🎨',
+    accentColor: 'border-pink-400/50 bg-pink-950/20',
+    tagColor: 'bg-pink-400 text-slate-950',
   },
   {
-    name: 'Animal Band',
-    emoji: '🦁',
-    blockIds: ['inst-cat', 'beat-boom', 'inst-frog', 'beat-clap', 'inst-xylophone', 'fx-sparkle'],
-  },
-  {
-    name: 'Space Mystery',
-    emoji: '🛸',
-    blockIds: ['mood-spooky', 'beat-robot', 'inst-bells', 'beat-boom', 'fx-rocket', 'inst-piano'],
+    id: 'lane-3',
+    title: 'Track 3: Rhythm & Beats',
+    emoji: '🥁',
+    accentColor: 'border-cyan-400/50 bg-cyan-950/20',
+    tagColor: 'bg-cyan-400 text-slate-950',
   },
 ];
 
 export const SongStarter: React.FC = () => {
-  // Kid song timeline: exactly 6 slots in the song box
-  const [songSlots, setSongSlots] = useState<(string | null)[]>([
-    'mood-sunny',
-    'beat-boom',
-    'inst-piano',
-    'beat-clap',
-    'inst-cat',
-    'fx-sparkle',
+  // 3 Multi-track Lines (6 slots each)
+  const [tracks, setTracks] = useState<(string | null)[][]>([
+    // Track 1 (Melody)
+    ['inst-piano', 'inst-cat', 'inst-xylophone', 'inst-cat', 'inst-piano', 'fx-sparkle'],
+    // Track 2 (Fun Sounds / Mood)
+    ['mood-sunny', null, 'inst-bells', null, 'mood-party', 'fx-rocket'],
+    // Track 3 (Rhythm / Drums)
+    ['beat-boom', 'beat-clap', 'beat-boom', 'beat-clap', 'beat-boom', 'beat-clap'],
   ]);
+
+  // Selected Accompanying Beat ("Beats!" option)
+  const [selectedBeatId, setSelectedBeatId] = useState<string>('beat-pop');
 
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [activePlaySlot, setActivePlaySlot] = useState<number>(-1);
@@ -223,14 +315,14 @@ export const SongStarter: React.FC = () => {
 
   const timerRef = useRef<number | null>(null);
 
-  // Play audio for a block
+  // Play audio for an individual block
   const playBlockAudio = useCallback(async (blockId: string, stepNumber: number = 0) => {
     const ctx = await getToolboxAudioContext();
     if (!ctx) return;
     const now = ctx.currentTime;
 
     switch (blockId) {
-      // Moods: gentle chord swell
+      // Moods: warm chords
       case 'mood-sunny':
         playMusicNote({ step: 'C', octave: 4 }, 'piano', 0.8);
         playMusicNote({ step: 'E', octave: 4 }, 'piano', 0.8);
@@ -318,14 +410,12 @@ export const SongStarter: React.FC = () => {
         break;
       }
       case 'inst-cat': {
-        // High playful note
         const catPitches: ('E' | 'G' | 'A' | 'C')[] = ['G', 'A', 'C', 'E'];
         const cp = catPitches[stepNumber % catPitches.length];
         playMusicNote({ step: cp, octave: 5 }, 'flute', 0.4);
         break;
       }
       case 'inst-frog': {
-        // Low bouncy pitch
         const frogPitches: ('C' | 'D' | 'E' | 'G')[] = ['C', 'D', 'E', 'D'];
         const fp = frogPitches[stepNumber % frogPitches.length];
         playMusicNote({ step: fp, octave: 3 }, 'marimba', 0.5);
@@ -368,7 +458,75 @@ export const SongStarter: React.FC = () => {
     }
   }, []);
 
-  // Playback Loop
+  // Play backing drums/bass for the active accompanying beat
+  const playAccompanyingBeatStep = useCallback(
+    async (stepIndex: number, beat: AccompanyingBeat) => {
+      if (beat.id === 'beat-none') return;
+      const ctx = await getToolboxAudioContext();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+
+      // 1. Bass Note (if provided)
+      if (beat.bassNoteFreqs && beat.bassNoteFreqs[stepIndex]) {
+        const freq = beat.bassNoteFreqs[stepIndex];
+        const bassOsc = ctx.createOscillator();
+        const bassGain = ctx.createGain();
+        bassOsc.type = 'triangle';
+        bassOsc.frequency.setValueAtTime(freq, now);
+        bassGain.gain.setValueAtTime(0.18, now);
+        bassGain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+        bassOsc.connect(bassGain);
+        bassGain.connect(ctx.destination);
+        bassOsc.start(now);
+        bassOsc.stop(now + 0.38);
+      }
+
+      // 2. Kick Drum
+      if (beat.kickBeats.includes(stepIndex)) {
+        const kickOsc = ctx.createOscillator();
+        const kickGain = ctx.createGain();
+        kickOsc.frequency.setValueAtTime(140, now);
+        kickOsc.frequency.exponentialRampToValueAtTime(38, now + 0.15);
+        kickGain.gain.setValueAtTime(0.28, now);
+        kickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+        kickOsc.connect(kickGain);
+        kickGain.connect(ctx.destination);
+        kickOsc.start(now);
+        kickOsc.stop(now + 0.18);
+      }
+
+      // 3. Snare / Clap
+      if (beat.snareBeats.includes(stepIndex)) {
+        const snareOsc = ctx.createOscillator();
+        const snareGain = ctx.createGain();
+        snareOsc.type = 'triangle';
+        snareOsc.frequency.setValueAtTime(280, now);
+        snareGain.gain.setValueAtTime(0.2, now);
+        snareGain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+        snareOsc.connect(snareGain);
+        snareGain.connect(ctx.destination);
+        snareOsc.start(now);
+        snareOsc.stop(now + 0.12);
+      }
+
+      // 4. Hi-Hat tick
+      if (beat.hihatBeats.includes(stepIndex)) {
+        const hatOsc = ctx.createOscillator();
+        const hatGain = ctx.createGain();
+        hatOsc.type = 'highpass' as any;
+        hatOsc.frequency.setValueAtTime(4500, now);
+        hatGain.gain.setValueAtTime(0.06, now);
+        hatGain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+        hatOsc.connect(hatGain);
+        hatGain.connect(ctx.destination);
+        hatOsc.start(now);
+        hatOsc.stop(now + 0.05);
+      }
+    },
+    []
+  );
+
+  // Playback Loop: advances all 3 tracks simultaneously
   useEffect(() => {
     if (!isPlaying) {
       if (timerRef.current) clearInterval(timerRef.current);
@@ -377,14 +535,23 @@ export const SongStarter: React.FC = () => {
     }
 
     const intervalMs = 600; // Kid-friendly comfortable tempo (~100 BPM)
+    const activeBeatDef = ACCOMPANYING_BEATS.find((b) => b.id === selectedBeatId) || ACCOMPANYING_BEATS[1];
 
     timerRef.current = window.setInterval(() => {
       setActivePlaySlot((prev) => {
-        const next = (prev + 1) % songSlots.length;
-        const blockId = songSlots[next];
-        if (blockId) {
-          playBlockAudio(blockId, next);
-        }
+        const next = (prev + 1) % 6;
+
+        // 1. Play the accompanying beat
+        playAccompanyingBeatStep(next, activeBeatDef);
+
+        // 2. Play all blocks in this column across Track 1, 2, and 3
+        tracks.forEach((lane) => {
+          const blockId = lane[next];
+          if (blockId) {
+            playBlockAudio(blockId, next);
+          }
+        });
+
         return next;
       });
     }, intervalMs);
@@ -392,21 +559,23 @@ export const SongStarter: React.FC = () => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [isPlaying, songSlots, playBlockAudio]);
+  }, [isPlaying, tracks, selectedBeatId, playBlockAudio, playAccompanyingBeatStep]);
 
-  // Click on a sound block: places into first empty slot or last slot
+  // Click on a sound block: places into first empty slot in Track 1, 2, or 3
   const handleTapBlock = (blockId: string) => {
     playBlockAudio(blockId);
-    setSongSlots((prev) => {
-      const emptyIdx = prev.findIndex((s) => s === null);
-      if (emptyIdx !== -1) {
-        const updated = [...prev];
-        updated[emptyIdx] = blockId;
-        return updated;
+    setTracks((prev) => {
+      const updated = prev.map((lane) => [...lane]);
+      // Find first empty slot in lane 0, then 1, then 2
+      for (let l = 0; l < updated.length; l++) {
+        const emptyIdx = updated[l].findIndex((s) => s === null);
+        if (emptyIdx !== -1) {
+          updated[l][emptyIdx] = blockId;
+          return updated;
+        }
       }
-      // If full, wrap around replacing active or first
-      const updated = [...prev];
-      updated[updated.length - 1] = blockId;
+      // If completely full, overwrite last slot in track 1
+      updated[0][updated[0].length - 1] = blockId;
       return updated;
     });
   };
@@ -416,42 +585,56 @@ export const SongStarter: React.FC = () => {
     setDraggedBlockId(blockId);
   };
 
-  const handleDropOnSlot = (slotIdx: number) => {
+  const handleDropOnSlot = (laneIdx: number, slotIdx: number) => {
     if (!draggedBlockId) return;
-    setSongSlots((prev) => {
-      const updated = [...prev];
-      updated[slotIdx] = draggedBlockId;
+    setTracks((prev) => {
+      const updated = prev.map((lane) => [...lane]);
+      updated[laneIdx][slotIdx] = draggedBlockId;
       return updated;
     });
     playBlockAudio(draggedBlockId);
     setDraggedBlockId(null);
   };
 
-  const handleClearSlot = (slotIdx: number, e: React.MouseEvent) => {
+  const handleClearSlot = (laneIdx: number, slotIdx: number, e: React.MouseEvent) => {
     e.stopPropagation();
-    setSongSlots((prev) => {
-      const updated = [...prev];
-      updated[slotIdx] = null;
+    setTracks((prev) => {
+      const updated = prev.map((lane) => [...lane]);
+      updated[laneIdx][slotIdx] = null;
       return updated;
     });
   };
 
-  const handleRandomizeSong = () => {
-    const randomSlots = Array.from({ length: 6 }, () => {
-      const randomBlock = SOUND_BLOCKS[Math.floor(Math.random() * SOUND_BLOCKS.length)];
-      return randomBlock.id;
+  const handleClearTrack = (laneIdx: number) => {
+    setTracks((prev) => {
+      const updated = prev.map((lane, idx) =>
+        idx === laneIdx ? [null, null, null, null, null, null] : [...lane]
+      );
+      return updated;
     });
-    setSongSlots(randomSlots);
-    playMatchChime();
   };
 
   const handleClearAll = () => {
-    setSongSlots([null, null, null, null, null, null]);
+    setTracks([
+      [null, null, null, null, null, null],
+      [null, null, null, null, null, null],
+      [null, null, null, null, null, null],
+    ]);
     setIsPlaying(false);
   };
 
-  const handleLoadPreset = (preset: typeof FUN_PRESETS[0]) => {
-    setSongSlots([...preset.blockIds]);
+  const handleRandomizeSong = () => {
+    const randomLanes = tracks.map(() =>
+      Array.from({ length: 6 }, () => {
+        // 75% chance of block, 25% empty
+        if (Math.random() < 0.25) return null;
+        const randomBlock = SOUND_BLOCKS[Math.floor(Math.random() * SOUND_BLOCKS.length)];
+        return randomBlock.id;
+      })
+    );
+    // Make sure at least first beat of track 1 has a sound
+    if (!randomLanes[0][0]) randomLanes[0][0] = 'inst-piano';
+    setTracks(randomLanes);
     playMatchChime();
   };
 
@@ -470,7 +653,7 @@ export const SongStarter: React.FC = () => {
               Song Starter!
             </h2>
             <p className="text-sm font-bold text-amber-300 mt-0.5">
-              Drag sound blocks to build your song! 🎨
+              Multi-Track DAW for Kindergarteners! 🎨
             </p>
           </div>
         </div>
@@ -505,14 +688,64 @@ export const SongStarter: React.FC = () => {
       </div>
 
       {/* ----------------------------------------------------
-          THE BIG SONG BOX (DAW FOR KINDERGARTENERS)
+          "BEATS!" PICK AN ACCOMPANYING BEAT
           ---------------------------------------------------- */}
-      <div className="bg-slate-950 p-5 sm:p-6 rounded-3xl border-4 border-sky-400/60 shadow-2xl space-y-4">
+      <div className="bg-slate-900/90 p-4 rounded-3xl border-2 border-slate-800 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">🥁</span>
+            <span className="text-base sm:text-lg font-black text-amber-300">
+              Beats! (Pick Background Rhythm)
+            </span>
+          </div>
+          <span className="text-xs font-bold text-slate-400">
+            Plays with all tracks
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+          {ACCOMPANYING_BEATS.map((beat) => {
+            const isSelected = selectedBeatId === beat.id;
+            return (
+              <button
+                key={beat.id}
+                type="button"
+                onClick={() => {
+                  setSelectedBeatId(beat.id);
+                  playAccompanyingBeatStep(0, beat);
+                }}
+                className={`p-3 rounded-2xl border-2 text-left transition-all cursor-pointer flex items-center gap-2.5 ${
+                  isSelected
+                    ? 'border-white bg-gradient-to-br ' + beat.bgGradient + ' text-slate-950 shadow-xl scale-103 ring-4 ring-white/40'
+                    : 'border-slate-800 bg-slate-950 hover:border-slate-700 text-white'
+                }`}
+              >
+                <span className="text-3xl">{beat.emoji}</span>
+                <div>
+                  <div className="font-black text-sm leading-tight">{beat.name}</div>
+                  <div
+                    className={`text-[10px] leading-none mt-0.5 ${
+                      isSelected ? 'text-slate-950/80 font-bold' : 'text-slate-400'
+                    }`}
+                  >
+                    {beat.description}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ----------------------------------------------------
+          THE MULTI-TRACK SONG BOX (3 LANES)
+          ---------------------------------------------------- */}
+      <div className="bg-slate-950 p-4 sm:p-6 rounded-3xl border-4 border-sky-400/60 shadow-2xl space-y-5">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-2xl">📦</span>
             <span className="text-lg sm:text-xl font-black text-sky-300">
-              My Song Box
+              My Song Box (3 Lines)
             </span>
           </div>
 
@@ -523,96 +756,108 @@ export const SongStarter: React.FC = () => {
               className="px-3.5 py-1.5 rounded-2xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border-2 border-purple-400/40 text-xs sm:text-sm font-black transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
             >
               <Dices className="w-4 h-4" />
-              <span>Surprise Song 🎲</span>
+              <span>Surprise Mix 🎲</span>
             </button>
 
             <button
               type="button"
               onClick={handleClearAll}
               className="px-3 py-1.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-rose-300 border border-slate-700 text-xs sm:text-sm font-bold transition-all cursor-pointer"
-              title="Clear Song Box"
+              title="Clear All Tracks"
             >
-              Clear ✕
+              Clear All ✕
             </button>
           </div>
         </div>
 
-        {/* 6 Giant Drop Slots */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 sm:gap-4">
-          {songSlots.map((blockId, idx) => {
-            const blockDef = SOUND_BLOCKS.find((b) => b.id === blockId);
-            const isCurrentBeat = isPlaying && activePlaySlot === idx;
+        {/* 3 Track Lanes */}
+        <div className="space-y-4">
+          {TRACK_LANES.map((laneMeta, laneIdx) => {
+            const laneSlots = tracks[laneIdx];
 
             return (
               <div
-                key={idx}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={() => handleDropOnSlot(idx)}
-                onClick={() => {
-                  if (blockId) playBlockAudio(blockId, idx);
-                }}
-                className={`relative min-h-[140px] sm:min-h-[160px] rounded-3xl border-4 flex flex-col items-center justify-center p-3 text-center transition-all duration-200 cursor-pointer select-none ${
-                  isCurrentBeat
-                    ? 'border-yellow-300 bg-amber-400/30 scale-108 shadow-2xl shadow-amber-400/40 ring-4 ring-yellow-300'
-                    : blockDef
-                    ? `border-white/80 bg-gradient-to-br ${blockDef.bgGradient} shadow-lg hover:scale-103`
-                    : 'border-dashed border-slate-800 bg-slate-900/60 hover:border-sky-400/60 hover:bg-slate-900'
-                }`}
+                key={laneMeta.id}
+                className={`p-3 sm:p-4 rounded-3xl border-2 ${laneMeta.accentColor} space-y-2`}
               >
-                {/* Step number badge */}
-                <span className="absolute top-2 left-2.5 px-2 py-0.5 rounded-full bg-slate-950/60 text-white font-mono font-black text-[10px]">
-                  #{idx + 1}
-                </span>
-
-                {blockDef ? (
-                  <>
-                    <button
-                      type="button"
-                      onClick={(e) => handleClearSlot(idx, e)}
-                      className="absolute top-2 right-2 w-6 h-6 rounded-full bg-slate-950/60 hover:bg-rose-500 text-white flex items-center justify-center text-xs font-black transition-colors"
-                      title="Remove"
-                    >
-                      ✕
-                    </button>
-                    <span className="text-5xl sm:text-6xl mb-1 filter drop-shadow-md">
-                      {blockDef.emoji}
-                    </span>
-                    <span className="font-black text-base sm:text-lg text-slate-950 bg-white/85 px-2.5 py-0.5 rounded-xl shadow-xs leading-tight">
-                      {blockDef.name}
-                    </span>
-                  </>
-                ) : (
-                  <div className="flex flex-col items-center justify-center text-slate-600 space-y-1">
-                    <Plus className="w-8 h-8 opacity-40" />
-                    <span className="text-xs font-black uppercase tracking-wider opacity-60">
-                      Drop Here
+                {/* Lane Header */}
+                <div className="flex items-center justify-between px-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">{laneMeta.emoji}</span>
+                    <span className="text-xs sm:text-sm font-black text-white">
+                      {laneMeta.title}
                     </span>
                   </div>
-                )}
+
+                  <button
+                    type="button"
+                    onClick={() => handleClearTrack(laneIdx)}
+                    className="text-[10px] text-slate-400 hover:text-rose-300 font-bold px-2 py-0.5 rounded-lg hover:bg-slate-800/80 transition-colors"
+                  >
+                    Clear line ✕
+                  </button>
+                </div>
+
+                {/* 6 Giant Drop Slots per line */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2.5 sm:gap-3">
+                  {laneSlots.map((blockId, slotIdx) => {
+                    const blockDef = SOUND_BLOCKS.find((b) => b.id === blockId);
+                    const isCurrentBeat = isPlaying && activePlaySlot === slotIdx;
+
+                    return (
+                      <div
+                        key={slotIdx}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={() => handleDropOnSlot(laneIdx, slotIdx)}
+                        onClick={() => {
+                          if (blockId) playBlockAudio(blockId, slotIdx);
+                        }}
+                        className={`relative min-h-[110px] sm:min-h-[125px] rounded-2xl border-3 flex flex-col items-center justify-center p-2 text-center transition-all duration-150 cursor-pointer select-none ${
+                          isCurrentBeat
+                            ? 'border-yellow-300 bg-amber-400/35 scale-105 shadow-xl shadow-amber-400/40 ring-4 ring-yellow-300'
+                            : blockDef
+                            ? `border-white/80 bg-gradient-to-br ${blockDef.bgGradient} shadow-md hover:scale-103`
+                            : 'border-dashed border-slate-800 bg-slate-900/60 hover:border-sky-400/60 hover:bg-slate-900'
+                        }`}
+                      >
+                        {/* Step number badge */}
+                        <span className="absolute top-1.5 left-2 px-1.5 py-0.2 rounded-full bg-slate-950/60 text-white font-mono font-black text-[9px]">
+                          #{slotIdx + 1}
+                        </span>
+
+                        {blockDef ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={(e) => handleClearSlot(laneIdx, slotIdx, e)}
+                              className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-slate-950/60 hover:bg-rose-500 text-white flex items-center justify-center text-[10px] font-black transition-colors"
+                              title="Remove"
+                            >
+                              ✕
+                            </button>
+                            <span className="text-4xl sm:text-5xl mb-0.5 filter drop-shadow-md">
+                              {blockDef.emoji}
+                            </span>
+                            <span className="font-black text-xs sm:text-sm text-slate-950 bg-white/90 px-2 py-0.2 rounded-md shadow-xs leading-tight">
+                              {blockDef.name}
+                            </span>
+                          </>
+                        ) : (
+                          <div className="flex flex-col items-center justify-center text-slate-600 space-y-0.5">
+                            <Plus className="w-6 h-6 opacity-40" />
+                            <span className="text-[10px] font-black uppercase tracking-wider opacity-60">
+                              Drop Sound
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             );
           })}
         </div>
-      </div>
-
-      {/* ----------------------------------------------------
-          1-TAP PRESETS FOR QUICK FUN
-          ---------------------------------------------------- */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-        <span className="text-xs font-black text-amber-300 shrink-0">
-          Try a Song:
-        </span>
-        {FUN_PRESETS.map((preset) => (
-          <button
-            key={preset.name}
-            type="button"
-            onClick={() => handleLoadPreset(preset)}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-slate-800 hover:bg-slate-700 border-2 border-slate-700 text-white font-black text-xs sm:text-sm whitespace-nowrap transition-all cursor-pointer active:scale-95"
-          >
-            <span>{preset.emoji}</span>
-            <span>{preset.name}</span>
-          </button>
-        ))}
       </div>
 
       {/* ----------------------------------------------------
@@ -624,11 +869,11 @@ export const SongStarter: React.FC = () => {
             <h3 className="text-lg sm:text-xl font-black text-white flex items-center gap-2">
               <span>Pick Your Sound Blocks!</span>
               <span className="text-xs font-bold text-amber-300 bg-amber-500/20 px-2 py-0.5 rounded-full border border-amber-400/40">
-                Tap or Drag
+                Tap or Drag to Any Line
               </span>
             </h3>
             <p className="text-xs text-slate-400 font-sans mt-0.5">
-              Click any block to hear it and add it to your song!
+              Drag sounds to Track 1, 2, or 3 to hear them play together!
             </p>
           </div>
         </div>
