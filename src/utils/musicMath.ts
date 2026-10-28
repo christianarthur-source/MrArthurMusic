@@ -670,3 +670,107 @@ export function getSelectedMeasureIndices(selection: SelectionState | null): num
   }
   return [selection.measureIndex];
 }
+
+// Ordered keys around circle of fifths for intelligent transposition
+export const CIRCLE_OF_FIFTHS: KeySignature[] = [
+  'Cb', 'Gb', 'Db', 'Ab', 'Eb', 'Bb', 'F',
+  'C',
+  'G', 'D', 'A', 'E', 'B', 'F#', 'C#'
+];
+
+export const KEY_TO_FIFTHS_INDEX: Record<KeySignature, number> = {
+  Cb: 0, Gb: 1, Db: 2, Ab: 3, Eb: 4, Bb: 5, F: 6,
+  C: 7,
+  G: 8, D: 9, A: 10, E: 11, B: 12, 'F#': 13, 'C#': 14
+};
+
+const FLAT_KEY_SIGNATURES = new Set<KeySignature>(['F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb', 'Cb']);
+
+/**
+ * Transposes a Pitch by a number of semitones (-24 to +24).
+ * Uses key signature to determine whether sharps or flats should be favored.
+ */
+export function transposePitch(
+  pitch: Pitch,
+  semitones: number,
+  keySignature: KeySignature = 'C'
+): Pitch {
+  if (semitones === 0) return { ...pitch };
+  const currentMidi = getMidiNoteNumber(pitch, keySignature);
+  const targetMidi = Math.max(12, Math.min(108, currentMidi + semitones));
+  
+  const semitone = targetMidi % 12;
+  const octave = Math.floor(targetMidi / 12) - 1;
+  const isFlatKey = FLAT_KEY_SIGNATURES.has(keySignature);
+
+  const flatMap: { step: NoteStep; accidental?: AccidentalType }[] = [
+    { step: 'C' },
+    { step: 'D', accidental: 'flat' },
+    { step: 'D' },
+    { step: 'E', accidental: 'flat' },
+    { step: 'E' },
+    { step: 'F' },
+    { step: 'G', accidental: 'flat' },
+    { step: 'G' },
+    { step: 'A', accidental: 'flat' },
+    { step: 'A' },
+    { step: 'B', accidental: 'flat' },
+    { step: 'B' },
+  ];
+
+  const sharpMap: { step: NoteStep; accidental?: AccidentalType }[] = [
+    { step: 'C' },
+    { step: 'C', accidental: 'sharp' },
+    { step: 'D' },
+    { step: 'D', accidental: 'sharp' },
+    { step: 'E' },
+    { step: 'F' },
+    { step: 'F', accidental: 'sharp' },
+    { step: 'G' },
+    { step: 'G', accidental: 'sharp' },
+    { step: 'A' },
+    { step: 'A', accidental: 'sharp' },
+    { step: 'B' },
+  ];
+
+  const chosenMap = isFlatKey ? flatMap : sharpMap;
+  const entry = chosenMap[semitone];
+
+  return {
+    step: entry.step,
+    octave,
+    accidental: entry.accidental || null,
+  };
+}
+
+/**
+ * Calculates a new KeySignature after transposing by a given number of semitones.
+ */
+export function transposeKeySignature(
+  currentKey: KeySignature,
+  semitones: number
+): KeySignature {
+  // Semitone delta of root notes from C (0..11)
+  const KEY_ROOT_SEMITONE: Record<KeySignature, number> = {
+    C: 0, 'C#': 1, Db: 1, D: 2, Eb: 3, E: 4, F: 5,
+    'F#': 6, Gb: 6, G: 7, Ab: 8, A: 9, Bb: 10, B: 11, Cb: 11
+  };
+
+  const currentRoot = KEY_ROOT_SEMITONE[currentKey] ?? 0;
+  const targetRoot = (((currentRoot + semitones) % 12) + 12) % 12;
+
+  // Determine if result should prefer flat or sharp based on original key
+  const preferFlats = FLAT_KEY_SIGNATURES.has(currentKey) || (semitones < 0 && !currentKey.includes('#'));
+
+  const SEMITONE_TO_KEY_FLATS: Record<number, KeySignature> = {
+    0: 'C', 1: 'Db', 2: 'D', 3: 'Eb', 4: 'E', 5: 'F',
+    6: 'Gb', 7: 'G', 8: 'Ab', 9: 'A', 10: 'Bb', 11: 'B'
+  };
+
+  const SEMITONE_TO_KEY_SHARPS: Record<number, KeySignature> = {
+    0: 'C', 1: 'C#', 2: 'D', 3: 'Eb', 4: 'E', 5: 'F',
+    6: 'F#', 7: 'G', 8: 'Ab', 9: 'A', 10: 'Bb', 11: 'B'
+  };
+
+  return preferFlats ? SEMITONE_TO_KEY_FLATS[targetRoot] : SEMITONE_TO_KEY_SHARPS[targetRoot];
+}

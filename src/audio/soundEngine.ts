@@ -2148,10 +2148,11 @@ class SoundEngine {
   // Play full score directly on Web Audio graph starting instantly at Measure 0 Beat 0
   public playScore(
     score: Score,
-    onProgress: (measureIndex: number, beatFraction: number) => void,
+    onProgress: (measureIndex: number, beatFraction: number, countInInfo?: { isCountIn: boolean; beat: number }) => void,
     onNoteTrigger: (noteId: string) => void,
     onFinished: () => void,
-    loopMeasureIndex?: number | null
+    loopMeasureIndex?: number | null,
+    enableCountIn?: boolean
   ) {
     this.stopPlayback();
     const liveCtx = this.ensureContext();
@@ -2186,7 +2187,42 @@ class SoundEngine {
 
     // Audio starts in 20ms - instantaneous playback response!
     const leadTime = 0.02;
-    const startAudioTime = liveCtx.currentTime + leadTime;
+    const countInDurationSec = enableCountIn ? measureDurationSec : 0;
+    const startAudioTime = liveCtx.currentTime + leadTime + countInDurationSec;
+
+    // 0) Render 1-measure Count-in if requested
+    if (enableCountIn) {
+      const beatSec = (1 / beatValue) * secondsPerWhole;
+      const countInStart = liveCtx.currentTime + leadTime;
+      for (let b = 0; b < beatsPerMeasure; b++) {
+        const beatTime = countInStart + b * beatSec;
+        const isDownbeat = b === 0;
+
+        const osc = liveCtx.createOscillator();
+        const gain = liveCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(isDownbeat ? 1800 : 1200, beatTime);
+
+        gain.gain.setValueAtTime(0.0001, beatTime);
+        gain.gain.linearRampToValueAtTime(isDownbeat ? 0.40 : 0.25, beatTime + 0.002);
+        gain.gain.linearRampToValueAtTime(0.0001, beatTime + 0.05);
+
+        osc.connect(gain);
+        gain.connect(this.getMasterOutput(liveCtx));
+
+        osc.start(beatTime);
+        osc.stop(beatTime + 0.06);
+
+        this.scheduledSources.push({
+          stop: () => {
+            try {
+              osc.stop();
+              osc.disconnect();
+            } catch {}
+          },
+        });
+      }
+    }
 
     // 1) Render Metronome Click Track directly on liveCtx
     if (this.metronomeEnabled) {
@@ -2390,6 +2426,12 @@ class SoundEngine {
         typeof window !== 'undefined' ? document.getElementById('staff-composer-main-scroll') : null;
 
       if (elapsedSec < 0) {
+        if (enableCountIn) {
+          const countInElapsedSec = elapsedSec + countInDurationSec;
+          const beatSec = (1 / beatValue) * secondsPerWhole;
+          const currentBeat = Math.max(1, Math.min(beatsPerMeasure, Math.floor(countInElapsedSec / beatSec) + 1));
+          onProgress(playbackSequence[0] ?? 0, 0, { isCountIn: true, beat: currentBeat });
+        }
         const firstM = playbackSequence[0] ?? 0;
         if (lineEl && layoutData && layoutData.layoutMap) {
           const mLayout = layoutData.layoutMap.get(firstM);
@@ -2415,7 +2457,7 @@ class SoundEngine {
         const currentM = playbackSequence[stepIdx] ?? 0;
         const beatFraction = Math.max(0, Math.min(0.999, relativeStep - Math.floor(relativeStep)));
 
-        onProgress(currentM, beatFraction);
+        onProgress(currentM, beatFraction, { isCountIn: false, beat: 0 });
 
         if (lineEl && layoutData && layoutData.layoutMap) {
           const mLayout = layoutData.layoutMap.get(currentM);

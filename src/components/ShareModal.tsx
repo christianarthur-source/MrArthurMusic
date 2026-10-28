@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Copy, Check, Share2, Globe, Loader2, Sparkles } from 'lucide-react';
+import { X, Copy, Check, Share2, Globe, Loader2, Sparkles, FileAudio } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 interface ShareModalProps {
@@ -7,6 +7,7 @@ interface ShareModalProps {
   onClose: () => void;
   shareUrl: string;
   isLoading?: boolean;
+  onExportWav?: () => void;
 }
 
 export const ShareModal: React.FC<ShareModalProps> = ({
@@ -14,8 +15,10 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   onClose,
   shareUrl,
   isLoading = false,
+  onExportWav,
 }) => {
   const [copied, setCopied] = useState<boolean>(false);
+  const [isExportingWav, setIsExportingWav] = useState<boolean>(false);
 
   if (!isOpen) return null;
 
@@ -117,6 +120,36 @@ export const ShareModal: React.FC<ShareModalProps> = ({
           <div className="p-3.5 bg-indigo-500/10 rounded-2xl border border-indigo-500/20 text-xs text-indigo-300 leading-relaxed">
             💡 <b>Tip:</b> This link packs your complete score, tempo, instruments, difficulty mode, and drum groove so your friends or students can experience your masterpiece instantly!
           </div>
+
+          {onExportWav && (
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    setIsExportingWav(true);
+                    await onExportWav();
+                  } finally {
+                    setIsExportingWav(false);
+                  }
+                }}
+                disabled={isExportingWav}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 font-extrabold text-white text-xs shadow-lg transition-all active:scale-98 cursor-pointer disabled:opacity-60"
+              >
+                {isExportingWav ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Rendering Audio File...</span>
+                  </>
+                ) : (
+                  <>
+                    <FileAudio className="w-4 h-4" />
+                    <span>Download Audio Recording (.wav)</span>
+                  </>
+                )}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Footer */}
