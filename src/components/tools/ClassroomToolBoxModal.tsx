@@ -6,6 +6,7 @@ import { SolfegeTrainer } from './SolfegeTrainer';
 import { InstrumentZoo } from './InstrumentZoo';
 import { DynamicEars } from './DynamicEars';
 import { MusicTuner } from './MusicTuner';
+import { MusicSymbolMatch } from './MusicSymbolMatch';
 
 export type ToolId =
   | 'metronome'
@@ -73,6 +74,14 @@ const TOOL_TABS: ToolTabMeta[] = [
     subtitle: 'Sound Meter & Dynamics',
     accentColor: 'from-emerald-400 to-teal-500',
     badgeBg: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
+  },
+  {
+    id: 'music-symbol-match',
+    title: 'Symbol Match',
+    emoji: '🃏',
+    subtitle: 'Notes, Clefs & Rests',
+    accentColor: 'from-violet-400 to-pink-500',
+    badgeBg: 'bg-violet-500/20 text-violet-300 border-violet-500/40',
   },
   {
     id: 'tuner',
@@ -172,6 +181,7 @@ export const ClassroomToolBoxModal: React.FC<ClassroomToolBoxModalProps> = ({
           {activeTool === 'solfege-trainer' && <SolfegeTrainer />}
           {activeTool === 'instrument-zoo' && <InstrumentZoo />}
           {activeTool === 'dynamic-ears' && <DynamicEars />}
+          {activeTool === 'music-symbol-match' && <MusicSymbolMatch />}
           {activeTool === 'tuner' && <MusicTuner />}
         </div>
       </div>

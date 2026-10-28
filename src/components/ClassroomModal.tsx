@@ -188,6 +188,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
   // Teacher portal state
   const [teacherPinInput, setTeacherPinInput] = useState<string>('');
   const [activeTeacherPin, setActiveTeacherPin] = useState<string>('');
+  const [newTeacherPinField, setNewTeacherPinField] = useState<string>('');
   const [teacherTab, setTeacherTab] = useState<'students' | 'classrooms' | 'projects' | 'teachers' | 'settings'>('students');
   const [allStudents, setAllStudents] = useState<StudentRecord[]>([]);
   const [allProjects, setAllProjects] = useState<SavedProjectRecord[]>([]);
