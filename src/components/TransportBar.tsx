@@ -28,6 +28,7 @@ import {
   ArrowLeft,
   Users,
   HelpCircle,
+  RefreshCw,
 } from 'lucide-react';
 import { CountingMode, KeySignature, NoteLabelMode, ViewLayout } from '../types/music';
 import { BOOMWHACKER_COLORS, getTempoDescription } from '../utils/musicMath';
@@ -50,6 +51,10 @@ interface TransportBarProps {
   onChangeTempo: (bpm: number) => void;
   metronome: boolean;
   onToggleMetronome: () => void;
+  countIn?: boolean;
+  onToggleCountIn?: () => void;
+  countInStatus?: { isCountIn: boolean; beat: number } | null;
+  onOpenTranspose?: () => void;
   timeSignature: [number, number];
   onChangeTimeSignature: (ts: [number, number]) => void;
   keySignature: KeySignature;
@@ -115,6 +120,10 @@ export const TransportBar: React.FC<TransportBarProps> = ({
   onChangeTempo,
   metronome,
   onToggleMetronome,
+  countIn = false,
+  onToggleCountIn,
+  countInStatus,
+  onOpenTranspose,
   timeSignature,
   onChangeTimeSignature,
   keySignature,
@@ -357,6 +366,30 @@ export const TransportBar: React.FC<TransportBarProps> = ({
           <span className="hidden md:inline">Click</span>
         </button>
 
+        {/* 1-Bar Count-In Toggle */}
+        {onToggleCountIn && (
+          <button
+            onClick={onToggleCountIn}
+            title={`1-Measure Count-In: ${countIn ? 'ON' : 'OFF'}`}
+            className={`flex items-center gap-1.5 px-2.5 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer relative ${
+              countIn
+                ? 'bg-amber-500/20 border-amber-400 text-amber-300'
+                : 'bg-slate-800 border-slate-700 text-slate-400 hover:text-white hover:bg-slate-700'
+            }`}
+          >
+            {countInStatus?.isCountIn ? (
+              <span className="px-1.5 py-0.5 rounded-md bg-amber-400 text-slate-950 font-black text-[11px] animate-pulse">
+                Beat {countInStatus.beat}
+              </span>
+            ) : (
+              <>
+                <span className="font-mono text-[11px] font-bold">1-2-3-4</span>
+                <span className="hidden lg:inline text-[11px]">Count-In</span>
+              </>
+            )}
+          </button>
+        )}
+
         {/* Compact Tempo Control */}
         <div className="flex items-center gap-2 bg-slate-800/80 border border-slate-700/80 px-3 py-1 rounded-xl">
           <div className="flex flex-col">
@@ -525,6 +558,19 @@ export const TransportBar: React.FC<TransportBarProps> = ({
                 <BookOpen className="w-4 h-4 text-amber-400" />
                 <span>Song Templates & Challenges</span>
               </button>
+
+              {onOpenTranspose && (
+                <button
+                  onClick={() => {
+                    setOpenMenu(null);
+                    onOpenTranspose();
+                  }}
+                  className="flex items-center gap-2.5 w-full px-3 py-2 rounded-xl hover:bg-slate-800 text-left font-bold text-indigo-300 transition-colors cursor-pointer"
+                >
+                  <RefreshCw className="w-4 h-4 text-indigo-400" />
+                  <span>Transpose Score / Keys...</span>
+                </button>
+              )}
               {onOpenToolBox && (
                 <button
                   onClick={() => {

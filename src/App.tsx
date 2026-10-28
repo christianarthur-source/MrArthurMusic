@@ -56,6 +56,7 @@ import { PrintView } from './components/PrintView';
 import { ShareModal } from './components/ShareModal';
 import { ClassroomModal } from './components/ClassroomModal';
 import { EdLawPrivacyModal } from './components/EdLawPrivacyModal';
+import { TransposeModal } from './components/TransposeModal';
 import { MusicLabLanding, MusicLabAppId } from './components/MusicLabLanding';
 import { ClassroomToolBoxModal, ToolId } from './components/tools/ClassroomToolBoxModal';
 import { HalloweenThemeOverlay } from './components/HalloweenThemeOverlay';
@@ -273,6 +274,15 @@ export default function App() {
   // Transport & Audio State
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [metronome, setMetronome] = useState<boolean>(true);
+  const [countIn, setCountIn] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('staff_composer_count_in') === 'true';
+    } catch {
+      return false;
+    }
+  });
+  const [countInStatus, setCountInStatus] = useState<{ isCountIn: boolean; beat: number } | null>(null);
+  const [isTransposeModalOpen, setIsTransposeModalOpen] = useState<boolean>(false);
   const [isLoopingMeasure, setIsLoopingMeasure] = useState<boolean>(false);
   const [playheadPosition, setPlayheadPosition] = useState<{
     measureIndex: number;
@@ -1549,15 +1559,22 @@ export default function App() {
       soundEngine.stopPlayback();
       setIsPlaying(false);
       setPlayheadPosition(null);
+      setCountInStatus(null);
       setActivePlayingNoteIds(new Set());
     } else {
       setIsPlaying(true);
+      setCountInStatus(countIn ? { isCountIn: true, beat: 1 } : null);
       soundEngine.setMetronome(metronome);
       const loopTarget = isLoopingMeasure ? (selection?.measureIndex ?? 0) : null;
       soundEngine.playScore(
         score,
-        (mIdx, beatFraction) => {
-          setPlayheadPosition({ measureIndex: mIdx, beatFraction });
+        (mIdx, beatFraction, countInInfo) => {
+          if (countInInfo?.isCountIn) {
+            setCountInStatus(countInInfo);
+          } else {
+            setCountInStatus(null);
+            setPlayheadPosition({ measureIndex: mIdx, beatFraction });
+          }
         },
         (noteId) => {
           setActivePlayingNoteIds((prev) => new Set([...prev, noteId]));
@@ -1572,12 +1589,14 @@ export default function App() {
         () => {
           setIsPlaying(false);
           setPlayheadPosition(null);
+          setCountInStatus(null);
           setActivePlayingNoteIds(new Set());
         },
-        loopTarget
+        loopTarget,
+        countIn
       );
     }
-  }, [isPlaying, isLoopingMeasure, metronome, score, selection?.measureIndex]);
+  }, [isPlaying, isLoopingMeasure, metronome, countIn, score, selection?.measureIndex]);
 
   const handleRewind = useCallback(() => {
     if (isPlaying) {
@@ -1585,6 +1604,7 @@ export default function App() {
       setIsPlaying(false);
     }
     setPlayheadPosition(null);
+    setCountInStatus(null);
     setActivePlayingNoteIds(new Set());
     setSelection({ trackIndex: 0, measureIndex: 0, itemIndex: 0 });
   }, [isPlaying]);
@@ -2612,6 +2632,18 @@ export default function App() {
           }}
           metronome={metronome}
           onToggleMetronome={() => setMetronome((v) => !v)}
+          countIn={countIn}
+          onToggleCountIn={() => {
+            setCountIn((prev) => {
+              const next = !prev;
+              try {
+                localStorage.setItem('staff_composer_count_in', String(next));
+              } catch {}
+              return next;
+            });
+          }}
+          countInStatus={countInStatus}
+          onOpenTranspose={() => setIsTransposeModalOpen(true)}
           timeSignature={score.timeSignature}
           onChangeTimeSignature={(ts) => {
             const nextScore: Score = JSON.parse(JSON.stringify(score));
@@ -3227,6 +3259,17 @@ export default function App() {
         onClose={() => setIsShareModalOpen(false)}
         shareUrl={shareUrl}
         isLoading={isGeneratingShareLink}
+        onExportWav={() => soundEngine.exportWav(score)}
+      />
+
+      <TransposeModal
+        isOpen={isTransposeModalOpen}
+        onClose={() => setIsTransposeModalOpen(false)}
+        score={score}
+        selectedTrackIndex={selection?.trackIndex ?? 0}
+        onApplyTranspose={(newScore) => {
+          pushScoreState(newScore);
+        }}
       />
 
       {isHalloweenTheme && currentApp === 'staff-composer' && (
