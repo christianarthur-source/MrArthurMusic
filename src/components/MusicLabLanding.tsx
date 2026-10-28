@@ -859,6 +859,15 @@ export const MusicLabLanding: React.FC<MusicLabLandingProps> = ({
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
               <span>NY Ed Law § 2-d &amp; Parents&apos; Bill of Rights</span>
             </button>
+
+            <a
+              href="/Dentichorus/index.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-2.5 py-1.5 rounded-lg text-slate-500 hover:text-amber-300 hover:bg-slate-800/60 transition-colors text-[11px]"
+            >
+              Denti Chorus
+            </a>
           </div>
         </footer>
       </main>
