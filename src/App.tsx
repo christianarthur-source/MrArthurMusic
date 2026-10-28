@@ -2376,18 +2376,21 @@ export default function App() {
           handleNewBlankScore();
           handleSelectApp('staff-composer');
         }}
-        onManualSaveCurrentSong={async (customTitle) => {
+        onManualSaveCurrentSong={async (customTitle, teacherOverride) => {
           const nextTitle = (customTitle || score.title || '').trim();
-          if (editingAsTeacher) {
+          if (teacherOverride || editingAsTeacher) {
+            const target = teacherOverride || editingAsTeacher!;
             const nextScore: Score = {
               ...score,
               title: nextTitle,
+              composer: teacherOverride ? teacherOverride.teacherName : score.composer,
             };
             setScore(nextScore);
+            const studentId = 'teacherId' in target ? target.teacherId : target.studentId;
             const res = await saveStudentProject({
-              studentId: editingAsTeacher.studentId,
+              studentId,
               isTeacher: true,
-              teacherPin: editingAsTeacher.teacherPin,
+              teacherPin: target.teacherPin,
               projectId: currentProjectId,
               title: nextTitle,
               score: nextScore,

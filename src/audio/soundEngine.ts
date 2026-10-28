@@ -1,6 +1,6 @@
 import { InstrumentId, Pitch, Score, Track } from '../types/music';
 import { expandPlaybackMeasures, getItemDuration, getPitchFrequency } from '../utils/musicMath';
-import { DrumSound, DrumStepEvent } from '../data/drumGrooves';
+import { DrumSound, DrumStepEvent, getDrumSoundForPitch } from '../data/drumGrooves';
 import {
   createConcertHallImpulse,
   DrumKitType,
@@ -606,10 +606,22 @@ class SoundEngine {
       instrumentId === 'drum_latin'
     ) {
       await preloadInstrumentSamples(ctx, instrumentId);
+      const pitches = Array.isArray(pitch) ? pitch : [pitch];
       const now = ctx.currentTime + 0.005;
-      this.playDrumHit('kick', now, 0.95, ctx, undefined, instrumentId);
-      this.playDrumHit('snare', now + 0.22, 0.9, ctx, undefined, instrumentId);
-      this.playDrumHit('hihat_closed', now + 0.44, 0.82, ctx, undefined, instrumentId);
+
+      // If specific pitch(es) are provided (e.g. dragging a note up/down the staff or clicking lines/spaces),
+      // audition the EXACT drum sample mapped to each line or space!
+      if (pitches.length > 0) {
+        pitches.forEach((p) => {
+          const sound = getDrumSoundForPitch(p);
+          this.playDrumHit(sound, now, 0.95, ctx, undefined, instrumentId as DrumKitType);
+        });
+      } else {
+        // Fallback default rhythm groove preview if no pitch is specified
+        this.playDrumHit('kick', now, 0.95, ctx, undefined, instrumentId as DrumKitType);
+        this.playDrumHit('snare', now + 0.22, 0.9, ctx, undefined, instrumentId as DrumKitType);
+        this.playDrumHit('hihat_closed', now + 0.44, 0.82, ctx, undefined, instrumentId as DrumKitType);
+      }
       return;
     }
     const pitches = Array.isArray(pitch) ? pitch : [pitch];
@@ -1366,26 +1378,7 @@ class SoundEngine {
       instrumentId === 'drum_jazz' ||
       instrumentId === 'drum_latin'
     ) {
-      const step = pitch?.step || 'F';
-      const octave = pitch?.octave || 4;
-      let sound: DrumSound = 'kick';
-      if (octave >= 5) {
-        if (step === 'G') sound = 'hihat_closed';
-        else if (step === 'A') sound = 'hihat_open';
-        else if (step === 'B') sound = 'crash';
-        else if (step === 'F') sound = 'ride';
-        else if (step === 'E') sound = 'rimshot';
-        else if (step === 'D') sound = 'tom_high';
-        else sound = 'snare';
-      } else {
-        if (step === 'F' || step === 'C') sound = 'kick';
-        else if (step === 'A') sound = 'tom_low';
-        else if (step === 'B') sound = 'shaker';
-        else if (step === 'D') sound = 'cowbell';
-        else if (step === 'E') sound = 'conga_open';
-        else if (step === 'G') sound = 'conga_slap';
-        else sound = 'kick';
-      }
+      const sound = getDrumSoundForPitch(pitch);
       return this.playDrumHit(sound, startTime, normalizedVolume, ctx, outTarget, instrumentId as DrumKitType);
     }
 
