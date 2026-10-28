@@ -274,25 +274,32 @@ function classroomApiPlugin(): Plugin {
           }
 
           if (action === 'staff_wars_leaderboard') {
-            const list = ((db as any).staffWarsLeaderboard || []).sort((a: any, b: any) => b.score - a.score);
-            return send(200, { ok: true, leaderboard: list.slice(0, 50) });
+            const requestedLevel = parseInt(body.level || (req.url && new URL(req.url, 'http://localhost').searchParams.get('level')), 10) || 1;
+            const allList = (((db as any).staffWarsLeaderboard || []) as any[]).filter(
+              (e: any) => (parseInt(e.level, 10) || 1) === requestedLevel
+            );
+            allList.sort((a: any, b: any) => b.score - a.score);
+            return send(200, { ok: true, level: requestedLevel, leaderboard: allList.slice(0, 50) });
           }
 
           if (action === 'staff_wars_submit_score') {
             const name = String(body.name || '').trim();
             const score = parseInt(body.score, 10);
+            const level = parseInt(body.level, 10) || 1;
             const studentId = body.studentId || null;
             if (!name || isNaN(score) || score <= 0) {
               return send(400, { ok: false, error: 'Invalid name or score' });
             }
             if (!(db as any).staffWarsLeaderboard) (db as any).staffWarsLeaderboard = [];
             const existingIdx = (db as any).staffWarsLeaderboard.findIndex(
-              (e: any) => (studentId && e.studentId === studentId) || (!studentId && e.name.toLowerCase() === name.toLowerCase())
+              (e: any) => ((studentId && e.studentId === studentId) || (!studentId && e.name.toLowerCase() === name.toLowerCase())) &&
+                          ((parseInt(e.level, 10) || 1) === level)
             );
             if (existingIdx >= 0) {
               if (score > (db as any).staffWarsLeaderboard[existingIdx].score) {
                 (db as any).staffWarsLeaderboard[existingIdx].score = score;
                 (db as any).staffWarsLeaderboard[existingIdx].name = name;
+                (db as any).staffWarsLeaderboard[existingIdx].level = level;
                 (db as any).staffWarsLeaderboard[existingIdx].updatedAt = new Date().toISOString();
               }
             } else {
@@ -301,12 +308,14 @@ function classroomApiPlugin(): Plugin {
                 studentId,
                 name,
                 score,
+                level,
                 updatedAt: new Date().toISOString(),
               });
             }
             (db as any).staffWarsLeaderboard.sort((a: any, b: any) => b.score - a.score);
             saveClassroomDb(db);
-            return send(200, { ok: true, leaderboard: (db as any).staffWarsLeaderboard.slice(0, 50) });
+            const filtered = ((db as any).staffWarsLeaderboard as any[]).filter((e: any) => (parseInt(e.level, 10) || 1) === level);
+            return send(200, { ok: true, level, leaderboard: filtered.slice(0, 50) });
           }
 
           if (action === 'save_project') {

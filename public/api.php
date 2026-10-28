@@ -363,7 +363,17 @@ switch ($action) {
     $appType = isset($body['appType']) ? $body['appType'] : 'staff-composer';
     $projectData = isset($body['projectData']) ? $body['projectData'] : null;
 
-    $isTeacher = ($teacherPin !== '' && verify_teacher_pin($teacherPin, $db['teacherPin']));
+    $isMaster = ($teacherPin !== '' && verify_teacher_pin($teacherPin, $db['teacherPin']));
+    $matchedTeacher = null;
+    if (isset($db['teachers']) && is_array($db['teachers'])) {
+      foreach ($db['teachers'] as $t) {
+        if (isset($t['pin']) && trim((string)$t['pin']) === trim((string)$teacherPin)) {
+          $matchedTeacher = $t;
+          break;
+        }
+      }
+    }
+    $isTeacher = ($teacherPin !== '' && ($isMaster || $matchedTeacher !== null));
     $student = null;
     foreach ($db['students'] as $s) {
       if ($s['id'] === $studentId && ($isTeacher || $pin === '' || $s['pin'] === $pin)) {
@@ -372,9 +382,24 @@ switch ($action) {
       }
     }
 
-    if (!$student || (!$score && !$projectData) || $title === '') {
+    $creatorName = $student ? $student['firstName'] : '';
+    if ($creatorName === '' && $isTeacher) {
+      if (isset($db['teachers']) && is_array($db['teachers'])) {
+        foreach ($db['teachers'] as $t) {
+          if ($t['id'] === $studentId) {
+            $creatorName = $t['name'];
+            break;
+          }
+        }
+      }
+      if ($creatorName === '' && ($studentId === 'teach_master' || $studentId === 'teacher_master')) {
+        $creatorName = 'Mr. Arthur';
+      }
+    }
+
+    if ((!$student && $creatorName === '') || (!$score && !$projectData) || $title === '') {
       http_response_code(400);
-      echo json_encode(['ok' => false, 'error' => 'Invalid student session or missing song title.']);
+      echo json_encode(['ok' => false, 'error' => 'Invalid user session or missing song title.']);
       exit;
     }
 
@@ -412,7 +437,7 @@ switch ($action) {
       $savedProject = [
         'id' => 'proj_' . substr(md5(uniqid('', true)), 0, 10),
         'studentId' => $studentId,
-        'studentName' => $student['firstName'],
+        'studentName' => $creatorName ?: ($student ? $student['firstName'] : 'Mr. Arthur'),
         'title' => $title,
         'score' => $score,
         'appType' => $appType,
@@ -639,6 +664,186 @@ switch ($action) {
       'allowSelfRegister' => (bool)$db['allowSelfRegister'],
       'students' => $db['students'],
       'projects' => $db['projects']
+    ]);
+    exit;
+  }
+
+  case 'teacher_assign_project': {
+    $teacherPin = isset($body['teacherPin']) ? $body['teacherPin'] : '';
+    if (!verify_teacher_pin($teacherPin, $db['teacherPin'])) {
+      http_response_code(401);
+      echo json_encode(['ok' => false, 'error' => 'Unauthorized']);
+      exit;
+    }
+    $sourceProject = isset($body['sourceProject']) ? $body['sourceProject'] : null;
+    $targetStudentIds = isset($body['targetStudentIds']) && is_array($body['targetStudentIds']) ? $body['targetStudentIds'] : [];
+    $instructions = trim(isset($body['instructions']) ? $body['instructions'] : '');
+
+    if (!$sourceProject || empty($targetStudentIds)) {
+      http_response_code(400);
+      echo json_encode(['ok' => false, 'error' => 'Missing source project or target students.']);
+      exit;
+    }
+
+    $teacherName = 'Mr. Arthur';
+    if (isset($db['teachers']) && is_array($db['teachers'])) {
+      foreach ($db['teachers'] as $t) {
+        if (isset($t['pin']) && trim((string)$t['pin']) === trim((string)$teacherPin)) {
+          $teacherName = $t['name'];
+          break;
+        }
+      }
+    }
+
+    $now = gmdate('c');
+    $assignedCount = 0;
+
+    foreach ($targetStudentIds as $sid) {
+      $student = null;
+      foreach ($db['students'] as $s) {
+        if ($s['id'] === $sid) {
+          $student = $s;
+          break;
+        }
+      }
+      if (!$student) continue;
+
+      $assignmentTitle = isset($sourceProject['title']) ? $sourceProject['title'] : 'Class Assignment';
+      $clonedScore = isset($sourceProject['score']) ? $sourceProject['score'] : null;
+      $clonedProjectData = isset($sourceProject['projectData']) ? $sourceProject['projectData'] : [];
+      if (!is_array($clonedProjectData)) $clonedProjectData = [];
+      $clonedProjectData['_assignment'] = [
+        'isAssignment' => true,
+        'instructions' => $instructions,
+        'sourceTitle' => $assignmentTitle,
+        'assignedByTeacher' => $teacherName,
+        'assignedAt' => $now,
+      ];
+      if (is_array($clonedScore)) {
+        $clonedScore['title'] = $assignmentTitle;
+      }
+
+      $existingIndex = -1;
+      foreach ($db['projects'] as $idx => $p) {
+        if ($p['studentId'] === $sid && strcasecmp(trim($p['title']), $assignmentTitle) === 0) {
+          $existingIndex = $idx;
+          break;
+        }
+      }
+
+      $assignedRecord = [
+        'id' => $existingIndex >= 0 ? $db['projects'][$existingIndex]['id'] : 'proj_' . substr(md5(uniqid('', true)), 0, 10),
+        'studentId' => $student['id'],
+        'studentName' => $student['firstName'],
+        'title' => $assignmentTitle,
+        'appType' => isset($sourceProject['appType']) ? $sourceProject['appType'] : 'staff-composer',
+        'score' => $clonedScore,
+        'projectData' => $clonedProjectData,
+        'isAssignment' => true,
+        'assignmentInstructions' => $instructions,
+        'assignmentSourceTitle' => $assignmentTitle,
+        'assignedByTeacher' => $teacherName,
+        'createdAt' => $existingIndex >= 0 ? $db['projects'][$existingIndex]['createdAt'] : $now,
+        'updatedAt' => $now,
+      ];
+
+      if ($existingIndex >= 0) {
+        $db['projects'][$existingIndex] = $assignedRecord;
+      } else {
+        $db['projects'][] = $assignedRecord;
+      }
+      $assignedCount++;
+    }
+
+    save_db($dbFile, $db);
+    echo json_encode([
+      'ok' => true,
+      'assignedCount' => $assignedCount,
+      'projects' => $db['projects']
+    ]);
+    exit;
+  }
+
+  case 'staff_wars_leaderboard': {
+    $requestedLevel = isset($body['level']) ? (int)$body['level'] : (isset($_GET['level']) ? (int)$_GET['level'] : 1);
+    if ($requestedLevel <= 0) $requestedLevel = 1;
+    $all = isset($db['staffWarsLeaderboard']) && is_array($db['staffWarsLeaderboard']) ? $db['staffWarsLeaderboard'] : [];
+    $filtered = array_filter($all, function($e) use ($requestedLevel) {
+      $lvl = isset($e['level']) ? (int)$e['level'] : 1;
+      return $lvl === $requestedLevel;
+    });
+    usort($filtered, function($a, $b) {
+      return $b['score'] - $a['score'];
+    });
+    echo json_encode([
+      'ok' => true,
+      'level' => $requestedLevel,
+      'leaderboard' => array_values(array_slice($filtered, 0, 50))
+    ]);
+    exit;
+  }
+
+  case 'staff_wars_submit_score': {
+    $name = trim(isset($body['name']) ? $body['name'] : '');
+    $score = isset($body['score']) ? (int)$body['score'] : 0;
+    $level = isset($body['level']) ? (int)$body['level'] : 1;
+    if ($level <= 0) $level = 1;
+    $studentId = isset($body['studentId']) ? $body['studentId'] : null;
+
+    if ($name === '' || $score <= 0) {
+      http_response_code(400);
+      echo json_encode(['ok' => false, 'error' => 'Invalid name or score']);
+      exit;
+    }
+
+    if (!isset($db['staffWarsLeaderboard']) || !is_array($db['staffWarsLeaderboard'])) {
+      $db['staffWarsLeaderboard'] = [];
+    }
+
+    $existingIdx = -1;
+    foreach ($db['staffWarsLeaderboard'] as $idx => $e) {
+      $matchStudent = ($studentId && isset($e['studentId']) && $e['studentId'] === $studentId);
+      $matchName = (!$studentId && isset($e['name']) && strcasecmp($e['name'], $name) === 0);
+      $eLevel = isset($e['level']) ? (int)$e['level'] : 1;
+      if (($matchStudent || $matchName) && $eLevel === $level) {
+        $existingIdx = $idx;
+        break;
+      }
+    }
+
+    $now = gmdate('c');
+    if ($existingIdx >= 0) {
+      if ($score > $db['staffWarsLeaderboard'][$existingIdx]['score']) {
+        $db['staffWarsLeaderboard'][$existingIdx]['score'] = $score;
+        $db['staffWarsLeaderboard'][$existingIdx]['name'] = $name;
+        $db['staffWarsLeaderboard'][$existingIdx]['level'] = $level;
+        $db['staffWarsLeaderboard'][$existingIdx]['updatedAt'] = $now;
+      }
+    } else {
+      $db['staffWarsLeaderboard'][] = [
+        'id' => 'sw_' . substr(md5(uniqid('', true)), 0, 8),
+        'studentId' => $studentId,
+        'name' => $name,
+        'score' => $score,
+        'level' => $level,
+        'updatedAt' => $now,
+      ];
+    }
+
+    save_db($dbFile, $db);
+
+    $filtered = array_filter($db['staffWarsLeaderboard'], function($e) use ($level) {
+      $lvl = isset($e['level']) ? (int)$e['level'] : 1;
+      return $lvl === $level;
+    });
+    usort($filtered, function($a, $b) {
+      return $b['score'] - $a['score'];
+    });
+
+    echo json_encode([
+      'ok' => true,
+      'level' => $level,
+      'leaderboard' => array_values(array_slice($filtered, 0, 50))
     ]);
     exit;
   }

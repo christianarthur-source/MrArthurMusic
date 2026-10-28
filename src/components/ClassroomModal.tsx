@@ -1058,8 +1058,18 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
   });
 
   const filteredProjectsList = allProjects.filter((p) => {
-    if (projectStudentFilter !== 'ALL' && p.studentId !== projectStudentFilter) {
-      return false;
+    if (projectStudentFilter !== 'ALL') {
+      const matchedTch = teachers.find((t) => t.id === projectStudentFilter);
+      if (matchedTch) {
+        const isMaster = matchedTch.isMasterAdmin || matchedTch.pin === '1138' || matchedTch.pin === 'adminbaby';
+        const matchesThisTeacher =
+          p.studentId === matchedTch.id ||
+          (isMaster && (p.studentId === 'teach_master' || p.studentId === 'teacher_master')) ||
+          p.studentName.toLowerCase() === matchedTch.name.toLowerCase();
+        if (!matchesThisTeacher) return false;
+      } else if (p.studentId !== projectStudentFilter) {
+        return false;
+      }
     }
     if (projectAppFilter !== 'ALL' && (p.appType || 'staff-composer') !== projectAppFilter) {
       return false;
@@ -1116,22 +1126,6 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            {mode === 'student' && (
-              <button
-                type="button"
-                onClick={() => {
-                  setTeacherPinInput('');
-                  setTeacherError(null);
-                  setTeacherNotice(null);
-                  setMode('teacher_auth');
-                }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 cursor-pointer transition-colors"
-                title="Teacher / Admin portal login"
-              >
-                <Shield className="w-3.5 h-3.5 text-amber-400" />
-                <span>Teacher / Admin</span>
-              </button>
-            )}
             {mode !== 'student' && (
               <button
                 type="button"
@@ -2747,13 +2741,30 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                   <div className="space-y-2">
                     {teachers.map((tch) => {
                       const isMaster = tch.isMasterAdmin || tch.pin === '1138' || tch.pin === 'adminbaby';
+                      const tchProjectCount = allProjects.filter(
+                        (p) =>
+                          p.studentId === tch.id ||
+                          (isMaster && (p.studentId === 'teach_master' || p.studentId === 'teacher_master')) ||
+                          p.studentName.toLowerCase() === tch.name.toLowerCase()
+                      ).length;
+
                       return (
                         <div
                           key={tch.id}
                           className="p-3 rounded-xl bg-slate-950/70 border border-slate-800 flex items-center justify-between gap-3 text-xs"
                         >
-                          <div className="flex items-center gap-3 flex-wrap">
-                            <span className="font-bold text-sm text-white">{tch.name}</span>
+                          <div
+                            onClick={() => {
+                              setProjectStudentFilter(tch.id);
+                              setTeacherTab('projects');
+                            }}
+                            className="flex items-center gap-3 flex-wrap cursor-pointer group"
+                            title={`Click to view ${tch.name}'s songs (${tchProjectCount})`}
+                          >
+                            <span className="font-bold text-sm text-white group-hover:text-amber-300 group-hover:underline flex items-center gap-1.5">
+                              <span>{tch.name}</span>
+                              <FolderOpen className="w-3.5 h-3.5 text-amber-400 opacity-70 group-hover:opacity-100" />
+                            </span>
                             <span className="px-2 py-0.5 rounded-md bg-slate-800 border border-slate-700 font-mono text-amber-300 font-bold">
                               PIN: {tch.pin}
                             </span>
@@ -2763,6 +2774,9 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                             {tch.gradeRange && (
                               <span className="text-slate-400">🎵 {tch.gradeRange}</span>
                             )}
+                            <span className="px-2 py-0.5 rounded-md bg-sky-500/15 text-sky-300 font-bold border border-sky-500/30 text-[11px] flex items-center gap-1">
+                              🎵 {tchProjectCount} song{tchProjectCount === 1 ? '' : 's'}
+                            </span>
                             {isMaster ? (
                               <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30 text-[10px]">
                                 ⭐ Master Admin
@@ -2775,6 +2789,18 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                           </div>
 
                           <div className="flex items-center gap-1.5 shrink-0">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setProjectStudentFilter(tch.id);
+                                setTeacherTab('projects');
+                              }}
+                              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs cursor-pointer"
+                              title={`View songs created by ${tch.name}`}
+                            >
+                              <Music className="w-3 h-3" />
+                              <span>View Songs</span>
+                            </button>
                             <button
                               type="button"
                               onClick={() => {
@@ -2808,10 +2834,63 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                 </div>
               )}
 
-              {/* TAB B: STUDENT PROJECTS */}
+              {/* TAB B: ALL PROJECTS (STUDENTS & TEACHERS) */}
               {teacherTab === 'projects' && (
                 <div className="space-y-3">
+                  {/* Active filter banner if a specific teacher or student is selected */}
+                  {projectStudentFilter !== 'ALL' && (
+                    <div className="flex items-center justify-between px-3 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-200 text-xs">
+                      <span className="font-semibold flex items-center gap-1.5">
+                        <span>🎵 Filtered to:</span>
+                        <span className="font-bold text-white">
+                          {teachers.find((t) => t.id === projectStudentFilter)?.name ||
+                            allStudents.find((s) => s.id === projectStudentFilter)?.firstName ||
+                            projectStudentFilter}
+                        </span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setProjectStudentFilter('ALL')}
+                        className="text-[11px] underline text-amber-300 hover:text-white cursor-pointer"
+                      >
+                        Show All
+                      </button>
+                    </div>
+                  )}
+
                   <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        let titleToSave = currentScore.title.trim();
+                        if (isUntitledScore || !titleToSave) {
+                          const prompted = window.prompt(
+                            'Enter a title for this song to save under your teacher projects:',
+                            'Class Lesson Melody'
+                          );
+                          if (!prompted || !prompted.trim()) return;
+                          titleToSave = prompted.trim();
+                        }
+                        setIsLoading(true);
+                        try {
+                          await onManualSaveCurrentSong(titleToSave);
+                          const refreshed = await loginTeacher(activeTeacherPin);
+                          setAllProjects(refreshed.projects);
+                          setTeacherNotice(`Saved "${titleToSave}" to your projects!`);
+                          window.setTimeout(() => setTeacherNotice(null), 3000);
+                        } catch (err: any) {
+                          setTeacherError(err.message || 'Could not save current song.');
+                        } finally {
+                          setIsLoading(false);
+                        }
+                      }}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs cursor-pointer shrink-0 shadow-sm"
+                      title="Save the currently active song in Staff Composer as a teacher project"
+                    >
+                      <Save className="w-3.5 h-3.5" />
+                      <span>Save Current Song as Teacher</span>
+                    </button>
+
                     <div className="relative flex-1 min-w-[180px]">
                       <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2" />
                       <input
@@ -2827,12 +2906,32 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                       onChange={(e) => setProjectStudentFilter(e.target.value)}
                       className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200"
                     >
-                      <option value="ALL">All Students ({allProjects.length})</option>
-                      {allStudents.map((s) => (
-                        <option key={s.id} value={s.id}>
-                          {s.firstName} ({allProjects.filter((p) => p.studentId === s.id).length})
-                        </option>
-                      ))}
+                      <option value="ALL">All Creators ({allProjects.length})</option>
+                      {teachers.length > 0 && (
+                        <optgroup label="Teachers & Admins">
+                          {teachers.map((t) => {
+                            const isMaster = t.isMasterAdmin || t.pin === '1138' || t.pin === 'adminbaby';
+                            const count = allProjects.filter(
+                              (p) =>
+                                p.studentId === t.id ||
+                                (isMaster && (p.studentId === 'teach_master' || p.studentId === 'teacher_master')) ||
+                                p.studentName.toLowerCase() === t.name.toLowerCase()
+                            ).length;
+                            return (
+                              <option key={t.id} value={t.id}>
+                                🎵 {t.name} ({count})
+                              </option>
+                            );
+                          })}
+                        </optgroup>
+                      )}
+                      <optgroup label="Students">
+                        {allStudents.map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.firstName} ({allProjects.filter((p) => p.studentId === s.id).length})
+                          </option>
+                        ))}
+                      </optgroup>
                     </select>
 
                     <select
@@ -2859,7 +2958,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
 
                   {filteredProjectsList.length === 0 ? (
                     <div className="p-6 rounded-xl bg-slate-950/40 border border-slate-800 text-center text-xs text-slate-400">
-                      No saved student projects match this filter.
+                      No saved songs match this filter.
                     </div>
                   ) : (
                     <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
