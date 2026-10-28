@@ -395,7 +395,13 @@ function executeLocalFallback(payload: Record<string, any>): any {
     if (isTeacher && (isMaster || matchedTeacher)) {
       authorized = true;
       const st = db.students.find((s) => s.id === studentId);
-      if (st) studentName = st.firstName;
+      if (st) {
+        studentName = st.firstName;
+      } else {
+        const tch = (db.teachers || []).find((t) => t.id === studentId);
+        if (tch) studentName = tch.name;
+        else if (isMaster && (studentId === 'teach_master' || studentId === 'teacher_master')) studentName = 'Mr. Arthur';
+      }
     } else {
       const st = db.students.find((s) => s.id === studentId && (!pin || String(s.pin) === pin));
       if (st) {
@@ -800,6 +806,60 @@ function executeLocalFallback(payload: Record<string, any>): any {
     };
   }
 
+  // 17. STAFF WARS LEADERBOARD (LOCAL FALLBACK)
+  if (action === 'staff_wars_leaderboard') {
+    const requestedLevel = parseInt(payload.level, 10) || 1;
+    const key = `staff_wars_leaderboard_level_${requestedLevel}`;
+    let list: any[] = [];
+    try {
+      const raw = localStorage.getItem(key) || localStorage.getItem('staff_wars_leaderboard');
+      if (raw) list = JSON.parse(raw);
+    } catch {}
+    const filtered = (list || []).filter((e: any) => (parseInt(e.level, 10) || 1) === requestedLevel);
+    filtered.sort((a: any, b: any) => b.score - a.score);
+    return { ok: true, level: requestedLevel, leaderboard: filtered.slice(0, 50) };
+  }
+
+  if (action === 'staff_wars_submit_score') {
+    const name = String(payload.name || '').trim();
+    const score = parseInt(payload.score, 10);
+    const level = parseInt(payload.level, 10) || 1;
+    const studentId = payload.studentId || null;
+    const key = `staff_wars_leaderboard_level_${level}`;
+    let list: any[] = [];
+    try {
+      const raw = localStorage.getItem(key);
+      if (raw) list = JSON.parse(raw);
+    } catch {}
+    const existingIdx = list.findIndex(
+      (e: any) => ((studentId && e.studentId === studentId) || (!studentId && e.name.toLowerCase() === name.toLowerCase())) &&
+                  ((parseInt(e.level, 10) || 1) === level)
+    );
+    const now = new Date().toISOString();
+    if (existingIdx >= 0) {
+      if (score > list[existingIdx].score) {
+        list[existingIdx].score = score;
+        list[existingIdx].name = name;
+        list[existingIdx].level = level;
+        list[existingIdx].updatedAt = now;
+      }
+    } else {
+      list.push({
+        id: 'sw_' + Math.random().toString(36).substring(2, 9),
+        studentId,
+        name,
+        score,
+        level,
+        updatedAt: now,
+      });
+    }
+    list.sort((a: any, b: any) => b.score - a.score);
+    try {
+      localStorage.setItem(key, JSON.stringify(list));
+    } catch {}
+    return { ok: true, level, leaderboard: list.slice(0, 50) };
+  }
+
   throw new Error('Unknown classroom action: ' + action);
 }
 
@@ -1091,7 +1151,13 @@ async function executeSupabaseRequest(payload: Record<string, any>): Promise<any
 
     if (isTeacher && isMaster) {
       const st = await supabaseFetch(`students?id=eq.${studentId}`);
-      if (st && st[0]) studentName = st[0].first_name;
+      if (st && st[0]) {
+        studentName = st[0].first_name;
+      } else {
+        const tch = await supabaseFetch(`teachers?id=eq.${studentId}`);
+        if (tch && tch[0]) studentName = tch[0].name;
+        else if (studentId === 'teach_master' || studentId === 'teacher_master') studentName = 'Mr. Arthur';
+      }
     } else {
       const st = await supabaseFetch(`students?id=eq.${studentId}`);
       if (!st || !st[0] || (pin && String(st[0].pin) !== pin)) {
@@ -1589,6 +1655,66 @@ async function executeSupabaseRequest(payload: Record<string, any>): Promise<any
     };
   }
 
+  // 17. STAFF WARS LEADERBOARD (SUPABASE CLOUD)
+  if (action === 'staff_wars_leaderboard') {
+    const requestedLevel = parseInt(payload.level, 10) || 1;
+    const configKey = `staff_wars_leaderboard_level_${requestedLevel}`;
+    const configs = await supabaseFetch(`classroom_config?key=eq.${encodeURIComponent(configKey)}`).catch(() => []);
+    let list: any[] = [];
+    if (configs && configs.length > 0 && Array.isArray(configs[0].value)) {
+      list = configs[0].value;
+    }
+    list.sort((a: any, b: any) => b.score - a.score);
+    return { ok: true, level: requestedLevel, leaderboard: list.slice(0, 50) };
+  }
+
+  if (action === 'staff_wars_submit_score') {
+    const name = String(payload.name || '').trim();
+    const score = parseInt(payload.score, 10);
+    const level = parseInt(payload.level, 10) || 1;
+    const studentId = payload.studentId || null;
+    const configKey = `staff_wars_leaderboard_level_${level}`;
+
+    const configs = await supabaseFetch(`classroom_config?key=eq.${encodeURIComponent(configKey)}`).catch(() => []);
+    let list: any[] = [];
+    if (configs && configs.length > 0 && Array.isArray(configs[0].value)) {
+      list = configs[0].value;
+    }
+
+    const existingIdx = list.findIndex(
+      (e: any) => ((studentId && e.studentId === studentId) || (!studentId && e.name.toLowerCase() === name.toLowerCase())) &&
+                  ((parseInt(e.level, 10) || 1) === level)
+    );
+    const now = new Date().toISOString();
+    if (existingIdx >= 0) {
+      if (score > list[existingIdx].score) {
+        list[existingIdx].score = score;
+        list[existingIdx].name = name;
+        list[existingIdx].level = level;
+        list[existingIdx].updatedAt = now;
+      }
+    } else {
+      list.push({
+        id: 'sw_' + Math.random().toString(36).substring(2, 9),
+        studentId,
+        name,
+        score,
+        level,
+        updatedAt: now,
+      });
+    }
+
+    list.sort((a: any, b: any) => b.score - a.score);
+
+    await supabaseFetch('classroom_config', {
+      method: 'POST',
+      headers: { Prefer: 'resolution=merge-duplicates' },
+      body: JSON.stringify([{ key: configKey, value: list.slice(0, 50) }]),
+    }).catch(() => {});
+
+    return { ok: true, level, leaderboard: list.slice(0, 50) };
+  }
+
   throw new Error('Unknown cloud classroom action: ' + action);
 }
 
@@ -1985,4 +2111,27 @@ export async function teacherAssignProject(params: {
     projects: res.projects || [],
   };
 }
+
+export async function fetchStaffWarsLeaderboard(level = 1): Promise<any[]> {
+  const res = await callClassroomBackend({
+    action: 'staff_wars_leaderboard',
+    level,
+  });
+  return res.leaderboard || [];
+}
+
+export async function submitStaffWarsScore(params: {
+  name: string;
+  score: number;
+  level: number;
+  studentId?: string;
+  classGroup?: string;
+}): Promise<any[]> {
+  const res = await callClassroomBackend({
+    action: 'staff_wars_submit_score',
+    ...params,
+  });
+  return res.leaderboard || [];
+}
+
 

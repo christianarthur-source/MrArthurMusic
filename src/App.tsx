@@ -2535,6 +2535,10 @@ export default function App() {
         <StaffWarsApp
           onBackToHub={handleBackToHub}
           studentSession={studentSession}
+          onOpenAvatar={() => {
+            soundEngine.playWelcomeChime();
+            setIsAvatarOpen(true);
+          }}
         />
         {renderSharedAuthAndModals()}
       </>

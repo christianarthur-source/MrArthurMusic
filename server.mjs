@@ -245,25 +245,32 @@ const server = http.createServer((req, res) => {
       }
 
       if (action === 'staff_wars_leaderboard') {
-        const list = (db.staffWarsLeaderboard || []).sort((a, b) => b.score - a.score);
-        return send(200, { ok: true, leaderboard: list.slice(0, 50) });
+        const requestedLevel = parseInt(body.level || (req.url && new URL(req.url, 'http://localhost').searchParams.get('level')), 10) || 1;
+        const allList = (db.staffWarsLeaderboard || []).filter(
+          (e) => (parseInt(e.level, 10) || 1) === requestedLevel
+        );
+        allList.sort((a, b) => b.score - a.score);
+        return send(200, { ok: true, level: requestedLevel, leaderboard: allList.slice(0, 50) });
       }
 
       if (action === 'staff_wars_submit_score') {
         const name = String(body.name || '').trim();
         const score = parseInt(body.score, 10);
+        const level = parseInt(body.level, 10) || 1;
         const studentId = body.studentId || null;
         if (!name || isNaN(score) || score <= 0) {
           return send(400, { ok: false, error: 'Invalid name or score' });
         }
         if (!db.staffWarsLeaderboard) db.staffWarsLeaderboard = [];
         const existingIdx = db.staffWarsLeaderboard.findIndex(
-          (e) => (studentId && e.studentId === studentId) || (!studentId && e.name.toLowerCase() === name.toLowerCase())
+          (e) => ((studentId && e.studentId === studentId) || (!studentId && e.name.toLowerCase() === name.toLowerCase())) &&
+                 ((parseInt(e.level, 10) || 1) === level)
         );
         if (existingIdx >= 0) {
           if (score > db.staffWarsLeaderboard[existingIdx].score) {
             db.staffWarsLeaderboard[existingIdx].score = score;
             db.staffWarsLeaderboard[existingIdx].name = name;
+            db.staffWarsLeaderboard[existingIdx].level = level;
             db.staffWarsLeaderboard[existingIdx].updatedAt = new Date().toISOString();
           }
         } else {
@@ -272,24 +279,38 @@ const server = http.createServer((req, res) => {
             studentId,
             name,
             score,
+            level,
             updatedAt: new Date().toISOString(),
           });
         }
         db.staffWarsLeaderboard.sort((a, b) => b.score - a.score);
         saveDb(db);
-        return send(200, { ok: true, leaderboard: db.staffWarsLeaderboard.slice(0, 50) });
+        const filtered = db.staffWarsLeaderboard.filter((e) => (parseInt(e.level, 10) || 1) === level);
+        return send(200, { ok: true, level, leaderboard: filtered.slice(0, 50) });
       }
 
       if (action === 'save_project') {
         const { studentId, pin, teacherPin, projectId, score, projectData } = body;
         const appType = body.appType || 'staff-composer';
         const title = String(body.title || '').trim();
-        const isTeacher = Boolean(teacherPin && teacherPin === db.teacherPin);
+        const isMaster = isMasterPin(teacherPin);
+        const matchedTeacher = (db.teachers || defaultTeachers).find(
+          (t) => String(t.pin).trim() === String(teacherPin || '').trim()
+        );
+        const isTeacher = Boolean(teacherPin && (isMaster || matchedTeacher));
         const student = db.students.find(
           (s) => s.id === studentId && (isTeacher || !pin || s.pin === pin)
         );
-        if (!student || (!score && !projectData) || !title) {
-          return send(400, { ok: false, error: 'Invalid student session or missing song title.' });
+        let creatorName = student ? student.firstName : '';
+        if (!creatorName && isTeacher) {
+          const tch = (db.teachers || defaultTeachers).find((t) => t.id === studentId);
+          if (tch) creatorName = tch.name;
+          else if (isMaster && (studentId === 'teach_master' || studentId === 'teacher_master')) {
+            creatorName = 'Mr. Arthur';
+          }
+        }
+        if ((!student && !creatorName) || (!score && !projectData) || !title) {
+          return send(400, { ok: false, error: 'Invalid user session or missing song title.' });
         }
         const now = new Date().toISOString();
         let updatedIdx = projectId
@@ -313,7 +334,7 @@ const server = http.createServer((req, res) => {
           savedProject = {
             id: makeId('proj'),
             studentId,
-            studentName: student.firstName,
+            studentName: creatorName || 'Mr. Arthur',
             title,
             score: score || null,
             appType,

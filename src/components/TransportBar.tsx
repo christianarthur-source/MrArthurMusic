@@ -882,32 +882,7 @@ export const TransportBar: React.FC<TransportBarProps> = ({
         </div>
       </div>
 
-      {/* Mr. Arthur Avatar Pop-Out Modal (click anywhere on or off image to dismiss) */}
-      {isAvatarOpen && (
-        <div
-          onClick={onCloseAvatar}
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-xs animate-in fade-in duration-150 cursor-pointer"
-        >
-          <div className="relative bg-slate-900 border-2 border-amber-400/60 rounded-3xl p-4 sm:p-5 shadow-2xl max-w-sm w-full flex flex-col items-center gap-3 animate-in zoom-in-95 duration-150">
-            <div className="w-64 h-64 sm:w-72 sm:h-72 rounded-2xl overflow-hidden bg-black border border-slate-700 shadow-xl ring-2 ring-amber-400/30">
-              <img
-                src="/mr-arthur-avatar.jpg"
-                alt="Mr. Arthur"
-                className="w-full h-full object-contain"
-              />
-            </div>
-
-            <div className="text-center">
-              <div className="text-xs font-extrabold uppercase tracking-wider text-amber-300 font-['Fredoka',sans-serif]">
-                Welcome to
-              </div>
-              <div className="text-xl font-black bg-gradient-to-r from-amber-300 via-rose-300 via-sky-300 to-emerald-300 bg-clip-text text-transparent font-['Fredoka',sans-serif]">
-                Mr. Arthur&apos;s Staff Composer!
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Mr. Arthur Avatar Pop-Out Modal is rendered centrally by App */}
     </header>
   );
 };
