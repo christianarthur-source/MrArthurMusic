@@ -20,137 +20,166 @@ import {
   playMusicNote,
   getToolboxAudioContext,
 } from './toolboxAudio';
+import { SymbolVisual } from './SymbolVisual';
 
 // Game Modes
 export type SymbolMatchMode = 'memory' | 'speed';
-export type SymbolCategory = 'all' | 'notes-rests' | 'dynamics' | 'tempos' | 'clefs-signs';
+export type SymbolCategory = 'all' | 'notes-rests' | 'dynamics' | 'clefs-signs' | 'articulations';
 
 export interface MusicalSymbolItem {
   id: string;
   name: string;
-  glyph: string;
-  category: 'notes-rests' | 'dynamics' | 'tempos' | 'clefs-signs';
+  category: 'notes-rests' | 'dynamics' | 'clefs-signs' | 'articulations';
   definition: string;
   soundType: 'short' | 'long' | 'loud' | 'soft' | 'fast' | 'slow' | 'chord';
   badgeColor: string;
 }
 
 export const SYMBOL_DATABASE: MusicalSymbolItem[] = [
-  // Notes
+  // --- Notes ---
   {
     id: 'whole-note',
     name: 'Whole Note',
-    glyph: '𝅝',
     category: 'notes-rests',
-    definition: 'Receives 4 beats of sound',
+    definition: 'Receives 4 beats of sound (open oval)',
     soundType: 'long',
     badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
   },
   {
     id: 'half-note',
     name: 'Half Note',
-    glyph: '𝅗𝅥',
     category: 'notes-rests',
-    definition: 'Receives 2 beats of sound',
+    definition: 'Receives 2 beats of sound (open notehead + stem)',
+    soundType: 'long',
+    badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
+  },
+  {
+    id: 'dotted-half',
+    name: 'Dotted Half Note',
+    category: 'notes-rests',
+    definition: 'Receives 3 beats (2 beats + 1 dot)',
     soundType: 'long',
     badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
   },
   {
     id: 'quarter-note',
     name: 'Quarter Note',
-    glyph: '♩',
     category: 'notes-rests',
-    definition: 'Receives 1 beat of sound',
+    definition: 'Receives 1 beat of sound (solid notehead + stem)',
     soundType: 'short',
     badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
   },
   {
     id: 'eighth-note',
     name: 'Eighth Note',
-    glyph: '♪',
     category: 'notes-rests',
-    definition: 'Receives 1/2 beat of sound',
+    definition: 'Receives 1/2 beat of sound (1 flag on stem)',
     soundType: 'short',
     badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
   },
   {
-    id: 'dotted-half',
-    name: 'Dotted Half Note',
-    glyph: '𝅗𝅥.',
+    id: 'sixteenth-note',
+    name: 'Sixteenth Note',
     category: 'notes-rests',
-    definition: 'Receives 3 beats (2 + 1)',
-    soundType: 'long',
+    definition: 'Receives 1/4 beat of sound (2 flags on stem)',
+    soundType: 'short',
     badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
   },
-  // Rests
+
+  // --- Rests ---
+  {
+    id: 'whole-rest',
+    name: 'Whole Rest',
+    category: 'notes-rests',
+    definition: '4 beats of silence (hangs below the line)',
+    soundType: 'long',
+    badgeColor: 'bg-sky-500/20 text-sky-300 border-sky-500/40',
+  },
+  {
+    id: 'half-rest',
+    name: 'Half Rest',
+    category: 'notes-rests',
+    definition: '2 beats of silence (sits like a hat on the line)',
+    soundType: 'long',
+    badgeColor: 'bg-sky-500/20 text-sky-300 border-sky-500/40',
+  },
   {
     id: 'quarter-rest',
     name: 'Quarter Rest',
-    glyph: '𝄽',
     category: 'notes-rests',
     definition: '1 beat of silent rest',
     soundType: 'short',
     badgeColor: 'bg-sky-500/20 text-sky-300 border-sky-500/40',
   },
   {
-    id: 'half-rest',
-    name: 'Half Rest',
-    glyph: '𝄼',
+    id: 'eighth-rest',
+    name: 'Eighth Rest',
     category: 'notes-rests',
-    definition: '2 beats of silence (hat on line)',
-    soundType: 'long',
+    definition: '1/2 beat of silent rest (1 hook)',
+    soundType: 'short',
     badgeColor: 'bg-sky-500/20 text-sky-300 border-sky-500/40',
   },
   {
-    id: 'whole-rest',
-    name: 'Whole Rest',
-    glyph: '𝄻',
+    id: 'sixteenth-rest',
+    name: 'Sixteenth Rest',
     category: 'notes-rests',
-    definition: '4 beats of silence (hangs below line)',
-    soundType: 'long',
+    definition: '1/4 beat of silent rest (2 hooks)',
+    soundType: 'short',
     badgeColor: 'bg-sky-500/20 text-sky-300 border-sky-500/40',
   },
-  // Dynamics
+
+  // --- Dynamics ---
   {
     id: 'pianissimo',
     name: 'Pianissimo (pp)',
-    glyph: '𝄠𝄠',
     category: 'dynamics',
-    definition: 'Very soft (whisper quiet)',
+    definition: 'Very soft (whisper quiet volume)',
     soundType: 'soft',
     badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
   },
   {
     id: 'piano',
     name: 'Piano (p)',
-    glyph: '𝄠',
     category: 'dynamics',
-    definition: 'Soft & gentle volume',
+    definition: 'Soft & gentle playing volume',
     soundType: 'soft',
     badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
   },
   {
+    id: 'mezzo-piano',
+    name: 'Mezzo-Piano (mp)',
+    category: 'dynamics',
+    definition: 'Medium soft (moderately quiet)',
+    soundType: 'soft',
+    badgeColor: 'bg-teal-500/20 text-teal-300 border-teal-500/40',
+  },
+  {
     id: 'mezzo-forte',
     name: 'Mezzo-Forte (mf)',
-    glyph: '𝄡𝄢',
     category: 'dynamics',
-    definition: 'Medium loud (speaking voice)',
+    definition: 'Medium loud (speaking voice volume)',
     soundType: 'loud',
     badgeColor: 'bg-teal-500/20 text-teal-300 border-teal-500/40',
   },
   {
     id: 'forte',
     name: 'Forte (f)',
-    glyph: '𝄢',
     category: 'dynamics',
     definition: 'Loud & strong sound',
     soundType: 'loud',
     badgeColor: 'bg-rose-500/20 text-rose-300 border-rose-500/40',
   },
   {
+    id: 'fortissimo',
+    name: 'Fortissimo (ff)',
+    category: 'dynamics',
+    definition: 'Very loud with full power!',
+    soundType: 'loud',
+    badgeColor: 'bg-rose-500/20 text-rose-300 border-rose-500/40',
+  },
+  {
     id: 'crescendo',
     name: 'Crescendo (<)',
-    glyph: '𝆒',
     category: 'dynamics',
     definition: 'Gradually get louder',
     soundType: 'loud',
@@ -159,109 +188,92 @@ export const SYMBOL_DATABASE: MusicalSymbolItem[] = [
   {
     id: 'decrescendo',
     name: 'Decrescendo (>)',
-    glyph: '𝆓',
     category: 'dynamics',
     definition: 'Gradually get softer',
     soundType: 'soft',
     badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
   },
-  // Tempos
-  {
-    id: 'adagio',
-    name: 'Adagio / Largo',
-    glyph: '🐢',
-    category: 'tempos',
-    definition: 'Slow and stately pace',
-    soundType: 'slow',
-    badgeColor: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40',
-  },
-  {
-    id: 'andante',
-    name: 'Andante',
-    glyph: '🚶',
-    category: 'tempos',
-    definition: 'Walking speed tempo',
-    soundType: 'slow',
-    badgeColor: 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40',
-  },
-  {
-    id: 'allegro',
-    name: 'Allegro',
-    glyph: '🐆',
-    category: 'tempos',
-    definition: 'Fast, quick, and lively tempo',
-    soundType: 'fast',
-    badgeColor: 'bg-orange-500/20 text-orange-300 border-orange-500/40',
-  },
-  {
-    id: 'presto',
-    name: 'Presto',
-    glyph: '🚀',
-    category: 'tempos',
-    definition: 'Super fast tempo!',
-    soundType: 'fast',
-    badgeColor: 'bg-orange-500/20 text-orange-300 border-orange-500/40',
-  },
-  // Clefs & Signs
+
+  // --- Clefs & Signs ---
   {
     id: 'treble-clef',
     name: 'Treble Clef',
-    glyph: '𝄞',
     category: 'clefs-signs',
-    definition: 'G Clef: high notes & right hand',
+    definition: 'G Clef: high notes & right hand on piano',
     soundType: 'chord',
     badgeColor: 'bg-violet-500/20 text-violet-300 border-violet-500/40',
   },
   {
     id: 'bass-clef',
     name: 'Bass Clef',
-    glyph: '𝄢',
     category: 'clefs-signs',
-    definition: 'F Clef: low notes & left hand',
+    definition: 'F Clef: low notes & left hand on piano',
     soundType: 'chord',
     badgeColor: 'bg-violet-500/20 text-violet-300 border-violet-500/40',
   },
   {
     id: 'sharp',
     name: 'Sharp (♯)',
-    glyph: '♯',
     category: 'clefs-signs',
-    definition: 'Raises a pitch by 1/2 step',
+    definition: 'Raises a pitch by 1/2 step (half step higher)',
     soundType: 'short',
     badgeColor: 'bg-pink-500/20 text-pink-300 border-pink-500/40',
   },
   {
     id: 'flat',
     name: 'Flat (♭)',
-    glyph: '♭',
     category: 'clefs-signs',
-    definition: 'Lowers a pitch by 1/2 step',
+    definition: 'Lowers a pitch by 1/2 step (half step lower)',
+    soundType: 'short',
+    badgeColor: 'bg-pink-500/20 text-pink-300 border-pink-500/40',
+  },
+  {
+    id: 'natural',
+    name: 'Natural (♮)',
+    category: 'clefs-signs',
+    definition: 'Cancels a previous sharp or flat',
     soundType: 'short',
     badgeColor: 'bg-pink-500/20 text-pink-300 border-pink-500/40',
   },
   {
     id: 'fermata',
     name: 'Fermata',
-    glyph: '𝄐',
     category: 'clefs-signs',
-    definition: 'Hold the note longer than normal!',
+    definition: 'Hold the note longer than its normal count!',
     soundType: 'long',
     badgeColor: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/40',
   },
   {
     id: 'repeat-sign',
     name: 'Repeat Sign',
-    glyph: '𝄆 𝄇',
     category: 'clefs-signs',
-    definition: 'Go back and play that section again',
+    definition: 'Go back and play that section of music again',
     soundType: 'chord',
     badgeColor: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/40',
+  },
+
+  // --- Articulations ---
+  {
+    id: 'staccato',
+    name: 'Staccato (•)',
+    category: 'articulations',
+    definition: 'Play the note short, crisp, and detached',
+    soundType: 'short',
+    badgeColor: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40',
+  },
+  {
+    id: 'accent',
+    name: 'Accent (>)',
+    category: 'articulations',
+    definition: 'Play the note with extra emphasis and punch!',
+    soundType: 'loud',
+    badgeColor: 'bg-orange-500/20 text-orange-300 border-orange-500/40',
   },
 ];
 
 interface MemoryCard {
-  id: string; // card-0, card-1...
-  pairId: string; // matches with other card
+  id: string;
+  pairId: string;
   cardType: 'symbol' | 'text';
   symbolItem: MusicalSymbolItem;
   isFlipped: boolean;
@@ -311,7 +323,7 @@ export const MusicSymbolMatch: React.FC = () => {
 
     // Pick 6 random symbols (12 cards)
     const shuffledPool = [...pool].sort(() => 0.5 - Math.random());
-    const selected = shuffledPool.slice(0, 6);
+    const selected = shuffledPool.slice(0, Math.min(6, shuffledPool.length));
 
     const cards: MemoryCard[] = [];
     selected.forEach((item, idx) => {
@@ -383,7 +395,8 @@ export const MusicSymbolMatch: React.FC = () => {
           );
           setMemoryMatches((m) => {
             const nextMatches = m + 1;
-            if (nextMatches >= 6) {
+            const targetCount = memoryCards.length / 2;
+            if (nextMatches >= targetCount) {
               setMemoryWon(true);
             }
             return nextMatches;
@@ -425,14 +438,12 @@ export const MusicSymbolMatch: React.FC = () => {
     const target = pool[Math.floor(Math.random() * pool.length)];
     setCurrentPrompt(target);
 
-    // Pick 3 distractors
-    const otherNames = pool
-      .filter((s) => s.id !== target.id)
-      .map((s) => s.name)
-      .sort(() => 0.5 - Math.random())
-      .slice(0, 3);
+    // Pick 3 distractors from the full database for diverse choices
+    const otherPool = SYMBOL_DATABASE.filter((s) => s.id !== target.id);
+    const shuffledOthers = [...otherPool].sort(() => 0.5 - Math.random());
+    const distractors = shuffledOthers.slice(0, 3).map((s) => s.name);
 
-    const opts = [target.name, ...otherNames].sort(() => 0.5 - Math.random());
+    const opts = [target.name, ...distractors].sort(() => 0.5 - Math.random());
     setSpeedOptions(opts);
     setFeedbackState(null);
   }, [categoryFilter]);
@@ -505,7 +516,7 @@ export const MusicSymbolMatch: React.FC = () => {
               </span>
             </div>
             <p className="text-xs text-slate-300 font-sans">
-              Test your musical memory! Match symbols to their names, meanings, and sounds.
+              Test your musical memory! Match engraved symbols to their names, meanings, and sounds.
             </p>
           </div>
         </div>
@@ -552,11 +563,11 @@ export const MusicSymbolMatch: React.FC = () => {
       <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs">
         <span className="text-slate-400 font-bold shrink-0 mr-1">Filter:</span>
         {[
-          { id: 'all', label: 'All Symbols (24)' },
+          { id: 'all', label: `All Symbols (${SYMBOL_DATABASE.length})` },
           { id: 'notes-rests', label: '🎼 Notes & Rests' },
           { id: 'dynamics', label: '🔊 Dynamics (pp - ff)' },
-          { id: 'tempos', label: '⏱️ Tempo Speeds' },
-          { id: 'clefs-signs', label: '𝄞 Clefs & Signs' },
+          { id: 'clefs-signs', label: '𝄞 Clefs & Accidentals' },
+          { id: 'articulations', label: '🎯 Articulations' },
         ].map((cat) => (
           <button
             key={cat.id}
@@ -583,7 +594,7 @@ export const MusicSymbolMatch: React.FC = () => {
               <div className="text-xs text-slate-400">
                 Pairs Matched:{' '}
                 <span className="text-amber-400 font-black text-sm">
-                  {memoryMatches} / 6
+                  {memoryMatches} / {memoryCards.length / 2}
                 </span>
               </div>
               <div className="text-xs text-slate-400">
@@ -607,7 +618,7 @@ export const MusicSymbolMatch: React.FC = () => {
               <div className="text-5xl animate-bounce">🏆</div>
               <h4 className="text-2xl font-black text-white">You Matched All Symbols!</h4>
               <p className="text-xs text-emerald-300 font-sans max-w-md mx-auto">
-                Incredible job! You solved all 6 musical pairs in only{' '}
+                Incredible job! You solved all {memoryCards.length / 2} musical pairs in only{' '}
                 <span className="font-bold text-white">{memoryMoves} moves</span>.
               </p>
               <button
@@ -638,11 +649,11 @@ export const MusicSymbolMatch: React.FC = () => {
                   }`}
                 >
                   {isOpen ? (
-                    <div className="flex flex-col items-center justify-center space-y-1.5 h-full animate-in zoom-in-75 duration-150">
+                    <div className="flex flex-col items-center justify-center space-y-1.5 h-full animate-in zoom-in-75 duration-150 w-full">
                       {card.cardType === 'symbol' ? (
                         <>
-                          <div className="text-4xl sm:text-5xl font-serif leading-none my-auto">
-                            {card.symbolItem.glyph}
+                          <div className="flex items-center justify-center h-16 w-full text-white my-auto">
+                            <SymbolVisual id={card.symbolItem.id} size="md" color="#F8FAFC" />
                           </div>
                           <div className="text-[10px] text-violet-300 font-bold uppercase tracking-wider">
                             Symbol Card
@@ -736,9 +747,9 @@ export const MusicSymbolMatch: React.FC = () => {
 
               {/* Spotlight Symbol */}
               {currentPrompt && (
-                <div className="p-6 rounded-3xl bg-slate-950 border-2 border-slate-800 flex flex-col items-center justify-center text-center space-y-2 relative overflow-hidden">
-                  <div className="text-6xl sm:text-7xl font-serif text-white py-2">
-                    {currentPrompt.glyph}
+                <div className="p-6 rounded-3xl bg-slate-950 border-2 border-slate-800 flex flex-col items-center justify-center text-center space-y-2 relative overflow-hidden min-h-[140px]">
+                  <div className="py-2 flex items-center justify-center text-white">
+                    <SymbolVisual id={currentPrompt.id} size="lg" color="#F8FAFC" />
                   </div>
                   <div className="text-xs text-slate-400 font-sans max-w-sm">
                     {currentPrompt.definition}
@@ -802,7 +813,9 @@ export const MusicSymbolMatch: React.FC = () => {
                 onClick={() => playSymbolAudio(item)}
                 className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-slate-700 flex flex-col justify-between cursor-pointer transition-colors"
               >
-                <div className="text-3xl font-serif text-center py-1 text-white">{item.glyph}</div>
+                <div className="flex items-center justify-center py-2 text-white min-h-[48px]">
+                  <SymbolVisual id={item.id} size="sm" color="#F8FAFC" />
+                </div>
                 <div>
                   <div className="font-bold text-xs text-amber-300 leading-tight">{item.name}</div>
                   <div className="text-[10px] text-slate-400 font-sans mt-0.5 leading-tight">

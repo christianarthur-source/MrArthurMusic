@@ -764,27 +764,24 @@ export const MusicLabLanding: React.FC<MusicLabLandingProps> = ({
               </div>
             </div>
 
-            {/* Tool 7: Music Symbol Match (Coming Soon - No link) */}
-            <div className="p-5 rounded-3xl bg-gradient-to-br from-slate-900/90 via-slate-900/80 to-purple-950/20 border border-slate-800 select-none flex flex-col justify-between relative overflow-hidden">
-              <div className="absolute top-3.5 right-3.5">
-                <span className="px-2.5 py-0.5 rounded-full bg-purple-500/15 border border-purple-500/30 text-purple-300 font-black text-[10px] uppercase font-['Fredoka',sans-serif] tracking-wider flex items-center gap-1">
-                  <Sparkles className="w-2.5 h-2.5" />
-                  <span>Coming Soon!</span>
-                </span>
-              </div>
+            {/* Tool 7: Music Symbol Match (Active) */}
+            <div
+              onClick={() => setSelectedToolModal('music-symbol-match')}
+              className="p-5 rounded-3xl bg-gradient-to-br from-slate-900 to-slate-950 border border-violet-500/30 hover:border-violet-400 hover:shadow-xl hover:shadow-violet-500/10 cursor-pointer transition-all duration-200 group flex flex-col justify-between"
+            >
               <div className="space-y-3">
-                <div className="w-16 h-16 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-4xl shadow-inner opacity-80">
+                <div className="w-16 h-16 rounded-2xl bg-violet-500/20 border border-violet-400/40 flex items-center justify-center text-4xl group-hover:scale-110 transition-transform shadow-inner">
                   🃏
                 </div>
                 <div>
-                  <h4 className="text-xl font-black text-slate-200 font-['Fredoka',sans-serif]">
+                  <h4 className="text-xl font-black text-white font-['Fredoka',sans-serif] group-hover:text-violet-300 transition-colors">
                     Music Symbol Match
                   </h4>
-                  <p className="text-xs text-slate-400 font-medium mt-0.5">
-                    Match musical symbols, names, and sounds in memory &amp; speed modes!
+                  <p className="text-xs text-violet-300 font-bold mt-0.5">
+                    Match notes, rests, clefs &amp; dynamics in memory and speed modes! 🎼
                   </p>
                 </div>
-                <div className="flex items-center justify-around font-serif text-2xl text-purple-300/50 pt-1 px-1">
+                <div className="flex items-center justify-around font-serif text-2xl text-violet-300 pt-1 px-1">
                   <span>♩</span>
                   <span>𝄽</span>
                   <span>𝄢</span>
@@ -793,11 +790,14 @@ export const MusicLabLanding: React.FC<MusicLabLandingProps> = ({
                 </div>
               </div>
 
-              <div className="pt-4 mt-3 border-t border-slate-800/60">
-                <div className="w-full py-2.5 rounded-xl bg-slate-800/60 border border-slate-700/50 text-slate-400 font-black text-xs flex items-center justify-center gap-1.5 font-['Fredoka',sans-serif]">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-400/70" />
-                  <span>Coming Soon!</span>
-                </div>
+              <div className="pt-4 mt-3 border-t border-slate-800/80">
+                <button
+                  type="button"
+                  className="w-full py-2.5 rounded-xl bg-slate-800 group-hover:bg-violet-400 group-hover:text-slate-950 text-violet-300 font-black text-xs transition-colors flex items-center justify-center gap-1.5 font-['Fredoka',sans-serif] cursor-pointer"
+                >
+                  <span>Play Symbol Match</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
               </div>
             </div>
 
