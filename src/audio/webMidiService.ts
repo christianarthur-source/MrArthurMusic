@@ -1,5 +1,7 @@
 import { KeySignature, Pitch, NoteStep, AccidentalType } from '../types/music';
-import { DrumSound, DRUM_SOUND_PITCH_MAP } from '../data/drumGrooves';
+import { DrumSound, DRUM_SOUND_PITCH_MAP, getDrumPitchForSound, getDrumSoundForPitch } from '../data/drumGrooves';
+
+export { getDrumPitchForSound, getDrumSoundForPitch };
 
 export interface MidiDeviceInfo {
   id: string;
@@ -119,38 +121,6 @@ export function midiNumberToPitch(
     octave,
     accidental: entry.accidental || null,
   };
-}
-
-/**
- * Returns standard staff pitch for a given DrumSound (e.g. kick -> F4, snare -> C5)
- */
-export function getDrumPitchForSound(sound: DrumSound): Pitch {
-  return DRUM_SOUND_PITCH_MAP[sound] || { step: 'C', octave: 5 };
-}
-
-/**
- * Returns a standard DrumSound for a given musical pitch
- */
-export function getDrumSoundForPitch(pitch: Pitch): DrumSound {
-  const step = pitch?.step || 'F';
-  const octave = pitch?.octave || 4;
-  if (octave >= 5) {
-    if (step === 'G') return 'hihat_closed';
-    if (step === 'A') return 'hihat_open';
-    if (step === 'B') return 'crash';
-    if (step === 'F') return 'ride';
-    if (step === 'E') return 'rimshot';
-    if (step === 'D') return 'tom_high';
-    return 'snare';
-  } else {
-    if (step === 'F' || step === 'C') return 'kick';
-    if (step === 'A') return 'tom_low';
-    if (step === 'B') return 'shaker';
-    if (step === 'D') return 'cowbell';
-    if (step === 'E') return 'conga_open';
-    if (step === 'G') return 'conga_slap';
-    return 'kick';
-  }
 }
 
 class WebMidiService {

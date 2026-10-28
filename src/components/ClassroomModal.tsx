@@ -32,6 +32,7 @@ import {
   Send,
   Eye,
   CheckCircle2,
+  Save,
 } from 'lucide-react';
 import { EdLawPrivacyModal } from './EdLawPrivacyModal';
 import { Score } from '../types/music';
@@ -150,7 +151,7 @@ interface ClassroomModalProps {
     asTeacher?: { teacherPin: string; studentName: string; studentId: string }
   ) => void;
   onStartNewSong: () => void;
-  onManualSaveCurrentSong: (customTitle?: string) => Promise<void>;
+  onManualSaveCurrentSong: (customTitle?: string, teacherOverride?: { teacherPin: string; teacherName: string; teacherId: string }) => Promise<void>;
   editingAsTeacher: { teacherPin: string; studentName: string; studentId: string } | null;
   onExitTeacherEditMode: () => void;
   openInTeacherMode?: boolean;
@@ -2894,10 +2895,20 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                         }
                         setIsLoading(true);
                         try {
-                          await onManualSaveCurrentSong(titleToSave);
-                          const refreshed = await loginTeacher(activeTeacherPin);
+                          const currentTeacher = teachers.find((t) => t.id === projectStudentFilter) ||
+                            teachers.find((t) => t.isMasterAdmin || t.pin === '1138' || t.pin === 'adminbaby') || {
+                              id: 'teach_master',
+                              name: 'Mr. Arthur',
+                              pin: activeTeacherPin || '1138',
+                            };
+                          await onManualSaveCurrentSong(titleToSave, {
+                            teacherPin: activeTeacherPin || currentTeacher.pin || '1138',
+                            teacherName: currentTeacher.name || 'Mr. Arthur',
+                            teacherId: currentTeacher.id || 'teach_master',
+                          });
+                          const refreshed = await loginTeacher(activeTeacherPin || '1138');
                           setAllProjects(refreshed.projects);
-                          setTeacherNotice(`Saved "${titleToSave}" to your projects!`);
+                          setTeacherNotice(`Saved "${titleToSave}" under ${currentTeacher.name}!`);
                           window.setTimeout(() => setTeacherNotice(null), 3000);
                         } catch (err: any) {
                           setTeacherError(err.message || 'Could not save current song.');
@@ -2981,8 +2992,31 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                   </div>
 
                   {filteredProjectsList.length === 0 ? (
-                    <div className="p-6 rounded-xl bg-slate-950/40 border border-slate-800 text-center text-xs text-slate-400">
-                      No saved songs match this filter.
+                    <div className="p-8 rounded-2xl bg-slate-950/40 border border-slate-800 text-center space-y-2 text-xs text-slate-400">
+                      <Music className="w-8 h-8 text-slate-600 mx-auto" />
+                      <div className="font-bold text-white text-sm">
+                        {projectStudentFilter !== 'ALL'
+                          ? `No saved songs found for ${
+                              teachers.find((t) => t.id === projectStudentFilter)?.name ||
+                              allStudents.find((s) => s.id === projectStudentFilter)?.firstName ||
+                              'this creator'
+                            }`
+                          : 'No saved songs match your search/filter.'}
+                      </div>
+                      <p className="text-slate-400 max-w-sm mx-auto">
+                        {projectStudentFilter !== 'ALL'
+                          ? 'Click "Save Current Song as Teacher" above to save the current song on your staff, or switch the filter to All Creators.'
+                          : 'Try clearing your search query or switching creator/app filters above.'}
+                      </p>
+                      {projectStudentFilter !== 'ALL' && (
+                        <button
+                          type="button"
+                          onClick={() => setProjectStudentFilter('ALL')}
+                          className="mt-1 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 font-bold text-xs cursor-pointer inline-flex items-center gap-1.5"
+                        >
+                          Show All Creators ({allProjects.length})
+                        </button>
+                      )}
                     </div>
                   ) : (
                     <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
