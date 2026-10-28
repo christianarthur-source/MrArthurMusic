@@ -68,6 +68,28 @@ import {
 import { createShortLink } from '../utils/shortLinkService';
 import { containsProfanity } from '../utils/profanityFilter';
 
+function safeFormatDate(dateVal: any, opts: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' }): string {
+  if (!dateVal) return '';
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleDateString([], opts);
+  } catch {
+    return '';
+  }
+}
+
+function safeFormatTime(dateVal: any, opts: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit' }): string {
+  if (!dateVal) return '';
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleTimeString([], opts);
+  } catch {
+    return '';
+  }
+}
+
 function getAppDescriptor(appType?: MusicLabAppType) {
   switch (appType) {
     case 'beat-machine':
@@ -1062,10 +1084,12 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
       const matchedTch = teachers.find((t) => t.id === projectStudentFilter);
       if (matchedTch) {
         const isMaster = matchedTch.isMasterAdmin || matchedTch.pin === '1138' || matchedTch.pin === 'adminbaby';
+        const tchNameLower = (matchedTch.name || '').toLowerCase();
+        const projStudentNameLower = (p.studentName || '').toLowerCase();
         const matchesThisTeacher =
           p.studentId === matchedTch.id ||
           (isMaster && (p.studentId === 'teach_master' || p.studentId === 'teacher_master')) ||
-          p.studentName.toLowerCase() === matchedTch.name.toLowerCase();
+          (tchNameLower && projStudentNameLower === tchNameLower);
         if (!matchesThisTeacher) return false;
       } else if (p.studentId !== projectStudentFilter) {
         return false;
@@ -1077,8 +1101,8 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
     const q = projectSearch.trim().toLowerCase();
     if (!q) return true;
     return (
-      p.title.toLowerCase().includes(q) ||
-      p.studentName.toLowerCase().includes(q)
+      (p.title || '').toLowerCase().includes(q) ||
+      (p.studentName || '').toLowerCase().includes(q)
     );
   });
 
@@ -1611,15 +1635,9 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                               <div className="text-[11px] text-slate-400 flex items-center gap-1.5 flex-wrap mt-0.5">
                                 <span>
                                   Saved{' '}
-                                  {new Date(proj.updatedAt).toLocaleDateString([], {
-                                    month: 'short',
-                                    day: 'numeric',
-                                  })}{' '}
+                                  {safeFormatDate(proj.updatedAt)}{' '}
                                   at{' '}
-                                  {new Date(proj.updatedAt).toLocaleTimeString([], {
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                  })}
+                                  {safeFormatTime(proj.updatedAt)}
                                 </span>
                                 <span>•</span>
                                 {proj.appType === 'beat-machine' ? (
@@ -2741,12 +2759,15 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                   <div className="space-y-2">
                     {teachers.map((tch) => {
                       const isMaster = tch.isMasterAdmin || tch.pin === '1138' || tch.pin === 'adminbaby';
-                      const tchProjectCount = allProjects.filter(
-                        (p) =>
+                      const tchNameLower = (tch.name || '').toLowerCase();
+                      const tchProjectCount = allProjects.filter((p) => {
+                        const projStudentNameLower = (p.studentName || '').toLowerCase();
+                        return (
                           p.studentId === tch.id ||
                           (isMaster && (p.studentId === 'teach_master' || p.studentId === 'teacher_master')) ||
-                          p.studentName.toLowerCase() === tch.name.toLowerCase()
-                      ).length;
+                          (tchNameLower && projStudentNameLower === tchNameLower)
+                        );
+                      }).length;
 
                       return (
                         <div
@@ -2911,12 +2932,15 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                         <optgroup label="Teachers & Admins">
                           {teachers.map((t) => {
                             const isMaster = t.isMasterAdmin || t.pin === '1138' || t.pin === 'adminbaby';
-                            const count = allProjects.filter(
-                              (p) =>
+                            const tNameLower = (t.name || '').toLowerCase();
+                            const count = allProjects.filter((p) => {
+                              const projStudentNameLower = (p.studentName || '').toLowerCase();
+                              return (
                                 p.studentId === t.id ||
                                 (isMaster && (p.studentId === 'teach_master' || p.studentId === 'teacher_master')) ||
-                                p.studentName.toLowerCase() === t.name.toLowerCase()
-                            ).length;
+                                (tNameLower && projStudentNameLower === tNameLower)
+                              );
+                            }).length;
                             return (
                               <option key={t.id} value={t.id}>
                                 🎵 {t.name} ({count})
@@ -3025,15 +3049,9 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                                   <div className="text-[11px] text-slate-400 flex items-center gap-1.5 flex-wrap mt-0.5">
                                     <span>
                                       Updated{' '}
-                                      {new Date(proj.updatedAt).toLocaleDateString([], {
-                                        month: 'short',
-                                        day: 'numeric',
-                                      })}{' '}
+                                      {safeFormatDate(proj.updatedAt)}{' '}
                                       at{' '}
-                                      {new Date(proj.updatedAt).toLocaleTimeString([], {
-                                        hour: '2-digit',
-                                        minute: '2-digit',
-                                      })}
+                                      {safeFormatTime(proj.updatedAt)}
                                     </span>
                                     <span>•</span>
                                     {proj.appType === 'beat-machine' ? (
@@ -3337,15 +3355,9 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                           <div className="text-[11px] text-slate-400 flex items-center gap-1.5 flex-wrap mt-1">
                             <span>
                               Updated{' '}
-                              {new Date(proj.updatedAt).toLocaleDateString([], {
-                                month: 'short',
-                                day: 'numeric',
-                              })}{' '}
+                              {safeFormatDate(proj.updatedAt)}{' '}
                               at{' '}
-                              {new Date(proj.updatedAt).toLocaleTimeString([], {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                              })}
+                              {safeFormatTime(proj.updatedAt)}
                             </span>
                             <span>•</span>
                             {proj.appType === 'beat-machine' ? (
