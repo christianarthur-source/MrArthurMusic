@@ -1,0 +1,1452 @@
+{
+ "format": "mrdaw-instruments-part",
+ "version": 1,
+ "instruments": [
+  {
+   "id": "piano",
+   "name": "Grand Piano",
+   "family": "Keyboards",
+   "kind": "melodic",
+   "samples": {
+    "22": "cc0/piano/22.mp3",
+    "24": "cc0/piano/24.mp3",
+    "27": "cc0/piano/27.mp3",
+    "30": "cc0/piano/30.mp3",
+    "33": "cc0/piano/33.mp3",
+    "36": "cc0/piano/36.mp3",
+    "39": "cc0/piano/39.mp3",
+    "42": "cc0/piano/42.mp3",
+    "45": "cc0/piano/45.mp3",
+    "48": "cc0/piano/48.mp3",
+    "50": "cc0/piano/50.mp3",
+    "52": "cc0/piano/52.mp3",
+    "54": "cc0/piano/54.mp3",
+    "56": "cc0/piano/56.mp3",
+    "58": "cc0/piano/58.mp3",
+    "60": "cc0/piano/60.mp3",
+    "62": "cc0/piano/62.mp3",
+    "64": "cc0/piano/64.mp3",
+    "66": "cc0/piano/66.mp3",
+    "68": "cc0/piano/68.mp3",
+    "70": "cc0/piano/70.mp3",
+    "72": "cc0/piano/72.mp3",
+    "74": "cc0/piano/74.mp3",
+    "76": "cc0/piano/76.mp3",
+    "78": "cc0/piano/78.mp3",
+    "80": "cc0/piano/80.mp3",
+    "82": "cc0/piano/82.mp3",
+    "83": "cc0/piano/83.mp3",
+    "84": "cc0/piano/84.mp3",
+    "87": "cc0/piano/87.mp3",
+    "90": "cc0/piano/90.mp3",
+    "93": "cc0/piano/93.mp3",
+    "96": "cc0/piano/96.mp3",
+    "99": "cc0/piano/99.mp3",
+    "102": "cc0/piano/102.mp3",
+    "103": "cc0/piano/103.mp3",
+    "105": "cc0/piano/105.mp3",
+    "108": "cc0/piano/108.mp3"
+   },
+   "range": [
+    17,
+    113
+   ],
+   "license": {
+    "id": "CC0-1.0",
+    "attribution": "Recordings from VSCO 2 Community Edition and VCSL by Versilian Studios (CC0 1.0). Source: Versilian Community Sample Library.",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+   }
+  },
+  {
+   "id": "upright_piano",
+   "name": "Upright Piano",
+   "family": "Keyboards",
+   "kind": "melodic",
+   "samples": {
+    "24": "cc0/upright_piano/24.mp3",
+    "31": "cc0/upright_piano/31.mp3",
+    "36": "cc0/upright_piano/36.mp3",
+    "43": "cc0/upright_piano/43.mp3",
+    "48": "cc0/upright_piano/48.mp3",
+    "55": "cc0/upright_piano/55.mp3",
+    "60": "cc0/upright_piano/60.mp3",
+    "67": "cc0/upright_piano/67.mp3",
+    "72": "cc0/upright_piano/72.mp3",
+    "79": "cc0/upright_piano/79.mp3",
+    "84": "cc0/upright_piano/84.mp3",
+    "91": "cc0/upright_piano/91.mp3",
+    "96": "cc0/upright_piano/96.mp3"
+   },
+   "range": [
+    19,
+    101
+   ],
+   "license": {
+    "id": "CC0-1.0",
+    "attribution": "Recordings from VSCO 2 Community Edition and VCSL by Versilian Studios (CC0 1.0). Source: Versilian Community Sample Library.",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+   }
+  },
+  {
+   "id": "electric_piano",
+   "name": "FM Electric Piano",
+   "family": "Keyboards",
+   "kind": "melodic",
+   "samples": {
+    "12": "cc0/electric_piano/12.mp3",
+    "16": "cc0/electric_piano/16.mp3",
+    "20": "cc0/electric_piano/20.mp3",
+    "24": "cc0/electric_piano/24.mp3",
+    "28": "cc0/electric_piano/28.mp3",
+    "32": "cc0/electric_piano/32.mp3",
+    "36": "cc0/electric_piano/36.mp3",
+    "40": "cc0/electric_piano/40.mp3",
+    "44": "cc0/electric_piano/44.mp3",
+    "48": "cc0/electric_piano/48.mp3",
+    "52": "cc0/electric_piano/52.mp3",
+    "56": "cc0/electric_piano/56.mp3",
+    "60": "cc0/electric_piano/60.mp3",
+    "64": "cc0/electric_piano/64.mp3",
+    "68": "cc0/electric_piano/68.mp3",
+    "72": "cc0/electric_piano/72.mp3",
+    "76": "cc0/electric_piano/76.mp3",
+    "80": "cc0/electric_piano/80.mp3",
+    "84": "cc0/electric_piano/84.mp3",
+    "88": "cc0/electric_piano/88.mp3",
+    "92": "cc0/electric_piano/92.mp3",
+    "96": "cc0/electric_piano/96.mp3"
+   },
+   "range": [
+    7,
+    101
+   ],
+   "license": {
+    "id": "CC0-1.0",
+    "attribution": "Recordings from VSCO 2 Community Edition and VCSL by Versilian Studios (CC0 1.0). Source: Versilian Community Sample Library.",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+   }
+  },
+  {
+   "id": "clavinet",
+   "name": "FM Clav",
+   "family": "Keyboards",
+   "kind": "melodic",
+   "samples": {
+    "36": "cc0/clavinet/36.mp3",
+    "40": "cc0/clavinet/40.mp3",
+    "44": "cc0/clavinet/44.mp3",
+    "48": "cc0/clavinet/48.mp3",
+    "52": "cc0/clavinet/52.mp3",
+    "56": "cc0/clavinet/56.mp3",
+    "60": "cc0/clavinet/60.mp3",
+    "64": "cc0/clavinet/64.mp3",
+    "68": "cc0/clavinet/68.mp3",
+    "72": "cc0/clavinet/72.mp3",
+    "76": "cc0/clavinet/76.mp3",
+    "80": "cc0/clavinet/80.mp3",
+    "84": "cc0/clavinet/84.mp3",
+    "88": "cc0/clavinet/88.mp3",
+    "92": "cc0/clavinet/92.mp3",
+    "96": "cc0/clavinet/96.mp3",
+    "100": "cc0/clavinet/100.mp3",
+    "104": "cc0/clavinet/104.mp3",
+    "108": "cc0/clavinet/108.mp3"
+   },
+   "range": [
+    31,
+    113
+   ],
+   "license": {
+    "id": "CC0-1.0",
+    "attribution": "Recordings from VSCO 2 Community Edition and VCSL by Versilian Studios (CC0 1.0). Source: Versilian Community Sample Library.",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+   }
+  },
+  {
+   "id": "organ",
+   "name": "Pipe Organ",
+   "family": "Keyboards",
+   "kind": "melodic",
+   "samples": {
+    "36": "cc0/organ/36.mp3",
+    "39": "cc0/organ/39.mp3",
+    "42": "cc0/organ/42.mp3",
+    "45": "cc0/organ/45.mp3",
+    "48": "cc0/organ/48.mp3",
+    "51": "cc0/organ/51.mp3",
+    "54": "cc0/organ/54.mp3",
+    "57": "cc0/organ/57.mp3",
+    "60": "cc0/organ/60.mp3",
+    "63": "cc0/organ/63.mp3",
+    "66": "cc0/organ/66.mp3",
+    "69": "cc0/organ/69.mp3",
+    "72": "cc0/organ/72.mp3",
+    "75": "cc0/organ/75.mp3",
+    "78": "cc0/organ/78.mp3",
+    "81": "cc0/organ/81.mp3",
+    "84": "cc0/organ/84.mp3",
+    "87": "cc0/organ/87.mp3",
+    "90": "cc0/organ/90.mp3",
+    "93": "cc0/organ/93.mp3",
+    "96": "cc0/organ/96.mp3"
+   },
+   "range": [
+    31,
+    101
+   ],
+   "license": {
+    "id": "CC0-1.0",
+    "attribution": "Recordings from VSCO 2 Community Edition and VCSL by Versilian Studios (CC0 1.0). Source: Versilian Community Sample Library.",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+   }
+  },
+  {
+   "id": "harpsichord",
+   "name": "Harpsichord",
+   "family": "Keyboards",
+   "kind": "melodic",
+   "samples": {
+    "34": "cc0/harpsichord/34.mp3",
+    "36": "cc0/harpsichord/36.mp3",
+    "38": "cc0/harpsichord/38.mp3",
+    "40": "cc0/harpsichord/40.mp3",
+    "42": "cc0/harpsichord/42.mp3",
+    "44": "cc0/harpsichord/44.mp3",
+    "46": "cc0/harpsichord/46.mp3",
+    "48": "cc0/harpsichord/48.mp3",
+    "50": "cc0/harpsichord/50.mp3",
+    "52": "cc0/harpsichord/52.mp3",
+    "54": "cc0/harpsichord/54.mp3",
+    "56": "cc0/harpsichord/56.mp3",
+    "58": "cc0/harpsichord/58.mp3",
+    "60": "cc0/harpsichord/60.mp3",
+    "62": "cc0/harpsichord/62.mp3",
+    "64": "cc0/harpsichord/64.mp3",
+    "66": "cc0/harpsichord/66.mp3",
+    "68": "cc0/harpsichord/68.mp3",
+    "70": "cc0/harpsichord/70.mp3",
+    "72": "cc0/harpsichord/72.mp3",
+    "74": "cc0/harpsichord/74.mp3",
+    "76": "cc0/harpsichord/76.mp3",
+    "78": "cc0/harpsichord/78.mp3",
+    "80": "cc0/harpsichord/80.mp3",
+    "82": "cc0/harpsichord/82.mp3",
+    "84": "cc0/harpsichord/84.mp3",
+    "86": "cc0/harpsichord/86.mp3",
+    "88": "cc0/harpsichord/88.mp3"
+   },
+   "range": [
+    29,
+    93
+   ],
+   "license": {
+    "id": "CC0-1.0",
+    "attribution": "Recordings from VSCO 2 Community Edition and VCSL by Versilian Studios (CC0 1.0). Source: Versilian Community Sample Library.",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+   }
+  },
+  {
+   "id": "vibraphone",
+   "name": "Vibraphone",
+   "family": "Mallets",
+   "kind": "melodic",
+   "samples": {
+    "53": "cc0/vibraphone/53.mp3",
+    "57": "cc0/vibraphone/57.mp3",
+    "60": "cc0/vibraphone/60.mp3",
+    "64": "cc0/vibraphone/64.mp3",
+    "67": "cc0/vibraphone/67.mp3",
+    "71": "cc0/vibraphone/71.mp3",
+    "74": "cc0/vibraphone/74.mp3",
+    "77": "cc0/vibraphone/77.mp3",
+    "81": "cc0/vibraphone/81.mp3",
+    "84": "cc0/vibraphone/84.mp3",
+    "88": "cc0/vibraphone/88.mp3"
+   },
+   "range": [
+    48,
+    93
+   ],
+   "license": {
+    "id": "CC0-1.0",
+    "attribution": "Recordings from VSCO 2 Community Edition and VCSL by Versilian Studios (CC0 1.0). Source: Versilian Community Sample Library.",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+   }
+  },
+  {
+   "id": "marimba",
+   "name": "Marimba",
+   "family": "Mallets",
+   "kind": "melodic",
+   "samples": {
+    "41": "cc0/marimba/41.mp3",
+    "48": "cc0/marimba/48.mp3",
+    "55": "cc0/marimba/55.mp3",
+    "59": "cc0/marimba/59.mp3",
+    "65": "cc0/marimba/65.mp3",
+    "72": "cc0/marimba/72.mp3",
+    "79": "cc0/marimba/79.mp3",
+    "83": "cc0/marimba/83.mp3",
+    "89": "cc0/marimba/89.mp3",
+    "96": "cc0/marimba/96.mp3"
+   },
+   "range": [
+    36,
+    101
+   ],
+   "license": {
+    "id": "CC0-1.0",
+    "attribution": "Recordings from VSCO 2 Community Edition and VCSL by Versilian Studios (CC0 1.0). Source: Versilian Community Sample Library.",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+   }
+  },
+  {
+   "id": "xylophone",
+   "name": "Xylophone",
+   "family": "Mallets",
+   "kind": "melodic",
+   "samples": {
+    "67": "cc0/xylophone/67.mp3",
+    "72": "cc0/xylophone/72.mp3",
+    "79": "cc0/xylophone/79.mp3",
+    "84": "cc0/xylophone/84.mp3",
+    "91": "cc0/xylophone/91.mp3",
+    "96": "cc0/xylophone/96.mp3",
+    "103": "cc0/xylophone/103.mp3",
+    "108": "cc0/xylophone/108.mp3"
+   },
+   "range": [
+    62,
+    113
+   ],
+   "license": {
+    "id": "CC0-1.0",
+    "attribution": "Recordings from VSCO 2 Community Edition and VCSL by Versilian Studios (CC0 1.0). Source: Versilian Community Sample Library.",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+   }
+  },
+  {
+   "id": "glockenspiel",
+   "name": "Glockenspiel",
+   "family": "Mallets",
+   "kind": "melodic",
+   "samples": {
+    "79": "cc0/glockenspiel/79.mp3",
+    "84": "cc0/glockenspiel/84.mp3",
+    "91": "cc0/glockenspiel/91.mp3",
+    "96": "cc0/glockenspiel/96.mp3",
+    "103": "cc0/glockenspiel/103.mp3",
+    "104": "cc0/glockenspiel/104.mp3",
+    "108": "cc0/glockenspiel/108.mp3"
+   },
+   "range": [
+    74,
+    113
+   ],
+   "license": {
+    "id": "CC0-1.0",
+    "attribution": "Recordings from VSCO 2 Community Edition and VCSL by Versilian Studios (CC0 1.0). Source: Versilian Community Sample Library.",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+   }
+  },
+  {
+   "id": "tubular_bells",
+   "name": "Tubular Bells",
+   "family": "Mallets",
+   "kind": "melodic",
+   "samples": {
+    "72": "cc0/tubular_bells/72.mp3",
+    "74": "cc0/tubular_bells/74.mp3",
+    "76": "cc0/tubular_bells/76.mp3",
+    "77": "cc0/tubular_bells/77.mp3",
+    "79": "cc0/tubular_bells/79.mp3",
+    "81": "cc0/tubular_bells/81.mp3",
+    "83": "cc0/tubular_bells/83.mp3",
+    "84": "cc0/tubular_bells/84.mp3",
+    "86": "cc0/tubular_bells/86.mp3",
+    "88": "cc0/tubular_bells/88.mp3",
+    "89": "cc0/tubular_bells/89.mp3"
+   },
+   "range": [
+    67,
+    94
+   ],
+   "license": {
+    "id": "CC0-1.0",
+    "attribution": "Recordings from VSCO 2 Community Edition and VCSL by Versilian Studios (CC0 1.0). Source: Versilian Community Sample Library.",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+   }
+  },
+  {
+   "id": "kalimba",
+   "name": "Kalimba",
+   "family": "World",
+   "kind": "melodic",
+   "samples": {
+    "43": "cc0/kalimba/43.mp3",
+    "44": "cc0/kalimba/44.mp3",
+    "47": "cc0/kalimba/47.mp3",
+    "49": "cc0/kalimba/49.mp3",
+    "51": "cc0/kalimba/51.mp3",
+    "53": "cc0/kalimba/53.mp3",
+    "55": "cc0/kalimba/55.mp3",
+    "58": "cc0/kalimba/58.mp3",
+    "61": "cc0/kalimba/61.mp3",
+    "63": "cc0/kalimba/63.mp3",
+    "65": "cc0/kalimba/65.mp3",
+    "67": "cc0/kalimba/67.mp3",
+    "70": "cc0/kalimba/70.mp3",
+    "73": "cc0/kalimba/73.mp3",
+    "74": "cc0/kalimba/74.mp3",
+    "75": "cc0/kalimba/75.mp3",
+    "77": "cc0/kalimba/77.mp3",
+    "79": "cc0/kalimba/79.mp3",
+    "82": "cc0/kalimba/82.mp3",
+    "83": "cc0/kalimba/83.mp3",
+    "85": "cc0/kalimba/85.mp3",
+    "88": "cc0/kalimba/88.mp3",
+    "90": "cc0/kalimba/90.mp3",
+    "92": "cc0/kalimba/92.mp3",
+    "97": "cc0/kalimba/97.mp3"
+   },
+   "range": [
+    38,
+    102
+   ],
+   "license": {
+    "id": "CC0-1.0",
+    "attribution": "Recordings from VSCO 2 Community Edition and VCSL by Versilian Studios (CC0 1.0). Source: Versilian Community Sample Library.",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+   }
+  },
+  {
+   "id": "balafon",
+   "name": "Balafon",
+   "family": "World",
+   "kind": "melodic",
+   "samples": {
+    "61": "cc0/balafon/61.mp3",
+    "65": "cc0/balafon/65.mp3",
+    "72": "cc0/balafon/72.mp3",
+    "77": "cc0/balafon/77.mp3",
+    "84": "cc0/balafon/84.mp3",
+    "89": "cc0/balafon/89.mp3"
+   },
+   "range": [
+    56,
+    94
+   ],
+   "license": {
+    "id": "CC0-1.0",
+    "attribution": "Recordings from VSCO 2 Community Edition and VCSL by Versilian Studios (CC0 1.0). Source: Versilian Community Sample Library.",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+   }
+  },
+  {
+   "id": "dan_tranh",
+   "name": "Dan Tranh Zither",
+   "family": "World",
+   "kind": "melodic",
+   "samples": {
+    "47": "cc0/dan_tranh/47.mp3",
+    "49": "cc0/dan_tranh/49.mp3",
+    "51": "cc0/dan_tranh/51.mp3",
+    "54": "cc0/dan_tranh/54.mp3",
+    "56": "cc0/dan_tranh/56.mp3",
+    "59": "cc0/dan_tranh/59.mp3",
+    "61": "cc0/dan_tranh/61.mp3",
+    "63": "cc0/dan_tranh/63.mp3",
+    "66": "cc0/dan_tranh/66.mp3",
+    "68": "cc0/dan_tranh/68.mp3",
+    "71": "cc0/dan_tranh/71.mp3",
+    "73": "cc0/dan_tranh/73.mp3",
+    "75": "cc0/dan_tranh/75.mp3",
+    "78": "cc0/dan_tranh/78.mp3",
+    "80": "cc0/dan_tranh/80.mp3",
+    "83": "cc0/dan_tranh/83.mp3"
+   },
+   "range": [
+    42,
+    88
+   ],
+   "license": {
+    "id": "CC0-1.0",
+    "attribution": "Recordings from VSCO 2 Community Edition and VCSL by Versilian Studios (CC0 1.0). Source: Versilian Community Sample Library.",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+   }
+  },
+  {
+   "id": "harp",
+   "name": "Concert Harp",
+   "family": "Strings",
+   "kind": "melodic",
+   "samples": {
+    "28": "cc0/harp/28.mp3",
+    "31": "cc0/harp/31.mp3",
+    "35": "cc0/harp/35.mp3",
+    "38": "cc0/harp/38.mp3",
+    "41": "cc0/harp/41.mp3",
+    "45": "cc0/harp/45.mp3",
+    "48": "cc0/harp/48.mp3",
+    "52": "cc0/harp/52.mp3",
+    "55": "cc0/harp/55.mp3",
+    "59": "cc0/harp/59.mp3",
+    "62": "cc0/harp/62.mp3",
+    "65": "cc0/harp/65.mp3",
+    "69": "cc0/harp/69.mp3",
+    "72": "cc0/harp/72.mp3",
+    "76": "cc0/harp/76.mp3",
+    "79": "cc0/harp/79.mp3",
+    "83": "cc0/harp/83.mp3",
+    "86": "cc0/harp/86.mp3",
+    "89": "cc0/harp/89.mp3",
+    "93": "cc0/harp/93.mp3",
+    "95": "cc0/harp/95.mp3",
+    "98": "cc0/harp/98.mp3",
+    "101": "cc0/harp/101.mp3"
+   },
+   "range": [
+    23,
+    106
+   ],
+   "license": {
+    "id": "CC0-1.0",
+    "attribution": "Recordings from VSCO 2 Community Edition and VCSL by Versilian Studios (CC0 1.0). Source: VSCO 2 Community Edition.",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+   }
+  },
+  {
+   "id": "strumstick",
+   "name": "Strumstick (folk)",
+   "family": "Strings",
+   "kind": "melodic",
+   "samples": {
+    "50": "cc0/strumstick/50.mp3",
+    "52": "cc0/strumstick/52.mp3",
+    "54": "cc0/strumstick/54.mp3",
+    "55": "cc0/strumstick/55.mp3",
+    "57": "cc0/strumstick/57.mp3",
+    "59": "cc0/strumstick/59.mp3",
+    "61": "cc0/strumstick/61.mp3",
+    "62": "cc0/strumstick/62.mp3",
+    "64": "cc0/strumstick/64.mp3",
+    "66": "cc0/strumstick/66.mp3",
+    "67": "cc0/strumstick/67.mp3",
+    "69": "cc0/strumstick/69.mp3",
+    "71": "cc0/strumstick/71.mp3",
+    "73": "cc0/strumstick/73.mp3",
+    "74": "cc0/strumstick/74.mp3",
+    "76": "cc0/strumstick/76.mp3",
+    "78": "cc0/strumstick/78.mp3",
+    "79": "cc0/strumstick/79.mp3",
+    "81": "cc0/strumstick/81.mp3"
+   },
+   "range": [
+    45,
+    86
+   ],
+   "license": {
+    "id": "CC0-1.0",
+    "attribution": "Recordings from VSCO 2 Community Edition and VCSL by Versilian Studios (CC0 1.0). Source: Versilian Community Sample Library.",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+   }
+  },
+  {
+   "id": "violin",
+   "name": "Violin Section",
+   "family": "Strings",
+   "kind": "melodic",
+   "samples": {
+    "55": "cc0/violin/55.mp3",
+    "57": "cc0/violin/57.mp3",
+    "59": "cc0/violin/59.mp3",
+    "62": "cc0/violin/62.mp3",
+    "66": "cc0/violin/66.mp3",
+    "69": "cc0/violin/69.mp3",
+    "72": "cc0/violin/72.mp3",
+    "76": "cc0/violin/76.mp3",
+    "79": "cc0/violin/79.mp3",
+    "83": "cc0/violin/83.mp3",
+    "86": "cc0/violin/86.mp3"
+   },
+   "range": [
+    50,
+    91
+   ],
+   "license": {
+    "id": "CC0-1.0",
+    "attribution": "Recordings from VSCO 2 Community Edition and VCSL by Versilian Studios (CC0 1.0). Source: VSCO 2 Community Edition.",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+   }
+  },
+  {
+   "id": "viola",
+   "name": "Viola Section",
+   "family": "Strings",
+   "kind": "melodic",
+   "samples": {
+    "48": "cc0/viola/48.mp3",
+    "50": "cc0/viola/50.mp3",
+    "52": "cc0/viola/52.mp3",
+    "55": "cc0/viola/55.mp3",
+    "59": "cc0/viola/59.mp3",
+    "62": "cc0/viola/62.mp3",
+    "65": "cc0/viola/65.mp3",
+    "69": "cc0/viola/69.mp3",
+    "72": "cc0/viola/72.mp3",
+    "76": "cc0/viola/76.mp3",
+    "79": "cc0/viola/79.mp3",
+    "83": "cc0/viola/83.mp3",
+    "86": "cc0/viola/86.mp3"
+   },
+   "range": [
+    43,
+    91
+   ],
+   "license": {
+    "id": "CC0-1.0",
+    "attribution": "Recordings from VSCO 2 Community Edition and VCSL by Versilian Studios (CC0 1.0). Source: VSCO 2 Community Edition.",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+   }
+  },
+  {
+   "id": "cello",
+   "name": "Cello Section",
+   "family": "Strings",
+   "kind": "melodic",
+   "samples": {
+    "36": "cc0/cello/36.mp3",
+    "40": "cc0/cello/40.mp3",
+    "43": "cc0/cello/43.mp3",
+    "47": "cc0/cello/47.mp3",
+    "50": "cc0/cello/50.mp3",
+    "53": "cc0/cello/53.mp3",
+    "57": "cc0/cello/57.mp3",
+    "60": "cc0/cello/60.mp3",
+    "64": "cc0/cello/64.mp3",
+    "67": "cc0/cello/67.mp3",
+    "71": "cc0/cello/71.mp3",
+    "74": "cc0/cello/74.mp3",
+    "77": "cc0/cello/77.mp3"
+   },
+   "range": [
+    31,
+    82
+   ],
+   "license": {
+    "id": "CC0-1.0",
+    "attribution": "Recordings from VSCO 2 Community Edition and VCSL by Versilian Studios (CC0 1.0). Source: VSCO 2 Community Edition.",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+   }
+  },
+  {
+   "id": "double_bass",
+   "name": "Double Bass (bowed)",
+   "family": "Strings",
+   "kind": "melodic",
+   "samples": {
+    "28": "cc0/double_bass/28.mp3",
+    "30": "cc0/double_bass/30.mp3",
+    "31": "cc0/double_bass/31.mp3",
+    "34": "cc0/double_bass/34.mp3",
+    "36": "cc0/double_bass/36.mp3",
+    "38": "cc0/double_bass/38.mp3",
+    "40": "cc0/double_bass/40.mp3",
+    "42": "cc0/double_bass/42.mp3",
+    "44": "cc0/double_bass/44.mp3",
+    "45": "cc0/double_bass/45.mp3",
+    "49": "cc0/double_bass/49.mp3",
+    "52": "cc0/double_bass/52.mp3",
+    "56": "cc0/double_bass/56.mp3",
+    "59": "cc0/double_bass/59.mp3"
+   },
+   "range": [
+    23,
+    64
+   ],
+   "license": {
+    "id": "CC0-1.0",
+    "attribution": "Recordings from VSCO 2 Community Edition and VCSL by Versilian Studios (CC0 1.0). Source: VSCO 2 Community Edition.",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+   }
+  },
+  {
+   "id": "violin_pizz",
+   "name": "Violins Pizzicato",
+   "family": "Strings",
+   "kind": "melodic",
+   "samples": {
+    "55": "cc0/violin_pizz/55.mp3",
+    "57": "cc0/violin_pizz/57.mp3",
+    "59": "cc0/violin_pizz/59.mp3",
+    "62": "cc0/violin_pizz/62.mp3",
+    "66": "cc0/violin_pizz/66.mp3",
+    "69": "cc0/violin_pizz/69.mp3",
+    "72": "cc0/violin_pizz/72.mp3",
+    "76": "cc0/violin_pizz/76.mp3",
+    "79": "cc0/violin_pizz/79.mp3",
+    "83": "cc0/violin_pizz/83.mp3",
+    "86": "cc0/violin_pizz/86.mp3"
+   },
+   "range": [
+    50,
+    91
+   ],
+   "license": {
+    "id": "CC0-1.0",
+    "attribution": "Recordings from VSCO 2 Community Edition and VCSL by Versilian Studios (CC0 1.0). Source: VSCO 2 Community Edition.",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+   }
+  },
+  {
+   "id": "cello_pizz",
+   "name": "Cellos Pizzicato",
+   "family": "Strings",
+   "kind": "melodic",
+   "samples": {
+    "36": "cc0/cello_pizz/36.mp3",
+    "40": "cc0/cello_pizz/40.mp3",
+    "43": "cc0/cello_pizz/43.mp3",
+    "47": "cc0/cello_pizz/47.mp3",
+    "50": "cc0/cello_pizz/50.mp3",
+    "53": "cc0/cello_pizz/53.mp3",
+    "57": "cc0/cello_pizz/57.mp3",
+    "60": "cc0/cello_pizz/60.mp3",
+    "64": "cc0/cello_pizz/64.mp3",
+    "67": "cc0/cello_pizz/67.mp3",
+    "71": "cc0/cello_pizz/71.mp3",
+    "74": "cc0/cello_pizz/74.mp3",
+    "77": "cc0/cello_pizz/77.mp3"
+   },
+   "range": [
+    31,
+    82
+   ],
+   "license": {
+    "id": "CC0-1.0",
+    "attribution": "Recordings from VSCO 2 Community Edition and VCSL by Versilian Studios (CC0 1.0). Source: VSCO 2 Community Edition.",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+   }
+  },
+  {
+   "id": "upright_bass",
+   "name": "Upright Bass (plucked)",
+   "family": "Bass",
+   "kind": "melodic",
+   "samples": {
+    "28": "cc0/upright_bass/28.mp3",
+    "30": "cc0/upright_bass/30.mp3",
+    "31": "cc0/upright_bass/31.mp3",
+    "34": "cc0/upright_bass/34.mp3",
+    "36": "cc0/upright_bass/36.mp3",
+    "38": "cc0/upright_bass/38.mp3",
+    "40": "cc0/upright_bass/40.mp3",
+    "42": "cc0/upright_bass/42.mp3",
+    "44": "cc0/upright_bass/44.mp3",
+    "45": "cc0/upright_bass/45.mp3",
+    "49": "cc0/upright_bass/49.mp3",
+    "52": "cc0/upright_bass/52.mp3",
+    "56": "cc0/upright_bass/56.mp3",
+    "59": "cc0/upright_bass/59.mp3"
+   },
+   "range": [
+    23,
+    64
+   ],
+   "license": {
+    "id": "CC0-1.0",
+    "attribution": "Recordings from VSCO 2 Community Edition and VCSL by Versilian Studios (CC0 1.0). Source: VSCO 2 Community Edition.",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+   }
+  },
+  {
+   "id": "strings_spiccato",
+   "name": "Strings Spiccato",
+   "family": "Strings",
+   "kind": "melodic",
+   "samples": {
+    "55": "cc0/strings_spiccato/55.mp3",
+    "57": "cc0/strings_spiccato/57.mp3",
+    "59": "cc0/strings_spiccato/59.mp3",
+    "62": "cc0/strings_spiccato/62.mp3",
+    "66": "cc0/strings_spiccato/66.mp3",
+    "69": "cc0/strings_spiccato/69.mp3",
+    "72": "cc0/strings_spiccato/72.mp3",
+    "76": "cc0/strings_spiccato/76.mp3",
+    "79": "cc0/strings_spiccato/79.mp3",
+    "83": "cc0/strings_spiccato/83.mp3",
+    "86": "cc0/strings_spiccato/86.mp3"
+   },
+   "range": [
+    50,
+    91
+   ],
+   "license": {
+    "id": "CC0-1.0",
+    "attribution": "Recordings from VSCO 2 Community Edition and VCSL by Versilian Studios (CC0 1.0). Source: VSCO 2 Community Edition.",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+   }
+  },
+  {
+   "id": "cello_spiccato",
+   "name": "Cellos Spiccato",
+   "family": "Strings",
+   "kind": "melodic",
+   "samples": {
+    "36": "cc0/cello_spiccato/36.mp3",
+    "40": "cc0/cello_spiccato/40.mp3",
+    "43": "cc0/cello_spiccato/43.mp3",
+    "47": "cc0/cello_spiccato/47.mp3",
+    "50": "cc0/cello_spiccato/50.mp3",
+    "53": "cc0/cello_spiccato/53.mp3",
+    "57": "cc0/cello_spiccato/57.mp3",
+    "60": "cc0/cello_spiccato/60.mp3",
+    "64": "cc0/cello_spiccato/64.mp3",
+    "67": "cc0/cello_spiccato/67.mp3",
+    "71": "cc0/cello_spiccato/71.mp3",
+    "74": "cc0/cello_spiccato/74.mp3",
+    "77": "cc0/cello_spiccato/77.mp3"
+   },
+   "range": [
+    31,
+    82
+   ],
+   "license": {
+    "id": "CC0-1.0",
+    "attribution": "Recordings from VSCO 2 Community Edition and VCSL by Versilian Studios (CC0 1.0). Source: VSCO 2 Community Edition.",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+   }
+  },
+  {
+   "id": "trumpet",
+   "name": "Trumpet",
+   "family": "Brass",
+   "kind": "melodic",
+   "samples": {
+    "53": "cc0/trumpet/53.mp3",
+    "57": "cc0/trumpet/57.mp3",
+    "60": "cc0/trumpet/60.mp3",
+    "63": "cc0/trumpet/63.mp3",
+    "67": "cc0/trumpet/67.mp3",
+    "70": "cc0/trumpet/70.mp3",
+    "74": "cc0/trumpet/74.mp3",
+    "77": "cc0/trumpet/77.mp3",
+    "81": "cc0/trumpet/81.mp3",
+    "84": "cc0/trumpet/84.mp3"
+   },
+   "range": [
+    48,
+    89
+   ],
+   "license": {
+    "id": "CC0-1.0",
+    "attribution": "Recordings from VSCO 2 Community Edition and VCSL by Versilian Studios (CC0 1.0). Source: VSCO 2 Community Edition.",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+   }
+  },
+  {
+   "id": "trumpet_stac",
+   "name": "Trumpet Staccato",
+   "family": "Brass",
+   "kind": "melodic",
+   "samples": {
+    "53": "cc0/trumpet_stac/53.mp3",
+    "57": "cc0/trumpet_stac/57.mp3",
+    "60": "cc0/trumpet_stac/60.mp3",
+    "63": "cc0/trumpet_stac/63.mp3",
+    "65": "cc0/trumpet_stac/65.mp3",
+    "67": "cc0/trumpet_stac/67.mp3",
+    "70": "cc0/trumpet_stac/70.mp3",
+    "74": "cc0/trumpet_stac/74.mp3",
+    "77": "cc0/trumpet_stac/77.mp3",
+    "81": "cc0/trumpet_stac/81.mp3",
+    "84": "cc0/trumpet_stac/84.mp3"
+   },
+   "range": [
+    48,
+    89
+   ],
+   "license": {
+    "id": "CC0-1.0",
+    "attribution": "Recordings from VSCO 2 Community Edition and VCSL by Versilian Studios (CC0 1.0). Source: VSCO 2 Community Edition.",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+   }
+  },
+  {
+   "id": "french_horn",
+   "name": "French Horn",
+   "family": "Brass",
+   "kind": "melodic",
+   "samples": {
+    "33": "cc0/french_horn/33.mp3",
+    "36": "cc0/french_horn/36.mp3",
+    "39": "cc0/french_horn/39.mp3",
+    "43": "cc0/french_horn/43.mp3",
+    "46": "cc0/french_horn/46.mp3",
+    "50": "cc0/french_horn/50.mp3",
+    "53": "cc0/french_horn/53.mp3",
+    "57": "cc0/french_horn/57.mp3",
+    "60": "cc0/french_horn/60.mp3",
+    "74": "cc0/french_horn/74.mp3",
+    "77": "cc0/french_horn/77.mp3"
+   },
+   "range": [
+    28,
+    82
+   ],
+   "license": {
+    "id": "CC0-1.0",
+    "attribution": "Recordings from VSCO 2 Community Edition and VCSL by Versilian Studios (CC0 1.0). Source: VSCO 2 Community Edition.",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+   }
+  },
+  {
+   "id": "trombone",
+   "name": "Trombone",
+   "family": "Brass",
+   "kind": "melodic",
+   "samples": {
+    "34": "cc0/trombone/34.mp3",
+    "37": "cc0/trombone/37.mp3",
+    "39": "cc0/trombone/39.mp3",
+    "41": "cc0/trombone/41.mp3",
+    "46": "cc0/trombone/46.mp3",
+    "50": "cc0/trombone/50.mp3",
+    "53": "cc0/trombone/53.mp3",
+    "60": "cc0/trombone/60.mp3",
+    "61": "cc0/trombone/61.mp3",
+    "63": "cc0/trombone/63.mp3",
+    "65": "cc0/trombone/65.mp3"
+   },
+   "range": [
+    29,
+    70
+   ],
+   "license": {
+    "id": "CC0-1.0",
+    "attribution": "Recordings from VSCO 2 Community Edition and VCSL by Versilian Studios (CC0 1.0). Source: VSCO 2 Community Edition.",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+   }
+  },
+  {
+   "id": "trombone_stac",
+   "name": "Trombone Staccato",
+   "family": "Brass",
+   "kind": "melodic",
+   "samples": {
+    "34": "cc0/trombone_stac/34.mp3",
+    "41": "cc0/trombone_stac/41.mp3",
+    "46": "cc0/trombone_stac/46.mp3",
+    "53": "cc0/trombone_stac/53.mp3",
+    "58": "cc0/trombone_stac/58.mp3",
+    "62": "cc0/trombone_stac/62.mp3",
+    "65": "cc0/trombone_stac/65.mp3"
+   },
+   "range": [
+    29,
+    70
+   ],
+   "license": {
+    "id": "CC0-1.0",
+    "attribution": "Recordings from VSCO 2 Community Edition and VCSL by Versilian Studios (CC0 1.0). Source: VSCO 2 Community Edition.",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+   }
+  },
+  {
+   "id": "tuba",
+   "name": "Tuba",
+   "family": "Brass",
+   "kind": "melodic",
+   "samples": {
+    "29": "cc0/tuba/29.mp3",
+    "34": "cc0/tuba/34.mp3",
+    "39": "cc0/tuba/39.mp3",
+    "41": "cc0/tuba/41.mp3",
+    "46": "cc0/tuba/46.mp3",
+    "50": "cc0/tuba/50.mp3",
+    "53": "cc0/tuba/53.mp3",
+    "58": "cc0/tuba/58.mp3",
+    "62": "cc0/tuba/62.mp3"
+   },
+   "range": [
+    24,
+    67
+   ],
+   "license": {
+    "id": "CC0-1.0",
+    "attribution": "Recordings from VSCO 2 Community Edition and VCSL by Versilian Studios (CC0 1.0). Source: VSCO 2 Community Edition.",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+   }
+  },
+  {
+   "id": "flute",
+   "name": "Flute",
+   "family": "Woodwinds",
+   "kind": "melodic",
+   "samples": {
+    "60": "cc0/flute/60.mp3",
+    "64": "cc0/flute/64.mp3",
+    "69": "cc0/flute/69.mp3",
+    "72": "cc0/flute/72.mp3",
+    "76": "cc0/flute/76.mp3",
+    "81": "cc0/flute/81.mp3",
+    "84": "cc0/flute/84.mp3",
+    "88": "cc0/flute/88.mp3",
+    "93": "cc0/flute/93.mp3",
+    "96": "cc0/flute/96.mp3"
+   },
+   "range": [
+    55,
+    101
+   ],
+   "license": {
+    "id": "CC0-1.0",
+    "attribution": "Recordings from VSCO 2 Community Edition and VCSL by Versilian Studios (CC0 1.0). Source: VSCO 2 Community Edition.",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+   }
+  },
+  {
+   "id": "flute_stac",
+   "name": "Flute Staccato",
+   "family": "Woodwinds",
+   "kind": "melodic",
+   "samples": {
+    "69": "cc0/flute_stac/69.mp3",
+    "72": "cc0/flute_stac/72.mp3",
+    "76": "cc0/flute_stac/76.mp3",
+    "81": "cc0/flute_stac/81.mp3",
+    "84": "cc0/flute_stac/84.mp3",
+    "88": "cc0/flute_stac/88.mp3",
+    "93": "cc0/flute_stac/93.mp3",
+    "96": "cc0/flute_stac/96.mp3"
+   },
+   "range": [
+    64,
+    101
+   ],
+   "license": {
+    "id": "CC0-1.0",
+    "attribution": "Recordings from VSCO 2 Community Edition and VCSL by Versilian Studios (CC0 1.0). Source: VSCO 2 Community Edition.",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+   }
+  },
+  {
+   "id": "piccolo",
+   "name": "Piccolo",
+   "family": "Woodwinds",
+   "kind": "melodic",
+   "samples": {
+    "79": "cc0/piccolo/79.mp3",
+    "84": "cc0/piccolo/84.mp3",
+    "91": "cc0/piccolo/91.mp3",
+    "96": "cc0/piccolo/96.mp3",
+    "103": "cc0/piccolo/103.mp3"
+   },
+   "range": [
+    74,
+    108
+   ],
+   "license": {
+    "id": "CC0-1.0",
+    "attribution": "Recordings from VSCO 2 Community Edition and VCSL by Versilian Studios (CC0 1.0). Source: VSCO 2 Community Edition.",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+   }
+  },
+  {
+   "id": "clarinet",
+   "name": "Clarinet",
+   "family": "Woodwinds",
+   "kind": "melodic",
+   "samples": {
+    "50": "cc0/clarinet/50.mp3",
+    "53": "cc0/clarinet/53.mp3",
+    "58": "cc0/clarinet/58.mp3",
+    "62": "cc0/clarinet/62.mp3",
+    "65": "cc0/clarinet/65.mp3",
+    "70": "cc0/clarinet/70.mp3",
+    "74": "cc0/clarinet/74.mp3",
+    "77": "cc0/clarinet/77.mp3",
+    "82": "cc0/clarinet/82.mp3",
+    "86": "cc0/clarinet/86.mp3",
+    "90": "cc0/clarinet/90.mp3"
+   },
+   "range": [
+    45,
+    95
+   ],
+   "license": {
+    "id": "CC0-1.0",
+    "attribution": "Recordings from VSCO 2 Community Edition and VCSL by Versilian Studios (CC0 1.0). Source: VSCO 2 Community Edition.",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+   }
+  },
+  {
+   "id": "oboe",
+   "name": "Oboe",
+   "family": "Woodwinds",
+   "kind": "melodic",
+   "samples": {
+    "58": "cc0/oboe/58.mp3",
+    "62": "cc0/oboe/62.mp3",
+    "65": "cc0/oboe/65.mp3",
+    "70": "cc0/oboe/70.mp3",
+    "74": "cc0/oboe/74.mp3",
+    "77": "cc0/oboe/77.mp3",
+    "82": "cc0/oboe/82.mp3",
+    "86": "cc0/oboe/86.mp3",
+    "89": "cc0/oboe/89.mp3"
+   },
+   "range": [
+    53,
+    94
+   ],
+   "license": {
+    "id": "CC0-1.0",
+    "attribution": "Recordings from VSCO 2 Community Edition and VCSL by Versilian Studios (CC0 1.0). Source: VSCO 2 Community Edition.",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+   }
+  },
+  {
+   "id": "bassoon",
+   "name": "Bassoon",
+   "family": "Woodwinds",
+   "kind": "melodic",
+   "samples": {
+    "34": "cc0/bassoon/34.mp3",
+    "37": "cc0/bassoon/37.mp3",
+    "41": "cc0/bassoon/41.mp3",
+    "45": "cc0/bassoon/45.mp3",
+    "46": "cc0/bassoon/46.mp3",
+    "48": "cc0/bassoon/48.mp3",
+    "55": "cc0/bassoon/55.mp3",
+    "60": "cc0/bassoon/60.mp3",
+    "63": "cc0/bassoon/63.mp3",
+    "68": "cc0/bassoon/68.mp3",
+    "69": "cc0/bassoon/69.mp3",
+    "72": "cc0/bassoon/72.mp3",
+    "75": "cc0/bassoon/75.mp3"
+   },
+   "range": [
+    29,
+    80
+   ],
+   "license": {
+    "id": "CC0-1.0",
+    "attribution": "Recordings from VSCO 2 Community Edition and VCSL by Versilian Studios (CC0 1.0). Source: VSCO 2 Community Edition.",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+   }
+  },
+  {
+   "id": "tenor_sax",
+   "name": "Tenor Sax",
+   "family": "Woodwinds",
+   "kind": "melodic",
+   "samples": {
+    "44": "cc0/tenor_sax/44.mp3",
+    "46": "cc0/tenor_sax/46.mp3",
+    "48": "cc0/tenor_sax/48.mp3",
+    "50": "cc0/tenor_sax/50.mp3",
+    "52": "cc0/tenor_sax/52.mp3",
+    "54": "cc0/tenor_sax/54.mp3",
+    "56": "cc0/tenor_sax/56.mp3",
+    "58": "cc0/tenor_sax/58.mp3",
+    "60": "cc0/tenor_sax/60.mp3",
+    "62": "cc0/tenor_sax/62.mp3",
+    "64": "cc0/tenor_sax/64.mp3",
+    "66": "cc0/tenor_sax/66.mp3",
+    "68": "cc0/tenor_sax/68.mp3",
+    "70": "cc0/tenor_sax/70.mp3",
+    "72": "cc0/tenor_sax/72.mp3",
+    "74": "cc0/tenor_sax/74.mp3",
+    "76": "cc0/tenor_sax/76.mp3",
+    "78": "cc0/tenor_sax/78.mp3",
+    "80": "cc0/tenor_sax/80.mp3",
+    "82": "cc0/tenor_sax/82.mp3",
+    "84": "cc0/tenor_sax/84.mp3",
+    "86": "cc0/tenor_sax/86.mp3",
+    "88": "cc0/tenor_sax/88.mp3"
+   },
+   "range": [
+    39,
+    93
+   ],
+   "license": {
+    "id": "CC0-1.0",
+    "attribution": "Recordings from VSCO 2 Community Edition and VCSL by Versilian Studios (CC0 1.0). Source: Versilian Community Sample Library.",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+   }
+  },
+  {
+   "id": "tenor_sax_stac",
+   "name": "Tenor Sax Staccato",
+   "family": "Woodwinds",
+   "kind": "melodic",
+   "samples": {
+    "44": "cc0/tenor_sax_stac/44.mp3",
+    "46": "cc0/tenor_sax_stac/46.mp3",
+    "48": "cc0/tenor_sax_stac/48.mp3",
+    "50": "cc0/tenor_sax_stac/50.mp3",
+    "52": "cc0/tenor_sax_stac/52.mp3",
+    "54": "cc0/tenor_sax_stac/54.mp3",
+    "56": "cc0/tenor_sax_stac/56.mp3",
+    "57": "cc0/tenor_sax_stac/57.mp3",
+    "60": "cc0/tenor_sax_stac/60.mp3",
+    "62": "cc0/tenor_sax_stac/62.mp3",
+    "64": "cc0/tenor_sax_stac/64.mp3",
+    "66": "cc0/tenor_sax_stac/66.mp3",
+    "68": "cc0/tenor_sax_stac/68.mp3",
+    "70": "cc0/tenor_sax_stac/70.mp3",
+    "72": "cc0/tenor_sax_stac/72.mp3",
+    "74": "cc0/tenor_sax_stac/74.mp3",
+    "76": "cc0/tenor_sax_stac/76.mp3",
+    "77": "cc0/tenor_sax_stac/77.mp3",
+    "80": "cc0/tenor_sax_stac/80.mp3",
+    "81": "cc0/tenor_sax_stac/81.mp3",
+    "84": "cc0/tenor_sax_stac/84.mp3",
+    "86": "cc0/tenor_sax_stac/86.mp3",
+    "88": "cc0/tenor_sax_stac/88.mp3"
+   },
+   "range": [
+    39,
+    93
+   ],
+   "license": {
+    "id": "CC0-1.0",
+    "attribution": "Recordings from VSCO 2 Community Edition and VCSL by Versilian Studios (CC0 1.0). Source: Versilian Community Sample Library.",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+   }
+  },
+  {
+   "id": "harmonica",
+   "name": "Harmonica",
+   "family": "Woodwinds",
+   "kind": "melodic",
+   "samples": {
+    "60": "cc0/harmonica/60.mp3",
+    "64": "cc0/harmonica/64.mp3",
+    "72": "cc0/harmonica/72.mp3",
+    "76": "cc0/harmonica/76.mp3",
+    "79": "cc0/harmonica/79.mp3",
+    "84": "cc0/harmonica/84.mp3",
+    "88": "cc0/harmonica/88.mp3",
+    "91": "cc0/harmonica/91.mp3",
+    "96": "cc0/harmonica/96.mp3"
+   },
+   "range": [
+    55,
+    101
+   ],
+   "license": {
+    "id": "CC0-1.0",
+    "attribution": "Recordings from VSCO 2 Community Edition and VCSL by Versilian Studios (CC0 1.0). Source: Versilian Community Sample Library.",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+   }
+  },
+  {
+   "id": "recorder",
+   "name": "Recorder",
+   "family": "Woodwinds",
+   "kind": "melodic",
+   "samples": {
+    "65": "cc0/recorder/65.mp3",
+    "68": "cc0/recorder/68.mp3",
+    "70": "cc0/recorder/70.mp3",
+    "72": "cc0/recorder/72.mp3",
+    "74": "cc0/recorder/74.mp3",
+    "76": "cc0/recorder/76.mp3",
+    "78": "cc0/recorder/78.mp3",
+    "80": "cc0/recorder/80.mp3",
+    "82": "cc0/recorder/82.mp3",
+    "84": "cc0/recorder/84.mp3",
+    "86": "cc0/recorder/86.mp3",
+    "88": "cc0/recorder/88.mp3"
+   },
+   "range": [
+    60,
+    93
+   ],
+   "license": {
+    "id": "CC0-1.0",
+    "attribution": "Recordings from VSCO 2 Community Edition and VCSL by Versilian Studios (CC0 1.0). Source: Versilian Community Sample Library.",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+   }
+  },
+  {
+   "id": "ocarina",
+   "name": "Ocarina",
+   "family": "Woodwinds",
+   "kind": "melodic",
+   "samples": {
+    "69": "cc0/ocarina/69.mp3",
+    "71": "cc0/ocarina/71.mp3",
+    "73": "cc0/ocarina/73.mp3",
+    "74": "cc0/ocarina/74.mp3",
+    "76": "cc0/ocarina/76.mp3",
+    "78": "cc0/ocarina/78.mp3",
+    "80": "cc0/ocarina/80.mp3",
+    "81": "cc0/ocarina/81.mp3",
+    "82": "cc0/ocarina/82.mp3",
+    "84": "cc0/ocarina/84.mp3",
+    "85": "cc0/ocarina/85.mp3"
+   },
+   "range": [
+    64,
+    90
+   ],
+   "license": {
+    "id": "CC0-1.0",
+    "attribution": "Recordings from VSCO 2 Community Edition and VCSL by Versilian Studios (CC0 1.0). Source: Versilian Community Sample Library.",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+   }
+  },
+  {
+   "id": "drum_kit",
+   "name": "Acoustic Drum Kit",
+   "family": "Drums",
+   "kind": "drumkit",
+   "samples": {
+    "35": "cc0/drum_kit/35.mp3",
+    "36": "cc0/drum_kit/36.mp3",
+    "37": "cc0/drum_kit/37.mp3",
+    "38": "cc0/drum_kit/38.mp3",
+    "39": "cc0/drum_kit/39.mp3",
+    "40": "cc0/drum_kit/40.mp3",
+    "42": "cc0/drum_kit/42.mp3",
+    "44": "cc0/drum_kit/44.mp3",
+    "45": "cc0/drum_kit/45.mp3",
+    "46": "cc0/drum_kit/46.mp3",
+    "47": "cc0/drum_kit/47.mp3",
+    "49": "cc0/drum_kit/49.mp3",
+    "50": "cc0/drum_kit/50.mp3",
+    "51": "cc0/drum_kit/51.mp3",
+    "54": "cc0/drum_kit/54.mp3",
+    "56": "cc0/drum_kit/56.mp3",
+    "57": "cc0/drum_kit/57.mp3",
+    "70": "cc0/drum_kit/70.mp3",
+    "75": "cc0/drum_kit/75.mp3",
+    "76": "cc0/drum_kit/76.mp3"
+   },
+   "noteNames": {
+    "35": "Kick (hard)",
+    "36": "Kick",
+    "37": "Cross-stick",
+    "38": "Snare",
+    "39": "Clap",
+    "40": "Snare (hard)",
+    "42": "Closed Hat",
+    "44": "Hat Pedal",
+    "45": "Low Tom",
+    "46": "Open Hat",
+    "47": "Mid Tom",
+    "49": "Crash",
+    "50": "High Tom",
+    "51": "Ride",
+    "54": "Tambourine",
+    "56": "Cowbell",
+    "57": "Crash 2",
+    "70": "Shaker",
+    "75": "Claves",
+    "76": "Woodblock"
+   },
+   "license": {
+    "id": "CC0-1.0",
+    "attribution": "Recordings from VSCO 2 Community Edition and VCSL by Versilian Studios (CC0 1.0). Source: Versilian Community Sample Library.",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+   }
+  },
+  {
+   "id": "drum_latin",
+   "name": "Latin & Hand Percussion",
+   "family": "Drums",
+   "kind": "drumkit",
+   "samples": {
+    "36": "cc0/drum_latin/36.mp3",
+    "37": "cc0/drum_latin/37.mp3",
+    "38": "cc0/drum_latin/38.mp3",
+    "39": "cc0/drum_latin/39.mp3",
+    "54": "cc0/drum_latin/54.mp3",
+    "56": "cc0/drum_latin/56.mp3",
+    "60": "cc0/drum_latin/60.mp3",
+    "61": "cc0/drum_latin/61.mp3",
+    "62": "cc0/drum_latin/62.mp3",
+    "63": "cc0/drum_latin/63.mp3",
+    "64": "cc0/drum_latin/64.mp3",
+    "65": "cc0/drum_latin/65.mp3",
+    "66": "cc0/drum_latin/66.mp3",
+    "67": "cc0/drum_latin/67.mp3",
+    "68": "cc0/drum_latin/68.mp3",
+    "69": "cc0/drum_latin/69.mp3",
+    "70": "cc0/drum_latin/70.mp3",
+    "73": "cc0/drum_latin/73.mp3",
+    "74": "cc0/drum_latin/74.mp3",
+    "75": "cc0/drum_latin/75.mp3"
+   },
+   "noteNames": {
+    "36": "Cajon Bass",
+    "37": "Cajon Mid",
+    "38": "Cajon Slap",
+    "39": "Clap",
+    "54": "Tambourine",
+    "56": "Cowbell",
+    "60": "Bongo High",
+    "61": "Bongo Low",
+    "62": "Conga Mute",
+    "63": "Conga Open",
+    "64": "Tumba",
+    "65": "Darbuka Doum",
+    "66": "Darbuka Tek",
+    "67": "Agogo High",
+    "68": "Agogo Low",
+    "69": "Cabasa",
+    "70": "Shaker",
+    "73": "Guiro Short",
+    "74": "Guiro Long",
+    "75": "Claves"
+   },
+   "license": {
+    "id": "CC0-1.0",
+    "attribution": "Recordings from VSCO 2 Community Edition and VCSL by Versilian Studios (CC0 1.0). Source: Versilian Community Sample Library.",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+   }
+  },
+  {
+   "id": "drum_orchestral",
+   "name": "Orchestral Percussion",
+   "family": "Drums",
+   "kind": "drumkit",
+   "samples": {
+    "35": "cc0/drum_orchestral/35.mp3",
+    "36": "cc0/drum_orchestral/36.mp3",
+    "38": "cc0/drum_orchestral/38.mp3",
+    "41": "cc0/drum_orchestral/41.mp3",
+    "43": "cc0/drum_orchestral/43.mp3",
+    "45": "cc0/drum_orchestral/45.mp3",
+    "47": "cc0/drum_orchestral/47.mp3",
+    "48": "cc0/drum_orchestral/48.mp3",
+    "49": "cc0/drum_orchestral/49.mp3",
+    "52": "cc0/drum_orchestral/52.mp3",
+    "55": "cc0/drum_orchestral/55.mp3",
+    "81": "cc0/drum_orchestral/81.mp3"
+   },
+   "noteNames": {
+    "35": "Bass Drum (soft)",
+    "36": "Bass Drum",
+    "38": "Snare",
+    "41": "Timpani 1 (low)",
+    "43": "Timpani 2",
+    "45": "Timpani 3",
+    "47": "Timpani 4",
+    "48": "Timpani 5 (high)",
+    "49": "Clash Cymbals",
+    "52": "Gong",
+    "55": "Cymbal Roll",
+    "81": "Triangle"
+   },
+   "license": {
+    "id": "CC0-1.0",
+    "attribution": "Recordings from VSCO 2 Community Edition and VCSL by Versilian Studios (CC0 1.0). Source: VSCO 2 Community Edition.",
+    "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+   }
+  }
+ ]
+}

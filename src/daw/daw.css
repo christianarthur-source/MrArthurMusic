@@ -1,0 +1,24 @@
+/* DAW styles. Every rule is scoped to .daw-* classes, so importing this file cannot change any other
+   part of the host site. Fonts (Fredoka, Inter) are loaded by the host page. */
+.daw-root { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
+.daw-display { font-family: 'Fredoka', system-ui, sans-serif; }
+.daw-root button, .daw-root select { cursor: pointer; }
+.daw-root :focus-visible { outline: 2px solid #38bdf8; outline-offset: 1px; }
+
+/* Scrollbars that stay visible and usable on Chromebooks */
+.daw-scroll::-webkit-scrollbar { width: 12px; height: 12px; }
+.daw-scroll::-webkit-scrollbar-track { background: #0b1220; }
+.daw-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 6px; border: 2px solid #0b1220; }
+.daw-scroll::-webkit-scrollbar-thumb:hover { background: #475569; }
+.daw-scroll::-webkit-scrollbar-corner { background: #0b1220; }
+
+/* Range inputs */
+.daw-range { appearance: none; background: transparent; height: 16px; }
+.daw-range::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: #334155; }
+.daw-range::-moz-range-track { height: 4px; border-radius: 2px; background: #334155; }
+.daw-range::-webkit-slider-thumb { appearance: none; width: 12px; height: 12px; border-radius: 9999px; background: #fbbf24; margin-top: -4px; border: 0; }
+.daw-range::-moz-range-thumb { width: 12px; height: 12px; border-radius: 9999px; background: #fbbf24; border: 0; }
+.daw-range:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 3px #38bdf8; }
+.daw-range-vertical { writing-mode: vertical-lr; direction: rtl; width: 16px; height: auto; min-height: 80px; }
+.daw-range-vertical::-webkit-slider-runnable-track { width: 4px; height: 100%; }
+.daw-range-vertical::-webkit-slider-thumb { margin-top: 0; margin-left: -4px; }
