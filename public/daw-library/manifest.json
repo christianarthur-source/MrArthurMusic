@@ -1,0 +1,135 @@
+{
+  "format": "mrdaw-catalog",
+  "version": 5,
+  "generatedAt": "2026-10-29T12:01:10.774Z",
+  "count": 920,
+  "shards": [
+    {
+      "url": "shards/0.4c5fdfea.json",
+      "count": 920,
+      "bytes": 1077862
+    }
+  ],
+  "facets": {
+    "instrument": {
+      "bass": 139,
+      "woodwinds": 109,
+      "electric-guitar": 94,
+      "strings": 82,
+      "synth-bass": 70,
+      "brass": 69,
+      "mallets": 64,
+      "piano": 62,
+      "keys": 48,
+      "acoustic-guitar": 44,
+      "world": 41,
+      "drums": 36,
+      "electronic-drums": 21,
+      "percussion": 20,
+      "synth": 10,
+      "fx": 8,
+      "vocals": 3
+    },
+    "genre": {
+      "cinematic": 168,
+      "pop": 108,
+      "electronic": 106,
+      "funk": 95,
+      "rock": 75,
+      "hiphop": 70,
+      "jazz": 70,
+      "folk": 68,
+      "rnb-soul": 66,
+      "world": 62,
+      "latin": 59,
+      "country": 54,
+      "lofi": 42,
+      "ambient": 40,
+      "blues": 34,
+      "reggae": 33
+    },
+    "mood": {
+      "happy": 215,
+      "warm": 167,
+      "energetic": 122,
+      "uplifting": 113,
+      "chill": 90,
+      "nostalgic": 62,
+      "dark": 59,
+      "dreamy": 59,
+      "epic": 58,
+      "calm": 55,
+      "smooth": 55,
+      "tense": 28,
+      "groovy": 26,
+      "emotional": 25,
+      "gritty": 25,
+      "mysterious": 25,
+      "playful": 25,
+      "elegant": 24,
+      "aggressive": 8,
+      "moody": 4,
+      "hypnotic": 1
+    },
+    "key": {
+      "C": 104,
+      "F": 79,
+      "G": 78,
+      "D": 63,
+      "A": 41,
+      "Bb": 40,
+      "E": 39,
+      "Am": 38,
+      "Cm": 37,
+      "Em": 37,
+      "Dm": 34,
+      "Gm": 33,
+      "Fm": 29,
+      "Eb": 24,
+      "Ab": 12,
+      "D#m": 5,
+      "Db": 4,
+      "B": 3,
+      "D#": 3,
+      "F#m": 3,
+      "G#m": 3,
+      "A#": 2,
+      "Bm": 2,
+      "C#m": 2,
+      "F#": 2,
+      "G#": 2,
+      "C#": 1
+    }
+  },
+  "packs": [
+    {
+      "id": "cc0-studio",
+      "name": "Studio Loops (CC0)",
+      "license": {
+        "id": "CC0-1.0",
+        "attribution": "No attribution required. Thanks to Versilian Studios (VSCO 2 CE, VCSL) for the CC0 recordings.",
+        "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      },
+      "count": 574
+    },
+    {
+      "id": "freesound-cc0",
+      "name": "Freesound Loops (CC0)",
+      "license": {
+        "id": "CC0-1.0",
+        "attribution": "No attribution required. Loops from Freesound.org, credited to their uploaders.",
+        "url": "https://creativecommons.org/publicdomain/zero/1.0/"
+      },
+      "count": 256
+    },
+    {
+      "id": "legacy-staff-composer",
+      "name": "Staff Composer Legacy Loops",
+      "license": {
+        "id": "UNVERIFIED",
+        "attribution": "Provenance not documented in the Staff Composer repository — verify rights and whether these are recorded audio before public deployment."
+      },
+      "count": 90
+    }
+  ]
+}
