@@ -6,3 +6,6 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Local classroom data (dev server / PHP fallback); never commit student data
+classroom-data/
