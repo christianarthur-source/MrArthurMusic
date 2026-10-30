@@ -60,10 +60,20 @@ import { TransposeModal } from './components/TransposeModal';
 import { MusicLabLanding, MusicLabAppId } from './components/MusicLabLanding';
 import { ClassroomToolBoxModal, ToolId } from './components/tools/ClassroomToolBoxModal';
 import { HalloweenThemeOverlay } from './components/HalloweenThemeOverlay';
-import RhythmRockStarsApp from './rhythm-rockstars/RhythmRockStarsApp';
-import BeatMachineApp from './beat-machine/App';
-import { DawApp } from './daw/App';
-import { StaffWarsApp } from './staff-wars/StaffWarsApp';
+// The other tools load only when opened, so the hub and Staff Composer start faster.
+const RhythmRockStarsApp = React.lazy(() => import('./rhythm-rockstars/RhythmRockStarsApp'));
+const BeatMachineApp = React.lazy(() => import('./beat-machine/App'));
+const DawApp = React.lazy(() => import('./daw/App').then((m) => ({ default: m.DawApp })));
+const StaffWarsApp = React.lazy(() => import('./staff-wars/StaffWarsApp').then((m) => ({ default: m.StaffWarsApp })));
+
+const ToolLoading = () => (
+  <div className="min-h-screen bg-[#0B0F19] flex items-center justify-center text-slate-300 font-sans">
+    <div className="flex items-center gap-3 text-lg">
+      <span className="h-5 w-5 rounded-full border-2 border-slate-500 border-t-amber-400 animate-spin" />
+      Loading…
+    </div>
+  </div>
+);
 import { ShieldCheck, Plus, Play, Square } from 'lucide-react';
 import { EighthNoteUIIcon, RestUIIcon } from './components/NotationSymbols';
 import {
@@ -2487,18 +2497,20 @@ export default function App() {
   if (currentApp === 'rhythm-rockstars') {
     return (
       <>
-        <RhythmRockStarsApp
-          onBackToHub={handleBackToHub}
-          studentSession={studentSession}
-          onOpenClassroomModal={() => {
-            setOpenInTeacherMode(false);
-            setIsClassroomModalOpen(true);
-          }}
-          onOpenAvatar={() => {
-            soundEngine.playWelcomeChime();
-            setIsAvatarOpen(true);
-          }}
-        />
+        <React.Suspense fallback={<ToolLoading />}>
+          <RhythmRockStarsApp
+            onBackToHub={handleBackToHub}
+            studentSession={studentSession}
+            onOpenClassroomModal={() => {
+              setOpenInTeacherMode(false);
+              setIsClassroomModalOpen(true);
+            }}
+            onOpenAvatar={() => {
+              soundEngine.playWelcomeChime();
+              setIsAvatarOpen(true);
+            }}
+          />
+        </React.Suspense>
         {renderSharedAuthAndModals()}
       </>
     );
@@ -2507,22 +2519,24 @@ export default function App() {
   if (currentApp === 'beat-machine') {
     return (
       <>
-        <BeatMachineApp
-          onBackToHub={handleBackToHub}
-          studentSession={studentSession}
-          loadedSongData={beatMachineLoadedSong}
-          onClearLoadedSongData={() => setBeatMachineLoadedSong(null)}
-          currentProjectId={currentProjectId}
-          onProjectSaved={(newId) => setCurrentProjectId(newId)}
-          onOpenClassroomModal={() => {
-            setOpenInTeacherMode(false);
-            setIsClassroomModalOpen(true);
-          }}
-          onOpenAvatar={() => {
-            soundEngine.playWelcomeChime();
-            setIsAvatarOpen(true);
-          }}
-        />
+        <React.Suspense fallback={<ToolLoading />}>
+          <BeatMachineApp
+            onBackToHub={handleBackToHub}
+            studentSession={studentSession}
+            loadedSongData={beatMachineLoadedSong}
+            onClearLoadedSongData={() => setBeatMachineLoadedSong(null)}
+            currentProjectId={currentProjectId}
+            onProjectSaved={(newId) => setCurrentProjectId(newId)}
+            onOpenClassroomModal={() => {
+              setOpenInTeacherMode(false);
+              setIsClassroomModalOpen(true);
+            }}
+            onOpenAvatar={() => {
+              soundEngine.playWelcomeChime();
+              setIsAvatarOpen(true);
+            }}
+          />
+        </React.Suspense>
         {renderSharedAuthAndModals()}
       </>
     );
@@ -2531,22 +2545,24 @@ export default function App() {
   if (currentApp === 'daw') {
     return (
       <>
-        <DawApp
-          onBackToHub={handleBackToHub}
-          studentSession={studentSession}
-          loadedProjectData={dawLoadedProject}
-          onClearLoadedProjectData={() => setDawLoadedProject(null)}
-          currentProjectId={currentProjectId}
-          onProjectSaved={(newId) => setCurrentProjectId(newId)}
-          onOpenClassroomModal={() => {
-            setOpenInTeacherMode(false);
-            setIsClassroomModalOpen(true);
-          }}
-          onOpenAvatar={() => {
-            soundEngine.playWelcomeChime();
-            setIsAvatarOpen(true);
-          }}
-        />
+        <React.Suspense fallback={<ToolLoading />}>
+          <DawApp
+            onBackToHub={handleBackToHub}
+            studentSession={studentSession}
+            loadedProjectData={dawLoadedProject}
+            onClearLoadedProjectData={() => setDawLoadedProject(null)}
+            currentProjectId={currentProjectId}
+            onProjectSaved={(newId) => setCurrentProjectId(newId)}
+            onOpenClassroomModal={() => {
+              setOpenInTeacherMode(false);
+              setIsClassroomModalOpen(true);
+            }}
+            onOpenAvatar={() => {
+              soundEngine.playWelcomeChime();
+              setIsAvatarOpen(true);
+            }}
+          />
+        </React.Suspense>
         {renderSharedAuthAndModals()}
       </>
     );
@@ -2555,14 +2571,16 @@ export default function App() {
   if (currentApp === 'staff-wars') {
     return (
       <>
-        <StaffWarsApp
-          onBackToHub={handleBackToHub}
-          studentSession={studentSession}
-          onOpenAvatar={() => {
-            soundEngine.playWelcomeChime();
-            setIsAvatarOpen(true);
-          }}
-        />
+        <React.Suspense fallback={<ToolLoading />}>
+          <StaffWarsApp
+            onBackToHub={handleBackToHub}
+            studentSession={studentSession}
+            onOpenAvatar={() => {
+              soundEngine.playWelcomeChime();
+              setIsAvatarOpen(true);
+            }}
+          />
+        </React.Suspense>
         {renderSharedAuthAndModals()}
       </>
     );

@@ -45,6 +45,11 @@ export function generateShortSlug(length: number = 6): string {
 export function getCleanBaseUrl(): string {
   if (typeof window === 'undefined') return '';
   const origin = window.location.origin;
+  // Links made on Cloudflare preview/workers.dev addresses point at the real site
+  // (share links are stored in the shared database, so the live site can open them).
+  if (window.location.hostname.endsWith('.workers.dev')) {
+    return 'https://mrarthurmusic.com';
+  }
   // Automatically convert private development URL to public preview URL if needed
   if (origin.includes('ais-dev-')) {
     return origin.replace('ais-dev-', 'ais-pre-');
