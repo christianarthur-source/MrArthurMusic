@@ -104,15 +104,25 @@ interface TeacherAuth {
   teacher: any | null;
 }
 
+/**
+ * The master admin's own account ("Mr. Arthur"). Its songs and assignments belong to whoever
+ * signs in with MASTER_TEACHER_PIN; the PIN stored on the row itself no longer signs in.
+ */
+const MASTER_ACCOUNT_ID = 'teach_master';
+const isMasterAccountId = (id: string) => id === MASTER_ACCOUNT_ID || id === 'teacher_master';
+
 async function requireTeacher(db: Db, env: ClassroomEnv, payload: Record<string, any>): Promise<TeacherAuth> {
   const pin = String(payload.teacherPin ?? '').trim();
   if (!pin) throw new UserError('Teacher PIN required.', 401);
   const master = String(env.MASTER_TEACHER_PIN ?? '').trim();
-  const teachers = (await db.fetch(`teachers?select=*&pin=${eq(pin)}`)) || [];
+  if (master !== '' && pin === master) {
+    const rows = (await db.fetch(`teachers?select=*&id=${eq(MASTER_ACCOUNT_ID)}`)) || [];
+    return { isMaster: true, teacher: rows[0] ?? null };
+  }
+  const teachers = ((await db.fetch(`teachers?select=*&pin=${eq(pin)}`)) || []).filter((t: any) => !isMasterAccountId(t.id));
   const teacher = teachers[0] ?? null;
-  const isMaster = (master !== '' && pin === master) || Boolean(teacher?.is_master_admin);
-  if (!isMaster && !teacher) throw new UserError('Invalid Teacher PIN.', 401);
-  return { isMaster, teacher };
+  if (!teacher) throw new UserError('Invalid Teacher PIN.', 401);
+  return { isMaster: Boolean(teacher.is_master_admin), teacher };
 }
 
 async function requireMaster(db: Db, env: ClassroomEnv, payload: Record<string, any>, what: string) {
@@ -157,13 +167,13 @@ const classroomOut = (c: any) => ({
   allowSelfRegister: c.allow_self_register !== false,
 });
 
-/** Teachers' PINs are only shown to master admins. */
+/** Teachers' PINs are only shown to master admins; the master account's stored PIN is never shown. */
 const teacherOut = (t: any, showPin: boolean) => ({
   id: t.id,
   name: t.name,
-  pin: showPin ? t.pin : '',
+  pin: showPin && !isMasterAccountId(t.id) ? t.pin : '',
   schoolName: t.school_name,
-  isMasterAdmin: Boolean(t.is_master_admin),
+  isMasterAdmin: Boolean(t.is_master_admin) || isMasterAccountId(t.id),
 });
 
 const randomId = (prefix: string, len = 8) => `${prefix}_${crypto.randomUUID().replace(/-/g, '').slice(0, len)}`;
@@ -337,9 +347,11 @@ async function runAction(payload: Record<string, any>, db: Db, env: ClassroomEnv
       const st = (await db.fetch(`students?select=first_name&id=${eq(studentId)}`)) || [];
       if (st[0]) studentName = st[0].first_name;
       else {
+        // A teacher's own song list: only that teacher (or a master admin) may save into it.
+        if (!auth.isMaster && studentId !== auth.teacher?.id) throw new UserError('Unauthorized save request.', 403);
         const tch = (await db.fetch(`teachers?select=name&id=${eq(studentId)}`)) || [];
         if (tch[0]) studentName = tch[0].name;
-        else if (studentId === 'teach_master' || studentId === 'teacher_master') studentName = auth.teacher?.name || 'Mr. Arthur';
+        else if (isMasterAccountId(studentId)) studentName = auth.teacher?.name || 'Mr. Arthur';
         else throw new UserError('That student was not found.', 404);
       }
     } else {
@@ -420,8 +432,8 @@ async function runAction(payload: Record<string, any>, db: Db, env: ClassroomEnv
       ok: true,
       isMasterAdmin: isMaster,
       currentTeacher: teacher
-        ? { ...teacherOut(teacher, true), isMasterAdmin: isMaster }
-        : { id: 'teach_master', name: 'Mr. Arthur', pin: teacherPin, schoolName: DEFAULT_SCHOOL, isMasterAdmin: true },
+        ? { ...teacherOut(teacher, true), pin: teacherPin, isMasterAdmin: isMaster }
+        : { id: MASTER_ACCOUNT_ID, name: 'Mr. Arthur', pin: teacherPin, schoolName: DEFAULT_SCHOOL, isMasterAdmin: true },
       teachers: (teachers || []).map((t: any) => teacherOut(t, isMaster || t.id === teacher?.id)),
       classrooms,
       students: (students || []).map((s: any) => ({
@@ -581,6 +593,7 @@ async function runAction(payload: Record<string, any>, db: Db, env: ClassroomEnv
     await requireMaster(db, env, payload, 'delete teacher accounts');
     const teacherId = String(payload.teacherId || '');
     if (!teacherId) throw new UserError('Teacher id is required.');
+    if (isMasterAccountId(teacherId)) throw new UserError('The master admin account cannot be deleted.');
     await db.fetch(`teachers?id=${eq(teacherId)}`, { method: 'DELETE' });
     return { ok: true, teachers: await listTeachers(db, true) };
   }

@@ -211,6 +211,8 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
   // Teacher portal state
   const [teacherPinInput, setTeacherPinInput] = useState<string>('');
   const [activeTeacherPin, setActiveTeacherPin] = useState<string>('');
+  // The account the server says this PIN belongs to (the master PIN signs in as "Mr. Arthur").
+  const [signedInTeacher, setSignedInTeacher] = useState<TeacherRecord | null>(null);
   const [newTeacherPinField, setNewTeacherPinField] = useState<string>('');
   const [teacherTab, setTeacherTab] = useState<'students' | 'classrooms' | 'projects' | 'teachers' | 'settings'>('students');
   const [allStudents, setAllStudents] = useState<StudentRecord[]>([]);
@@ -308,6 +310,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
       loginTeacher(pinToTry)
         .then((data) => {
           setActiveTeacherPin(pinToTry);
+          setSignedInTeacher(data.currentTeacher ?? null);
           setAllStudents(data.students);
           setAllProjects(data.projects);
           setAllowSelfCreate(data.allowStudentSelfCreate);
@@ -553,6 +556,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
     try {
       const data = await loginTeacher(pin);
       setActiveTeacherPin(pin);
+      setSignedInTeacher(data.currentTeacher ?? null);
       setAllStudents(data.students);
       setAllProjects(data.projects);
       setAllowSelfCreate(data.allowStudentSelfCreate);
@@ -2896,6 +2900,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                         setIsLoading(true);
                         try {
                           const currentTeacher = teachers.find((t) => t.id === projectStudentFilter) ||
+                            signedInTeacher ||
                             teachers.find((t) => t.isMasterAdmin || t.pin === '1138' || t.pin === 'adminbaby') || {
                               id: 'teach_master',
                               name: 'Mr. Arthur',
