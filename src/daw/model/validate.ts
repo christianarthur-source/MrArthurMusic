@@ -14,6 +14,7 @@ import {
   PROJECT_SCHEMA_VERSION,
   Region,
   Track,
+  VideoInfo,
 } from './types';
 
 /**
@@ -310,7 +311,30 @@ export function validateProject(input: unknown): ValidationResult {
       followPlayhead: bool(ed.followPlayhead, true),
     },
   };
+  const video = videoInfo(raw.video, trackIds);
+  if (video) project.video = video;
   return { project, warnings: dedupe(warnings) };
+}
+
+const VIDEO_SRC_RE = /^\/[A-Za-z0-9_\-./]{1,200}\.(mp4|webm|m4v|mov)$/;
+
+function videoInfo(v: unknown, trackIds: Set<string>): VideoInfo | undefined {
+  if (!isObj(v)) return undefined;
+  const assetId = typeof v.assetId === 'string' && /^usr_[A-Za-z0-9]{1,40}$/.test(v.assetId) ? v.assetId : undefined;
+  // Site-provided videos must be same-site paths (never another website).
+  const src = typeof v.src === 'string' && VIDEO_SRC_RE.test(v.src) && !v.src.includes('..') ? v.src : undefined;
+  if (!assetId && !src) return undefined;
+  return {
+    assetId,
+    src,
+    name: sanitizeText(v.name, 'Video', 80),
+    durationSec: num(v.durationSec, 0, 0, 3600),
+    width: int(v.width, 1280, 1, 8192),
+    height: int(v.height, 720, 1, 8192),
+    startTick: int(v.startTick, 0, 0),
+    audioTrackId: typeof v.audioTrackId === 'string' && trackIds.has(v.audioTrackId) ? v.audioTrackId : undefined,
+    link: typeof v.link === 'string' && /^(https:\/\/|http:\/\/localhost(:\d+)?\/)[^\s<>"']{1,500}$/.test(v.link) ? v.link : undefined, // localhost: dev testing
+  };
 }
 
 function dedupe(w: string[]): string[] {

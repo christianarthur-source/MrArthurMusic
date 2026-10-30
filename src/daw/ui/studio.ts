@@ -8,6 +8,7 @@ import { ProjectStore } from '../model/store';
 import { Autosaver } from '../persistence/projectRepo';
 import { UiState, UiStore } from './uiStore';
 import { ClipboardData } from '../model/ops';
+import { LiveInput } from './liveInput';
 
 /**
  * Everything one open studio needs. Created once per DAW mount; the audio
@@ -20,6 +21,8 @@ export interface HostIntegration {
   /** Host-provided text filter (e.g. the site's profanity filter). Return false to reject. */
   textFilter?: (text: string) => boolean;
   onExit?: () => void;
+  /** Host-provided short share link (e.g. the site's ?s= links). Without it the DAW makes a long self-contained link. */
+  share?: (project: Project) => Promise<{ url: string } | null>;
 }
 
 export class Studio {
@@ -30,6 +33,7 @@ export class Studio {
   readonly autosave: Autosaver;
   readonly preview: PreviewPlayer;
   readonly recorder: InputRecorder;
+  readonly live: LiveInput;
   clipboard: ClipboardData | null = null;
   private unsub: (() => void)[] = [];
 
@@ -44,6 +48,7 @@ export class Studio {
     this.engine = new AudioEngine(project, this.catalog);
     this.preview = new PreviewPlayer(this.engine.ctx, this.catalog, this.engine.assets);
     this.recorder = new InputRecorder(this.engine.ctx);
+    this.live = new LiveInput(this);
     this.autosave = new Autosaver(
       () => this.store.get(),
       () => this.store.revision,
@@ -91,6 +96,7 @@ export class Studio {
 
   async dispose() {
     for (const u of this.unsub) u();
+    this.live.allNotesOff();
     await this.autosave.flush();
     this.autosave.dispose();
     this.preview.stop();

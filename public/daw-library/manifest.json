@@ -1,20 +1,20 @@
 {
   "format": "mrdaw-catalog",
-  "version": 5,
-  "generatedAt": "2026-10-29T12:01:10.774Z",
-  "count": 920,
+  "version": 8,
+  "generatedAt": "2026-10-30T01:04:49.249Z",
+  "count": 909,
   "shards": [
     {
-      "url": "shards/0.4c5fdfea.json",
-      "count": 920,
-      "bytes": 1077862
+      "url": "shards/0.b3ab32dc.json",
+      "count": 909,
+      "bytes": 1067793
     }
   ],
   "facets": {
     "instrument": {
-      "bass": 139,
+      "bass": 138,
       "woodwinds": 109,
-      "electric-guitar": 94,
+      "electric-guitar": 84,
       "strings": 82,
       "synth-bass": 70,
       "brass": 69,
@@ -31,20 +31,20 @@
       "vocals": 3
     },
     "genre": {
-      "cinematic": 168,
+      "cinematic": 167,
       "pop": 108,
       "electronic": 106,
-      "funk": 95,
-      "rock": 75,
+      "funk": 93,
       "hiphop": 70,
       "jazz": 70,
       "folk": 68,
+      "rock": 67,
       "rnb-soul": 66,
       "world": 62,
       "latin": 59,
       "country": 54,
       "lofi": 42,
-      "ambient": 40,
+      "ambient": 39,
       "blues": 34,
       "reggae": 33
     },
@@ -72,16 +72,16 @@
       "hypnotic": 1
     },
     "key": {
-      "C": 104,
+      "C": 103,
       "F": 79,
       "G": 78,
       "D": 63,
       "A": 41,
       "Bb": 40,
-      "E": 39,
       "Am": 38,
+      "E": 38,
       "Cm": 37,
-      "Em": 37,
+      "Em": 35,
       "Dm": 34,
       "Gm": 33,
       "Fm": 29,
@@ -120,7 +120,7 @@
         "attribution": "No attribution required. Loops from Freesound.org, credited to their uploaders.",
         "url": "https://creativecommons.org/publicdomain/zero/1.0/"
       },
-      "count": 256
+      "count": 245
     },
     {
       "id": "legacy-staff-composer",

@@ -60,31 +60,33 @@ export function TransportBar() {
   const countIn = useProject((p) => p.editor.countInBars);
 
   return (
-    <div className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1 border-b border-slate-800 bg-slate-900/95 px-3 py-1.5" role="toolbar" aria-label="Transport">
-      <div className="flex items-center gap-1">
-        <IconButton label="Back to start" shortcut="Home" onClick={() => A.returnToStart(s)}>
-          <SkipBack size={16} />
+    <div className="flex shrink-0 flex-wrap items-center gap-x-4 gap-y-1.5 border-b border-slate-800 bg-slate-900/95 px-3 py-2" role="toolbar" aria-label="Transport">
+      <div className="flex items-center gap-1.5 rounded-2xl bg-slate-950/70 p-1 ring-1 ring-slate-800">
+        <IconButton size="lg" label="Back to start" shortcut="Home" onClick={() => A.returnToStart(s)}>
+          <SkipBack size={20} />
         </IconButton>
-        <IconButton label="Stop" onClick={() => A.stop(s)}>
-          <Square size={15} />
+        <IconButton size="lg" label="Stop" onClick={() => A.stop(s)}>
+          <Square size={19} />
         </IconButton>
-        <IconButton label={playing ? 'Pause' : 'Play'} shortcut="Space" active={playing && !recording} onClick={() => A.togglePlay(s)} className="w-11" testId="play">
-          {playing ? <Pause size={18} /> : <Play size={18} />}
+        <IconButton size="lg" label={playing ? 'Pause' : 'Play'} shortcut="Space" tone="play" active={playing && !recording} onClick={() => A.togglePlay(s)} className="w-20" testId="play">
+          {playing ? <Pause size={24} /> : <Play size={24} fill="currentColor" />}
         </IconButton>
         <IconButton
-          label={recording ? 'Stop recording' : 'Record (into the armed audio track)'}
+          size="lg"
+          label={recording ? 'Stop recording' : 'Record (microphone into an audio track, or notes into a selected instrument track)'}
           shortcut="R"
           tone="record"
           active={recording}
           onClick={() => (recording ? void A.stopRecording(s) : void A.startRecording(s))}
+          className="w-14"
         >
-          <Circle size={15} fill="currentColor" />
+          <Circle size={20} fill="currentColor" />
         </IconButton>
-        <IconButton label={loopOn ? 'Loop on' : 'Loop off'} shortcut="L" active={loopOn} onClick={() => A.toggleLoop(s)}>
-          <Repeat size={16} />
+        <IconButton size="lg" label={loopOn ? 'Loop on' : 'Loop off'} shortcut="L" active={loopOn} onClick={() => A.toggleLoop(s)}>
+          <Repeat size={20} />
         </IconButton>
-        <IconButton label={metronome ? 'Metronome on' : 'Metronome off'} shortcut="K" active={metronome} onClick={() => A.toggleMetronome(s)}>
-          <Timer size={16} />
+        <IconButton size="lg" label={metronome ? 'Metronome on' : 'Metronome off'} shortcut="K" active={metronome} onClick={() => A.toggleMetronome(s)}>
+          <Timer size={20} />
         </IconButton>
       </div>
 
@@ -198,7 +200,7 @@ function TempoField({ bpm }: { bpm: number }) {
         aria-label="Tempo (BPM)"
         data-testid="tempo"
         inputMode="decimal"
-        className="h-8 w-16 rounded-lg bg-slate-800 px-2 text-center font-mono text-sm text-amber-300 outline-none focus:ring-2 focus:ring-amber-400"
+        className="h-10 w-20 rounded-xl bg-slate-800 px-2 text-center font-mono text-lg font-semibold text-amber-300 outline-none focus:ring-2 focus:ring-amber-400"
         value={draft}
         onFocus={() => setFocus(true)}
         onBlur={() => {
@@ -253,14 +255,14 @@ function PositionDisplay() {
   }, [s]);
   return (
     <div
-      className={cx('flex items-baseline gap-2 rounded-lg bg-slate-950 px-3 py-1 font-mono ring-1', countIn ? 'ring-rose-500' : 'ring-slate-800')}
+      className={cx('flex items-baseline gap-2 rounded-xl bg-slate-950 px-4 py-1.5 font-mono ring-1', countIn ? 'ring-rose-500' : 'ring-slate-800')}
       aria-live="off"
       title="Position: bar.beat.sixteenth and minutes:seconds"
     >
-      <span ref={bars} className="min-w-[4.5rem] text-lg font-semibold text-amber-300" data-testid="position">
+      <span ref={bars} className="min-w-[6rem] text-2xl font-semibold text-amber-300" data-testid="position">
         1.1.1
       </span>
-      <span ref={time} className="text-xs text-slate-400">
+      <span ref={time} className="text-sm text-slate-400">
         0:00.000
       </span>
       {countIn && <span className="text-xs font-bold text-rose-400">COUNT-IN</span>}
