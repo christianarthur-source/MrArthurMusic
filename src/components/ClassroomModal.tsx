@@ -211,6 +211,8 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
   // Teacher portal state
   const [teacherPinInput, setTeacherPinInput] = useState<string>('');
   const [activeTeacherPin, setActiveTeacherPin] = useState<string>('');
+  // The account the server says this PIN belongs to (the master PIN signs in as "Mr. Arthur").
+  const [signedInTeacher, setSignedInTeacher] = useState<TeacherRecord | null>(null);
   const [newTeacherPinField, setNewTeacherPinField] = useState<string>('');
   const [teacherTab, setTeacherTab] = useState<'students' | 'classrooms' | 'projects' | 'teachers' | 'settings'>('students');
   const [allStudents, setAllStudents] = useState<StudentRecord[]>([]);
@@ -308,6 +310,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
       loginTeacher(pinToTry)
         .then((data) => {
           setActiveTeacherPin(pinToTry);
+          setSignedInTeacher(data.currentTeacher ?? null);
           setAllStudents(data.students);
           setAllProjects(data.projects);
           setAllowSelfCreate(data.allowStudentSelfCreate);
@@ -553,6 +556,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
     try {
       const data = await loginTeacher(pin);
       setActiveTeacherPin(pin);
+      setSignedInTeacher(data.currentTeacher ?? null);
       setAllStudents(data.students);
       setAllProjects(data.projects);
       setAllowSelfCreate(data.allowStudentSelfCreate);
@@ -1871,9 +1875,12 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                   </button>
                   <button
                     type="button"
-                    onClick={() => setTeacherTab('projects')}
+                    onClick={() => {
+                      setTeacherTab('projects');
+                      setProjectStudentFilter('ALL');
+                    }}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer ${
-                      teacherTab === 'projects'
+                      teacherTab === 'projects' && projectStudentFilter === 'ALL'
                         ? 'bg-amber-400 text-slate-950 shadow-sm'
                         : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
                     }`}
@@ -1881,6 +1888,34 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                     <Music className="w-3.5 h-3.5" />
                     <span>Projects ({allProjects.length})</span>
                   </button>
+                  {(() => {
+                    // Songs saved under the signed-in teacher's own account (the master PIN's is "Mr. Arthur").
+                    const myId = signedInTeacher?.id || 'teach_master';
+                    const myName = (signedInTeacher?.name || '').toLowerCase();
+                    const isMine = (p: SavedProjectRecord) =>
+                      p.studentId === myId ||
+                      (isMasterAdmin && (p.studentId === 'teach_master' || p.studentId === 'teacher_master')) ||
+                      (!!myName && (p.studentName || '').toLowerCase() === myName);
+                    const active = teacherTab === 'projects' && projectStudentFilter === myId;
+                    return (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTeacherTab('projects');
+                          setProjectStudentFilter(myId);
+                        }}
+                        title="Songs saved under your own teacher account"
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer ${
+                          active
+                            ? 'bg-amber-400 text-slate-950 shadow-sm'
+                            : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                        }`}
+                      >
+                        <Music className="w-3.5 h-3.5" />
+                        <span>My Songs ({allProjects.filter(isMine).length})</span>
+                      </button>
+                    );
+                  })()}
                   {isMasterAdmin && (
                     <button
                       type="button"
@@ -2896,6 +2931,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                         setIsLoading(true);
                         try {
                           const currentTeacher = teachers.find((t) => t.id === projectStudentFilter) ||
+                            signedInTeacher ||
                             teachers.find((t) => t.isMasterAdmin || t.pin === '1138' || t.pin === 'adminbaby') || {
                               id: 'teach_master',
                               name: 'Mr. Arthur',
