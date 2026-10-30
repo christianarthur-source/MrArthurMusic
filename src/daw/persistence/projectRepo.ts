@@ -62,6 +62,19 @@ export async function saveUserAudio(blob: Blob, name: string): Promise<string> {
   return id;
 }
 
+export const MAX_VIDEO_BYTES = 300 * 1024 * 1024;
+
+/** A student's video file, kept on this computer like recordings (its sound can be an audio asset too). */
+export async function saveUserVideo(blob: Blob, name: string, id = newId('usr')): Promise<string> {
+  if (blob.size > MAX_VIDEO_BYTES) throw new Error('That video is too large (limit 300 MB). Try a shorter clip or a smaller (720p) version.');
+  await idbPut<StoredAsset>('assets', { id, blob, name: SAFE_NAME(name), mime: blob.type || 'video/mp4', createdAt: new Date().toISOString() });
+  return id;
+}
+
+export async function loadUserBlob(id: string): Promise<Blob | null> {
+  return (await idbGet<StoredAsset>('assets', id))?.blob ?? null;
+}
+
 export async function userAudioExists(id: string): Promise<boolean> {
   return !!(await idbGet<StoredAsset>('assets', id));
 }
@@ -88,19 +101,20 @@ export function projectToJson(p: Project): string {
   return JSON.stringify({ format: 'mrdaw-project', ...p }, null, 1);
 }
 
-const EXT: Record<string, string> = { 'audio/wav': 'wav', 'audio/x-wav': 'wav', 'audio/mpeg': 'mp3', 'audio/ogg': 'ogg', 'audio/webm': 'webm', 'audio/mp4': 'm4a', 'audio/flac': 'flac' };
+const EXT: Record<string, string> = { 'audio/wav': 'wav', 'audio/x-wav': 'wav', 'audio/mpeg': 'mp3', 'audio/ogg': 'ogg', 'audio/webm': 'webm', 'audio/mp4': 'm4a', 'audio/flac': 'flac', 'video/mp4': 'mp4', 'video/quicktime': 'mov' };
 
 export async function projectToArchive(p: Project): Promise<Blob> {
   const entries: ZipEntry[] = [{ name: 'project.json', data: new TextEncoder().encode(projectToJson(p)) }];
   const missing: string[] = [];
-  for (const a of Object.values(p.assets)) {
-    if (a.ref.kind !== 'user') continue;
-    const row = await idbGet<StoredAsset>('assets', a.ref.assetId);
+  const userIds = new Set(Object.values(p.assets).flatMap((a) => (a.ref.kind === 'user' ? [a.ref.assetId] : [])));
+  if (p.video?.assetId) userIds.add(p.video.assetId);
+  for (const assetId of userIds) {
+    const row = await idbGet<StoredAsset>('assets', assetId);
     if (!row) {
-      missing.push(a.name);
+      missing.push(assetId);
       continue;
     }
-    entries.push({ name: `audio/${a.ref.assetId}.${EXT[row.mime] ?? 'bin'}`, data: new Uint8Array(await row.blob.arrayBuffer()) });
+    entries.push({ name: `audio/${assetId}.${EXT[row.mime] ?? 'bin'}`, data: new Uint8Array(await row.blob.arrayBuffer()) });
   }
   if (missing.length) console.warn('[daw] archive is missing audio:', missing);
   return new Blob([writeZip(entries) as Uint8Array<ArrayBuffer>], { type: 'application/zip' });
@@ -134,7 +148,7 @@ export async function importProjectFile(file: File): Promise<ValidationResult> {
   const result = validateProject(parsed);
   // Store archived audio under its original asset id (ids are validated, names never trusted as paths).
   for (const e of entries) {
-    const m = /^audio\/(usr_[A-Za-z0-9]{1,40})\.(wav|mp3|ogg|webm|m4a|flac|bin)$/.exec(e.name);
+    const m = /^audio\/(usr_[A-Za-z0-9]{1,40})\.(wav|mp3|ogg|webm|m4a|flac|mp4|mov|bin)$/.exec(e.name);
     if (!m) continue;
     const mime = Object.entries(EXT).find(([, x]) => x === m[2])?.[0] ?? 'application/octet-stream';
     await idbPut<StoredAsset>('assets', {

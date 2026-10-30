@@ -1,4 +1,4 @@
-import { GripVertical, Heart, Loader2, Play, Plus, Search, SlidersHorizontal, Square, X } from 'lucide-react';
+import { ChevronsDown, GripVertical, Heart, Loader2, Play, Plus, Search, SlidersHorizontal, Square, X } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { CatalogEntry, decodePeaks } from '../library/catalogTypes';
 import { LibraryQuery, LibraryRow } from '../library/searchCore';
@@ -326,6 +326,7 @@ export function LibraryPanel() {
       )}
       <div className="shrink-0 border-t border-slate-800 px-3 py-1 text-[10px] text-slate-500">
         {total.toLocaleString()} result{total === 1 ? '' : 's'}
+        {total > rows.length && ` · showing the first ${rows.length} (search or filter to find more)`}
         {loading ? ' · searching…' : ` · ${took.toFixed(1)} ms`}
         {preview.error && <span className="text-rose-300"> · {preview.error}</span>}
       </div>
@@ -363,7 +364,9 @@ function VirtualList(props: {
   const last = Math.min(props.rows.length, Math.ceil((scroll + height) / ROW_H) + 4);
   const fav = new Set(props.favorites);
   if (!props.rows.length) return <div className="flex-1 p-6 text-center text-sm text-slate-500">{props.empty}</div>;
+  const below = props.rows.length - Math.floor((scroll + height) / ROW_H);
   return (
+    <div className="relative flex min-h-0 flex-1 flex-col">
     <div ref={ref} className="daw-scroll min-h-0 flex-1 overflow-y-auto" onScroll={(e) => setScroll(e.currentTarget.scrollTop)} role="list" aria-label="Loops">
       <div style={{ height: props.rows.length * ROW_H, position: 'relative' }}>
         {props.rows.slice(first, last).map((e, i) => (
@@ -382,6 +385,20 @@ function VirtualList(props: {
           </div>
         ))}
       </div>
+    </div>
+      {below > 0 && (
+        // Hint that the list scrolls: fades the last rows and offers a "more" button.
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 flex h-14 items-end justify-center bg-gradient-to-t from-slate-900 via-slate-900/80 to-transparent pb-1.5">
+          <button
+            type="button"
+            data-testid="library-more"
+            className="pointer-events-auto flex animate-bounce items-center gap-1 rounded-full bg-slate-700/90 px-3 py-1 text-xs font-semibold text-slate-100 shadow-lg ring-1 ring-slate-600 hover:bg-slate-600 [animation-iteration-count:3]"
+            onClick={() => ref.current?.scrollBy({ top: Math.max(ROW_H, height - ROW_H), behavior: 'smooth' })}
+          >
+            <ChevronsDown size={14} /> {below} more below
+          </button>
+        </div>
+      )}
     </div>
   );
 }
