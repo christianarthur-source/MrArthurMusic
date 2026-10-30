@@ -1,18 +1,18 @@
 {
   "format": "mrdaw-review-report",
-  "catalogVersion": 5,
+  "catalogVersion": 8,
   "summary": {
-    "assets": 920,
-    "needsReview": 92,
+    "assets": 909,
+    "needsReview": 90,
     "unverifiedLicense": 90,
     "bpmEstimated": 0,
     "bpmUnknown": 0,
-    "keyUnknown": 200,
+    "keyUnknown": 193,
     "durationMismatches": 0,
-    "withNotes": 4,
+    "withNotes": 2,
     "rejected": 0,
     "duplicates": 0,
-    "warnings": 0
+    "warnings": 4
   },
   "packs": [
     {
@@ -44,7 +44,12 @@
   ],
   "rejected": [],
   "duplicates": [],
-  "warnings": [],
+  "warnings": [
+    "freesound-cc0/audio/electric-guitar/rock-guitar-3-253045.wav: metadata slug \"fs253045\" differs from persisted id freesound-cc0.fs253045-2; keeping the persisted id (edit ids.json to change it deliberately)",
+    "freesound-cc0/audio/electric-guitar/rock-guitar-4-485082.wav: metadata slug \"fs485082\" differs from persisted id freesound-cc0.fs485082-2; keeping the persisted id (edit ids.json to change it deliberately)",
+    "freesound-cc0/audio/electric-guitar/rock-guitar-2-237583.wav: metadata slug \"fs237583\" differs from persisted id freesound-cc0.fs237583-2; keeping the persisted id (edit ids.json to change it deliberately)",
+    "freesound-cc0/audio/electric-guitar/rock-guitar-566109.wav: metadata slug \"fs566109\" differs from persisted id freesound-cc0.fs566109-2; keeping the persisted id (edit ids.json to change it deliberately)"
+  ],
   "assets": [
     {
       "id": "cc0-studio.afro-groove-a-c-balafon-pattern",
@@ -9835,24 +9840,6 @@
       "notes": []
     },
     {
-      "id": "freesound-cc0.fs215048",
-      "file": "audio/electric-guitar/sinkhole-guitar-215048.wav",
-      "pack": "freesound-cc0",
-      "review": "approved",
-      "license": "CC0-1.0",
-      "estimated": [],
-      "unknown": [
-        "key"
-      ],
-      "durationCheck": {
-        "expectedSec": 7.384615,
-        "measuredSec": 7.384626,
-        "diffMs": 0.01,
-        "diffFrames": 0
-      },
-      "notes": []
-    },
-    {
       "id": "freesound-cc0.fs219269",
       "file": "audio/percussion/world-percussion-219269.wav",
       "pack": "freesound-cc0",
@@ -9907,8 +9894,8 @@
       "notes": []
     },
     {
-      "id": "freesound-cc0.fs237583",
-      "file": "audio/electric-guitar/rock-guitar-5-237583.wav",
+      "id": "freesound-cc0.fs237583-2",
+      "file": "audio/electric-guitar/rock-guitar-2-237583.wav",
       "pack": "freesound-cc0",
       "review": "approved",
       "license": "CC0-1.0",
@@ -9959,8 +9946,8 @@
       "notes": []
     },
     {
-      "id": "freesound-cc0.fs253045",
-      "file": "audio/electric-guitar/rock-guitar-6-253045.wav",
+      "id": "freesound-cc0.fs253045-2",
+      "file": "audio/electric-guitar/rock-guitar-3-253045.wav",
       "pack": "freesound-cc0",
       "review": "approved",
       "license": "CC0-1.0",
@@ -10173,40 +10160,6 @@
       "durationCheck": {
         "expectedSec": 16,
         "measuredSec": 16,
-        "diffMs": 0,
-        "diffFrames": 0
-      },
-      "notes": []
-    },
-    {
-      "id": "freesound-cc0.fs331869",
-      "file": "audio/electric-guitar/intense-battle-guitar-331869.wav",
-      "pack": "freesound-cc0",
-      "review": "approved",
-      "license": "CC0-1.0",
-      "estimated": [],
-      "unknown": [
-        "key"
-      ],
-      "durationCheck": {
-        "expectedSec": 21.333333,
-        "measuredSec": 21.333333,
-        "diffMs": 0,
-        "diffFrames": 0
-      },
-      "notes": []
-    },
-    {
-      "id": "freesound-cc0.fs331875",
-      "file": "audio/electric-guitar/epic-metal-guitar-331875.wav",
-      "pack": "freesound-cc0",
-      "review": "approved",
-      "license": "CC0-1.0",
-      "estimated": [],
-      "unknown": [],
-      "durationCheck": {
-        "expectedSec": 10.666667,
-        "measuredSec": 10.666667,
         "diffMs": 0,
         "diffFrames": 0
       },
@@ -10464,58 +10417,6 @@
         "expectedSec": 9.6,
         "measuredSec": 9.6,
         "diffMs": 0,
-        "diffFrames": 0
-      },
-      "notes": []
-    },
-    {
-      "id": "freesound-cc0.fs368068",
-      "file": "audio/electric-guitar/rock-guitar-2-368068.wav",
-      "pack": "freesound-cc0",
-      "review": "approved",
-      "license": "CC0-1.0",
-      "estimated": [],
-      "unknown": [],
-      "durationCheck": {
-        "expectedSec": 4,
-        "measuredSec": 4,
-        "diffMs": 0,
-        "diffFrames": 0
-      },
-      "notes": []
-    },
-    {
-      "id": "freesound-cc0.fs370351",
-      "file": "audio/electric-guitar/rock-guitar-4-370351.wav",
-      "pack": "freesound-cc0",
-      "review": "approved",
-      "license": "CC0-1.0",
-      "estimated": [],
-      "unknown": [
-        "key"
-      ],
-      "durationCheck": {
-        "expectedSec": 10.666667,
-        "measuredSec": 10.666667,
-        "diffMs": 0,
-        "diffFrames": 0
-      },
-      "notes": []
-    },
-    {
-      "id": "freesound-cc0.fs370352",
-      "file": "audio/electric-guitar/rock-guitar-370352.wav",
-      "pack": "freesound-cc0",
-      "review": "approved",
-      "license": "CC0-1.0",
-      "estimated": [],
-      "unknown": [
-        "key"
-      ],
-      "durationCheck": {
-        "expectedSec": 8.727273,
-        "measuredSec": 8.727279,
-        "diffMs": 0.01,
         "diffFrames": 0
       },
       "notes": []
@@ -11271,24 +11172,6 @@
       "notes": []
     },
     {
-      "id": "freesound-cc0.fs483494",
-      "file": "audio/electric-guitar/disco-guitar-483494.wav",
-      "pack": "freesound-cc0",
-      "review": "approved",
-      "license": "CC0-1.0",
-      "estimated": [],
-      "unknown": [
-        "key"
-      ],
-      "durationCheck": {
-        "expectedSec": 8,
-        "measuredSec": 8,
-        "diffMs": 0,
-        "diffFrames": 0
-      },
-      "notes": []
-    },
-    {
       "id": "freesound-cc0.fs484255",
       "file": "audio/bass/funk-bass-2-484255.wav",
       "pack": "freesound-cc0",
@@ -11341,8 +11224,8 @@
       "notes": []
     },
     {
-      "id": "freesound-cc0.fs485082",
-      "file": "audio/electric-guitar/rock-guitar-7-485082.wav",
+      "id": "freesound-cc0.fs485082-2",
+      "file": "audio/electric-guitar/rock-guitar-4-485082.wav",
       "pack": "freesound-cc0",
       "review": "approved",
       "license": "CC0-1.0",
@@ -11411,22 +11294,6 @@
     {
       "id": "freesound-cc0.fs492413",
       "file": "audio/bass/example-riff-bass-492413.wav",
-      "pack": "freesound-cc0",
-      "review": "approved",
-      "license": "CC0-1.0",
-      "estimated": [],
-      "unknown": [],
-      "durationCheck": {
-        "expectedSec": 8.727273,
-        "measuredSec": 8.727279,
-        "diffMs": 0.01,
-        "diffFrames": 0
-      },
-      "notes": []
-    },
-    {
-      "id": "freesound-cc0.fs494065",
-      "file": "audio/bass/example-riff-bass-2-494065.wav",
       "pack": "freesound-cc0",
       "review": "approved",
       "license": "CC0-1.0",
@@ -11658,7 +11525,7 @@
       "id": "freesound-cc0.fs555917",
       "file": "audio/vocals/pop-vocal-555917.wav",
       "pack": "freesound-cc0",
-      "review": "needs-review",
+      "review": "approved",
       "license": "CC0-1.0",
       "estimated": [],
       "unknown": [],
@@ -11668,9 +11535,7 @@
         "diffMs": 0,
         "diffFrames": 0
       },
-      "notes": [
-        "Vocal loop: listen for words before approving."
-      ]
+      "notes": []
     },
     {
       "id": "freesound-cc0.fs558140",
@@ -11791,8 +11656,8 @@
       "notes": []
     },
     {
-      "id": "freesound-cc0.fs566109",
-      "file": "audio/electric-guitar/rock-guitar-3-566109.wav",
+      "id": "freesound-cc0.fs566109-2",
+      "file": "audio/electric-guitar/rock-guitar-566109.wav",
       "pack": "freesound-cc0",
       "review": "approved",
       "license": "CC0-1.0",
@@ -11856,24 +11721,6 @@
         "expectedSec": 12.307692,
         "measuredSec": 12.307687,
         "diffMs": -0.01,
-        "diffFrames": 0
-      },
-      "notes": []
-    },
-    {
-      "id": "freesound-cc0.fs570866",
-      "file": "audio/electric-guitar/melodic-guitar-570866.wav",
-      "pack": "freesound-cc0",
-      "review": "approved",
-      "license": "CC0-1.0",
-      "estimated": [],
-      "unknown": [
-        "key"
-      ],
-      "durationCheck": {
-        "expectedSec": 7.007299,
-        "measuredSec": 7.007302,
-        "diffMs": 0,
         "diffFrames": 0
       },
       "notes": []
@@ -11985,22 +11832,6 @@
       "durationCheck": {
         "expectedSec": 26.666667,
         "measuredSec": 26.666667,
-        "diffMs": 0,
-        "diffFrames": 0
-      },
-      "notes": []
-    },
-    {
-      "id": "freesound-cc0.fs585337",
-      "file": "audio/electric-guitar/metal-jeffrey-greer-guitar-585337.wav",
-      "pack": "freesound-cc0",
-      "review": "approved",
-      "license": "CC0-1.0",
-      "estimated": [],
-      "unknown": [],
-      "durationCheck": {
-        "expectedSec": 22.588235,
-        "measuredSec": 22.588231,
         "diffMs": 0,
         "diffFrames": 0
       },
@@ -12290,7 +12121,7 @@
       "id": "freesound-cc0.fs649429",
       "file": "audio/vocals/gibberish-vocal-649429.wav",
       "pack": "freesound-cc0",
-      "review": "needs-review",
+      "review": "approved",
       "license": "CC0-1.0",
       "estimated": [],
       "unknown": [
@@ -12302,9 +12133,7 @@
         "diffMs": 0,
         "diffFrames": 0
       },
-      "notes": [
-        "Vocal loop: listen for words before approving."
-      ]
+      "notes": []
     },
     {
       "id": "freesound-cc0.fs650584",
@@ -12864,24 +12693,6 @@
         "expectedSec": 2.307692,
         "measuredSec": 2.307687,
         "diffMs": -0.01,
-        "diffFrames": 0
-      },
-      "notes": []
-    },
-    {
-      "id": "freesound-cc0.fs751678",
-      "file": "audio/electric-guitar/prepare-earth-arrival-guitar-751678.wav",
-      "pack": "freesound-cc0",
-      "review": "approved",
-      "license": "CC0-1.0",
-      "estimated": [],
-      "unknown": [
-        "key"
-      ],
-      "durationCheck": {
-        "expectedSec": 13.617021,
-        "measuredSec": 13.617029,
-        "diffMs": 0.01,
         "diffFrames": 0
       },
       "notes": []

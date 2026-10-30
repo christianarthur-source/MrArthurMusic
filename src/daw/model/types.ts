@@ -185,6 +185,26 @@ export interface EditorSettings {
   followPlayhead: boolean;
 }
 
+/**
+ * A video to score (one per song). The file is either the student's own (stored on this
+ * computer under `assetId`, like recordings) or provided by the site (`src`, a same-site path).
+ * Its sound, when imported, is an ordinary audio clip on `audioTrackId`; while linked, the
+ * video follows that clip, so moving the clip moves the video.
+ */
+export interface VideoInfo {
+  assetId?: string;
+  src?: string;
+  name: string;
+  durationSec: number;
+  width: number;
+  height: number;
+  /** Where the video starts on the timeline (used when it has no linked audio clip). */
+  startTick: number;
+  audioTrackId?: string;
+  /** Where the video was downloaded from (e.g. a Google Drive link), so another computer can fetch it again. */
+  link?: string;
+}
+
 /** Grid division expressed as a fraction of a whole note. */
 export type GridDivision = '1/1' | '1/2' | '1/4' | '1/8' | '1/16' | '1/32' | '1/4T' | '1/8T' | '1/16T';
 
@@ -203,4 +223,5 @@ export interface Project {
   markers: Marker[];
   loop: { enabled: boolean; start: number; end: number };
   editor: EditorSettings;
+  video?: VideoInfo;
 }

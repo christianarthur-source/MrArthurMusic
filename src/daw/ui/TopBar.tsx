@@ -1,4 +1,4 @@
-import { ArrowLeft, Check, Cloud, HelpCircle, Home, Library, Loader2, Mic, Menu, Redo2, Save, Sliders, Undo2 } from 'lucide-react';
+import { ArrowLeft, Check, Cloud, HelpCircle, Home, KeyboardMusic, Library, Loader2, Mic, Menu, Redo2, Save, Share2, Sliders, Undo2 } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { saveProjectLocal, duplicateProject } from '../persistence/projectRepo';
 import { importFiles, redo, undo } from './actions';
@@ -47,6 +47,7 @@ export function TopBar({ onHome, onSave, cloudLabel }: { onHome: () => void; onS
         </IconButton>
         {menu === 'file' && (
           <div role="menu" className="absolute left-0 top-9 z-[70] w-64 rounded-xl border border-slate-700 bg-slate-900 p-1 shadow-2xl" onPointerLeave={() => setMenu(null)}>
+            {item('Share (link)…', () => s.ui.set({ dialog: 'share' }))}
             {item('New song…', onHome)}
             {item('Save', onSave, 'Ctrl+S')}
             {item('Save a copy', async () => {
@@ -56,6 +57,7 @@ export function TopBar({ onHome, onSave, cloudLabel }: { onHome: () => void; onS
               s.ui.toast('success', `Saved a copy: "${copy.title}". You are now editing the copy.`);
             })}
             {item('Import audio or MIDI file…', () => fileInput.current?.click())}
+            {item(s.store.get().video ? 'Replace video…' : 'Add video…', () => s.ui.set({ dialog: 'video' }))}
             {item('Export / download…', () => s.ui.set({ dialog: 'export' }), 'Ctrl+E')}
             {item('Recording setup…', () => s.ui.set({ dialog: 'record' }))}
             {item('Storage & cache…', () => s.ui.set({ dialog: 'storage' }))}
@@ -107,6 +109,12 @@ export function TopBar({ onHome, onSave, cloudLabel }: { onHome: () => void; onS
 
       <IconButton label={cloudLabel ? `Save to ${cloudLabel}` : 'Save'} shortcut="Ctrl+S" tone="accent" onClick={onSave}>
         {cloudLabel ? <Cloud size={16} /> : <Save size={16} />} <span className="hidden md:inline">Save</span>
+      </IconButton>
+      <IconButton label="Share a link to this song" onClick={() => s.ui.set({ dialog: 'share' })}>
+        <Share2 size={16} /> <span className="hidden xl:inline">Share</span>
+      </IconButton>
+      <IconButton label="Keyboard: play notes with the mouse, computer keys or a MIDI keyboard" shortcut="N" active={bottom === 'keyboard'} onClick={() => s.ui.set({ bottom: bottom === 'keyboard' ? 'none' : 'keyboard' })}>
+        <KeyboardMusic size={16} /> <span className="hidden lg:inline">Keyboard</span>
       </IconButton>
       <IconButton label="Recording setup" onClick={() => s.ui.set({ dialog: 'record' })}>
         <Mic size={16} />

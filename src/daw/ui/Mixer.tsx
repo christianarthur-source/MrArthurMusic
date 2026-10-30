@@ -2,7 +2,7 @@ import { AlertTriangle } from 'lucide-react';
 import { useCallback, useMemo } from 'react';
 import * as ops from '../model/ops';
 import { Track } from '../model/types';
-import { cx, fmtDb, fmtPan, Meter, SmallToggle, Slider } from './controls';
+import { cx, Fader, fmtDb, fmtPan, Meter, SmallToggle, Slider } from './controls';
 import { useProject, useStudio } from './studio';
 
 /** Mixing desk backed by the real audio graph (meters read the track analysers). */
@@ -34,9 +34,9 @@ function Strip({ track }: { track: Track }) {
         {track.name}
       </div>
       <Slider label={`${track.name} pan`} className="w-full" min={-1} max={1} step={0.02} value={track.pan} defaultValue={0} format={fmtPan} onChange={(v) => live({ pan: v })} onCommit={() => s.store.commitGesture('Pan')} />
-      <div className="flex min-h-0 flex-1 items-stretch gap-2">
-        <Slider vertical label={`${track.name} volume`} min={-60} max={6} step={0.5} value={track.volumeDb} defaultValue={0} format={fmtDb} onChange={(v) => live({ volumeDb: v })} onCommit={() => s.store.commitGesture('Volume')} />
-        <Meter vertical read={read} />
+      <div className="flex min-h-0 flex-1 items-stretch gap-1">
+        <Fader label={`${track.name} volume`} value={track.volumeDb} accent={track.color} onChange={(v) => live({ volumeDb: v })} onCommit={() => s.store.commitGesture('Volume')} />
+        <Meter vertical read={read} className="my-[14px] w-1.5" />
       </div>
       <div className="font-mono text-[11px] text-slate-400">{volAutomated ? 'auto' : fmtDb(track.volumeDb)}</div>
       <div className="flex gap-1">
@@ -64,24 +64,18 @@ function MasterStrip() {
     <div className="ml-auto flex w-28 shrink-0 flex-col items-center gap-2 rounded-xl border border-amber-500/40 bg-slate-900 p-2">
       <div className="h-1 w-full rounded bg-amber-400" />
       <div className="text-xs font-bold text-amber-300">MASTER</div>
-      <div className="flex min-h-0 flex-1 items-stretch gap-2">
-        <Slider
-          vertical
+      <div className="flex min-h-0 flex-1 items-stretch gap-1">
+        <Fader
           label="Master volume"
-          min={-60}
-          max={6}
-          step={0.5}
           value={master.volumeDb}
-          defaultValue={0}
-          format={fmtDb}
           onChange={(v) => {
             s.store.beginGesture();
             s.store.preview((p) => ({ ...p, master: { ...p.master, volumeDb: v } }));
           }}
           onCommit={() => s.store.commitGesture('Master volume')}
         />
-        <Meter vertical read={read} />
-        <Meter vertical read={readPre} className="opacity-60" />
+        <Meter vertical read={read} className="my-[14px] w-1.5" />
+        <Meter vertical read={readPre} className="my-[14px] w-1.5 opacity-60" />
       </div>
       <div className="font-mono text-[11px] text-slate-400">{fmtDb(master.volumeDb)}</div>
       <HotWarning read={readPre} />

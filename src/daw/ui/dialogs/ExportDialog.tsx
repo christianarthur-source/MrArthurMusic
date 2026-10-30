@@ -3,7 +3,7 @@ import { analyse, defaultRange, downloadBlob, renderProject, RenderCancelled, sa
 import { barToTick, formatSeconds, tickToBarBeat, ticksToSeconds } from '../../model/time';
 import { projectToArchive, projectToJson } from '../../persistence/projectRepo';
 import { exportMidi } from '../actions';
-import { Modal } from '../controls';
+import { Modal, ProgressBar } from '../controls';
 import { useProject, useStudio } from '../studio';
 
 export function ExportDialog({ onClose }: { onClose: () => void }) {
@@ -112,9 +112,7 @@ export function ExportDialog({ onClose }: { onClose: () => void }) {
         </p>
         {progress !== null ? (
           <div className="space-y-2">
-            <div className="h-2 overflow-hidden rounded bg-slate-800">
-              <div className="h-full bg-amber-400 transition-[width]" style={{ width: `${Math.round(progress * 100)}%` }} />
-            </div>
+            <ProgressBar progress={progress} label="Exporting your song…" />
             <button type="button" className="rounded-lg bg-slate-700 px-3 py-1.5 text-sm" onClick={() => abort.current?.abort()}>
               Cancel
             </button>
