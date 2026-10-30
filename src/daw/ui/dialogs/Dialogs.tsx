@@ -10,7 +10,7 @@ import { useStudio } from '../studio';
 export const SHORTCUTS: [string, string][] = [
   ['Space', 'Play / pause'],
   ['Home or Enter', 'Back to start'],
-  ['R', 'Record'],
+  ['R', 'Record (microphone, or notes on a selected instrument track)'],
   ['L', 'Loop on/off (loops the selected clips)'],
   ['K', 'Metronome'],
   ['Ctrl+Z / Ctrl+Shift+Z', 'Undo / redo'],
@@ -26,9 +26,11 @@ export const SHORTCUTS: [string, string][] = [
   ['F', 'Fit the song to the window'],
   ['Q', 'Quantize notes'],
   ['M / X / I', 'Mixer / editor / clip & effects panel'],
+  ['N or Ctrl+K', 'On-screen piano keyboard'],
   ['Ctrl+S', 'Save'],
   ['Ctrl+E', 'Export'],
-  ['A–K row (with an instrument track selected)', 'Play notes on the computer keyboard (Z / X change octave)'],
+  ['A–L row (with the keyboard or note editor open)', 'Play notes on the computer keyboard (Z / X change octave)'],
+  ['MIDI keyboard', 'Plug in any USB/Bluetooth MIDI keyboard or pad (Chrome/Edge); sustain pedal and Start/Stop buttons work'],
   ['?', 'Show this list'],
 ];
 

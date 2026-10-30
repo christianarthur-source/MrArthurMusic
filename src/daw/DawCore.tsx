@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { createProject } from './model/factory';
+import { createProject, newId } from './model/factory';
 import { Project } from './model/types';
 import { validateProject, ValidationResult } from './model/validate';
 import { saveProjectLocal } from './persistence/projectRepo';
+import { readShareFromLocation } from './persistence/shareLink';
 import { cx, Modal } from './ui/controls';
 import { ExportDialog } from './ui/dialogs/ExportDialog';
 import { DiagnosticsDialog } from './ui/dialogs/Diagnostics';
@@ -11,13 +12,16 @@ import { MidiEditor } from './ui/editors/MidiEditor';
 import { Inspector } from './ui/Inspector';
 import { LibraryPanel } from './ui/LibraryPanel';
 import { Mixer } from './ui/Mixer';
-import { AudioStatusBanner, ContextMenu, Toasts, Tutorial } from './ui/Overlays';
+import { AudioStatusBanner, ContextMenu, TaskStatus, Toasts, Tutorial } from './ui/Overlays';
 import { StartScreen } from './ui/StartScreen';
 import { HostIntegration, Studio, StudioContext, useStudio, useUi } from './ui/studio';
 import { Timeline } from './ui/timeline/Timeline';
 import { TopBar } from './ui/TopBar';
 import { TrackHeaders } from './ui/TrackHeaders';
 import { TransportBar } from './ui/TransportBar';
+import { VirtualKeyboard } from './ui/VirtualKeyboard';
+import { AddVideoDialog, TheaterMode, VideoStrip, VideoWindow } from './ui/VideoTrack';
+import { ShareDialog } from './ui/dialogs/ShareDialog';
 import { BottomPanel } from './ui/uiStore';
 import { useKeyboard, useMidiInput } from './ui/useKeyboard';
 import { LibraryCatalog } from './library/catalog';
@@ -39,6 +43,8 @@ export interface DawAppProps {
   /** Optional: cloud save provided by the host (classroom accounts). */
   cloudSave?: HostIntegration['cloudSave'];
   cloudLabel?: string;
+  /** Optional: short share links from the host (e.g. the site's ?s= links). */
+  share?: HostIntegration['share'];
   /** Optional: host text filter (e.g. profanity filter). */
   textFilter?: (text: string) => boolean;
   /** Where the loop library is served from. */
@@ -56,6 +62,7 @@ export function DawApp(props: DawAppProps) {
   hostRef.current.cloudLabel = props.cloudLabel;
   hostRef.current.textFilter = props.textFilter;
   hostRef.current.onExit = props.onBackToHub;
+  hostRef.current.share = props.share;
 
   // Objects with workers/audio are created in effects so StrictMode's simulated
   // unmount cannot dispose them while still in use.
@@ -96,6 +103,18 @@ export function DawApp(props: DawAppProps) {
     },
     [studio, catalog],
   );
+
+  // A self-contained share link (#mrdaw=…) opens as the listener's own copy.
+  useEffect(() => {
+    if (!catalog) return;
+    readShareFromLocation()
+      .then((data) => {
+        if (!data) return;
+        const r = validateProject(data);
+        open({ ...r, project: { ...r.project, id: newId('proj') }, warnings: ['This is a shared song. It is your own copy: changes you make never change the original.', ...r.warnings] });
+      })
+      .catch(() => setWarnings(['This share link is damaged or incomplete, so the song could not be opened.']));
+  }, [catalog]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Project handed over by the host (classroom portal / shared link)
   const { loadedProjectData, onClearLoadedProjectData } = props;
@@ -195,6 +214,7 @@ function StudioView({ onHome, currentProjectId, onProjectSaved, onNeedLogin }: {
       <TransportBar />
       <div className="relative flex min-h-0 flex-1">
         <div className="flex min-w-0 flex-1 flex-col">
+          <VideoStrip />
           <div className="flex min-h-0 flex-1">
             <TrackHeaders />
             <Timeline />
@@ -219,8 +239,13 @@ function StudioView({ onHome, currentProjectId, onProjectSaved, onNeedLogin }: {
       {dialog === 'record' && <RecordDialog onClose={close} />}
       {dialog === 'storage' && <StorageDialog onClose={close} />}
       {dialog === 'about' && <AboutDialog onClose={close} />}
+      {dialog === 'share' && <ShareDialog onClose={close} />}
+      {dialog === 'video' && <AddVideoDialog onClose={close} />}
+      <VideoWindow />
+      <TheaterMode />
       <ContextMenu />
       <Toasts />
+      <TaskStatus />
       <Tutorial />
     </>
   );
@@ -230,12 +255,16 @@ const TABS: { id: BottomPanel; label: string; key: string }[] = [
   { id: 'inspector', label: 'Clip & Effects', key: 'I' },
   { id: 'editor', label: 'Note Editor', key: 'X' },
   { id: 'mixer', label: 'Mixer', key: 'M' },
+  { id: 'keyboard', label: '🎹 Keyboard', key: 'N' },
 ];
+
+/** The mixer's faders and the keyboard need some height to be usable. */
+const MIN_PANEL: Partial<Record<BottomPanel, number>> = { mixer: 330, keyboard: 210 };
 
 function BottomDock({ bottom, height }: { bottom: BottomPanel; height: number }) {
   const s = useStudio();
   return (
-    <div className="flex shrink-0 flex-col border-t border-slate-800 bg-slate-900" style={{ height: bottom === 'none' ? undefined : height }}>
+    <div className="flex shrink-0 flex-col border-t border-slate-800 bg-slate-900" style={{ height: bottom === 'none' ? undefined : Math.max(height, MIN_PANEL[bottom] ?? 0) }}>
       {bottom !== 'none' && <Resizer onDrag={(_dx, dy) => s.ui.set({ bottomHeight: Math.min(window.innerHeight * 0.65, Math.max(160, s.ui.get().bottomHeight - dy)) })} />}
       <div className="flex shrink-0 items-center gap-1 px-2 py-1" role="tablist">
         {TABS.map((t) => (
@@ -262,6 +291,7 @@ function BottomDock({ bottom, height }: { bottom: BottomPanel; height: number })
           {bottom === 'inspector' && <Inspector />}
           {bottom === 'editor' && <MidiEditor />}
           {bottom === 'mixer' && <Mixer />}
+          {bottom === 'keyboard' && <VirtualKeyboard />}
         </div>
       )}
     </div>

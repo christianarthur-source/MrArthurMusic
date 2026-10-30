@@ -13,16 +13,15 @@ const PIANO_KEYS: Record<string, number> = { a: 0, w: 1, s: 2, e: 3, d: 4, f: 5,
 export function useKeyboard(s: Studio, enabled: boolean, onSave: () => void) {
   useEffect(() => {
     if (!enabled) return;
-    let octave = 4;
-    const held = new Map<string, () => void>();
+    const held = new Map<string, number>();
     const typing = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement | null;
       return !!t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable);
     };
-    const pianoTrack = () => {
-      const p = s.store.get();
-      const t = p.tracks.find((x) => x.id === s.ui.get().selectedTrack);
-      return t && t.kind === 'instrument' && s.ui.get().bottom === 'editor' ? t : null;
+    // Letters play notes only while the note editor or on-screen keyboard is open, so they stay shortcuts otherwise.
+    const pianoOn = () => {
+      const b = s.ui.get().bottom;
+      return (b === 'editor' || b === 'keyboard') && !!s.live.target();
     };
 
     const down = (e: KeyboardEvent) => {
@@ -31,22 +30,19 @@ export function useKeyboard(s: Studio, enabled: boolean, onSave: () => void) {
       const k = e.key.toLowerCase();
       const ui = s.ui.get();
 
-      // Computer-keyboard piano (only while the note editor is open, so letters stay shortcuts otherwise)
-      const pt = pianoTrack();
-      if (pt && !mod && !e.altKey) {
+      if (pianoOn() && !mod && !e.altKey) {
         if (k in PIANO_KEYS) {
           e.preventDefault();
-          if (!e.repeat && !held.has(k)) held.set(k, s.engine.liveNoteOn(pt.id, 12 * (octave + 1) + PIANO_KEYS[k], 100));
+          if (!e.repeat && !held.has(k)) {
+            const pitch = 12 * (s.live.octave + 1) + PIANO_KEYS[k];
+            held.set(k, pitch);
+            s.live.noteOn(pitch, 100);
+          }
           return;
         }
-        if (k === 'z') {
-          octave = Math.max(1, octave - 1);
-          s.ui.toast('info', `Keyboard octave ${octave}`);
-          return;
-        }
-        if (k === 'x') {
-          octave = Math.min(7, octave + 1);
-          s.ui.toast('info', `Keyboard octave ${octave}`);
+        if (k === 'z' || k === 'x') {
+          s.live.setOctave(s.live.octave + (k === 'z' ? -1 : 1));
+          s.ui.toast('info', `Keyboard octave ${s.live.octave}`);
           return;
         }
       }
@@ -80,6 +76,9 @@ export function useKeyboard(s: Studio, enabled: boolean, onSave: () => void) {
         } else if (k === 'e') {
           e.preventDefault();
           s.ui.set({ dialog: 'export' });
+        } else if (k === 'k') {
+          e.preventDefault();
+          s.ui.set({ bottom: ui.bottom === 'keyboard' ? 'none' : 'keyboard' });
         }
         return;
       }
@@ -165,18 +164,21 @@ export function useKeyboard(s: Studio, enabled: boolean, onSave: () => void) {
         case 'i':
           s.ui.set({ bottom: ui.bottom === 'inspector' ? 'none' : 'inspector' });
           break;
+        case 'n':
+          s.ui.set({ bottom: ui.bottom === 'keyboard' ? 'none' : 'keyboard' });
+          break;
       }
     };
     const up = (e: KeyboardEvent) => {
       const k = e.key.toLowerCase();
-      const off = held.get(k);
-      if (off) {
-        off();
+      const pitch = held.get(k);
+      if (pitch !== undefined) {
+        s.live.noteOff(pitch);
         held.delete(k);
       }
     };
     const blur = () => {
-      for (const off of held.values()) off();
+      for (const pitch of held.values()) s.live.noteOff(pitch);
       held.clear();
     };
     window.addEventListener('keydown', down);
@@ -191,39 +193,72 @@ export function useKeyboard(s: Studio, enabled: boolean, onSave: () => void) {
   }, [s, enabled, onSave]);
 }
 
-/** Web MIDI keyboards play the selected instrument track (if the browser allows MIDI). */
+/**
+ * Web MIDI controllers (USB/Bluetooth keyboards, pad controllers, any class-compliant
+ * device on any channel) play the target instrument track and record into MIDI takes.
+ * Handles note on/off (incl. note-on velocity 0), sustain pedal (CC64), all-notes-off
+ * (CC120/123), and MIDI clock transport messages (Start/Continue/Stop). Devices can be
+ * plugged in or out at any time. Needs Chrome, Edge or Firefox (Safari has no Web MIDI).
+ */
 export function useMidiInput(s: Studio, enabled: boolean) {
   useEffect(() => {
-    if (!enabled || !('requestMIDIAccess' in navigator)) return;
+    if (!enabled) return;
+    if (!s.live.midiSupported) {
+      s.live.setDevices([], 'This browser cannot use MIDI keyboards. Use Chrome or Edge.');
+      return;
+    }
     let access: MIDIAccess | null = null;
-    const held = new Map<number, () => void>();
+    let disposed = false;
+    let known = new Set<string>();
     const onMsg = (ev: MIDIMessageEvent) => {
       const d = ev.data;
-      if (!d || d.length < 3) return;
-      const cmd = d[0] & 0xf0;
-      const p = s.store.get();
-      const t = p.tracks.find((x) => x.id === s.ui.get().selectedTrack && x.kind === 'instrument') ?? p.tracks.find((x) => x.kind === 'instrument');
-      if (!t) return;
-      if (cmd === 0x90 && d[2] > 0) {
-        held.get(d[1])?.();
-        held.set(d[1], s.engine.liveNoteOn(t.id, d[1], d[2]));
-      } else if (cmd === 0x80 || (cmd === 0x90 && d[2] === 0)) {
-        held.get(d[1])?.();
-        held.delete(d[1]);
+      if (!d || !d.length) return;
+      const status = d[0];
+      // System real-time (one byte): transport buttons on many controllers send these.
+      if (status === 0xfa || status === 0xfb) {
+        if (s.engine.state !== 'playing') A.togglePlay(s);
+        return;
+      }
+      if (status === 0xfc) {
+        if (s.ui.get().recording) void A.stopRecording(s);
+        else if (s.engine.state === 'playing') A.togglePlay(s);
+        return;
+      }
+      if (d.length < 3) return;
+      const cmd = status & 0xf0;
+      if (cmd === 0x90 && d[2] > 0) s.live.noteOn(d[1], d[2]);
+      else if (cmd === 0x80 || cmd === 0x90) s.live.noteOff(d[1]);
+      else if (cmd === 0xb0) {
+        if (d[1] === 64) s.live.setSustain(d[2] >= 64);
+        else if (d[1] === 120 || d[1] === 123) s.live.allNotesOff();
       }
     };
-    const attach = () => access?.inputs.forEach((inp) => (inp.onmidimessage = onMsg));
+    const attach = () => {
+      if (!access || disposed) return;
+      const devices: { id: string; name: string }[] = [];
+      access.inputs.forEach((inp) => {
+        inp.onmidimessage = onMsg;
+        if (inp.state !== 'disconnected') devices.push({ id: inp.id, name: inp.name || inp.manufacturer || 'MIDI device' });
+      });
+      for (const dev of devices) if (!known.has(dev.id)) s.ui.toast('info', `MIDI keyboard connected: ${dev.name}`);
+      known = new Set(devices.map((x) => x.id));
+      s.live.setDevices(devices);
+    };
     navigator
       .requestMIDIAccess()
       .then((a) => {
+        if (disposed) return;
         access = a;
+        known = new Set([...a.inputs.values()].map((i) => i.id)); // no toast for devices already plugged in
         attach();
         a.onstatechange = attach;
       })
-      .catch(() => undefined); // MIDI is optional (often blocked on managed Chromebooks)
+      .catch(() => s.live.setDevices([], 'MIDI is blocked in this browser. Allow MIDI devices for this site, or ask your teacher.'));
     return () => {
+      disposed = true;
+      if (access) access.onstatechange = null;
       access?.inputs.forEach((inp) => (inp.onmidimessage = null));
-      for (const off of held.values()) off();
+      s.live.allNotesOff();
     };
   }, [s, enabled]);
 }

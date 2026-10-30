@@ -1,0 +1,15 @@
+// Example Wrangler config that adds the Worker script (cloudflare/worker.mjs) to the
+// existing static site. Before using it, copy it to wrangler.jsonc in the repo root and set
+// "name" (and anything else) to match the Worker as it is set up in the Cloudflare dashboard,
+// so the next deploy updates the existing Worker instead of creating a new one.
+{
+  "name": "REPLACE-WITH-EXISTING-WORKER-NAME",
+  "main": "cloudflare/worker.mjs",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    // Only /api/ requests run the script; everything else is served as static files.
+    "run_worker_first": ["/api/*"]
+  }
+}

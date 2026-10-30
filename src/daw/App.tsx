@@ -1,12 +1,13 @@
 /**
  * Site glue for the DAW: connects class-account saving, legacy project conversion,
- * URL sharing (?daw= / ?project=), and the profanity filter.
+ * URL sharing (?daw= / ?project=, and short ?s= links for File → Share), and the profanity filter.
  * The DAW itself is DawCore.tsx (kept identical to the standalone "mrA DAW" project).
  */
 import { useEffect, useMemo, useRef } from 'react';
 import { DawApp as DawCore, DawAppProps } from './DawCore';
 import { saveStudentProject, StudentSession } from '../utils/classroomApi';
 import { containsProfanity } from '../utils/profanityFilter';
+import { createShortLink } from '../utils/shortLinkService';
 import { convertLegacyProject, decompressLegacyDawProject } from './legacy';
 
 const DEFAULT_TITLES = new Set(['my song', 'untitled', 'my composition']);
@@ -119,6 +120,12 @@ export function DawApp(
       {...props}
       loadedProjectData={effectiveProjectData ?? undefined}
       textFilter={(t) => !containsProfanity(t)}
+      // Short ?s= links, like Staff Composer and Beat Machine. If Supabase is unreachable the DAW
+      // falls back to a long self-contained link. Opening either gives the listener a copy (see above).
+      share={async (project) => {
+        const link = await createShortLink('daw', project.title, project);
+        return link ? { url: link.shortUrl } : null;
+      }}
       cloudLabel="your class account"
       cloudSave={async (project) => {
         if (!studentSession) {

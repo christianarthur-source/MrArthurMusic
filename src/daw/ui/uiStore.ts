@@ -4,8 +4,8 @@
  */
 
 export type Tool = 'pointer' | 'split' | 'draw';
-export type BottomPanel = 'none' | 'inspector' | 'editor' | 'mixer';
-export type Dialog = 'none' | 'export' | 'shortcuts' | 'diagnostics' | 'record' | 'open' | 'storage' | 'about';
+export type BottomPanel = 'none' | 'inspector' | 'editor' | 'mixer' | 'keyboard';
+export type Dialog = 'none' | 'export' | 'shortcuts' | 'diagnostics' | 'record' | 'open' | 'storage' | 'about' | 'share' | 'video';
 
 export interface Toast {
   id: number;
@@ -36,6 +36,12 @@ export interface UiState {
   bottomHeight: number;
   libraryWidth: number;
   dialog: Dialog;
+  /** The floating video window (only when the song has a video). */
+  videoWindow: boolean;
+  /** Full-screen Theater Mode: the video with the song's music. */
+  theater: boolean;
+  /** A long job in progress (import, adding a video): shown as a progress bar. progress null = working, length unknown. */
+  task: { label: string; progress: number | null } | null;
   beginner: boolean;
   toasts: Toast[];
   scrollX: number; // px
@@ -78,6 +84,9 @@ export class UiStore {
       bottomHeight: Math.min(480, Math.max(180, prefs.bottomHeight ?? 260)),
       libraryWidth: Math.min(520, Math.max(260, prefs.libraryWidth ?? 320)),
       dialog: 'none',
+      videoWindow: true,
+      theater: false,
+      task: null,
       beginner: prefs.beginner ?? true,
       toasts: [],
       scrollX: 0,

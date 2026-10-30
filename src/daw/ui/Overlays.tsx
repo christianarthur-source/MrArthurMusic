@@ -1,6 +1,6 @@
 import { X } from 'lucide-react';
 import { useEffect } from 'react';
-import { cx } from './controls';
+import { cx, ProgressBar } from './controls';
 import { useProject, useStudio, useSubscribe, useUi } from './studio';
 
 export function ContextMenu() {
@@ -41,6 +41,18 @@ export function ContextMenu() {
           </button>
         ),
       )}
+    </div>
+  );
+}
+
+/** Progress of a long job (importing audio, adding a video), bottom-left. Dialogs that show their own bar hide it. */
+export function TaskStatus() {
+  const task = useUi((u) => u.task);
+  const dialog = useUi((u) => u.dialog);
+  if (!task || dialog === 'video') return null;
+  return (
+    <div className="fixed bottom-4 left-4 z-[90] w-72 rounded-xl border border-slate-700 bg-slate-900/95 p-3 shadow-2xl" role="status" data-testid="task-status">
+      <ProgressBar progress={task.progress} label={task.label} />
     </div>
   );
 }

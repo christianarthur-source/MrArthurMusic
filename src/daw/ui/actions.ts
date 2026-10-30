@@ -306,6 +306,7 @@ export async function importFiles(s: Studio, files: File[], tick?: number, track
   for (const f of files) {
     if (MIDI_EXT.test(f.name)) await importMidi(s, f, tick);
     else if (AUDIO_EXT.test(f.name) || f.type.startsWith('audio/')) await importAudio(s, f, tick, trackId);
+    else if (f.type.startsWith('video/')) s.ui.toast('info', 'To score a video, use File → Add video…');
     else s.ui.toast('warn', `"${cleanName(f.name)}" is not an audio or MIDI file.`);
   }
 }
@@ -321,7 +322,7 @@ export async function importAudio(s: Studio, file: File, tick?: number, trackId?
     s.ui.toast('error', `"${name}" is too large (limit 80 MB). Try a shorter clip or an MP3.`);
     return;
   }
-  s.ui.toast('info', `Importing "${name}"…`);
+  s.ui.set({ task: { label: `Importing "${name}"…`, progress: null } });
   try {
     const bytes = await file.arrayBuffer();
     const buffer = await s.engine.assets.decode(bytes.slice(0), name);
@@ -340,6 +341,8 @@ export async function importAudio(s: Studio, file: File, tick?: number, trackId?
     s.ui.toast('success', `Imported "${name}" (${buffer.duration.toFixed(1)} s, ${buffer.numberOfChannels === 1 ? 'mono' : 'stereo'}, ${buffer.sampleRate} Hz).`);
   } catch (err) {
     s.ui.toast('error', err instanceof Error ? err.message : `Could not import "${name}".`);
+  } finally {
+    s.ui.set({ task: null });
   }
 }
 
@@ -468,12 +471,32 @@ export async function prepareRecording(s: Studio, deviceId?: string): Promise<bo
 
 let recordStartTick = 0;
 
+/**
+ * Record. An armed instrument track, or a selected instrument track when no audio track is
+ * armed, records the notes played live (MIDI keyboard, computer keys, on-screen piano).
+ * Otherwise the microphone records into the armed (or a new) audio track.
+ */
 export async function startRecording(s: Studio) {
   const p = s.store.get();
+  const armedAudio = p.tracks.find((t) => t.arm && t.kind === 'audio');
+  const sel = p.tracks.find((t) => t.id === s.ui.get().selectedTrack);
+  const midiTrack = p.tracks.find((t) => t.arm && t.kind === 'instrument') ?? (!armedAudio && sel?.kind === 'instrument' ? sel : undefined);
+  if (midiTrack) {
+    await s.engine.unlock();
+    s.preview.stop();
+    if (s.engine.state === 'playing') s.engine.pause();
+    recordStartTick = snap(s, s.engine.currentTick(), 'floor');
+    s.ui.set({ selectedTrack: midiTrack.id });
+    s.live.startTake(midiTrack.id, recordStartTick);
+    s.engine.play(recordStartTick, { countInBars: p.editor.countInBars });
+    s.ui.set({ recording: true });
+    s.ui.toast('info', `Recording notes into "${midiTrack.name}". Play your MIDI keyboard, computer keys or the on-screen piano.`);
+    return;
+  }
   let track = p.tracks.find((t) => t.arm && t.kind === 'audio');
   if (!track) {
-    const sel = p.tracks.find((t) => t.id === s.ui.get().selectedTrack && t.kind === 'audio');
-    const id = sel?.id ?? addTrack(s, 'audio', undefined, 'Vocals');
+    const selAudio = sel?.kind === 'audio' ? sel : undefined;
+    const id = selAudio?.id ?? addTrack(s, 'audio', undefined, 'Vocals');
     s.store.exec('Arm track', (x) => ops.updateTrack(x, id, { arm: true }));
     track = s.store.get().tracks.find((t) => t.id === id)!;
   }
@@ -489,6 +512,22 @@ export async function startRecording(s: Studio) {
 export async function stopRecording(s: Studio) {
   if (!s.ui.get().recording) return;
   s.ui.set({ recording: false });
+  if (s.live.recordingMidi) {
+    const take = s.live.stopTake();
+    s.engine.pause();
+    if (!take || !take.notes.length) {
+      s.ui.toast('warn', 'No notes were played, so nothing was recorded.');
+      return;
+    }
+    const last = Math.max(...take.notes.map((n) => n.start + n.length));
+    const bar = ticksPerBar(s.store.get().timeSigMap[0].sig);
+    const length = Math.max(1, Math.ceil(last / bar)) * bar;
+    const region = createMidiRegion({ trackId: take.trackId, start: take.startTick, length, name: 'Recorded notes', notes: take.notes });
+    s.store.exec('Record notes', (x) => ops.addRegions(x, [region]));
+    s.ui.set({ selectedRegions: [region.id], editRegion: region.id });
+    s.ui.toast('success', `Recorded ${take.notes.length} note${take.notes.length === 1 ? '' : 's'}. Open the Note Editor (X) to fix any notes, or press Q to tidy the timing.`);
+    return;
+  }
   const stopTick = s.engine.currentTick();
   // Map the punch-in point to context time *before* stopping the transport.
   const punchTime = s.engine.timeAtTick(recordStartTick);
