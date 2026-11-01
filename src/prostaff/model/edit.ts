@@ -851,7 +851,9 @@ export function addControl(score: Score, sel: Selection, name: string, attrs: Re
 }
 
 export function addTempo(score: Score, sel: Selection, bpm: number, text: string, unit = '4', dots = 0): CommandResult {
-  const r = addControl(score, sel, 'tempo', { 'midi.bpm': String(bpm), mm: String(bpm), 'mm.unit': unit, place: 'above', ...(dots ? { 'mm.dots': '1' } : {}) });
+  // midi.bpm counts quarter notes; scale from the marked beat (e.g. a dotted quarter = 1.5)
+  const quarters = (4 / Number(unit)) * (dots ? 1.5 : 1);
+  const r = addControl(score, sel, 'tempo', { 'midi.bpm': String(Math.round(bpm * quarters)), mm: String(bpm), 'mm.unit': unit, place: 'above', ...(dots ? { 'mm.dots': '1' } : {}) });
   const t = score.byId(r.createdIds![0])!;
   t.textContent = `${text ? text + ' ' : ''}${tempoGlyph(t)} = ${bpm}`;
   return r;
