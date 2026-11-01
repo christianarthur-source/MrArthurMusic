@@ -1,4 +1,4 @@
-// Wolfi (Pro Staff Notation): the advanced notation editor at /wolfi and /prostaff, kept separate from
+// Wolfi (Pro Staff Notation): the advanced notation editor at /wolfie (also /wolfi and /prostaff), kept separate from
 // the classroom Music Lab.
 import React from 'react';
 import ProStaffApp from './ui/ProStaffApp';

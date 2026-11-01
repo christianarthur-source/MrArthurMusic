@@ -80,21 +80,26 @@ export function renderOptions(v: ViewOptions, hasEncodedBreaks: boolean): Record
   };
 }
 
-/** Engraving options for printing / PDF: full US Letter pages (8.5 × 11 in, 1 unit = 0.1 mm). */
-export function printOptions(v: ViewOptions, hasEncodedBreaks: boolean): Record<string, unknown> {
+/** Engraving options for printing / PDF: full pages (US Letter or A4; 1 unit = 0.1 mm at normal size). */
+export function printOptions(v: ViewOptions, hasEncodedBreaks: boolean, layout?: { pageSize: 'letter' | 'a4'; staffSize: number; perLine: number }): Record<string, unknown> {
+  const a4 = layout?.pageSize === 'a4';
+  const scale = layout?.staffSize || 100;
+  // the page stays the same physical size; a bigger staff means fewer, larger measures per page
+  const k = 100 / scale;
   return {
     ...renderOptions({ ...v, layout: 'page' }, hasEncodedBreaks),
-    scale: 100,
-    pageWidth: 2159,
-    pageHeight: 2794,
+    scale,
+    pageWidth: Math.round((a4 ? 2100 : 2159) * k),
+    pageHeight: Math.round((a4 ? 2970 : 2794) * k),
     adjustPageHeight: false,
     justifyVertically: true,
-    pageMarginTop: 100,
-    pageMarginBottom: 100,
-    pageMarginLeft: 120,
-    pageMarginRight: 120,
+    pageMarginTop: Math.round(100 * k),
+    pageMarginBottom: Math.round(100 * k),
+    pageMarginLeft: Math.round(120 * k),
+    pageMarginRight: Math.round(120 * k),
     spacingSystem: 14,
     header: 'auto',
     footer: 'none',
+    ...(layout?.perLine ? { breaks: 'line' } : {}),
   };
 }

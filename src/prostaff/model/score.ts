@@ -210,6 +210,30 @@ export class Score {
     for (const h of descendants(this.mainScoreDef, 'pgHead')) h.remove();
   }
 
+  // ---------- per-score settings (mixer, playback, layout), kept in <meiHead><extMeta type="wolfi"> ----------
+
+  getSettings<T = Record<string, unknown>>(): Partial<T> {
+    const head = descendants(this.doc, 'meiHead')[0];
+    const ext = head ? descendants(head, 'extMeta').find((e) => e.getAttribute('type') === 'wolfi') : null;
+    if (!ext) return {};
+    try {
+      return JSON.parse(ext.textContent || '{}');
+    } catch {
+      return {};
+    }
+  }
+
+  setSettings(patch: Record<string, unknown>) {
+    let head = descendants(this.doc, 'meiHead')[0];
+    if (!head) {
+      head = el(this.doc, 'meiHead');
+      this.root.insertBefore(head, this.root.firstChild);
+    }
+    let ext = descendants(head, 'extMeta').find((e) => e.getAttribute('type') === 'wolfi');
+    if (!ext) ext = head.appendChild(el(this.doc, 'extMeta', { type: 'wolfi' }));
+    ext.textContent = JSON.stringify({ ...this.getSettings(), ...patch });
+  }
+
   // ---------- context: meter and key per measure ----------
 
   contextOf(measure: Element): MeasureContext {
@@ -599,8 +623,9 @@ export class Score {
       seen[def.id] = (seen[def.id] || 0) + 1;
       const numberSuffix = counts[def.id] > 1 ? ` ${seen[def.id]}` : '';
       const name = def.name + numberSuffix;
-      const parent = def.clefs.length > 1 ? top.appendChild(el(doc, 'staffGrp', { symbol: 'brace', 'bar.thru': 'true' })) : top;
-      if (def.clefs.length > 1) {
+      const grouped = def.clefs.length > 1 || def.tab;
+      const parent = grouped ? top.appendChild(el(doc, 'staffGrp', { symbol: def.tab ? undefined : 'brace', 'bar.thru': 'true' })) : top;
+      if (grouped) {
         parent.appendChild(el(doc, 'label')).textContent = name;
         parent.appendChild(el(doc, 'labelAbbr')).textContent = def.abbr + numberSuffix;
       }
@@ -617,13 +642,17 @@ export class Score {
           'trans.diat': def.diat,
           type: `ps:${def.id}`,
         });
-        if (def.clefs.length === 1) {
+        if (!grouped) {
           sd.appendChild(el(doc, 'label')).textContent = name;
           sd.appendChild(el(doc, 'labelAbbr')).textContent = def.abbr + numberSuffix;
         }
         sd.appendChild(el(doc, 'instrDef', { 'midi.instrnum': def.program, 'midi.channel': def.percussion ? 9 : undefined }));
         setKeySig(sd, def.percussion ? '0' : keySigString(writtenFifths(opts.keyFifths, def.semi)));
         parent.appendChild(sd);
+        if (def.tab) {
+          n++;
+          parent.appendChild(tabStaffDef(doc, n, sd));
+        }
       });
     }
     const section = score.appendChild(el(doc, 'section'));
@@ -650,6 +679,19 @@ export class Score {
     s.invalidate();
     return s;
   }
+}
+
+/** A six-line guitar tab staff linked to a notation staff (filled in by tools.syncTabs). */
+export function tabStaffDef(doc: Document, n: number, source: Element): Element {
+  return el(doc, 'staffDef', {
+    n, lines: 6, notationtype: 'tab.guitar', 'clef.shape': 'TAB', 'clef.line': 5, 'tab.strings': 'e4 b3 g3 d3 a2 e2',
+    corresp: '#' + getId(source), type: 'ps:guitar-tab-tab',
+  });
+}
+
+/** True for tab staves (they mirror another staff and are not played or edited directly). */
+export function isTabStaff(def: Element | undefined | null) {
+  return !!def && (def.getAttribute('notationtype') || '').startsWith('tab');
 }
 
 /** Writes a key signature as a <keySig> child (read by every MEI version Verovio supports). */

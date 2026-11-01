@@ -1,4 +1,4 @@
-# Pro Staff (`/prostaff`)
+# Wolfi — Pro Staff Notation (`/wolfie`, also `/wolfi` and `/prostaff`)
 
 The advanced notation editor for high school and college students. It is not linked from the
 classroom Music Lab yet; `src/main.tsx` renders it only when the path starts with `/prostaff`, and

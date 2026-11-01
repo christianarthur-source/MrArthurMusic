@@ -9,3 +9,6 @@ coverage/
 
 # Local classroom data (dev server / PHP fallback); never commit student data
 classroom-data/
+
+.dev.vars
+.wrangler/

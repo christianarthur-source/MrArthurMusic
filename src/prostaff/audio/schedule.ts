@@ -1,10 +1,11 @@
 // Builds the playback schedule from Verovio's timemap for the currently loaded score.
 import type { VerovioToolkit } from 'verovio/esm';
-import type { Score } from '../model/score';
+import { isTabStaff, type Score } from '../model/score';
 import { ancestor, child, descendants, getId } from '../model/mei';
 import { sampleForProgram, instrumentById } from '../model/instruments';
 import { DYNAMIC_VELOCITY, type Click, type Cue, type PedalEvent, type PlayNote } from './player';
 import type { ChannelSetup } from './soundfont';
+import { playOrder, tempoChanges, parseChord, voiceChord, harmonyElements } from './form';
 
 /** Standard drum-set staff positions → General MIDI drum keys. */
 const DRUM_MAP: Record<string, number> = {
@@ -23,7 +24,7 @@ export interface Schedule {
 }
 
 /** `concert`: the toolkit already holds sounding pitch (concert-pitch view), so no transposition is added. */
-export function buildSchedule(tk: VerovioToolkit, score: Score, concert = false): Schedule {
+export function buildSchedule(tk: VerovioToolkit, score: Score, concert = false, opts: PlaybackOptions = DEFAULT_PLAYBACK): Schedule {
   const timemap = tk.renderToTimemap({ includeMeasures: true, includeRests: true });
   const staves = score.staves();
   const sampleOf = new Map<string, { sample: string; drums: boolean; semi: number }>();
@@ -35,6 +36,7 @@ export function buildSchedule(tk: VerovioToolkit, score: Score, concert = false)
     sampleOf.set(s.n, { sample: drums ? 'drum_kit' : sample, drums, semi: s.semi });
   }
 
+  const tabStaves = new Set(score.staffDefs().filter(isTabStaff).map((d) => d.getAttribute('n') || ''));
   // dynamics per staff, by time
   const dyn = new Map<string, { t: number; v: number }[]>();
   const notes: PlayNote[] = [];
@@ -135,6 +137,7 @@ export function buildSchedule(tk: VerovioToolkit, score: Score, concert = false)
       const mv = tk.getMIDIValuesForElement(id);
       if (typeof mv?.pitch !== 'number') continue;
       const staffN = ancestor(el, 'staff')?.getAttribute('n') || '1';
+      if (tabStaves.has(staffN)) continue; // tab mirrors another staff
       const info = sampleOf.get(staffN) || { sample: 'piano', drums: false, semi: 0 };
       let dur = typeof mv.duration === 'number' ? mv.duration : 500;
       const ev = ancestor(el, 'chord') || el;
@@ -188,5 +191,137 @@ export function buildSchedule(tk: VerovioToolkit, score: Score, concert = false)
   }
   const last = timemap[timemap.length - 1];
   const channels: ChannelSetup[] = staves.map((st) => ({ staffN: st.n, partKey: String(st.partIndex), program: st.program, drums: sampleOf.get(st.n)?.drums ?? false }));
-  return { notes, pedals, channels, cues, clicks, idTime, measureTime, duration: last ? last.tstamp : 0 };
+  const linear: Schedule = { notes, pedals, channels, cues, clicks, idTime, measureTime, duration: last ? last.tstamp : 0 };
+  return arrange(score, linear, opts, timeOf);
 }
+
+export interface PlaybackOptions {
+  repeats: boolean; // follow repeats, endings, D.C./D.S.
+  swing: number; // 0 = straight; 0.167 = triplet swing (fraction of a quarter the off-beat moves)
+  chords: 'piano' | 'guitar' | 'off'; // play chord symbols
+}
+
+export const DEFAULT_PLAYBACK: PlaybackOptions = { repeats: true, swing: 0, chords: 'piano' };
+
+/**
+ * Lays the measures out in playing order (repeats, endings, jumps) and applies rit./a tempo,
+ * fermatas, swing and chord-symbol accompaniment.
+ */
+function arrange(score: Score, lin: Schedule, opts: PlaybackOptions, timeOf: (ref: string | null) => number | null): Schedule {
+  const ms = score.measures();
+  const ids = ms.map(getId);
+  const starts = ids.map((id) => lin.measureTime.get(id));
+  // measures the timemap skipped (empty) get the previous start
+  for (let i = 0; i < starts.length; i++) if (starts[i] === undefined) starts[i] = i ? starts[i - 1]! : 0;
+  const lastNoteEnd = lin.notes.reduce((a, n) => Math.max(a, n.time + n.dur), lin.duration);
+  const ends = starts.map((_, i) => (i + 1 < starts.length ? starts[i + 1]! : Math.max(lin.duration, lastNoteEnd)));
+  const measureOfTime = (t: number) => {
+    let lo = 0;
+    let hi = starts.length - 1;
+    while (lo < hi) {
+      const mid = (lo + hi + 1) >> 1;
+      if (starts[mid]! <= t + 0.5) lo = mid;
+      else hi = mid - 1;
+    }
+    return lo;
+  };
+  const group = <T extends { time: number }>(list: T[]) => {
+    const g: T[][] = ms.map(() => []);
+    for (const x of list) g[measureOfTime(x.time)].push(x);
+    return g;
+  };
+  const notesBy = group(lin.notes);
+  const cuesBy = group(lin.cues);
+  const pedalsBy = group(lin.pedals);
+
+  // fermatas: hold the note about 70% longer and wait for it
+  const fermataAt = new Map<number, { t: number; extra: number }[]>();
+  for (const f of descendants(score.doc, 'fermata')) {
+    const t = timeOf(f.getAttribute('startid'));
+    if (t == null) continue;
+    const k = measureOfTime(t);
+    const n = lin.notes.find((x) => Math.abs(x.time - t) < 2);
+    const extra = Math.min(2500, (n ? n.dur : 600) * 0.7);
+    (fermataAt.get(k) || fermataAt.set(k, []).get(k)!).push({ t, extra });
+  }
+  const tempoMarks = tempoChanges(score);
+
+  // chord symbols: block chords until the next symbol or the end of the measure
+  const chordNotes: PlayNote[] = [];
+  if (opts.chords !== 'off') {
+    const harms = harmonyElements(score)
+      .map((h) => ({ t: timeOf(h.getAttribute('startid')), text: (h.textContent || '').trim() }))
+      .filter((h): h is { t: number; text: string } => h.t != null && !!h.text)
+      .sort((a, b) => a.t - b.t);
+    harms.forEach((h, i) => {
+      const ch = parseChord(h.text);
+      if (!ch) return;
+      const k = measureOfTime(h.t);
+      const until = Math.min(i + 1 < harms.length ? harms[i + 1].t : Infinity, ends[k]);
+      for (const midi of voiceChord(ch)) chordNotes.push({ time: h.t, dur: Math.max(120, until - h.t - 30), midi, staffN: CHORD_STAFF, velocity: 0.5, sample: opts.chords === 'guitar' ? 'harp' : 'piano', id: '' });
+    });
+  }
+  const chordsBy = group(chordNotes);
+
+  const order = opts.repeats ? playOrder(score) : ms.map((_, i) => i);
+  const notes: PlayNote[] = [];
+  const cues: Cue[] = [];
+  const pedals: PedalEvent[] = [];
+  const clicks: Click[] = [];
+  const idTime = new Map<string, number>();
+  const measureTime = new Map<string, number>();
+  let offset = 0;
+  let ritStep = 0;
+  for (const k of order) {
+    const mark = tempoMarks.get(k);
+    if (mark === 'rit') ritStep = Math.max(ritStep, 1);
+    if (mark === 'atempo') ritStep = 0;
+    const stretch = ritStep ? Math.min(1.35, 1 + 0.12 * ritStep) : 1;
+    const s0 = starts[k]!;
+    const len = ends[k] - s0;
+    const ferm = (fermataAt.get(k) || []).sort((a, b) => a.t - b.t);
+    const ctx = score.contextOf(ms[k]);
+    const quarters = score.capacity(ms[k]) / 960;
+    const qMs = quarters ? len / quarters : 600;
+    const simple = ctx.unit === 4 || ctx.unit === 2;
+    const at = (t: number) => {
+      let x = (t - s0) * stretch;
+      for (const f of ferm) if (t > f.t + 1) x += f.extra;
+      return offset + x;
+    };
+    if (!measureTime.has(ids[k])) measureTime.set(ids[k], offset);
+    for (const n of [...notesBy[k], ...chordsBy[k]]) {
+      let t = at(n.time);
+      let dur = n.dur * stretch;
+      const f = ferm.find((x) => Math.abs(x.t - n.time) < 2);
+      if (f) dur += f.extra;
+      if (opts.swing && simple && n.staffN !== CHORD_STAFF) {
+        const q = (n.time - s0) / qMs;
+        const frac = q - Math.floor(q);
+        const eighthish = n.dur < qMs * 0.62;
+        if (Math.abs(frac - 0.5) < 0.04 && eighthish) {
+          t += opts.swing * qMs * stretch;
+          dur *= 1 - opts.swing * 1.6;
+        } else if (frac < 0.04 && eighthish) dur *= 1 + opts.swing * 1.6;
+      }
+      notes.push({ ...n, time: t, dur });
+      if (n.id && !idTime.has(n.id)) idTime.set(n.id, t);
+    }
+    for (const c of cuesBy[k]) cues.push({ ...c, time: at(c.time), measureOn: c.measureOn });
+    for (const p of pedalsBy[k]) pedals.push({ ...p, time: at(p.time) });
+    for (const c of lin.cues) for (const id of c.on) if (!idTime.has(id) && measureOfTime(c.time) === k) idTime.set(id, at(c.time));
+    // metronome: one click per beat
+    const compound = ctx.unit === 8 && ctx.count % 3 === 0 && ctx.count > 3;
+    const beatQ = compound ? 1.5 : 4 / ctx.unit;
+    for (let b = 0; b * beatQ < quarters - 0.001; b++) clicks.push({ time: offset + b * beatQ * qMs * stretch, accent: b === 0 });
+    offset += len * stretch + ferm.reduce((a, f) => a + f.extra, 0);
+    if (ritStep) ritStep++;
+  }
+  notes.sort((a, b) => a.time - b.time);
+  cues.sort((a, b) => a.time - b.time);
+  pedals.sort((a, b) => a.time - b.time);
+  const channels = chordNotes.length ? [...lin.channels, { staffN: CHORD_STAFF, partKey: CHORD_STAFF, program: opts.chords === 'guitar' ? 24 : 0, drums: false }] : lin.channels;
+  return { notes, pedals, channels, cues, clicks, idTime, measureTime, duration: offset };
+}
+
+export const CHORD_STAFF = 'chords';

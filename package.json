@@ -17,6 +17,7 @@
     "lucide-react": "^0.475.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "spessasynth_core": "4.3.22",
     "spessasynth_lib": "4.3.14",
     "verovio": "6.3.0"
   },

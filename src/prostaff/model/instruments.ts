@@ -15,6 +15,7 @@ export interface InstrumentDef {
   sample: string;
   range?: [number, number]; // sounding MIDI range
   percussion?: boolean;
+  tab?: boolean; // adds a linked guitar tab staff under the notation staff
 }
 
 export const INSTRUMENTS: InstrumentDef[] = [
@@ -58,6 +59,7 @@ export const INSTRUMENTS: InstrumentDef[] = [
   { id: 'bass-voice', name: 'Bass', abbr: 'B.', family: 'Voices', clefs: [{ shape: 'F', line: 4 }], program: 52, sample: 'bassoon', range: [40, 62] },
   // Plucked
   { id: 'guitar', name: 'Guitar', abbr: 'Gtr.', family: 'Plucked', clefs: [{ shape: 'G', line: 2, dis: 8, disPlace: 'below' }], program: 24, sample: 'harp', range: [40, 88] },
+  { id: 'guitar-tab', name: 'Guitar + Tab', abbr: 'Gtr.', family: 'Plucked', clefs: [{ shape: 'G', line: 2, dis: 8, disPlace: 'below' }], program: 24, sample: 'harp', range: [40, 88], tab: true },
   { id: 'bass-guitar', name: 'Bass Guitar', abbr: 'Bass', family: 'Plucked', clefs: [{ shape: 'F', line: 4, dis: 8, disPlace: 'below' }], program: 33, sample: 'upright_bass', range: [28, 67] },
   { id: 'harp', name: 'Harp', abbr: 'Hp.', family: 'Plucked', clefs: [{ shape: 'G', line: 2 }, { shape: 'F', line: 4 }], program: 46, sample: 'harp', range: [24, 103] },
   { id: 'ukulele', name: 'Ukulele', abbr: 'Uke.', family: 'Plucked', clefs: [{ shape: 'G', line: 2 }], program: 24, sample: 'strumstick', range: [60, 81] },

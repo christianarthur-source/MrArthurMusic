@@ -11,7 +11,7 @@ type Synth = import('spessasynth_lib').WorkletSynthesizer;
 let bankPromise: Promise<ArrayBuffer> | null = null;
 
 /** Downloads the SoundFont once (the browser caches it afterwards). */
-function loadBank(onProgress?: (fraction: number) => void): Promise<ArrayBuffer> {
+export function loadBank(onProgress?: (fraction: number) => void): Promise<ArrayBuffer> {
   if (!bankPromise) {
     bankPromise = (async () => {
       let loaded = 0;
