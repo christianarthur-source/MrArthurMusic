@@ -427,7 +427,7 @@ const SHORTCUTS: [string, [string, string][]][] = [
   ['Pitch', [['↑ / ↓', 'Up / down a semitone'], ['Ctrl + ↑ / ↓  or  Shift + ↑ / ↓', 'Up / down an octave'], ['Alt + Shift + ↑ / ↓', 'Up / down a step in the key'], ['+  -  =', 'Sharp, flat, natural']]],
   ['Selection', [['← / →', 'Previous / next note'], ['Shift + ← / →', 'Extend selection'], ['Ctrl + ← / →', 'Previous / next measure'], ['Click empty staff', 'Select measure'], ['Shift + click', 'Select a range'], ['Esc', 'Leave input / clear selection']]],
   ['Markings', [['T', 'Tie'], ['S', 'Slur'], ['K', 'Chord symbol'], ['L', 'Lyrics'], ['X', 'Staff text'], ['Delete', 'Delete selection']]],
-  ['Score', [['Ctrl + Z / Ctrl + Shift + Z', 'Undo / redo'], ['Ctrl + C / X / V', 'Copy, cut, paste'], ['Ctrl + B', 'Add a measure'], ['Space', 'Play / pause'], ['Ctrl + S', 'Save'], ['?', 'This list']]],
+  ['Score', [['Ctrl + Z / Ctrl + Shift + Z', 'Undo / redo'], ['Ctrl + C / X / V', 'Copy, cut, paste'], ['Ctrl + B', 'Add a measure'], ['Space', 'Play / pause'], ['Home', 'Return to start'], ['Ctrl + S', 'Save'], ['?', 'This list']]],
 ];
 
 export function ShortcutsDialog({ onClose }: { onClose: () => void }) {
