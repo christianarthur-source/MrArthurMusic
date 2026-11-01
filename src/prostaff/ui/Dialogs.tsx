@@ -304,15 +304,41 @@ export function ScanDialog({ onClose, onRecognize, busy, progress, error }: {
 
   useEffect(() => () => streamRef.current?.getTracks().forEach((t) => t.stop()), []);
 
+  // the stream is attached once the <video> exists (iPad Safari shows black if it is set too early)
+  useEffect(() => {
+    const v = videoRef.current;
+    const st = streamRef.current;
+    if (!camera || !v || !st) return;
+    v.setAttribute('playsinline', 'true');
+    v.muted = true;
+    v.srcObject = st;
+    const p = v.play();
+    if (p) p.catch(() => setLocal('Tap the video to start the camera.'));
+  }, [camera]);
+
+  // is the scanner switched on for this site?
+  const [serverReady, setServerReady] = useState<boolean | null>(null);
+  useEffect(() => {
+    fetch('/api/omr').then((r) => r.json()).then((d) => setServerReady(!!d?.configured)).catch(() => setServerReady(null));
+  }, []);
+
   const startCamera = async () => {
     setLocal('');
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setLocal('This browser cannot open the camera here. Use “Take photo” instead.');
+      return;
+    }
     try {
-      const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 3840 }, height: { ideal: 2160 } }, audio: false });
+      let s: MediaStream;
+      try {
+        s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false });
+      } catch {
+        s = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      }
       streamRef.current = s;
       setCamera(true);
-      setTimeout(() => { if (videoRef.current) { videoRef.current.srcObject = s; void videoRef.current.play(); } }, 0);
     } catch {
-      setLocal('The camera could not be opened. Allow camera access, or use “Take photo / choose files”.');
+      setLocal('The camera could not be opened. Allow camera access in the browser settings, or use “Take photo / choose files”.');
     }
   };
   const stopCamera = () => {
@@ -364,8 +390,18 @@ export function ScanDialog({ onClose, onRecognize, busy, progress, error }: {
       footer={<>
         {busy && <span style={{ marginRight: 'auto', color: 'var(--ps-muted)' }}>Reading {progress?.total || pages.length} page{(progress?.total || pages.length) === 1 ? '' : 's'}… this takes about 1–3 minutes per page.</span>}
         <button className="ps-btn ps-outline" disabled={busy} onClick={() => { stopCamera(); onClose(); }}>Cancel</button>
-        <button className="ps-btn ps-primary" disabled={busy || !pages.length || !pin.trim()} onClick={go}>{busy ? 'Reading…' : `Read ${pages.length || ''} page${pages.length === 1 ? '' : 's'}`}</button>
+        <button className="ps-btn ps-primary" disabled={busy} onClick={() => {
+          if (serverReady === false) return setLocal('Scanning is not switched on for this site yet (the server needs its Anthropic API key).');
+          if (!pages.length) return setLocal('Add at least one page first: take a photo, capture with the camera, or choose images or a PDF.');
+          if (!pin.trim()) return setLocal('Enter your teacher PIN.');
+          go();
+        }}>{busy ? 'Reading…' : `Read ${pages.length || ''} page${pages.length === 1 ? '' : 's'}`}</button>
       </>}>
+      {serverReady === false && (
+        <div className="ps-note ps-warn" style={{ marginBottom: 12 }}>
+          Scanning isn't switched on for this site yet: the server needs an Anthropic API key (Cloudflare → Workers → mrarthurmusic → Settings → Variables and secrets → <code>ANTHROPIC_API_KEY</code>). You can still add pages here.
+        </div>
+      )}
       {!camera ? (
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
           <button className="ps-btn ps-outline" disabled={busy} onClick={startCamera}><Camera size={16} /> Use camera</button>
@@ -376,7 +412,7 @@ export function ScanDialog({ onClose, onRecognize, busy, progress, error }: {
         </div>
       ) : (
         <div className="ps-camera" style={{ marginBottom: 14 }}>
-          <video ref={videoRef} playsInline muted />
+          <video ref={videoRef} playsInline muted autoPlay onClick={() => void videoRef.current?.play()} />
           <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
             <button className="ps-btn ps-primary" onClick={capture}><Camera size={16} /> Capture page</button>
             <button className="ps-btn ps-outline" onClick={stopCamera}>Done with camera</button>
