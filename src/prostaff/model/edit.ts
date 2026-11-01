@@ -303,37 +303,49 @@ const TIMED = new Set(['note', 'chord', 'rest', 'space', 'mRest', 'mSpace', 'mul
 const isTimed = (e: Element) => TIMED.has(e.localName);
 
 /** Enters a note (or adds a chord tone) for a letter A–G. */
-export function enterLetter(score: Score, cursorId: string | null, sel: Selection, letter: string, input: InputState, mode: 'input' | 'normal', addToChord: boolean): CommandResult {
+/** Enters a note for a letter A–G at the cursor (or adds a chord tone above the selected note). */
+export function enterLetter(score: Score, cursorId: string | null, sel: Selection, letter: string, input: InputState, _mode: 'input' | 'normal', addToChord: boolean): CommandResult {
   const pname = letter.toLowerCase();
   if (addToChord) {
     const target = selectedEvent(score, sel);
     if (!target) throw new EditError('Select a note first.');
     return addChordTone(score, target, pname);
   }
-  if (mode === 'normal') {
-    // Change the pitch of the selected notes
-    const notes = selectedNotes(score, sel);
-    if (!notes.length) throw new EditError('Select a note, or press N to start note input.');
-    for (const n of notes) {
-      const fifths = keyAt(score, n);
-      const oldStep = stepOf(n.getAttribute('pname') || 'c', Number(n.getAttribute('oct') || 4));
-      const best = nearestOctave(pname, oldStep);
-      setPitch(n, { pname, oct: best, alter: keyAlter(fifths, pname) });
-      afterEdit(score, locate(n).layer);
-    }
-    return { selection: sel };
-  }
   const target = cursorTarget(score, cursorId, sel, input);
   const fifths = keyAt(score, target);
   const prev = previousPitch(score, target);
   const oct = prev ? nearestOctave(pname, stepOf(prev.pname, prev.oct)) : defaultOctave(score, target);
-  const resolved = resolveTarget(score, target)!;
-  const note = makeEvent(score, 'note', input.dur, input.dots, { pname, oct, alter: keyAlter(fifths, pname) });
+  return enterPitchAt(score, getId(target), { pname, oct, alter: keyAlter(fifths, pname) }, input);
+}
+
+/** Writes a note of the input duration at an exact pitch, replacing what is at `targetId`. */
+export function enterPitchAt(score: Score, targetId: string, pitch: { pname: string; oct: number; alter?: number }, input: InputState): CommandResult {
+  const t = score.byId(targetId);
+  if (!t) throw new EditError('Click inside a measure.');
+  const fifths = keyAt(score, t);
+  const resolved = resolveTarget(score, t)!;
+  const alter = pitch.alter ?? keyAlter(fifths, pitch.pname);
+  const note = makeEvent(score, 'note', input.dur, input.dots, { pname: pitch.pname, oct: pitch.oct, alter });
   const layer = ancestor(resolved, 'layer')!;
   const placed = overwrite(score, resolved, note);
   afterEdit(score, layer);
   const cursor = nextCursor(score, placed);
   return { selection: { kind: 'events', ids: [getId(placed)] }, cursor };
+}
+
+/** Adds an exact pitch to the note/chord `targetId` (no change if that pitch is already there). */
+export function addChordPitch(score: Score, targetId: string, pitch: { pname: string; oct: number }): CommandResult {
+  const t = score.byId(targetId);
+  if (!t) throw new EditError('Select a note first.');
+  const ev = eventOf(t);
+  const existing = (ev.localName === 'chord' ? children(ev, 'note') : [ev]).find((n) => n.getAttribute('pname') === pitch.pname && n.getAttribute('oct') === String(pitch.oct));
+  if (existing) return { selection: { kind: 'events', ids: [getId(existing)] } };
+  const r = addChordTone(score, ev, pitch.pname);
+  const added = score.byId((r.selection as { ids: string[] }).ids[0])!;
+  added.setAttribute('oct', String(pitch.oct));
+  sortChord(ancestor(added, 'chord')!);
+  afterEdit(score, locate(added).layer);
+  return r;
 }
 
 function nearestOctave(pname: string, fromStep: number): number {

@@ -100,7 +100,7 @@ kbd, .ps-kbd { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font
 .ps-voice.ps-on { border-color: currentColor; }
 
 /* ---------- main area ---------- */
-.ps-main { display: grid; grid-template-columns: auto 1fr; min-height: 0; }
+.ps-main { position: relative; display: grid; grid-template-columns: auto 1fr; min-height: 0; }
 .ps-palette { width: 248px; background: var(--ps-panel); border-right: 1px solid var(--ps-line); overflow-y: auto; scrollbar-width: thin; }
 .ps-palette.ps-collapsed { width: 0; border: 0; }
 .ps-pal-section { border-bottom: 1px solid var(--ps-line); }
@@ -118,9 +118,13 @@ kbd, .ps-kbd { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font
 .ps-pal-item .ps-txt { font-size: 11px; line-height: 1.1; text-align: center; }
 .ps-pal-item small { font-size: 9px; color: var(--ps-faint); }
 
-.ps-stage { position: relative; overflow: auto; background: radial-gradient(1200px 600px at 50% -10%, #23272f 0%, #16191e 60%); scrollbar-width: thin; }
+.ps-stage { grid-column: 2; grid-row: 1; position: relative; overflow: auto; background: radial-gradient(1200px 600px at 50% -10%, #23272f 0%, #16191e 60%); scrollbar-width: thin; }
 .ps-pages { display: flex; flex-direction: column; align-items: center; gap: 28px; padding: 28px 24px 120px; min-width: min-content; }
 .ps-pages.ps-continuous { align-items: flex-start; }
+.ps-pages { position: relative; }
+.ps-pages.ps-entering .ps-page, .ps-pages.ps-entering .ps-page g.measure { cursor: crosshair; }
+.ps-ghost { position: absolute; z-index: 5; pointer-events: none; border-radius: 50%; background: var(--ps-cursor); opacity: .55; transform: rotate(-20deg); }
+.ps-ghost-ledger { position: absolute; z-index: 5; pointer-events: none; height: 1.5px; background: var(--ps-cursor); opacity: .55; }
 .ps-page { background: var(--ps-paper); border-radius: 2px; box-shadow: 0 1px 0 rgba(255,255,255,.04), 0 12px 32px rgba(0,0,0,.45); }
 .ps-page svg { display: block; }
 .ps-page svg { color: #1a1a1a; }
@@ -207,8 +211,16 @@ textarea.ps-input { height: auto; padding: 8px 10px; resize: vertical; }
 .ps-shortcuts h4 { grid-column: 1 / -1; margin: 12px 0 2px; color: var(--ps-accent-2); font-size: 12px; letter-spacing: .5px; text-transform: uppercase; }
 
 @media (max-width: 820px) {
+  .ps-main { grid-template-columns: 0 1fr; }
   .ps-palette { position: absolute; z-index: 30; top: 0; bottom: 0; box-shadow: 10px 0 30px rgba(0,0,0,.4); }
   .ps-brand span, .ps-hide-sm { display: none; }
   .ps-status { display: none; }
+}
+@media (max-width: 560px) {
+  .ps-brand, .ps-doc-title { display: none; }
+  .ps-top { gap: 4px; padding: 6px 8px; }
+  .ps-menu > button { padding: 0 7px; }
+  .ps-pages { padding: 12px 8px 100px; }
+  .ps-dropdown { position: fixed; left: 8px; right: 8px; top: 52px; min-width: 0; }
 }
 @media print { .ps-root { display: none; } }

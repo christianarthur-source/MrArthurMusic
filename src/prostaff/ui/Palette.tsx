@@ -151,7 +151,7 @@ const SECTIONS: { id: string; title: string; wide?: boolean; items: Item[] }[] =
       { label: T('D.C.'), title: 'Da capo', run: (a) => a.dirText('D.C.', true) },
       { label: T('D.C. al Fine'), title: 'D.C. al Fine', run: (a) => a.dirText('D.C. al Fine', true) },
       { label: T('D.S. al Coda'), title: 'D.S. al Coda', run: (a) => a.dirText('D.S. al Coda', true) },
-      { label: T('To Coda'), title: 'To Coda', run: (a) => a.dirText('To Coda 𝄌', true) },
+      { label: T('To Coda'), title: 'To Coda', run: (a) => a.dirText('To Coda', true) },
     ],
   },
   {
