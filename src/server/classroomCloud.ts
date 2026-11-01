@@ -111,6 +111,20 @@ interface TeacherAuth {
 const MASTER_ACCOUNT_ID = 'teach_master';
 const isMasterAccountId = (id: string) => id === MASTER_ACCOUNT_ID || id === 'teacher_master';
 
+/** True when `pin` is a teacher's or the master PIN (used by other API routes such as /api/omr). */
+export async function isTeacherPin(env: ClassroomEnv, pin: string): Promise<boolean> {
+  if (!env.SUPABASE_SECRET_KEY) {
+    const master = String(env.MASTER_TEACHER_PIN ?? '').trim();
+    return master !== '' && pin.trim() === master;
+  }
+  try {
+    await requireTeacher(new Db(env.SUPABASE_SECRET_KEY), env, { teacherPin: pin });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 async function requireTeacher(db: Db, env: ClassroomEnv, payload: Record<string, any>): Promise<TeacherAuth> {
   const pin = String(payload.teacherPin ?? '').trim();
   if (!pin) throw new UserError('Teacher PIN required.', 401);
