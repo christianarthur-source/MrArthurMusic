@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
-  Play, Pause, Square, Undo2, Redo2, ZoomIn, ZoomOut, PanelLeft, Repeat, Timer, SlidersHorizontal, Keyboard, ChevronDown, Pencil, Music, Home, Camera,
+  Play, Pause, Square, SkipBack, Maximize, Minimize, Undo2, Redo2, ZoomIn, ZoomOut, PanelLeft, Repeat, Timer, SlidersHorizontal, Keyboard, ChevronDown, Pencil, Music, Home, Camera,
 } from 'lucide-react';
 import type { VerovioToolkit } from 'verovio/esm';
 import './prostaff.css';
@@ -12,6 +12,8 @@ import { NONE, type Selection, type InputState, type CommandResult, type Clip, E
 import { instrumentById } from '../model/instruments';
 import { Player, DEFAULT_MASTER_MIX, DEFAULT_STAFF_MIX, type MasterMix, type StaffMix } from '../audio/player';
 import { Mixer } from './Mixer';
+import { WolfiBrand, wolfiFaviconHref } from './Logo';
+import { NoteIcon } from './NoteIcon';
 import { buildSchedule, type Schedule } from '../audio/schedule';
 import { importScoreFile, importScoreText, download, safeFileName, base64ToBytes, printPages, IMPORT_ACCEPT } from '../io/files';
 import { listScores, loadScore, saveScore, deleteScore, lastOpenedId, type StoredScore } from '../io/storage';
@@ -164,7 +166,14 @@ export default function ProStaffApp() {
   // ---------- loading ----------
 
   useEffect(() => {
-    document.title = 'Pro Staff — Mr. Arthur Music';
+    document.title = 'Wolfi — Pro Staff Notation';
+    const icon = document.createElement('link');
+    icon.rel = 'icon';
+    icon.type = 'image/svg+xml';
+    icon.href = wolfiFaviconHref();
+    const oldIcons = Array.from(document.querySelectorAll<HTMLLinkElement>('link[rel~="icon"]'));
+    oldIcons.forEach((l) => l.remove());
+    document.head.appendChild(icon);
     const fonts = document.createElement('link');
     fonts.rel = 'stylesheet';
     fonts.href = 'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&family=Noto+Music&display=swap';
@@ -196,6 +205,8 @@ export default function ProStaffApp() {
     return () => {
       cancelled = true;
       fonts.remove();
+      icon.remove();
+      oldIcons.forEach((l) => document.head.appendChild(l));
       player.stop(false);
     };
   }, [player]);
@@ -780,6 +791,7 @@ export default function ProStaffApp() {
       }
       if (mod && !k.startsWith('Arrow')) return;
       if (k === ' ') { handled(); void togglePlay(); return; }
+      if (k === 'Home') { handled(); rewind(); return; }
       if (k === 'Escape') {
         handled();
         if (m === 'input') updMode('normal');
@@ -898,6 +910,26 @@ export default function ProStaffApp() {
     setPlaying(false);
     clearPlayHighlight();
   }, [player, clearPlayHighlight]);
+
+  /** Stops and goes back to the beginning: the next Play starts at measure 1. */
+  function rewind() {
+    stop();
+    updSel(NONE);
+    updCursor(null);
+    if (timeRef.current) timeRef.current.textContent = '0:00';
+    stageRef.current?.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+  }
+
+  const [fullscreen, setFullscreen] = useState(false);
+  useEffect(() => {
+    const on = () => setFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', on);
+    return () => document.removeEventListener('fullscreenchange', on);
+  }, []);
+  const toggleFullscreen = () => {
+    if (document.fullscreenElement) void document.exitFullscreen();
+    else void document.documentElement.requestFullscreen?.().catch(() => showToast('Full screen is not available in this browser.', true));
+  };
 
   async function togglePlay() {
     if (player.playing) {
@@ -1262,7 +1294,7 @@ export default function ProStaffApp() {
   }, []);
 
   if (loadError) {
-    return <div className="ps-root"><div className="ps-empty"><h2>Pro Staff</h2><p>{loadError}</p></div></div>;
+    return <div className="ps-root"><div className="ps-empty"><h2>Wolfi</h2><p>{loadError}</p></div></div>;
   }
 
   const setDur = (dur: string) => {
@@ -1275,7 +1307,7 @@ export default function ProStaffApp() {
       <style>{highlightCss}</style>
       <header className="ps-top">
         <a href="/" className="ps-btn" title="Back to Mr. Arthur’s Music Lab" aria-label="Music Lab home"><Home size={16} /></a>
-        <div className="ps-brand"><b>Pro Staff</b><span>Notation</span></div>
+        <WolfiBrand />
         <nav className="ps-menus" onClick={(e) => e.stopPropagation()}>
           <Menu id="file" label="File">
             <Item onClick={() => setDialog('new')}>New score…</Item>
@@ -1353,7 +1385,7 @@ export default function ProStaffApp() {
         </div>
         <div className="ps-tool-group">
           {DURATIONS.map((d) => (
-            <button key={d.dur} className={`ps-tool${input.dur === d.dur ? ' ps-on' : ''}`} title={`${d.name} (${d.key})`} onClick={() => setDur(d.dur)}><span className="ps-glyph">{d.glyph}</span></button>
+            <button key={d.dur} className={`ps-tool${input.dur === d.dur ? ' ps-on' : ''}`} title={`${d.name} (${d.key})`} aria-label={d.name} onClick={() => setDur(d.dur)}><NoteIcon dur={d.dur} /></button>
           ))}
           <button className={`ps-tool${input.dots ? ' ps-on' : ''}`} title="Dot (.)" onClick={() => (mode === 'input' ? updInput({ ...input, dots: input.dots ? 0 : 1 }) : run((sc) => E.toggleDot(sc, sel)))}><b>•</b></button>
           <button className="ps-tool" title="Rest (0)" onClick={() => run((sc) => E.enterRest(sc, cursor, sel, input, mode))}><span className="ps-glyph">𝄽</span></button>
@@ -1384,6 +1416,7 @@ export default function ProStaffApp() {
           <small style={{ minWidth: 34, textAlign: 'center' }}>{Math.round((view.zoom / 55) * 100)}%</small>
           <button className="ps-tool" title="Zoom in" onClick={() => setView({ ...view, zoom: Math.min(120, view.zoom + 5) })}><ZoomIn size={17} /></button>
           <button className="ps-tool" title="Keyboard shortcuts (?)" onClick={() => setDialog('shortcuts')}><Keyboard size={17} /></button>
+          <button className="ps-tool" title={fullscreen ? 'Exit full screen' : 'Full screen'} aria-label="Full screen" onClick={toggleFullscreen}>{fullscreen ? <Minimize size={17} /> : <Maximize size={17} />}</button>
         </div>
       </div>
 
@@ -1433,6 +1466,7 @@ export default function ProStaffApp() {
         <div className="ps-transport">
           <button className="ps-play" onClick={() => void togglePlay()} title="Play / pause (Space)" aria-label={playing ? 'Pause' : 'Play'}>{playing ? <Pause size={18} /> : <Play size={18} style={{ marginLeft: 2 }} />}</button>
           <button className="ps-btn" onClick={stop} title="Stop" aria-label="Stop"><Square size={15} /></button>
+          <button className="ps-btn" onClick={rewind} title="Return to start (Home)" aria-label="Return to start"><SkipBack size={15} /></button>
           <span className="ps-time" ref={timeRef}>0:00</span>
           <button className={`ps-btn${metronome ? ' ps-on' : ''}`} onClick={() => setMetronome(!metronome)} title="Metronome"><Timer size={15} /> <span className="ps-hide-sm">Click</span></button>
           <button className={`ps-btn${countIn ? ' ps-on' : ''}`} onClick={() => setCountIn(!countIn)} title="One-bar count-in"><span className="ps-hide-sm">Count-in</span><span className="ps-hide-sm" /></button>

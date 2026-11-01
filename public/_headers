@@ -1,0 +1,3 @@
+# The SoundFont for Wolfi (/prostaff) is large and rarely changes: let browsers keep it for 30 days.
+/audio/soundfont/*
+  Cache-Control: public, max-age=2592000

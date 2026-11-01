@@ -3,8 +3,8 @@ import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
 
-// /prostaff is the advanced notation editor; it loads its own code only on that path.
-const isProStaff = /^\/prostaff(\/|$)/i.test(window.location.pathname);
+// /wolfi (also /prostaff) is the advanced notation editor; it loads its own code only on those paths.
+const isProStaff = /^\/(prostaff|wolfi)(\/|$)/i.test(window.location.pathname);
 const ProStaff = lazy(() => import('./prostaff'));
 
 createRoot(document.getElementById('root')!).render(
