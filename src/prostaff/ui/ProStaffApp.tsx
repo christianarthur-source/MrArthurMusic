@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   Play, Pause, Square, Undo2, Redo2, ZoomIn, ZoomOut, PanelLeft, Repeat, Timer, SlidersHorizontal, Keyboard, ChevronDown, Pencil, Music, Home, Camera,
 } from 'lucide-react';
@@ -6,7 +6,7 @@ import type { VerovioToolkit } from 'verovio/esm';
 import './prostaff.css';
 import { getToolkit, getConverter, renderOptions, DEFAULT_VIEW, type ViewOptions, type EngravingFont } from '../engine/verovio';
 import { Score } from '../model/score';
-import { ancestor, children, descendants, getId, keyAlter, midiOf } from '../model/mei';
+import { ancestor, child, children, descendants, getId, keyAlter, midiOf, stepOf, fromStep } from '../model/mei';
 import * as E from '../model/edit';
 import { NONE, type Selection, type InputState, type CommandResult, type Clip, EditError } from '../model/edit';
 import { instrumentById } from '../model/instruments';
@@ -39,7 +39,7 @@ const CLICKABLE = [
 
 function loadView(): ViewOptions {
   try {
-    return { ...DEFAULT_VIEW, ...JSON.parse(localStorage.getItem('prostaff:view') || '{}') };
+    return { ...DEFAULT_VIEW, ...JSON.parse(localStorage.getItem('prostaff:view2') || '{}') };
   } catch {
     return DEFAULT_VIEW;
   }
@@ -50,7 +50,7 @@ function newDocId() {
 }
 
 function defaultScore() {
-  return Score.create({ title: 'Untitled Score', composer: '', instruments: ['piano'], keyFifths: 0, meterCount: 4, meterUnit: 4, tempo: 100, tempoText: 'Moderato', measures: 32 });
+  return Score.create({ title: 'Untitled Score', composer: '', instruments: ['piano'], keyFifths: 0, meterCount: 4, meterUnit: 4, tempo: 100, tempoText: 'Moderato', measures: 16 });
 }
 
 /** A copy of the score with only some staves, for part view (same ids, so editing still works). */
@@ -152,6 +152,7 @@ export default function ProStaffApp() {
   if (import.meta.env.DEV) (window as any).__prostaff = { score: () => scoreRef.current, tk: () => tkRef.current, live };
 
   const showToast = useCallback((msg: string, err = false) => {
+    if (import.meta.env.DEV) ((window as any).__psToasts ||= []).push((err ? 'ERR: ' : '') + msg);
     setToast({ msg, err });
     window.clearTimeout((showToast as any)._t);
     (showToast as any)._t = window.setTimeout(() => setToast(null), err ? 5000 : 2800);
@@ -196,6 +197,20 @@ export default function ProStaffApp() {
     };
   }, [player]);
 
+  const [stageW, setStageW] = useState(0);
+  useEffect(() => {
+    const el = stageRef.current;
+    if (!el) return;
+    let t = 0;
+    const ro = new ResizeObserver(() => {
+      window.clearTimeout(t);
+      t = window.setTimeout(() => setStageW((w) => (Math.abs(w - el.clientWidth) > 24 ? el.clientWidth : w)), 150);
+    });
+    ro.observe(el);
+    setStageW(el.clientWidth);
+    return () => ro.disconnect();
+  }, [ready]);
+
   // ---------- render ----------
 
   useEffect(() => {
@@ -205,7 +220,11 @@ export default function ProStaffApp() {
     setRendering(true);
     const hasBreaks = descendants(s.doc, 'sb').length + descendants(s.doc, 'pb').length > 0;
     try {
-      tk.setOptions(renderOptions(view, hasBreaks));
+      // fit the page to the screen width (systems reflow); printing always uses full-size pages
+      const phone = stageW > 0 && stageW < 600;
+      const zoom = phone ? Math.min(view.zoom, 38) : view.zoom;
+      const fitWidth = stageW ? Math.max(phone ? 800 : 1100, Math.min(view.pageWidth, Math.floor((stageW - (phone ? 24 : 56)) / (zoom / 100)))) : view.pageWidth;
+      tk.setOptions(renderOptions({ ...view, zoom, pageWidth: fitWidth }, hasBreaks));
       const mei = partView === 'all' ? s.toString() : partMei(s, partView.split(','));
       if (!tk.loadData(mei)) throw new Error('render failed');
       const n = tk.getPageCount();
@@ -218,11 +237,11 @@ export default function ProStaffApp() {
     }
     scheduleRef.current = null;
     setRendering(false);
-  }, [ready, version, view, partView, showToast]);
+  }, [ready, version, view, partView, showToast, stageW]);
 
   useEffect(() => {
     try {
-      localStorage.setItem('prostaff:view', JSON.stringify(view));
+      localStorage.setItem('prostaff:view2', JSON.stringify(view));
     } catch {
       /* ignore */
     }
@@ -340,6 +359,26 @@ export default function ProStaffApp() {
     stageRef.current?.scrollTo({ top: 0, left: 0 });
   }, [player]);
 
+  /** Switches to note input with the cursor on the selected note/rest (or the selected measure's start). */
+  const startInputCursor = useCallback((): string | null => {
+    const sc = scoreRef.current;
+    if (!sc) return null;
+    const { sel: cur, input: inp } = live.current;
+    let id: string | null = null;
+    try {
+      if (cur.kind === 'events') {
+        const e = sc.byId(cur.ids[0]);
+        if (e && ['note', 'chord', 'rest', 'space', 'mRest', 'mSpace'].includes(e.localName)) id = getId(E.eventOf(e));
+      }
+      if (!id) id = getId(E.cursorTarget(sc, null, cur, inp));
+    } catch {
+      id = null;
+    }
+    updMode('input');
+    updCursor(id);
+    return id;
+  }, [updMode, updCursor]);
+
   // ---------- selection helpers ----------
 
   const selectId = useCallback((id: string, extend: boolean) => {
@@ -370,14 +409,145 @@ export default function ProStaffApp() {
       }
     }
     updSel({ kind: 'events', ids: [id] });
-    if (m === 'input' && isLeaf) updCursor(getId(E.eventOf(e)));
+    if (isLeaf) updCursor(getId(E.eventOf(e)));
+    void m;
     if (isLeaf && (e.localName === 'note' || e.localName === 'chord')) audition([id]);
   }, [audition]);
+
+  // ---------- mouse note entry ----------
+
+  interface StaffGeom { staffId: string; left: number; right: number; top: number; space: number; lines: number }
+  const pagesRef = useRef<HTMLDivElement>(null);
+  const geomRef = useRef<StaffGeom[]>([]);
+  const hoverRef = useRef<{ g: StaffGeom; pos: number; x: number } | null>(null);
+  const [ghost, setGhost] = useState<{ x: number; y: number; space: number; ledgers: number[] } | null>(null);
+
+  /** Records where every staff's lines are on screen, relative to the pages container. */
+  const measureStaves = useCallback(() => {
+    const root = pagesRef.current;
+    if (!root) return;
+    const base = root.getBoundingClientRect();
+    const out: StaffGeom[] = [];
+    root.querySelectorAll('g.staff').forEach((g) => {
+      const lines = Array.from(g.children).filter((c) => c.tagName === 'path');
+      if (!lines.length || !g.id) return;
+      const r0 = lines[0].getBoundingClientRect();
+      const rN = lines[lines.length - 1].getBoundingClientRect();
+      const top = r0.top + r0.height / 2 - base.top;
+      const bottom = rN.top + rN.height / 2 - base.top;
+      out.push({ staffId: g.id, left: r0.left - base.left, right: r0.right - base.left, top, space: lines.length > 1 ? (bottom - top) / (lines.length - 1) : 8, lines: lines.length });
+    });
+    geomRef.current = out;
+  }, []);
+
+  useLayoutEffect(() => {
+    measureStaves();
+  }, [pages, palette, measureStaves]);
+  useEffect(() => {
+    window.addEventListener('resize', measureStaves);
+    return () => window.removeEventListener('resize', measureStaves);
+  }, [measureStaves]);
+  useEffect(() => {
+    if (mode !== 'input') {
+      setGhost(null);
+      hoverRef.current = null;
+    }
+  }, [mode]);
+
+  const onStageMove = useCallback((ev: React.MouseEvent) => {
+    if (live.current.mode !== 'input' || !pagesRef.current) return;
+    const base = pagesRef.current.getBoundingClientRect();
+    const x = ev.clientX - base.left;
+    const y = ev.clientY - base.top;
+    let best: StaffGeom | null = null;
+    let bestD = Infinity;
+    for (const g of geomRef.current) {
+      if (x < g.left || x > g.right) continue;
+      const mid = g.top + ((g.lines - 1) * g.space) / 2;
+      const d = Math.abs(y - mid);
+      if (d < bestD && d < ((g.lines - 1) * g.space) / 2 + g.space * 4.5) {
+        best = g;
+        bestD = d;
+      }
+    }
+    if (!best) {
+      if (hoverRef.current) setGhost(null);
+      hoverRef.current = null;
+      return;
+    }
+    const maxPos = (best.lines - 1) * 2;
+    const pos = Math.max(-9, Math.min(maxPos + 9, Math.round((y - best.top) / (best.space / 2))));
+    hoverRef.current = { g: best, pos, x };
+    const ledgers: number[] = [];
+    for (let p = -2; p >= pos; p -= 2) ledgers.push(p);
+    for (let p = maxPos + 2; p <= pos; p += 2) ledgers.push(p);
+    setGhost((old) => {
+      const ny = best!.top + (pos * best!.space) / 2;
+      if (old && Math.abs(old.x - x) < 1 && old.y === ny) return old;
+      return { x, y: ny, space: best!.space, ledgers: ledgers.map((p) => best!.top + (p * best!.space) / 2) };
+    });
+  }, []);
+
+  /** The written pitch at a staff position (0 = top line, counting down in steps) for the staff's clef. */
+  const pitchAt = (sc: Score, staffN: string, pos: number, lines: number) => {
+    const sd = sc.staffDefs().find((d) => d.getAttribute('n') === staffN);
+    const clefEl = sd ? child(sd, 'clef') : null;
+    const shape = sd?.getAttribute('clef.shape') || clefEl?.getAttribute('shape') || 'G';
+    const line = Number(sd?.getAttribute('clef.line') || clefEl?.getAttribute('line') || (shape === 'F' ? 4 : shape === 'C' ? 3 : 2));
+    const dis = Number(sd?.getAttribute('clef.dis') || clefEl?.getAttribute('dis') || 0);
+    const place = sd?.getAttribute('clef.dis.place') || clefEl?.getAttribute('dis.place') || 'below';
+    const ref = shape === 'F' ? stepOf('f', 3) : shape === 'C' ? stepOf('c', 4) : stepOf('g', 4);
+    let topStep = ref + (lines - (shape === 'perc' ? 2 : line)) * 2;
+    if (dis) topStep += (place === 'above' ? 1 : -1) * (dis === 15 ? 14 : 7);
+    return fromStep(topStep - pos);
+  };
+
+  const mouseEnter = useCallback((): boolean => {
+    const h = hoverRef.current;
+    const sc = scoreRef.current;
+    const root = pagesRef.current;
+    if (!h || !sc || !root) return false;
+    const staffEl = sc.byId(h.g.staffId);
+    const measure = staffEl ? ancestor(staffEl, 'measure') : null;
+    if (!staffEl || !measure) return false;
+    const staffN = staffEl.getAttribute('n') || '1';
+    const pitch = pitchAt(sc, staffN, h.pos, h.g.lines);
+    const inp = live.current.input;
+    const base = root.getBoundingClientRect();
+    const r = run((s2) => {
+      const layer = E.voiceLayer(s2, measure, staffN, inp.voice);
+      const layerN = layer.getAttribute('n') || '1';
+      const leaves = E.leafSequence(s2, staffN, layerN, false).filter((x) => ancestor(x, 'measure') === measure);
+      if (!leaves.length) throw new EditError('Click inside a measure.');
+      // the event under (or just left of) the click
+      let pick = leaves[0];
+      let pickCenter = Infinity;
+      for (const leaf of leaves) {
+        const elx = root.querySelector(`[id="${CSS.escape(getId(leaf))}"]`);
+        if (!elx) continue;
+        const rr = elx.getBoundingClientRect();
+        const left = rr.left - base.left;
+        if (left - h.g.space * 0.9 <= h.x) {
+          pick = leaf;
+          pickCenter = left + rr.width / 2;
+        }
+      }
+      const onIt = Math.abs(h.x - pickCenter) < h.g.space * 1.4;
+      if (onIt && (pick.localName === 'note' || pick.localName === 'chord')) return E.addChordPitch(s2, getId(pick), pitch);
+      return E.enterPitchAt(s2, getId(pick), pitch, inp);
+    });
+    if (r?.selection?.kind === 'events') audition(r.selection.ids);
+    return true;
+  }, [run, audition]);
 
   const onStageClick = useCallback((ev: React.MouseEvent) => {
     const s = scoreRef.current;
     if (!s) return;
     setMenu(null);
+    if (live.current.mode === 'input' && !ev.shiftKey) {
+      onStageMove(ev); // taps on touch screens have no hover before the click
+      if (hoverRef.current && mouseEnter()) return;
+    }
     const t = ev.target as Element;
     const hit = t.closest?.(CLICKABLE);
     if (hit?.id && s.byId(hit.id)) {
@@ -415,7 +585,7 @@ export default function ProStaffApp() {
       return;
     }
     updSel(NONE);
-  }, [selectId]);
+  }, [selectId, mouseEnter, onStageMove]);
 
   // ---------- prompts (text entry) ----------
 
@@ -626,11 +796,21 @@ export default function ProStaffApp() {
       }
       if (/^[a-g]$/i.test(k) && !e.altKey) {
         handled();
-        const r = run((s) => E.enterLetter(s, cc, cur, k, inp, m, e.shiftKey));
+        // typing a letter always writes a note: start note input at the selection if needed
+        const startCursor = m === 'input' ? cc : startInputCursor();
+        const r = run((s) => E.enterLetter(s, startCursor, live.current.sel, k, inp, 'input', e.shiftKey));
         if (r?.selection?.kind === 'events') audition(r.selection.ids);
         return;
       }
-      if (k === '0' || k.toLowerCase() === 'r') { handled(); run((s) => E.enterRest(s, cc, cur, inp, m)); return; }
+      if (k === '0' || k.toLowerCase() === 'r') {
+        handled();
+        if (m === 'normal' && cur.kind === 'events' && E.selectedNotes(scoreRef.current, cur).length) run((s) => E.deleteSelection(s, cur));
+        else {
+          const startCursor = m === 'input' ? cc : startInputCursor();
+          run((s) => E.enterRest(s, startCursor, live.current.sel, inp, 'input'));
+        }
+        return;
+      }
       if (/^[1-7]$/.test(k)) {
         handled();
         const dur = KEY_TO_DUR[k];
@@ -1136,7 +1316,7 @@ export default function ProStaffApp() {
               const t = E.cursorTarget(scoreRef.current, null, sel, input);
               updCursor(getId(t));
             }
-          }}><Pencil size={14} /> {mode === 'input' ? 'Note input' : 'Select'}</button>
+          }}><Pencil size={14} /> {mode === 'input' ? 'Adding notes' : 'Add notes'} <kbd style={{ marginLeft: 2 }}>N</kbd></button>
         </div>
         <div className="ps-tool-group">
           {DURATIONS.map((d) => (
@@ -1168,7 +1348,7 @@ export default function ProStaffApp() {
         </div>
         <div className="ps-tool-group">
           <button className="ps-tool" title="Zoom out" onClick={() => setView({ ...view, zoom: Math.max(20, view.zoom - 5) })}><ZoomOut size={17} /></button>
-          <small style={{ minWidth: 34, textAlign: 'center' }}>{Math.round((view.zoom / 45) * 100)}%</small>
+          <small style={{ minWidth: 34, textAlign: 'center' }}>{Math.round((view.zoom / 55) * 100)}%</small>
           <button className="ps-tool" title="Zoom in" onClick={() => setView({ ...view, zoom: Math.min(120, view.zoom + 5) })}><ZoomIn size={17} /></button>
           <button className="ps-tool" title="Keyboard shortcuts (?)" onClick={() => setDialog('shortcuts')}><Keyboard size={17} /></button>
         </div>
@@ -1180,8 +1360,20 @@ export default function ProStaffApp() {
           {!ready ? (
             <div className="ps-loading"><div className="ps-spinner" /> Loading the engraving engine…</div>
           ) : (
-            <div className={`ps-pages${view.layout === 'continuous' ? ' ps-continuous' : ''}`} onClick={onStageClick}>
+            <div
+              ref={pagesRef}
+              className={`ps-pages${view.layout === 'continuous' ? ' ps-continuous' : ''}${mode === 'input' ? ' ps-entering' : ''}`}
+              onClick={onStageClick}
+              onMouseMove={onStageMove}
+              onMouseLeave={() => { hoverRef.current = null; setGhost(null); }}
+            >
               {pages.map((svg, i) => <div key={i} className="ps-page" dangerouslySetInnerHTML={{ __html: svg }} />)}
+              {ghost && mode === 'input' && (
+                <>
+                  {ghost.ledgers.map((ly, i) => <div key={i} className="ps-ghost-ledger" style={{ left: ghost.x - ghost.space * 1.1, top: ly - 0.75, width: ghost.space * 2.2 }} />)}
+                  <div className="ps-ghost" style={{ left: ghost.x - ghost.space * 0.65, top: ghost.y - ghost.space * 0.48, width: ghost.space * 1.3, height: ghost.space * 0.96 }} />
+                </>
+              )}
             </div>
           )}
           {rendering && <div style={{ position: 'absolute', top: 10, right: 14 }}><div className="ps-spinner" /></div>}
@@ -1227,7 +1419,7 @@ export default function ProStaffApp() {
         </div>
         <div className="ps-status">
           {status && <span>{status}</span>}
-          <span><b>{mode === 'input' ? 'Note input' : 'Select'}</b> · {DURATIONS.find((d) => d.dur === input.dur)?.name}{input.dots ? ' dotted' : ''} · voice {input.voice}</span>
+          <span><b>{mode === 'input' ? 'Adding notes — click the staff or type A–G' : 'Select — press N or type A–G to add notes'}</b> · {DURATIONS.find((d) => d.dur === input.dur)?.name}{input.dots ? ' dotted' : ''} · voice {input.voice}</span>
           {view.concertPitch && <span style={{ color: 'var(--ps-accent)' }}>Concert pitch</span>}
           {partView !== 'all' && <span style={{ color: 'var(--ps-accent)' }}>Part view</span>}
           <span>{pages.length} page{pages.length === 1 ? '' : 's'}</span>

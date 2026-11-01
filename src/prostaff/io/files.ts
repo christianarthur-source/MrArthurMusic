@@ -35,7 +35,8 @@ export async function importScoreText(text: string, name = 'Imported score'): Pr
 /** Small fixes so imported scores behave like ones made in the editor. */
 export function normalizeImported(score: Score, fileName: string): Score {
   const meta = score.getMeta();
-  if (!meta.title) score.setMeta({ title: fileName.replace(/\.[^.]+$/, '') });
+  // copy the credits into the title statement, which is what the page header prints
+  score.setMeta({ title: meta.title || fileName.replace(/\.[^.]+$/, ''), composer: meta.composer, lyricist: meta.lyricist, arranger: meta.arranger });
   // Verovio writes <pgHead> page headers for some imports; the editor draws its own from the metadata
   for (const h of descendants(score.doc, 'pgHead')) h.remove();
   for (const h of descendants(score.doc, 'pgFoot')) h.remove();

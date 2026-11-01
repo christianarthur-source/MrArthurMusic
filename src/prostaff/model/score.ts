@@ -144,11 +144,17 @@ export class Score {
     const sub = titles.find((t) => t.getAttribute('type') === 'subordinate');
     const pers = (role: string) =>
       descendants(ts, 'persName').find((p) => (p.getAttribute('role') || '').toLowerCase() === role)?.textContent?.trim() ||
-      descendants(ts, role)[0]?.textContent?.trim() || '';
+      // a bare <composer> is only the source when there are no named roles (otherwise it is our credit line)
+      (descendants(ts, 'persName').length ? '' : descendants(ts, role)[0]?.textContent?.trim()) || '';
+    // imports (ABC, some MusicXML) keep the title and composer in <workList> instead
+    const head = descendants(this.doc, 'meiHead')[0];
+    const anyTitle = () => (head ? descendants(head, 'title').map((t) => t.textContent?.trim() || '').find(Boolean) : '') || '';
+    const anyPers = (role: string) =>
+      (head ? [...descendants(head, 'persName'), ...descendants(head, role)].find((p) => (p.localName === role || (p.getAttribute('role') || '').toLowerCase() === role) && p.textContent?.trim())?.textContent?.trim() : '') || '';
     return {
-      title: main?.textContent?.trim() || '',
+      title: main?.textContent?.trim() || anyTitle(),
       subtitle: sub?.textContent?.trim() || '',
-      composer: pers('composer'),
+      composer: pers('composer') || (descendants(ts, 'persName').length ? '' : anyPers('composer')),
       lyricist: pers('lyricist'),
       arranger: pers('arranger'),
     };
@@ -188,6 +194,16 @@ export class Score {
         p = resp.appendChild(el(this.doc, 'persName', { role }));
       }
       p.textContent = value;
+    }
+    // Verovio's page header prints only title, subtitle and a <composer> element, so keep a combined
+    // credit line there (the separate names stay in <respStmt>)
+    const m = this.getMeta();
+    for (const c of children(ts, 'composer')) c.remove();
+    const credit = [m.composer, m.arranger ? `arr. ${m.arranger}` : '', m.lyricist ? `words by ${m.lyricist}` : ''].filter(Boolean).join(', ');
+    if (credit) {
+      const c = el(this.doc, 'composer');
+      c.textContent = credit;
+      ts.insertBefore(c, resp || null);
     }
     // Verovio prints the page header from <pgHead> when one exists; drop imported headers so the edited
     // title/composer show.

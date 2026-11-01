@@ -42,7 +42,7 @@ export interface ViewOptions {
   pageWidth: number; // in Verovio units (tenths of mm at scale 100)
 }
 
-export const DEFAULT_VIEW: ViewOptions = { layout: 'page', zoom: 45, font: 'Leipzig', concertPitch: false, pageWidth: 2100 };
+export const DEFAULT_VIEW: ViewOptions = { layout: 'page', zoom: 55, font: 'Leipzig', concertPitch: false, pageWidth: 2100 };
 
 export function renderOptions(v: ViewOptions, hasEncodedBreaks: boolean): Record<string, unknown> {
   const continuous = v.layout === 'continuous';
@@ -71,6 +71,9 @@ export function renderOptions(v: ViewOptions, hasEncodedBreaks: boolean): Record
     svgFormatRaw: true,
     xmlIdSeed: 1,
     condense: 'none',
+    // roomier measures so empty bars are easy to click and write in
+    measureMinWidth: 30,
+    spacingLinear: 0.35,
     lyricSize: 4.2,
     midiTempoAdjustment: 1,
     expand: '',

@@ -86,7 +86,7 @@ export function NewScoreDialog({ onClose, onCreate }: { onClose: () => void; onC
   const [tpl, setTpl] = useState('blank-piano');
   const [o, setO] = useState<NewScoreOptions>({
     title: 'Untitled Score', subtitle: '', composer: '', instruments: ['piano'], keyFifths: 0, meterCount: 4, meterUnit: 4,
-    tempo: 100, tempoText: 'Moderato', measures: 32, pickupTicks: 0,
+    tempo: 100, tempoText: 'Moderato', measures: 16, pickupTicks: 0,
   });
   const set = (p: Partial<NewScoreOptions>) => setO((x) => ({ ...x, ...p }));
   const pickTemplate = (id: string) => {
