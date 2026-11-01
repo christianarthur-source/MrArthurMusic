@@ -1,18 +1,18 @@
 {
   "format": "mrdaw-review-report",
-  "catalogVersion": 8,
+  "catalogVersion": 9,
   "summary": {
-    "assets": 909,
+    "assets": 1163,
     "needsReview": 90,
     "unverifiedLicense": 90,
     "bpmEstimated": 0,
     "bpmUnknown": 0,
-    "keyUnknown": 193,
+    "keyUnknown": 382,
     "durationMismatches": 0,
     "withNotes": 2,
     "rejected": 0,
     "duplicates": 0,
-    "warnings": 4
+    "warnings": 12
   },
   "packs": [
     {
@@ -46,9 +46,17 @@
   "duplicates": [],
   "warnings": [
     "freesound-cc0/audio/electric-guitar/rock-guitar-3-253045.wav: metadata slug \"fs253045\" differs from persisted id freesound-cc0.fs253045-2; keeping the persisted id (edit ids.json to change it deliberately)",
-    "freesound-cc0/audio/electric-guitar/rock-guitar-4-485082.wav: metadata slug \"fs485082\" differs from persisted id freesound-cc0.fs485082-2; keeping the persisted id (edit ids.json to change it deliberately)",
     "freesound-cc0/audio/electric-guitar/rock-guitar-2-237583.wav: metadata slug \"fs237583\" differs from persisted id freesound-cc0.fs237583-2; keeping the persisted id (edit ids.json to change it deliberately)",
-    "freesound-cc0/audio/electric-guitar/rock-guitar-566109.wav: metadata slug \"fs566109\" differs from persisted id freesound-cc0.fs566109-2; keeping the persisted id (edit ids.json to change it deliberately)"
+    "freesound-cc0/audio/electric-guitar/rock-guitar-4-485082.wav: metadata slug \"fs485082\" differs from persisted id freesound-cc0.fs485082-2; keeping the persisted id (edit ids.json to change it deliberately)",
+    "freesound-cc0/audio/electric-guitar/rock-guitar-566109.wav: metadata slug \"fs566109\" differs from persisted id freesound-cc0.fs566109-2; keeping the persisted id (edit ids.json to change it deliberately)",
+    "freesound-cc0/audio/percussion/world-percussion-2-219269.wav: id freesound-cc0.fs219269 already taken; assigned freesound-cc0.fs219269-2",
+    "freesound-cc0/audio/brass/storytelling-brass-852832.wav: encoded length 1263791 frames differs from source 1263761",
+    "freesound-cc0/audio/fx/environments/medium-343670.wav: encoded length 24239 frames differs from source 24229",
+    "freesound-cc0/audio/fx/funny/wonderloop-bpm-537020.wav: encoded length 1226927 frames differs from source 1226907",
+    "freesound-cc0/audio/fx/nature/wind-chime-644684.wav: encoded length 888239 frames differs from source 888201",
+    "freesound-cc0/audio/fx/vehicles/many-car-horns-traffic-675208.wav: encoded length 843311 frames differs from source 843285",
+    "freesound-cc0/audio/fx/vehicles/vintage-bicycle-horn-468441.wav: encoded length 50735 frames differs from source 50689",
+    "freesound-cc0/audio/fx/vehicles/troubeni-377496.wav: encoded length 407855 frames differs from source 407842"
   ],
   "assets": [
     {
@@ -9328,6 +9336,19 @@
       "notes": []
     },
     {
+      "id": "freesound-cc0.fs109435",
+      "file": "audio/fx/funny/cartoon-spring-bouncing-109435.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
       "id": "freesound-cc0.fs112532",
       "file": "audio/electric-guitar/electric-child-guitar-112532.wav",
       "pack": "freesound-cc0",
@@ -9341,6 +9362,79 @@
         "expectedSec": 24.935065,
         "measuredSec": 24.935057,
         "diffMs": -0.01,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs122313",
+      "file": "audio/fx/nature/bk-wind-122313.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs122319",
+      "file": "audio/fx/nature/bk-wind-2-122319.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs122323",
+      "file": "audio/fx/nature/bk-wind-3-122323.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs126543",
+      "file": "audio/keys/ghostchoir-keys-126543.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 12,
+        "measuredSec": 12,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs128673",
+      "file": "audio/electronic-drums/funky-house-beat-128673.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 3.809524,
+        "measuredSec": 3.809524,
+        "diffMs": 0,
         "diffFrames": 0
       },
       "notes": []
@@ -9364,6 +9458,45 @@
       "notes": []
     },
     {
+      "id": "freesound-cc0.fs13275",
+      "file": "audio/fx/nature/woc-chord-13275.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs13277",
+      "file": "audio/fx/nature/wofchord-13277.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs13278",
+      "file": "audio/fx/nature/wogchord-13278.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
       "id": "freesound-cc0.fs132910",
       "file": "audio/strings/cinematic-strings-132910.wav",
       "pack": "freesound-cc0",
@@ -9374,6 +9507,95 @@
       "durationCheck": {
         "expectedSec": 13.714286,
         "measuredSec": 13.714286,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs132911",
+      "file": "audio/piano/pop-piano-2-132911.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 13.714286,
+        "measuredSec": 13.714286,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs13298",
+      "file": "audio/fx/nature/nature-sound-2-13298.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs13300",
+      "file": "audio/fx/nature/nature-sound-13300.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs136979",
+      "file": "audio/synth/synthloop-synth-136979.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 6,
+        "measuredSec": 6,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs142922",
+      "file": "audio/fx/funny/dubstep-wobble-142922.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs144861",
+      "file": "audio/strings/cpk-strings-144861.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 4.8,
+        "measuredSec": 4.8,
         "diffMs": 0,
         "diffFrames": 0
       },
@@ -9391,6 +9613,56 @@
         "expectedSec": 17.454545,
         "measuredSec": 17.454535,
         "diffMs": -0.01,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs148105",
+      "file": "audio/percussion/son-percussion-148105.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 2,
+        "measuredSec": 2,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs149949",
+      "file": "audio/mallets/tanya-mallets-2-149949.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 4.571429,
+        "measuredSec": 4.571429,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs149950",
+      "file": "audio/mallets/tanya-mallets-149950.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 2.285714,
+        "measuredSec": 2.285714,
+        "diffMs": 0,
         "diffFrames": 0
       },
       "notes": []
@@ -9468,6 +9740,37 @@
       "notes": []
     },
     {
+      "id": "freesound-cc0.fs152387",
+      "file": "audio/fx/vehicles/paulhorn-152387.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs152467",
+      "file": "audio/brass/ddddd-brass-152467.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 1.983471,
+        "measuredSec": 1.983469,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
       "id": "freesound-cc0.fs156681",
       "file": "audio/electronic-drums/stezzer-beat-156681.wav",
       "pack": "freesound-cc0",
@@ -9502,6 +9805,22 @@
       "notes": []
     },
     {
+      "id": "freesound-cc0.fs157405",
+      "file": "audio/strings/chords-strings-157405.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 17.614679,
+        "measuredSec": 17.614671,
+        "diffMs": -0.01,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
       "id": "freesound-cc0.fs157779",
       "file": "audio/synth-bass/looper-synth-bass-157779.wav",
       "pack": "freesound-cc0",
@@ -9515,6 +9834,19 @@
         "diffMs": 0.01,
         "diffFrames": 0
       },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs158744",
+      "file": "audio/fx/vehicles/approaching-helicopter-mp-158744.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
       "notes": []
     },
     {
@@ -9618,6 +9950,24 @@
       "notes": []
     },
     {
+      "id": "freesound-cc0.fs16144",
+      "file": "audio/keys/cosmictech-keys-16144.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 8,
+        "measuredSec": 8,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
       "id": "freesound-cc0.fs162257",
       "file": "audio/synth-bass/dubstep-wobble-synth-bass-162257.wav",
       "pack": "freesound-cc0",
@@ -9631,6 +9981,19 @@
         "diffMs": 0,
         "diffFrames": 0
       },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs168709",
+      "file": "audio/fx/vehicles/bell-ring-168709.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
       "notes": []
     },
     {
@@ -9670,6 +10033,24 @@
       "notes": []
     },
     {
+      "id": "freesound-cc0.fs170591",
+      "file": "audio/strings/pluckytension-strings-170591.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 14.769231,
+        "measuredSec": 14.769229,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
       "id": "freesound-cc0.fs171501",
       "file": "audio/acoustic-guitar/folk-acoustic-guitar-3-171501.wav",
       "pack": "freesound-cc0",
@@ -9681,6 +10062,42 @@
         "expectedSec": 2.330097,
         "measuredSec": 2.330091,
         "diffMs": -0.01,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs171600",
+      "file": "audio/drums/rock-drums-4-171600.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 2,
+        "measuredSec": 2,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs171604",
+      "file": "audio/drums/fast-break-drums-171604.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 3,
+        "measuredSec": 3,
+        "diffMs": 0,
         "diffFrames": 0
       },
       "notes": []
@@ -9704,8 +10121,94 @@
       "notes": []
     },
     {
+      "id": "freesound-cc0.fs173309",
+      "file": "audio/synth/style-orig-synth-173309.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 3.428571,
+        "measuredSec": 3.428571,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs175378",
+      "file": "audio/synth/deep-chords-synth-175378.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 16,
+        "measuredSec": 16,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs176924",
+      "file": "audio/strings/cinematic-strings-3-176924.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 11.566265,
+        "measuredSec": 11.566259,
+        "diffMs": -0.01,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs177422",
+      "file": "audio/bass/reggaeton-groove-bass-177422.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 9.142857,
+        "measuredSec": 9.142857,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
       "id": "freesound-cc0.fs177457",
       "file": "audio/mallets/melody-dmenor-mallets-177457.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 10.666667,
+        "measuredSec": 10.666667,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs177458",
+      "file": "audio/strings/melody-menor-strings-177458.wav",
       "pack": "freesound-cc0",
       "review": "approved",
       "license": "CC0-1.0",
@@ -9737,6 +10240,207 @@
         "diffMs": 0,
         "diffFrames": 0
       },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs183441",
+      "file": "audio/electronic-drums/old-school-rave-beat-183441.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 14.222222,
+        "measuredSec": 14.222222,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs188554",
+      "file": "audio/percussion/electro-percussion-188554.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 8,
+        "measuredSec": 8,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs188692",
+      "file": "audio/piano/pianoa-piano-188692.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 19.2,
+        "measuredSec": 19.2,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs188720",
+      "file": "audio/electronic-drums/industrial-beat-188720.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 15.238095,
+        "measuredSec": 15.238095,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs19064",
+      "file": "audio/percussion/electro-percussion-4-19064.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 8,
+        "measuredSec": 8,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs19065",
+      "file": "audio/percussion/electro-percussion-9-19065.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 8,
+        "measuredSec": 8,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs19066",
+      "file": "audio/percussion/electro-percussion-8-19066.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 8,
+        "measuredSec": 8,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs19067",
+      "file": "audio/percussion/electro-percussion-10-19067.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 8,
+        "measuredSec": 8,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs19068",
+      "file": "audio/percussion/electro-percussion-2-19068.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 8,
+        "measuredSec": 8,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs191682",
+      "file": "audio/fx/vehicles/distant-flying-helicopter-191682.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs19348",
+      "file": "audio/fx/vehicles/deep-pulse-joined-19348.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs199690",
+      "file": "audio/fx/funny/clangs-cartoon-199690.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
       "notes": []
     },
     {
@@ -9806,6 +10510,72 @@
       "notes": []
     },
     {
+      "id": "freesound-cc0.fs205996",
+      "file": "audio/synth/drumbeats-melodic-chip-synth-205996.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 3.75,
+        "measuredSec": 3.75,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs209559",
+      "file": "audio/mallets/bell-master-mallets-209559.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 10.666667,
+        "measuredSec": 10.666667,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs209814",
+      "file": "audio/piano/electro-piano-209814.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 6.857143,
+        "measuredSec": 6.857143,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs210835",
+      "file": "audio/piano/rev-piano-210835.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 13.714286,
+        "measuredSec": 13.714286,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
       "id": "freesound-cc0.fs211555",
       "file": "audio/synth-bass/drumbeats-melodic-trance-synth-bass-211555.wav",
       "pack": "freesound-cc0",
@@ -9840,8 +10610,8 @@
       "notes": []
     },
     {
-      "id": "freesound-cc0.fs219269",
-      "file": "audio/percussion/world-percussion-219269.wav",
+      "id": "freesound-cc0.fs219269-2",
+      "file": "audio/percussion/world-percussion-2-219269.wav",
       "pack": "freesound-cc0",
       "review": "approved",
       "license": "CC0-1.0",
@@ -9852,6 +10622,24 @@
       "durationCheck": {
         "expectedSec": 12,
         "measuredSec": 12,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs220152",
+      "file": "audio/strings/electro-strings-2-220152.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 16,
+        "measuredSec": 16,
         "diffMs": 0,
         "diffFrames": 0
       },
@@ -9873,6 +10661,51 @@
         "diffMs": 0,
         "diffFrames": 0
       },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs220893",
+      "file": "audio/woodwinds/jazz-winds-220893.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 21.333333,
+        "measuredSec": 21.333333,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs220896",
+      "file": "audio/strings/cinematic-strings-6-220896.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 21.333333,
+        "measuredSec": 21.333333,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs235363",
+      "file": "audio/fx/vehicles/car-horn-235363.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
       "notes": []
     },
     {
@@ -9923,6 +10756,42 @@
         "expectedSec": 2.727273,
         "measuredSec": 2.727279,
         "diffMs": 0.01,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs242720",
+      "file": "audio/drums/darbuka-doumbek-dnb-drums-242720.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 2.727273,
+        "measuredSec": 2.727279,
+        "diffMs": 0.01,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs242849",
+      "file": "audio/electronic-drums/electro-beat-242849.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 6,
+        "measuredSec": 6,
+        "diffMs": 0,
         "diffFrames": 0
       },
       "notes": []
@@ -10096,6 +10965,130 @@
       "notes": []
     },
     {
+      "id": "freesound-cc0.fs278899",
+      "file": "audio/world/playful-world-278899.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 13.714286,
+        "measuredSec": 13.714286,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs319452",
+      "file": "audio/mallets/triplebel-mallets-319452.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 14.769231,
+        "measuredSec": 14.769229,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs319453",
+      "file": "audio/mallets/triplebel-mallets-3-319453.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 14.769231,
+        "measuredSec": 14.769229,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs319454",
+      "file": "audio/mallets/triplebel-mallets-2-319454.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 14.769231,
+        "measuredSec": 14.769229,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs319456",
+      "file": "audio/brass/middle-earth-brass-319456.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 14.769231,
+        "measuredSec": 14.769229,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs319457",
+      "file": "audio/brass/middle-earth-brass-2-319457.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 14.769231,
+        "measuredSec": 14.769229,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs319572",
+      "file": "audio/keys/lforgan-deep-keys-319572.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 14.769231,
+        "measuredSec": 14.769229,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
       "id": "freesound-cc0.fs32059",
       "file": "audio/synth-bass/electro-synth-bass-19-32059.wav",
       "pack": "freesound-cc0",
@@ -10108,6 +11101,24 @@
       "durationCheck": {
         "expectedSec": 2.181818,
         "measuredSec": 2.181814,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs321754",
+      "file": "audio/woodwinds/rainsteel-winds-321754.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 16,
+        "measuredSec": 16,
         "diffMs": 0,
         "diffFrames": 0
       },
@@ -10132,6 +11143,19 @@
       "notes": []
     },
     {
+      "id": "freesound-cc0.fs323123",
+      "file": "audio/fx/vehicles/bicycle-bell-bikekitchen-augsburg-323123.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
       "id": "freesound-cc0.fs324720",
       "file": "audio/brass/electro-brass-324720.wav",
       "pack": "freesound-cc0",
@@ -10141,6 +11165,22 @@
       "unknown": [
         "key"
       ],
+      "durationCheck": {
+        "expectedSec": 16,
+        "measuredSec": 16,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs324722",
+      "file": "audio/woodwinds/electro-winds-324722.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
       "durationCheck": {
         "expectedSec": 16,
         "measuredSec": 16,
@@ -10184,6 +11224,188 @@
       "notes": []
     },
     {
+      "id": "freesound-cc0.fs333316",
+      "file": "audio/fx/vehicles/galaga-mid-boss-tractor-333316.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs338777",
+      "file": "audio/world/venuzela-world-338777.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 14.769231,
+        "measuredSec": 14.769229,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs343072",
+      "file": "audio/keys/soul-keys-343072.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 9.50495,
+        "measuredSec": 9.504943,
+        "diffMs": -0.01,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs343629",
+      "file": "audio/fx/environments/soft-343629.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs343631",
+      "file": "audio/fx/environments/medium-2-343631.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs343632",
+      "file": "audio/fx/environments/soft-3-343632.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs343638",
+      "file": "audio/fx/environments/hard-2-343638.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs343642",
+      "file": "audio/fx/environments/hard-3-343642.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs343651",
+      "file": "audio/fx/environments/soft-2-343651.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs343665",
+      "file": "audio/fx/environments/soft-4-343665.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs343668",
+      "file": "audio/fx/environments/hard-343668.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs343670",
+      "file": "audio/fx/environments/medium-343670.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs34397",
+      "file": "audio/electronic-drums/wrd-beat-34397.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 3.428571,
+        "measuredSec": 3.428571,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
       "id": "freesound-cc0.fs344082",
       "file": "audio/acoustic-guitar/folk-acoustic-guitar-344082.wav",
       "pack": "freesound-cc0",
@@ -10197,6 +11419,19 @@
         "diffMs": 0.01,
         "diffFrames": 0
       },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs345351",
+      "file": "audio/fx/environments/musik-aus-meinem-zimmer-345351.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
       "notes": []
     },
     {
@@ -10246,6 +11481,24 @@
       "durationCheck": {
         "expectedSec": 10.666667,
         "measuredSec": 10.666667,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs353853",
+      "file": "audio/drums/rock-drums-2-353853.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 4,
+        "measuredSec": 4,
         "diffMs": 0,
         "diffFrames": 0
       },
@@ -10422,6 +11675,56 @@
       "notes": []
     },
     {
+      "id": "freesound-cc0.fs365189",
+      "file": "audio/synth/square-bubble-synth-365189.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 9.6,
+        "measuredSec": 9.6,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs369044",
+      "file": "audio/percussion/hats-percussion-369044.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 1.846154,
+        "measuredSec": 1.846145,
+        "diffMs": -0.01,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs371159",
+      "file": "audio/strings/stri-strings-2-371159.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 16,
+        "measuredSec": 16,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
       "id": "freesound-cc0.fs371160",
       "file": "audio/strings/stri-strings-371160.wav",
       "pack": "freesound-cc0",
@@ -10450,6 +11753,51 @@
       "durationCheck": {
         "expectedSec": 6.666667,
         "measuredSec": 6.666667,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs377496",
+      "file": "audio/fx/vehicles/troubeni-377496.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs381274",
+      "file": "audio/strings/str-strings-381274.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 16,
+        "measuredSec": 16,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs381279",
+      "file": "audio/strings/orchest-strings-381279.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 14.769231,
+        "measuredSec": 14.769229,
         "diffMs": 0,
         "diffFrames": 0
       },
@@ -10490,6 +11838,71 @@
       "notes": []
     },
     {
+      "id": "freesound-cc0.fs383593",
+      "file": "audio/fx/vehicles/bicycle-bell-4-383593.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs383595",
+      "file": "audio/fx/vehicles/bicycle-bell-3-383595.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs383600",
+      "file": "audio/fx/vehicles/bicycle-bell-2-383600.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs383601",
+      "file": "audio/fx/vehicles/bicycle-bell-383601.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs388277",
+      "file": "audio/fx/vehicles/tour-de-france-horns-388277.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
       "id": "freesound-cc0.fs392215",
       "file": "audio/electronic-drums/edm-beat-2-392215.wav",
       "pack": "freesound-cc0",
@@ -10508,6 +11921,161 @@
       "notes": []
     },
     {
+      "id": "freesound-cc0.fs398492",
+      "file": "audio/fx/nature/wind-chimes-single-398492.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs398494",
+      "file": "audio/fx/nature/wind-chimes-single-2-398494.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs398495",
+      "file": "audio/fx/nature/wind-chimes-rough-398495.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs399325",
+      "file": "audio/synth/electro-synth-399325.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 9.6,
+        "measuredSec": 9.6,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs400597",
+      "file": "audio/strings/electro-strings-400597.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 16,
+        "measuredSec": 16,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs400601",
+      "file": "audio/strings/lowkey-strings-400601.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 16,
+        "measuredSec": 16,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs402458",
+      "file": "audio/vocals/ambient-vocal-402458.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 8.727273,
+        "measuredSec": 8.727279,
+        "diffMs": 0.01,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs403555",
+      "file": "audio/piano/chords-piano-403555.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 7.384615,
+        "measuredSec": 7.384626,
+        "diffMs": 0.01,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs412164",
+      "file": "audio/fx/funny/deep-wobble-412164.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs413655",
+      "file": "audio/fx/vehicles/helicopter-413655.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
       "id": "freesound-cc0.fs414315",
       "file": "audio/mallets/christmas-bell-mallets-414315.wav",
       "pack": "freesound-cc0",
@@ -10521,6 +12089,24 @@
         "expectedSec": 6.153846,
         "measuredSec": 6.153855,
         "diffMs": 0.01,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs415004",
+      "file": "audio/bass/digital-vinyl-bass-415004.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 24,
+        "measuredSec": 24,
+        "diffMs": 0,
         "diffFrames": 0
       },
       "notes": []
@@ -10692,6 +12278,24 @@
       "notes": []
     },
     {
+      "id": "freesound-cc0.fs423079",
+      "file": "audio/mallets/trap-bell-mallets-423079.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 13.81295,
+        "measuredSec": 13.812948,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
       "id": "freesound-cc0.fs423278",
       "file": "audio/drums/rock-groove-drums-423278.wav",
       "pack": "freesound-cc0",
@@ -10705,6 +12309,24 @@
         "expectedSec": 17.454545,
         "measuredSec": 17.454535,
         "diffMs": -0.01,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs423720",
+      "file": "audio/drums/punk-rock-groove-drums-423720.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 27.428571,
+        "measuredSec": 27.428571,
+        "diffMs": 0,
         "diffFrames": 0
       },
       "notes": []
@@ -10744,6 +12366,19 @@
       "notes": []
     },
     {
+      "id": "freesound-cc0.fs424927",
+      "file": "audio/fx/environments/drum-424927.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
       "id": "freesound-cc0.fs427441",
       "file": "audio/world/clouds-world-427441.wav",
       "pack": "freesound-cc0",
@@ -10756,6 +12391,42 @@
       "durationCheck": {
         "expectedSec": 19.2,
         "measuredSec": 19.2,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs427559",
+      "file": "audio/drums/sweet-groove-drums-427559.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 18.461538,
+        "measuredSec": 18.461542,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs428332",
+      "file": "audio/brass/funk-brass-2-428332.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 16.842105,
+        "measuredSec": 16.842109,
         "diffMs": 0,
         "diffFrames": 0
       },
@@ -10780,6 +12451,24 @@
       "notes": []
     },
     {
+      "id": "freesound-cc0.fs429956",
+      "file": "audio/drums/fat-drums-429956.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 6,
+        "measuredSec": 6,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
       "id": "freesound-cc0.fs431180",
       "file": "audio/electric-guitar/grungy-guitar-431180.wav",
       "pack": "freesound-cc0",
@@ -10791,6 +12480,37 @@
         "expectedSec": 25.945946,
         "measuredSec": 25.945941,
         "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs431320",
+      "file": "audio/fx/vehicles/bicycle-bell-ringing-431320.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs431872",
+      "file": "audio/drums/rock-drums-5-431872.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 18.113208,
+        "measuredSec": 18.113197,
+        "diffMs": -0.01,
         "diffFrames": 0
       },
       "notes": []
@@ -10808,6 +12528,78 @@
       "durationCheck": {
         "expectedSec": 9.056604,
         "measuredSec": 9.056599,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs431874",
+      "file": "audio/drums/rock-drums-3-431874.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 18.113208,
+        "measuredSec": 18.113197,
+        "diffMs": -0.01,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs432116",
+      "file": "audio/drums/crazy-rhythm-drums-2-432116.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 32,
+        "measuredSec": 32,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs432117",
+      "file": "audio/drums/crazy-rhythm-drums-3-432117.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 32,
+        "measuredSec": 32,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs432133",
+      "file": "audio/drums/crazy-rhythm-drums-432133.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 24,
+        "measuredSec": 24,
         "diffMs": 0,
         "diffFrames": 0
       },
@@ -10850,6 +12642,98 @@
       "notes": []
     },
     {
+      "id": "freesound-cc0.fs434839",
+      "file": "audio/strings/goodbye-then-strings-434839.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 21.333333,
+        "measuredSec": 21.333333,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs435501",
+      "file": "audio/fx/environments/street-carnival-drums-435501.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs439464",
+      "file": "audio/strings/dragontrance-strings-439464.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 6.4,
+        "measuredSec": 6.4,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs444351",
+      "file": "audio/fx/funny/vibraslap-2-444351.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs445454",
+      "file": "audio/woodwinds/keyboard-winds-445454.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 17.454545,
+        "measuredSec": 17.454535,
+        "diffMs": -0.01,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs445800",
+      "file": "audio/strings/bells-strings-445800.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 19.2,
+        "measuredSec": 19.2,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
       "id": "freesound-cc0.fs44913",
       "file": "audio/synth-bass/house-rmx-synth-bass-44913.wav",
       "pack": "freesound-cc0",
@@ -10863,6 +12747,37 @@
         "diffMs": 0,
         "diffFrames": 0
       },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs452692",
+      "file": "audio/percussion/recorded-percussion-452692.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 1.95122,
+        "measuredSec": 1.951224,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs455434",
+      "file": "audio/fx/environments/artificial-forest-impulse-response-2-455434.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
       "notes": []
     },
     {
@@ -10884,6 +12799,24 @@
       "notes": []
     },
     {
+      "id": "freesound-cc0.fs456132",
+      "file": "audio/percussion/world-percussion-3-456132.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 5.333333,
+        "measuredSec": 5.333333,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
       "id": "freesound-cc0.fs45671",
       "file": "audio/synth-bass/electro-synth-bass-7-45671.wav",
       "pack": "freesound-cc0",
@@ -10900,6 +12833,19 @@
       "notes": []
     },
     {
+      "id": "freesound-cc0.fs457277",
+      "file": "audio/fx/environments/artificial-forest-impulse-response-457277.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
       "id": "freesound-cc0.fs45742",
       "file": "audio/synth-bass/jazz-follow-hardrise-synth-bass-45742.wav",
       "pack": "freesound-cc0",
@@ -10913,6 +12859,19 @@
         "diffMs": -0.01,
         "diffFrames": -1
       },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs462177",
+      "file": "audio/fx/vehicles/helicoptero-462177.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
       "notes": []
     },
     {
@@ -11036,6 +12995,19 @@
       "notes": []
     },
     {
+      "id": "freesound-cc0.fs468441",
+      "file": "audio/fx/vehicles/vintage-bicycle-horn-468441.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
       "id": "freesound-cc0.fs47113",
       "file": "audio/electric-guitar/blues-lick-guitar-47113.wav",
       "pack": "freesound-cc0",
@@ -11049,6 +13021,37 @@
         "expectedSec": 8.067227,
         "measuredSec": 8.067234,
         "diffMs": 0.01,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs472477",
+      "file": "audio/fx/funny/battery-compartment-spring-472477.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs476479",
+      "file": "audio/vocals/tadadapa-vocal-476479.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 8,
+        "measuredSec": 8,
+        "diffMs": 0,
         "diffFrames": 0
       },
       "notes": []
@@ -11224,6 +13227,22 @@
       "notes": []
     },
     {
+      "id": "freesound-cc0.fs484639",
+      "file": "audio/woodwinds/lcbc-winds-484639.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 6,
+        "measuredSec": 6,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
       "id": "freesound-cc0.fs485082-2",
       "file": "audio/electric-guitar/rock-guitar-4-485082.wav",
       "pack": "freesound-cc0",
@@ -11276,6 +13295,96 @@
       "notes": []
     },
     {
+      "id": "freesound-cc0.fs485390",
+      "file": "audio/percussion/electro-percussion-6-485390.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 4.897959,
+        "measuredSec": 4.897959,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs485392",
+      "file": "audio/percussion/electro-percussion-11-485392.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 4.897959,
+        "measuredSec": 4.897959,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs485400",
+      "file": "audio/percussion/electro-percussion-7-485400.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 4,
+        "measuredSec": 4,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs485478",
+      "file": "audio/percussion/electro-percussion-3-485478.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 2,
+        "measuredSec": 2,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs485479",
+      "file": "audio/percussion/electro-percussion-5-485479.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 2,
+        "measuredSec": 2,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
       "id": "freesound-cc0.fs488331",
       "file": "audio/synth-bass/prog-synth-bass-488331.wav",
       "pack": "freesound-cc0",
@@ -11308,6 +13417,54 @@
       "notes": []
     },
     {
+      "id": "freesound-cc0.fs502937",
+      "file": "audio/keys/progression-keys-502937.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 11.294118,
+        "measuredSec": 11.294127,
+        "diffMs": 0.01,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs505048",
+      "file": "audio/strings/king-has-arrived-strings-505048.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 9.142857,
+        "measuredSec": 9.142857,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs505112",
+      "file": "audio/brass/march-brass-505112.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 10.666667,
+        "measuredSec": 10.666667,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
       "id": "freesound-cc0.fs506375",
       "file": "audio/woodwinds/bamboo-winds-506375.wav",
       "pack": "freesound-cc0",
@@ -11319,6 +13476,172 @@
         "expectedSec": 10.666667,
         "measuredSec": 10.666667,
         "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs507896",
+      "file": "audio/fx/funny/xylophone-eye-blinks-507896.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs509467",
+      "file": "audio/percussion/happy-trance-percussion-509467.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 8,
+        "measuredSec": 8,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs51254",
+      "file": "audio/fx/funny/wobble-bass-51254.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs512920",
+      "file": "audio/fx/nature/thunder-sheet-soft-mallet-512920.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs512921",
+      "file": "audio/fx/nature/thunder-sheet-soft-mallet-2-512921.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs512922",
+      "file": "audio/fx/nature/thunder-sheet-medium-mallet-512922.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs512925",
+      "file": "audio/fx/nature/thunder-sheet-soft-mallet-5-512925.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs512927",
+      "file": "audio/fx/nature/thunder-sheet-soft-mallet-4-512927.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs512928",
+      "file": "audio/fx/nature/thunder-sheet-soft-mallet-3-512928.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs513297",
+      "file": "audio/fx/nature/gray-ocean-pulse-513297.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs515282",
+      "file": "audio/fx/funny/bocina-515282.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs516211",
+      "file": "audio/vocals/cinematic-vocal-516211.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 7.384615,
+        "measuredSec": 7.384626,
+        "diffMs": 0.01,
         "diffFrames": 0
       },
       "notes": []
@@ -11360,6 +13683,19 @@
       "notes": []
     },
     {
+      "id": "freesound-cc0.fs520452",
+      "file": "audio/fx/vehicles/echoing-kick-drum-520452.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
       "id": "freesound-cc0.fs527218",
       "file": "audio/mallets/berceuse-cologne-mallets-527218.wav",
       "pack": "freesound-cc0",
@@ -11376,6 +13712,24 @@
       "notes": []
     },
     {
+      "id": "freesound-cc0.fs527219",
+      "file": "audio/synth/salade-saison-synth-527219.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 27.428571,
+        "measuredSec": 27.428571,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
       "id": "freesound-cc0.fs527326",
       "file": "audio/acoustic-guitar/chord-acoustic-guitar-527326.wav",
       "pack": "freesound-cc0",
@@ -11386,6 +13740,97 @@
       "durationCheck": {
         "expectedSec": 16,
         "measuredSec": 16,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs527779",
+      "file": "audio/fx/funny/boing-box-527779.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs529676",
+      "file": "audio/vocals/electro-vocal-529676.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 4.8,
+        "measuredSec": 4.8,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs537020",
+      "file": "audio/fx/funny/wonderloop-bpm-537020.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs537981",
+      "file": "audio/fx/environments/carnival-537981.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs545900",
+      "file": "audio/drums/rock-pattern-key-drums-545900.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 8,
+        "measuredSec": 8,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs546205",
+      "file": "audio/strings/cinematic-strings-4-546205.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 21.333333,
+        "measuredSec": 21.333333,
         "diffMs": 0,
         "diffFrames": 0
       },
@@ -11522,6 +13967,22 @@
       "notes": []
     },
     {
+      "id": "freesound-cc0.fs555706",
+      "file": "audio/synth/cute-chords-synth-555706.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 20.645161,
+        "measuredSec": 20.64517,
+        "diffMs": 0.01,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
       "id": "freesound-cc0.fs555917",
       "file": "audio/vocals/pop-vocal-555917.wav",
       "pack": "freesound-cc0",
@@ -11556,6 +14017,38 @@
       "notes": []
     },
     {
+      "id": "freesound-cc0.fs558209",
+      "file": "audio/keys/old-keys-558209.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 21.333333,
+        "measuredSec": 21.333333,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs559453",
+      "file": "audio/synth/spooky-synth-559453.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 8.727273,
+        "measuredSec": 8.727279,
+        "diffMs": 0.01,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
       "id": "freesound-cc0.fs559519",
       "file": "audio/bass/dry-lipstick-both-bass-559519.wav",
       "pack": "freesound-cc0",
@@ -11574,6 +14067,22 @@
       "notes": []
     },
     {
+      "id": "freesound-cc0.fs560760",
+      "file": "audio/synth/bright-piano-synth-560760.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 15,
+        "measuredSec": 15,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
       "id": "freesound-cc0.fs560884",
       "file": "audio/bass/wet-vocoder-pick-bass-560884.wav",
       "pack": "freesound-cc0",
@@ -11584,6 +14093,22 @@
       "durationCheck": {
         "expectedSec": 4,
         "measuredSec": 4,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs562216",
+      "file": "audio/bass/house-bmp-bass-562216.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 8,
+        "measuredSec": 8,
         "diffMs": 0,
         "diffFrames": 0
       },
@@ -11635,6 +14160,19 @@
         "diffMs": 0,
         "diffFrames": 0
       },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs565800",
+      "file": "audio/fx/funny/badoink-565800.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
       "notes": []
     },
     {
@@ -11692,6 +14230,35 @@
       "notes": []
     },
     {
+      "id": "freesound-cc0.fs569393",
+      "file": "audio/woodwinds/quena-winds-569393.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 8.275862,
+        "measuredSec": 8.275873,
+        "diffMs": 0.01,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs569894",
+      "file": "audio/fx/funny/wild-west-569894.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
       "id": "freesound-cc0.fs569895",
       "file": "audio/electric-guitar/sad-guitar-569895.wav",
       "pack": "freesound-cc0",
@@ -11707,6 +14274,37 @@
         "diffMs": 0,
         "diffFrames": 0
       },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs570455",
+      "file": "audio/piano/dark-without-melody-piano-570455.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 32,
+        "measuredSec": 32,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs570603",
+      "file": "audio/fx/vehicles/truck-horns-570603.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
       "notes": []
     },
     {
@@ -11752,6 +14350,22 @@
       "durationCheck": {
         "expectedSec": 9.230769,
         "measuredSec": 9.230771,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs575036",
+      "file": "audio/synth/plucky-synth-575036.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 9.6,
+        "measuredSec": 9.6,
         "diffMs": 0,
         "diffFrames": 0
       },
@@ -11822,6 +14436,38 @@
       "notes": []
     },
     {
+      "id": "freesound-cc0.fs575476",
+      "file": "audio/piano/soft-upright-piano-575476.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 15,
+        "measuredSec": 15,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs575481",
+      "file": "audio/synth/happy-mouse-synth-575481.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 15,
+        "measuredSec": 15,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
       "id": "freesound-cc0.fs577603",
       "file": "audio/brass/wonky-ska-brass-577603.wav",
       "pack": "freesound-cc0",
@@ -11832,6 +14478,110 @@
       "durationCheck": {
         "expectedSec": 26.666667,
         "measuredSec": 26.666667,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs580833",
+      "file": "audio/piano/solar-winds-perfect-piano-580833.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 32,
+        "measuredSec": 32,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs582422",
+      "file": "audio/synth/weird-cool-synth-582422.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 11.034483,
+        "measuredSec": 11.03449,
+        "diffMs": 0.01,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs583275",
+      "file": "audio/piano/dark-melody-piano-2-583275.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 32,
+        "measuredSec": 32,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs583433",
+      "file": "audio/piano/dark-melody-piano-583433.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 32,
+        "measuredSec": 32,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs583698",
+      "file": "audio/piano/upbeat-piano-583698.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 22.068966,
+        "measuredSec": 22.068957,
+        "diffMs": -0.01,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs585157",
+      "file": "audio/keys/glitched-fuzz-dry-keys-585157.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 12,
+        "measuredSec": 12,
         "diffMs": 0,
         "diffFrames": 0
       },
@@ -11904,6 +14654,55 @@
       "notes": []
     },
     {
+      "id": "freesound-cc0.fs592850",
+      "file": "audio/keys/donor-keys-592850.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 15,
+        "measuredSec": 15,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs594066",
+      "file": "audio/fx/vehicles/helicopter-2-594066.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs608390",
+      "file": "audio/woodwinds/toy-winds-608390.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 15.483871,
+        "measuredSec": 15.483878,
+        "diffMs": 0.01,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
       "id": "freesound-cc0.fs609619",
       "file": "audio/synth-bass/analog-designed-neutron-synth-bass-609619.wav",
       "pack": "freesound-cc0",
@@ -11952,6 +14751,24 @@
       "notes": []
     },
     {
+      "id": "freesound-cc0.fs612742",
+      "file": "audio/percussion/cinematic-clap-percussion-612742.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 5.714286,
+        "measuredSec": 5.714286,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
       "id": "freesound-cc0.fs613550",
       "file": "audio/acoustic-guitar/lofi-emo-acoustic-guitar-613550.wav",
       "pack": "freesound-cc0",
@@ -11965,6 +14782,19 @@
         "diffMs": 0,
         "diffFrames": 0
       },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs615457",
+      "file": "audio/fx/funny/game-over-615457.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
       "notes": []
     },
     {
@@ -11994,6 +14824,24 @@
       "durationCheck": {
         "expectedSec": 12,
         "measuredSec": 12,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs623055",
+      "file": "audio/vocals/gated-vocal-623055.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 13.714286,
+        "measuredSec": 13.714286,
         "diffMs": 0,
         "diffFrames": 0
       },
@@ -12066,6 +14914,40 @@
       "notes": []
     },
     {
+      "id": "freesound-cc0.fs629168",
+      "file": "audio/piano/dusty-lofi-piano-629168.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 20.210526,
+        "measuredSec": 20.210522,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs629177",
+      "file": "audio/piano/vinyl-keyboard-piano-629177.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 6.575342,
+        "measuredSec": 6.575351,
+        "diffMs": 0.01,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
       "id": "freesound-cc0.fs634754",
       "file": "audio/acoustic-guitar/moody-sampled-acoustic-guitar-634754.wav",
       "pack": "freesound-cc0",
@@ -12118,6 +15000,69 @@
       "notes": []
     },
     {
+      "id": "freesound-cc0.fs644684",
+      "file": "audio/fx/nature/wind-chime-644684.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs646151",
+      "file": "audio/vocals/peanut-butter-trap-vocal-646151.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 13.061224,
+        "measuredSec": 13.061224,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs646152",
+      "file": "audio/vocals/peanut-butter-trap-vocal-2-646152.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 13.061224,
+        "measuredSec": 13.061224,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs648900",
+      "file": "audio/mallets/melodic-waiting-mystery-mallets-648900.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 15.36,
+        "measuredSec": 15.36,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
       "id": "freesound-cc0.fs649429",
       "file": "audio/vocals/gibberish-vocal-649429.wav",
       "pack": "freesound-cc0",
@@ -12131,6 +15076,24 @@
         "expectedSec": 2.033898,
         "measuredSec": 2.0339,
         "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs649771",
+      "file": "audio/woodwinds/psy-winds-649771.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 14.117647,
+        "measuredSec": 14.117642,
+        "diffMs": -0.01,
         "diffFrames": 0
       },
       "notes": []
@@ -12170,6 +15133,22 @@
       "notes": []
     },
     {
+      "id": "freesound-cc0.fs651801",
+      "file": "audio/synth/background-synth-2-651801.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 3.692308,
+        "measuredSec": 3.692313,
+        "diffMs": 0.01,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
       "id": "freesound-cc0.fs652298",
       "file": "audio/synth-bass/cadillac-synth-bass-652298.wav",
       "pack": "freesound-cc0",
@@ -12183,6 +15162,77 @@
         "diffMs": 0,
         "diffFrames": 0
       },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs655240",
+      "file": "audio/fx/vehicles/carhornsyn-655240.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs658515",
+      "file": "audio/fx/funny/cartoon-timpani-658515.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs661667",
+      "file": "audio/woodwinds/calabria-melody-reverb-winds-2-661667.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 3.75,
+        "measuredSec": 3.75,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs661668",
+      "file": "audio/woodwinds/calabria-melody-reverb-winds-661668.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 3.75,
+        "measuredSec": 3.75,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs663831",
+      "file": "audio/fx/funny/springy-jump-663831.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
       "notes": []
     },
     {
@@ -12256,6 +15306,32 @@
       "notes": []
     },
     {
+      "id": "freesound-cc0.fs675208",
+      "file": "audio/fx/vehicles/many-car-horns-traffic-675208.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs675998",
+      "file": "audio/fx/funny/crazy-machine-warner-loopable-675998.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
       "id": "freesound-cc0.fs676364",
       "file": "audio/electric-guitar/funk-ghost-notes-guitar-676364.wav",
       "pack": "freesound-cc0",
@@ -12310,6 +15386,58 @@
       "notes": []
     },
     {
+      "id": "freesound-cc0.fs679067",
+      "file": "audio/piano/show-upbeat-piano-679067.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 15,
+        "measuredSec": 15,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs682451",
+      "file": "audio/world/melody-world-2-682451.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 25.6,
+        "measuredSec": 25.6,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs684108",
+      "file": "audio/vocals/dreaming-electro-vocal-684108.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 4.8,
+        "measuredSec": 4.8,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
       "id": "freesound-cc0.fs684851",
       "file": "audio/electric-guitar/arabic-scale-guitar-684851.wav",
       "pack": "freesound-cc0",
@@ -12326,6 +15454,19 @@
       "notes": []
     },
     {
+      "id": "freesound-cc0.fs684930",
+      "file": "audio/fx/funny/cello-womp-684930.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
       "id": "freesound-cc0.fs685110",
       "file": "audio/electronic-drums/let-beat-685110.wav",
       "pack": "freesound-cc0",
@@ -12338,6 +15479,22 @@
       "durationCheck": {
         "expectedSec": 8.347826,
         "measuredSec": 8.347823,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs685343",
+      "file": "audio/keys/chorused-mpc-piano-keys-685343.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 6,
+        "measuredSec": 6,
         "diffMs": 0,
         "diffFrames": 0
       },
@@ -12378,6 +15535,19 @@
       "notes": []
     },
     {
+      "id": "freesound-cc0.fs691577",
+      "file": "audio/fx/environments/atm-forest-691577.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
       "id": "freesound-cc0.fs692485",
       "file": "audio/electric-guitar/wet-one-cirlce-guitar-692485.wav",
       "pack": "freesound-cc0",
@@ -12390,6 +15560,35 @@
       "durationCheck": {
         "expectedSec": 8,
         "measuredSec": 8,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs696560",
+      "file": "audio/fx/funny/uiclick-clay-pop-various-696560.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs697554",
+      "file": "audio/synth/granular-chords-synth-697554.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 16,
+        "measuredSec": 16,
         "diffMs": 0,
         "diffFrames": 0
       },
@@ -12412,6 +15611,37 @@
       "notes": []
     },
     {
+      "id": "freesound-cc0.fs700138",
+      "file": "audio/fx/funny/bicycle-bike-horn-triple-700138.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs700916",
+      "file": "audio/vocals/amilli-vanilli-vocal-700916.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 6.760563,
+        "measuredSec": 6.760567,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
       "id": "freesound-cc0.fs702707",
       "file": "audio/electric-guitar/live-band-vintage-guitar-702707.wav",
       "pack": "freesound-cc0",
@@ -12425,6 +15655,19 @@
         "diffMs": 0,
         "diffFrames": 0
       },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs703005",
+      "file": "audio/fx/environments/happy-parade-703005.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
       "notes": []
     },
     {
@@ -12475,6 +15718,69 @@
         "diffMs": 0,
         "diffFrames": 0
       },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs713117",
+      "file": "audio/synth/arabic-flute-synth-2-713117.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 14.769231,
+        "measuredSec": 14.769229,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs713120",
+      "file": "audio/synth/arabic-flute-synth-713120.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 14.769231,
+        "measuredSec": 14.769229,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs71409",
+      "file": "audio/strings/cinematic-strings-5-71409.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 2.424242,
+        "measuredSec": 2.42424,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs714580",
+      "file": "audio/fx/nature/venice-beach-forever-sunny-714580.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
       "notes": []
     },
     {
@@ -12664,6 +15970,53 @@
       "notes": []
     },
     {
+      "id": "freesound-cc0.fs722924",
+      "file": "audio/mallets/musikbox-noire-mallets-722924.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 13.714286,
+        "measuredSec": 13.714286,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs728266",
+      "file": "audio/woodwinds/smooth-jazz-winds-728266.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 27.428571,
+        "measuredSec": 27.428571,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs73215",
+      "file": "audio/fx/funny/vibraslap-73215.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
       "id": "freesound-cc0.fs734950",
       "file": "audio/bass/funk-bass-4-734950.wav",
       "pack": "freesound-cc0",
@@ -12675,6 +16028,73 @@
         "expectedSec": 16.695652,
         "measuredSec": 16.695646,
         "diffMs": -0.01,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs737762",
+      "file": "audio/fx/nature/wooden-frog-guiro-737762.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs738099",
+      "file": "audio/percussion/click-percussion-3-738099.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 4,
+        "measuredSec": 4,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs738103",
+      "file": "audio/percussion/click-percussion-2-738103.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 4,
+        "measuredSec": 4,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs738104",
+      "file": "audio/percussion/click-percussion-738104.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 4,
+        "measuredSec": 4,
+        "diffMs": 0,
         "diffFrames": 0
       },
       "notes": []
@@ -12698,6 +16118,62 @@
       "notes": []
     },
     {
+      "id": "freesound-cc0.fs749694",
+      "file": "audio/strings/caffeinated-strings-749694.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 8,
+        "measuredSec": 8,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs751699",
+      "file": "audio/fx/funny/game-jump-boing-751699.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key",
+        "loudnessLufs"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs752654",
+      "file": "audio/fx/environments/rock-concert-ending-people-752654.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs753221",
+      "file": "audio/fx/nature/wind-chime-2-753221.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
       "id": "freesound-cc0.fs755045",
       "file": "audio/electric-guitar/wet-vibrato-reverb-guitar-755045.wav",
       "pack": "freesound-cc0",
@@ -12713,6 +16189,32 @@
         "diffMs": 0,
         "diffFrames": 0
       },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs779205",
+      "file": "audio/fx/environments/ir-forest-distance-front-2-779205.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs779206",
+      "file": "audio/fx/environments/ir-forest-distance-front-779206.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
       "notes": []
     },
     {
@@ -12761,6 +16263,35 @@
         "expectedSec": 15.36,
         "measuredSec": 15.36,
         "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs787872",
+      "file": "audio/fx/funny/blink-effect-787872.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs789017",
+      "file": "audio/synth/sampled-plucky-synth-789017.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 17.454545,
+        "measuredSec": 17.454535,
+        "diffMs": -0.01,
         "diffFrames": 0
       },
       "notes": []
@@ -12924,6 +16455,24 @@
       "notes": []
     },
     {
+      "id": "freesound-cc0.fs811473",
+      "file": "audio/synth/mute-riff-synth-811473.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 31.47541,
+        "measuredSec": 31.47542,
+        "diffMs": 0.01,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
       "id": "freesound-cc0.fs811555",
       "file": "audio/electric-guitar/verison-guitar-6-811555.wav",
       "pack": "freesound-cc0",
@@ -12936,6 +16485,22 @@
       "durationCheck": {
         "expectedSec": 15.238095,
         "measuredSec": 15.238095,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs811991",
+      "file": "audio/piano/groovy-piano-811991.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 8,
+        "measuredSec": 8,
         "diffMs": 0,
         "diffFrames": 0
       },
@@ -12960,6 +16525,24 @@
       "notes": []
     },
     {
+      "id": "freesound-cc0.fs813191",
+      "file": "audio/keys/church-keys-813191.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 19.2,
+        "measuredSec": 19.2,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
       "id": "freesound-cc0.fs813537",
       "file": "audio/electric-guitar/ska-reggae-style-guitar-813537.wav",
       "pack": "freesound-cc0",
@@ -12975,6 +16558,35 @@
         "diffMs": 0.01,
         "diffFrames": 0
       },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs814317",
+      "file": "audio/mallets/hip-hop-mallets-814317.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 13.714286,
+        "measuredSec": 13.714286,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs814710",
+      "file": "audio/fx/environments/flute-chamber-beautiful-winds-814710.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
       "notes": []
     },
     {
@@ -13048,6 +16660,22 @@
       "notes": []
     },
     {
+      "id": "freesound-cc0.fs826622",
+      "file": "audio/keys/memories-sweet-summer-keys-826622.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 20,
+        "measuredSec": 20,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
       "id": "freesound-cc0.fs832483",
       "file": "audio/synth-bass/funk-synth-bass-832483.wav",
       "pack": "freesound-cc0",
@@ -13082,6 +16710,19 @@
       "notes": []
     },
     {
+      "id": "freesound-cc0.fs835932",
+      "file": "audio/fx/environments/chatarrero-argentina-835932.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
       "id": "freesound-cc0.fs838080",
       "file": "audio/electric-guitar/jazz-granular-brilliant-guitar-838080.wav",
       "pack": "freesound-cc0",
@@ -13094,6 +16735,40 @@
       "durationCheck": {
         "expectedSec": 32,
         "measuredSec": 32,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs842685",
+      "file": "audio/drums/groove-syncopated-drums-842685.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 9.142857,
+        "measuredSec": 9.142857,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs843254",
+      "file": "audio/vocals/dreamy-vocal-843254.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 13.714286,
+        "measuredSec": 13.714286,
         "diffMs": 0,
         "diffFrames": 0
       },
@@ -13113,6 +16788,22 @@
         "expectedSec": 16.842105,
         "measuredSec": 16.842109,
         "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs844130",
+      "file": "audio/world/melody-world-844130.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 7.384615,
+        "measuredSec": 7.384626,
+        "diffMs": 0.01,
         "diffFrames": 0
       },
       "notes": []
@@ -13203,6 +16894,19 @@
         "diffMs": 0,
         "diffFrames": 0
       },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs846671",
+      "file": "audio/fx/nature/wooden-frog-guiro-2-846671.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
       "notes": []
     },
     {
@@ -13326,6 +17030,56 @@
       "notes": []
     },
     {
+      "id": "freesound-cc0.fs852801",
+      "file": "audio/brass/celebratory-brass-852801.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 13.714286,
+        "measuredSec": 13.714286,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs852802",
+      "file": "audio/brass/celebratory-counter-brass-852802.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 13.714286,
+        "measuredSec": 13.714286,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs852832",
+      "file": "audio/brass/storytelling-brass-852832.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 28.656716,
+        "measuredSec": 28.656712,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
       "id": "freesound-cc0.fs853509",
       "file": "audio/electric-guitar/jazz-mello-guitar-853509.wav",
       "pack": "freesound-cc0",
@@ -13338,6 +17092,92 @@
       "durationCheck": {
         "expectedSec": 7.804878,
         "measuredSec": 7.804875,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs853511",
+      "file": "audio/world/bright-world-853511.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 4,
+        "measuredSec": 4,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs854307",
+      "file": "audio/world/mid-frequency-vibrations-world-854307.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 32,
+        "measuredSec": 32,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs856525",
+      "file": "audio/keys/obo-keys-856525.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 9.056604,
+        "measuredSec": 9.056599,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs859894",
+      "file": "audio/vocals/earlyfile-vocal-859894.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 2.4,
+        "measuredSec": 2.4,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs859897",
+      "file": "audio/vocals/earlyfiles-vocal-859897.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 1.714286,
+        "measuredSec": 1.714286,
         "diffMs": 0,
         "diffFrames": 0
       },
@@ -13371,6 +17211,58 @@
         "expectedSec": 8.135593,
         "measuredSec": 8.135601,
         "diffMs": 0.01,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs860527",
+      "file": "audio/drums/uptempo-rock-groove-drums-860527.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 12,
+        "measuredSec": 12,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs861542",
+      "file": "audio/vocals/distorted-yeah-vocal-861542.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 4.247788,
+        "measuredSec": 4.247778,
+        "diffMs": -0.01,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs862466",
+      "file": "audio/woodwinds/lofi-chopped-winds-862466.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 21.333333,
+        "measuredSec": 21.333333,
+        "diffMs": 0,
         "diffFrames": 0
       },
       "notes": []
@@ -13428,6 +17320,24 @@
       "notes": []
     },
     {
+      "id": "freesound-cc0.fs863991",
+      "file": "audio/mallets/random-soft-mallets-863991.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 16.695652,
+        "measuredSec": 16.695646,
+        "diffMs": -0.01,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
       "id": "freesound-cc0.fs870003",
       "file": "audio/electric-guitar/electric-guitar-2-870003.wav",
       "pack": "freesound-cc0",
@@ -13444,6 +17354,22 @@
       "notes": []
     },
     {
+      "id": "freesound-cc0.fs871657",
+      "file": "audio/piano/rally-house-melody-piano-871657.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 7.5,
+        "measuredSec": 7.5,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
       "id": "freesound-cc0.fs874737",
       "file": "audio/electric-guitar/electric-guitar-874737.wav",
       "pack": "freesound-cc0",
@@ -13454,6 +17380,71 @@
       "durationCheck": {
         "expectedSec": 12.8,
         "measuredSec": 12.8,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs874976",
+      "file": "audio/vocals/vocoder-vocal-874976.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [],
+      "durationCheck": {
+        "expectedSec": 13.714286,
+        "measuredSec": 13.714286,
+        "diffMs": 0,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs93340",
+      "file": "audio/fx/environments/orleans-ambience-93340.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "genres",
+        "key"
+      ],
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs93635",
+      "file": "audio/percussion/world-percussion-93635.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 7.384615,
+        "measuredSec": 7.384626,
+        "diffMs": 0.01,
+        "diffFrames": 0
+      },
+      "notes": []
+    },
+    {
+      "id": "freesound-cc0.fs99107",
+      "file": "audio/world/envlving-etude-world-99107.wav",
+      "pack": "freesound-cc0",
+      "review": "approved",
+      "license": "CC0-1.0",
+      "estimated": [],
+      "unknown": [
+        "key"
+      ],
+      "durationCheck": {
+        "expectedSec": 10.666667,
+        "measuredSec": 10.666667,
         "diffMs": 0,
         "diffFrames": 0
       },
