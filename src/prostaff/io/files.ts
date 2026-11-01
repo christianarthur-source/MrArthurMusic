@@ -86,22 +86,26 @@ export function base64ToBytes(b64: string): Uint8Array<ArrayBuffer> {
   return out;
 }
 
-/** Opens a print window with the engraved pages, which the browser can save as PDF. */
+/** Opens a print window with the engraved pages (US Letter), which the browser can save as PDF. */
 export function printPages(svgPages: string[], title: string) {
   const w = window.open('', '_blank');
   if (!w) throw new Error('Allow pop-ups to print or save as PDF.');
+  // Each page is engraved at Letter proportions; give the outer <svg> a viewBox so it scales to the sheet.
   const pages = svgPages
-    .map((svg) => `<section class="page">${svg.replace(/<svg([^>]*?)width="[^"]*"([^>]*?)height="[^"]*"/, '<svg$1$2')}</section>`)
+    .map((svg) => {
+      const fitted = svg.replace(/<svg([^>]*?)\swidth="([\d.]+)px"([^>]*?)\sheight="([\d.]+)px"/, '<svg$1$3 viewBox="0 0 $2 $4" preserveAspectRatio="xMidYMin meet"');
+      return `<section class="page">${fitted}</section>`;
+    })
     .join('');
   w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(title)}</title>
 <style>
-@page { size: letter; margin: 0.35in; }
-html, body { margin: 0; background: #fff; }
-.page { page-break-after: always; break-after: page; display: flex; justify-content: center; }
+@page { size: letter portrait; margin: 0; }
+html, body { margin: 0; padding: 0; background: #fff; }
+.page { width: 8.5in; height: 11in; overflow: hidden; page-break-after: always; break-after: page; }
 .page:last-child { page-break-after: auto; break-after: auto; }
-.page svg { width: 100%; height: auto; max-height: 10.2in; }
-@media screen { body { background: #e7e5e4; } .page { background: #fff; width: 8.5in; margin: 0.25in auto; padding: 0.3in; box-shadow: 0 2px 12px rgba(0,0,0,.15); } }
-</style></head><body>${pages}<script>window.onload=()=>setTimeout(()=>window.print(),300)<\/script></body></html>`);
+.page svg { display: block; width: 100%; height: 100%; }
+@media screen { body { background: #e7e5e4; padding: 0.25in 0; } .page { background: #fff; margin: 0 auto 0.25in; box-shadow: 0 2px 12px rgba(0,0,0,.15); } }
+</style></head><body>${pages}<script>window.onload=()=>setTimeout(()=>window.print(),400)<\/script></body></html>`);
   w.document.close();
 }
 

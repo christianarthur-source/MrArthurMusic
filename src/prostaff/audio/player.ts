@@ -1,4 +1,6 @@
-// Sample-based playback for Pro Staff, using the site's CC0 instrument recordings.
+// Playback for Pro Staff. The main sound is the MuseScore_General SoundFont (soundfont.ts); the site's
+// CC0 recordings are the fallback if it cannot load (e.g. blocked by a network filter).
+import { SoundFontEngine } from './soundfont';
 
 interface InstrumentManifest {
   instruments: { id: string; kind: string; samples: Record<string, string>; noteNames?: Record<string, string> }[];
@@ -26,11 +28,28 @@ export interface Click {
   accent: boolean;
 }
 
+export interface PedalEvent {
+  time: number;
+  staffN: string;
+  down: boolean;
+}
+
 export interface StaffMix {
   volume: number; // 0..1
+  pan: number; // -1 (left) .. 1 (right)
+  reverb: number; // send 0..1
   mute: boolean;
   solo: boolean;
 }
+
+export interface MasterMix {
+  volume: number; // 0..1
+  reverb: number; // 0..1 room amount
+  brightness: number; // -1 (dark) .. 1 (bright)
+}
+
+export const DEFAULT_STAFF_MIX: StaffMix = { volume: 0.8, pan: 0, reverb: 0.35, mute: false, solo: false };
+export const DEFAULT_MASTER_MIX: MasterMix = { volume: 0.85, reverb: 0.5, brightness: 0 };
 
 const BASE = '/audio/';
 
@@ -111,16 +130,26 @@ export class Player {
   ctx: AudioContext | null = null;
   private sampler: Sampler | null = null;
   private manifest: InstrumentManifest | null = null;
+  private sf: SoundFontEngine | null = null;
+  private sfFailed = false;
+  // master chain: input -> low shelf -> high shelf -> compressor -> volume -> speakers; reverb bus joins before EQ
+  private input: GainNode | null = null;
   private master: GainNode | null = null;
-  private staffGains = new Map<string, GainNode>();
+  private lowShelf: BiquadFilterNode | null = null;
+  private highShelf: BiquadFilterNode | null = null;
+  private reverbIn: GainNode | null = null;
+  private reverbOut: GainNode | null = null;
+  private strips = new Map<string, { gain: GainNode; pan: StereoPannerNode; send: GainNode }>();
   private timer: number | null = null;
   private raf: number | null = null;
   private notes: PlayNote[] = [];
   private cues: Cue[] = [];
   private clicks: Click[] = [];
+  private pedals: PedalEvent[] = [];
   private noteIdx = 0;
   private clickIdx = 0;
   private cueIdx = 0;
+  private pedalIdx = 0;
   private startCtxTime = 0;
   private startOffset = 0;
   private tempoFactor = 1;
@@ -128,19 +157,43 @@ export class Player {
   private loopStart = 0;
   metronome = false;
   mix: Record<string, StaffMix> = {};
+  masterMix: MasterMix = { ...DEFAULT_MASTER_MIX };
   playing = false;
   onCue: ((on: string[], off: string[], measure?: string) => void) | null = null;
   onStop: (() => void) | null = null;
   onTime: ((ms: number) => void) | null = null;
+  onLoading: ((fraction: number | null) => void) | null = null;
+
+  get engineName() {
+    return this.sf?.ready ? 'soundfont' : 'samples';
+  }
 
   async init() {
     if (!this.ctx) {
       const Ctx = window.AudioContext || (window as any).webkitAudioContext;
-      this.ctx = new Ctx();
-      this.master = this.ctx.createGain();
-      this.master.gain.value = 0.8;
-      const comp = this.ctx.createDynamicsCompressor();
-      this.master.connect(comp).connect(this.ctx.destination);
+      const ctx: AudioContext = new Ctx();
+      this.ctx = ctx;
+      this.input = ctx.createGain();
+      this.lowShelf = ctx.createBiquadFilter();
+      this.lowShelf.type = 'lowshelf';
+      this.lowShelf.frequency.value = 220;
+      this.highShelf = ctx.createBiquadFilter();
+      this.highShelf.type = 'highshelf';
+      this.highShelf.frequency.value = 3800;
+      const comp = ctx.createDynamicsCompressor();
+      comp.threshold.value = -14;
+      comp.ratio.value = 3;
+      comp.attack.value = 0.01;
+      comp.release.value = 0.2;
+      this.master = ctx.createGain();
+      this.input.connect(this.lowShelf).connect(this.highShelf).connect(comp).connect(this.master).connect(ctx.destination);
+      // hall reverb for the sample fallback (the SoundFont has its own reverb)
+      this.reverbIn = ctx.createGain();
+      this.reverbOut = ctx.createGain();
+      const conv = ctx.createConvolver();
+      conv.buffer = hallImpulse(ctx, 2.6);
+      this.reverbIn.connect(conv).connect(this.reverbOut).connect(this.input);
+      this.applyMaster();
     }
     if (this.ctx.state === 'suspended') await this.ctx.resume();
     if (!this.manifest) {
@@ -150,48 +203,112 @@ export class Player {
     }
   }
 
-  private gainFor(staffN: string): GainNode {
-    let g = this.staffGains.get(staffN);
-    if (!g) {
-      g = this.ctx!.createGain();
-      g.connect(this.master!);
-      this.staffGains.set(staffN, g);
+  /** Loads the SoundFont the first time (about 40 MB, cached by the browser afterwards). */
+  async loadSoundFont(): Promise<boolean> {
+    await this.init();
+    if (this.sf?.ready) return true;
+    if (this.sfFailed) return false;
+    try {
+      if (!this.sf) this.sf = new SoundFontEngine(this.ctx!, this.input!);
+      this.onLoading?.(0);
+      await this.sf.init((f) => this.onLoading?.(f));
+      return true;
+    } catch (e) {
+      console.warn('SoundFont unavailable, using the basic samples', e);
+      this.sfFailed = true;
+      return false;
+    } finally {
+      this.onLoading?.(null);
     }
-    return g;
+  }
+
+  private strip(staffN: string) {
+    let st = this.strips.get(staffN);
+    if (!st) {
+      const ctx = this.ctx!;
+      const gain = ctx.createGain();
+      const pan = ctx.createStereoPanner();
+      const send = ctx.createGain();
+      gain.connect(pan).connect(this.input!);
+      pan.connect(send).connect(this.reverbIn!);
+      st = { gain, pan, send };
+      this.strips.set(staffN, st);
+      this.applyStrip(staffN);
+    }
+    return st;
+  }
+
+  private audible(staffN: string) {
+    const anySolo = Object.values(this.mix).some((m) => m.solo);
+    const m = this.mix[staffN];
+    return !m || (!m.mute && (!anySolo || m.solo));
+  }
+
+  private applyStrip(staffN: string) {
+    const m = { ...DEFAULT_STAFF_MIX, ...this.mix[staffN] };
+    const vol = this.audible(staffN) ? m.volume : 0;
+    const st = this.strips.get(staffN);
+    const now = this.ctx?.currentTime ?? 0;
+    if (st) {
+      st.gain.gain.setTargetAtTime(vol, now, 0.02);
+      st.pan.pan.setTargetAtTime(m.pan, now, 0.02);
+      st.send.gain.setTargetAtTime(m.reverb * 0.9, now, 0.02);
+    }
+    this.sf?.setStrip(staffN, vol, m.pan, m.reverb);
+  }
+
+  applyMaster() {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+    const m = this.masterMix;
+    this.master!.gain.setTargetAtTime(m.volume, now, 0.02);
+    this.lowShelf!.gain.setTargetAtTime(-m.brightness * 5, now, 0.05);
+    this.highShelf!.gain.setTargetAtTime(m.brightness * 7, now, 0.05);
+    this.reverbOut!.gain.setTargetAtTime(m.reverb * 1.2, now, 0.05);
+    this.sf?.setReverbScale(m.reverb);
   }
 
   applyMix() {
     if (!this.ctx) return;
-    const anySolo = Object.values(this.mix).some((m) => m.solo);
-    for (const [n, m] of Object.entries(this.mix)) {
-      const audible = !m.mute && (!anySolo || m.solo);
-      this.gainFor(n).gain.setTargetAtTime(audible ? m.volume : 0, this.ctx.currentTime, 0.02);
-    }
+    const names = new Set([...Object.keys(this.mix), ...this.strips.keys()]);
+    for (const n of names) this.applyStrip(n);
   }
 
-  /** Sounds a single note right away (note entry feedback). */
-  async audition(sample: string, midis: number[], staffN = 'x') {
+  /** Sounds a note right away (note entry feedback). */
+  async audition(sample: string, midis: number[], staffN = 'x', program?: number, drums = false) {
     try {
       await this.init();
-      for (const m of midis) void this.sampler!.play(sample, m, this.ctx!.currentTime + 0.01, 0.45, 0.7, this.gainFor(staffN));
+      const at = this.ctx!.currentTime + 0.01;
+      if (this.sf?.ready && program !== undefined) {
+        for (const m of midis) this.sf.audition(program, drums, m, at);
+        return;
+      }
+      for (const m of midis) void this.sampler!.play(sample, m, at, 0.45, 0.7, this.strip(staffN).gain);
     } catch {
       /* audio is optional */
     }
   }
 
-  async play(data: { notes: PlayNote[]; cues: Cue[]; clicks: Click[] }, fromMs: number, tempoFactor: number, loop?: { start: number; end: number } | null) {
+  async play(data: { notes: PlayNote[]; cues: Cue[]; clicks: Click[]; pedals: PedalEvent[]; channels: import('./soundfont').ChannelSetup[] }, fromMs: number, tempoFactor: number, loop?: { start: number; end: number } | null) {
     await this.init();
     this.stop(false);
+    const sfOk = await this.loadSoundFont();
     this.notes = data.notes;
     this.cues = data.cues;
     this.clicks = data.clicks;
+    this.pedals = data.pedals;
     this.tempoFactor = tempoFactor;
     this.loopStart = loop?.start ?? fromMs;
     this.loopEnd = loop?.end ?? null;
+    if (sfOk) this.sf!.setup(data.channels);
+    for (const ch of data.channels) this.strip(ch.staffN);
     this.applyMix();
-    // load the first few seconds of samples before starting
-    await this.sampler!.preload(this.notes.filter((n) => n.time >= fromMs && n.time < fromMs + 8000));
-    void this.sampler!.preload(this.notes);
+    this.applyMaster();
+    if (!sfOk) {
+      // load the first few seconds of samples before starting
+      await this.sampler!.preload(this.notes.filter((n) => n.time >= fromMs && n.time < fromMs + 8000));
+      void this.sampler!.preload(this.notes);
+    }
     this.seek(fromMs);
     this.playing = true;
     this.timer = window.setInterval(() => this.schedule(), 25);
@@ -206,13 +323,21 @@ export class Player {
 
   private seek(ms: number) {
     this.startOffset = ms;
-    this.startCtxTime = this.ctx!.currentTime + 0.08;
-    this.noteIdx = this.notes.findIndex((n) => n.time >= ms - 1);
-    if (this.noteIdx < 0) this.noteIdx = this.notes.length;
-    this.clickIdx = this.clicks.findIndex((c) => c.time >= ms - 1);
-    if (this.clickIdx < 0) this.clickIdx = this.clicks.length;
-    this.cueIdx = this.cues.findIndex((c) => c.time >= ms - 1);
-    if (this.cueIdx < 0) this.cueIdx = this.cues.length;
+    this.startCtxTime = this.ctx!.currentTime + 0.1;
+    const first = <T extends { time: number }>(list: T[]) => {
+      const i = list.findIndex((n) => n.time >= ms - 1);
+      return i < 0 ? list.length : i;
+    };
+    this.noteIdx = first(this.notes);
+    this.clickIdx = first(this.clicks);
+    this.cueIdx = first(this.cues);
+    this.pedalIdx = first(this.pedals);
+    // a pedal already held down at the start point
+    if (this.sf?.ready) {
+      const held = new Map<string, boolean>();
+      for (const p of this.pedals) if (p.time < ms) held.set(p.staffN, p.down);
+      for (const [staffN, down] of held) if (down) this.sf.pedal(staffN, true, this.startCtxTime);
+    }
   }
 
   position(): number {
@@ -226,16 +351,24 @@ export class Player {
 
   private schedule() {
     if (!this.ctx || !this.playing) return;
-    const horizon = this.ctx.currentTime + 0.15;
-    const anySolo = Object.values(this.mix).some((m) => m.solo);
+    const horizon = this.ctx.currentTime + 0.2;
+    const sf = this.sf?.ready ? this.sf : null;
+    while (this.pedalIdx < this.pedals.length) {
+      const p = this.pedals[this.pedalIdx];
+      if (this.loopEnd != null && p.time >= this.loopEnd) break;
+      const at = this.ctxTimeOf(p.time);
+      if (at > horizon) break;
+      sf?.pedal(p.staffN, p.down, at);
+      this.pedalIdx++;
+    }
     while (this.noteIdx < this.notes.length) {
       const n = this.notes[this.noteIdx];
       if (this.loopEnd != null && n.time >= this.loopEnd) break;
       const at = this.ctxTimeOf(n.time);
       if (at > horizon) break;
-      const m = this.mix[n.staffN];
-      const audible = !m || (!m.mute && (!anySolo || m.solo));
-      if (audible) void this.sampler!.play(n.sample, n.midi, at, n.dur / 1000 / this.tempoFactor, n.velocity, this.gainFor(n.staffN));
+      const dur = n.dur / 1000 / this.tempoFactor;
+      if (sf) sf.noteOn(n.staffN, n.midi, n.velocity, Math.max(at, this.ctx.currentTime), dur);
+      else if (this.audible(n.staffN)) void this.sampler!.play(n.sample, n.midi, at, dur, n.velocity, this.strip(n.staffN).gain);
       this.noteIdx++;
     }
     while (this.clickIdx < this.clicks.length) {
@@ -256,6 +389,7 @@ export class Player {
     if (pos >= end + 50) {
       if (this.loopEnd != null) {
         this.onCue?.([], ['*'], undefined);
+        sf?.stopAll();
         this.seek(this.loopStart);
       } else this.stop(true);
     }
@@ -289,15 +423,32 @@ export class Player {
     if (this.raf != null) cancelAnimationFrame(this.raf);
     this.timer = null;
     this.raf = null;
-    if (this.master && this.ctx && was) {
-      // silence ringing notes quickly
-      for (const g of this.staffGains.values()) {
-        g.disconnect();
-      }
-      this.staffGains.clear();
+    this.sf?.stopAll();
+    // notes already queued a moment ahead can still start; clear them once more
+    if (was) window.setTimeout(() => { if (!this.playing) this.sf?.stopAll(); }, 260);
+    if (this.ctx && was) {
+      // silence ringing sample notes quickly by replacing the channel strips
+      for (const st of this.strips.values()) st.gain.disconnect();
+      this.strips.clear();
     }
     if (notify && was) this.onStop?.();
   }
+}
+
+/** A synthetic concert-hall impulse response (decaying stereo noise with early reflections). */
+function hallImpulse(ctx: BaseAudioContext, seconds: number): AudioBuffer {
+  const rate = ctx.sampleRate;
+  const len = Math.floor(rate * seconds);
+  const buf = ctx.createBuffer(2, len, rate);
+  for (let c = 0; c < 2; c++) {
+    const d = buf.getChannelData(c);
+    for (let i = 0; i < len; i++) {
+      const t = i / rate;
+      const early = t < 0.08 && Math.random() < 0.004 ? (Math.random() * 2 - 1) * 0.8 : 0;
+      d[i] = ((Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.6) + early) * 0.5;
+    }
+  }
+  return buf;
 }
 
 export const DYNAMIC_VELOCITY: Record<string, number> = {
