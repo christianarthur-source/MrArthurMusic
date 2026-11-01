@@ -15,8 +15,12 @@ site is unaffected.
 - **Editing** commands live in `model/edit.ts`. They mutate the MEI in place; the editor snapshots
   the document before each command for undo. Durations are counted in ticks (quarter = 960). After
   an edit the changed layer is re-beamed and its accidentals re-spelled from each note's real pitch.
-- **Playback** (`audio/`) uses Verovio's timemap for timing and the site's CC0 instrument samples
-  (`public/audio/cc0`). Transposing instruments, dynamics and staccato are applied.
+- **Playback** (`audio/`) uses Verovio's timemap for timing. Sound comes from the MuseScore_General
+  SoundFont (MIT; `public/audio/soundfont`, split in two because Cloudflare limits files to 25 MiB)
+  played by spessasynth (Apache-2.0) in an AudioWorklet — the same approach as MuseScore 3. It loads
+  on the first Play and the browser caches it; if it cannot load, the site's CC0 samples are used.
+  Dynamics, hairpin swells, slur legato, articulations, sustain pedal and transposition are applied.
+  The mixer (per part volume/pan/reverb/mute/solo, master volume/hall reverb/tone) is saved per score.
 - **Files** (`io/`): MusicXML (.musicxml/.xml/.mxl), MEI and ABC import; MusicXML, MEI, MIDI, SVG
   and print-to-PDF export; scores autosave to IndexedDB in the browser.
 - **Sheet-music scanning** (`io/omr.ts` + `src/server/omr.ts`): photos, scans or PDFs are sent page

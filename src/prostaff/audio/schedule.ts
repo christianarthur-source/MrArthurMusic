@@ -3,7 +3,8 @@ import type { VerovioToolkit } from 'verovio/esm';
 import type { Score } from '../model/score';
 import { ancestor, child, descendants, getId } from '../model/mei';
 import { sampleForProgram, instrumentById } from '../model/instruments';
-import { DYNAMIC_VELOCITY, type Click, type Cue, type PlayNote } from './player';
+import { DYNAMIC_VELOCITY, type Click, type Cue, type PedalEvent, type PlayNote } from './player';
+import type { ChannelSetup } from './soundfont';
 
 /** Standard drum-set staff positions → General MIDI drum keys. */
 const DRUM_MAP: Record<string, number> = {
@@ -12,6 +13,8 @@ const DRUM_MAP: Record<string, number> = {
 
 export interface Schedule {
   notes: PlayNote[];
+  pedals: PedalEvent[];
+  channels: ChannelSetup[];
   cues: Cue[];
   clicks: Click[];
   idTime: Map<string, number>;
@@ -66,7 +69,16 @@ export function buildSchedule(tk: VerovioToolkit, score: Score, concert = false)
     dyn.get(p.staff)!.push({ t, v: p.v });
   }
   for (const list of dyn.values()) list.sort((a, b) => a.t - b.t);
-  const velocityAt = (staff: string, t: number) => {
+  const timeOf = (ref: string | null) => {
+    const id = (ref || '').replace(/^#/, '');
+    if (!id) return null;
+    return idTime.get(id) ?? timeOfId(id);
+  };
+  const staffOfRef = (c: Element) => {
+    const id = (c.getAttribute('startid') || '').replace(/^#/, '');
+    return c.getAttribute('staff') || ancestor(id ? score.byId(id) : null, 'staff')?.getAttribute('n') || '1';
+  };
+  const levelAt = (staff: string, t: number) => {
     const list = dyn.get(staff);
     let v = 0.68;
     if (list) for (const d of list) {
@@ -75,6 +87,46 @@ export function buildSchedule(tk: VerovioToolkit, score: Score, concert = false)
     }
     return v;
   };
+
+  // crescendo / diminuendo hairpins swell the dynamic between their ends (toward the next marking if any)
+  const ramps = new Map<string, { t0: number; t1: number; v0: number; v1: number }[]>();
+  for (const h of descendants(score.doc, 'hairpin')) {
+    const t0 = timeOf(h.getAttribute('startid'));
+    const t1 = timeOf(h.getAttribute('endid'));
+    if (t0 == null || t1 == null || t1 <= t0) continue;
+    const staff = staffOfRef(h);
+    const v0 = levelAt(staff, t0);
+    const after = (dyn.get(staff) || []).find((d) => d.t >= t1 - 1 && d.t <= t1 + 1500);
+    const cres = h.getAttribute('form') !== 'dim';
+    const v1 = after ? after.v : Math.max(0.15, Math.min(1, v0 + (cres ? 0.22 : -0.22)));
+    (ramps.get(staff) || ramps.set(staff, []).get(staff)!).push({ t0, t1, v0, v1 });
+    if (!after) (dyn.get(staff) || dyn.set(staff, []).get(staff)!).push({ t: t1, v: v1 });
+  }
+  for (const list of dyn.values()) list.sort((a, b) => a.t - b.t);
+  const velocityAt = (staff: string, t: number) => {
+    for (const r of ramps.get(staff) || []) if (t >= r.t0 && t <= r.t1) return r.v0 + ((r.v1 - r.v0) * (t - r.t0)) / (r.t1 - r.t0);
+    return levelAt(staff, t);
+  };
+
+  // slurs: notes inside are played legato (connected)
+  const slurs = new Map<string, { t0: number; t1: number }[]>();
+  for (const sl of descendants(score.doc, 'slur')) {
+    const t0 = timeOf(sl.getAttribute('startid'));
+    const t1 = timeOf(sl.getAttribute('endid'));
+    if (t0 == null || t1 == null) continue;
+    const staff = staffOfRef(sl);
+    (slurs.get(staff) || slurs.set(staff, []).get(staff)!).push({ t0, t1 });
+  }
+  const legatoAt = (staff: string, t: number) => (slurs.get(staff) || []).some((r) => t >= r.t0 - 1 && t < r.t1 - 1);
+
+  // sustain pedal marks
+  const pedals: PedalEvent[] = [];
+  for (const pd of descendants(score.doc, 'pedal')) {
+    const t = timeOf(pd.getAttribute('startid'));
+    if (t == null) continue;
+    pedals.push({ time: pd.getAttribute('dir') === 'up' ? t + 20 : t + 5, staffN: staffOfRef(pd), down: pd.getAttribute('dir') !== 'up' });
+  }
+  pedals.sort((a, b) => a.time - b.time);
 
   for (const entry of timemap) {
     for (const id of entry.on || []) {
@@ -86,12 +138,18 @@ export function buildSchedule(tk: VerovioToolkit, score: Score, concert = false)
       const info = sampleOf.get(staffN) || { sample: 'piano', drums: false, semi: 0 };
       let dur = typeof mv.duration === 'number' ? mv.duration : 500;
       const ev = ancestor(el, 'chord') || el;
-      const artic = (ev.getAttribute('artic') || '') + ' ' + (el.getAttribute('artic') || '');
-      if (/\bstacc|stacis|spicc\b/.test(artic)) dur *= 0.45;
-      else if (/\bten\b/.test(artic)) dur *= 1;
-      else dur *= 0.94;
+      const artic = (ev.getAttribute('artic') || '') + ' ' + (el.getAttribute('artic') || '') + ' ' + descendants(ev, 'artic').map((a) => a.getAttribute('artic')).join(' ');
       let v = velocityAt(staffN, entry.tstamp);
-      if (/\b(acc|marc)\b/.test(artic)) v = Math.min(1, v + 0.15);
+      if (/stacis/.test(artic)) dur *= 0.3;
+      else if (/(stacc|spicc)/.test(artic)) dur *= 0.45;
+      else if (/ten/.test(artic)) dur *= 1;
+      else if (legatoAt(staffN, entry.tstamp)) dur *= 1.04;
+      else dur *= 0.9;
+      if (/marc/.test(artic)) {
+        v += 0.2;
+        dur *= 0.85;
+      } else if (/acc/.test(artic)) v += 0.15;
+      v = Math.max(0.08, Math.min(1, v + (Math.random() - 0.5) * 0.04)); // a little human variation
       const midi = info.drums ? DRUM_MAP[(el.getAttribute('pname') || '') + (el.getAttribute('oct') || '')] ?? 38 : mv.pitch + (concert ? 0 : info.semi);
       notes.push({ time: entry.tstamp, dur, midi, staffN, velocity: v, sample: info.sample, id });
     }
@@ -129,5 +187,6 @@ export function buildSchedule(tk: VerovioToolkit, score: Score, concert = false)
     }
   }
   const last = timemap[timemap.length - 1];
-  return { notes, cues, clicks, idTime, measureTime, duration: last ? last.tstamp : 0 };
+  const channels: ChannelSetup[] = staves.map((st) => ({ staffN: st.n, partKey: String(st.partIndex), program: st.program, drums: sampleOf.get(st.n)?.drums ?? false }));
+  return { notes, pedals, channels, cues, clicks, idTime, measureTime, duration: last ? last.tstamp : 0 };
 }

@@ -55,7 +55,7 @@ export function renderOptions(v: ViewOptions, hasEncodedBreaks: boolean): Record
     adjustPageWidth: continuous,
     breaks: continuous ? 'none' : hasEncodedBreaks ? 'smart' : 'auto',
     header: continuous ? 'none' : 'auto',
-    footer: continuous ? 'none' : 'auto',
+    footer: 'none', // no "engraved with Verovio" logo on the page
     pageMarginTop: 60,
     pageMarginBottom: 60,
     pageMarginLeft: 80,
@@ -77,5 +77,24 @@ export function renderOptions(v: ViewOptions, hasEncodedBreaks: boolean): Record
     lyricSize: 4.2,
     midiTempoAdjustment: 1,
     expand: '',
+  };
+}
+
+/** Engraving options for printing / PDF: full US Letter pages (8.5 × 11 in, 1 unit = 0.1 mm). */
+export function printOptions(v: ViewOptions, hasEncodedBreaks: boolean): Record<string, unknown> {
+  return {
+    ...renderOptions({ ...v, layout: 'page' }, hasEncodedBreaks),
+    scale: 100,
+    pageWidth: 2159,
+    pageHeight: 2794,
+    adjustPageHeight: false,
+    justifyVertically: true,
+    pageMarginTop: 100,
+    pageMarginBottom: 100,
+    pageMarginLeft: 120,
+    pageMarginRight: 120,
+    spacingSystem: 14,
+    header: 'auto',
+    footer: 'none',
   };
 }

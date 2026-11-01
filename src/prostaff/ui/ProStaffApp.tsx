@@ -4,13 +4,14 @@ import {
 } from 'lucide-react';
 import type { VerovioToolkit } from 'verovio/esm';
 import './prostaff.css';
-import { getToolkit, getConverter, renderOptions, DEFAULT_VIEW, type ViewOptions, type EngravingFont } from '../engine/verovio';
+import { getToolkit, getConverter, renderOptions, printOptions, DEFAULT_VIEW, type ViewOptions, type EngravingFont } from '../engine/verovio';
 import { Score } from '../model/score';
 import { ancestor, child, children, descendants, getId, keyAlter, midiOf, stepOf, fromStep } from '../model/mei';
 import * as E from '../model/edit';
 import { NONE, type Selection, type InputState, type CommandResult, type Clip, EditError } from '../model/edit';
 import { instrumentById } from '../model/instruments';
-import { Player, type StaffMix } from '../audio/player';
+import { Player, DEFAULT_MASTER_MIX, DEFAULT_STAFF_MIX, type MasterMix, type StaffMix } from '../audio/player';
+import { Mixer } from './Mixer';
 import { buildSchedule, type Schedule } from '../audio/schedule';
 import { importScoreFile, importScoreText, download, safeFileName, base64ToBytes, printPages, IMPORT_ACCEPT } from '../io/files';
 import { listScores, loadScore, saveScore, deleteScore, lastOpenedId, type StoredScore } from '../io/storage';
@@ -121,7 +122,9 @@ export default function ProStaffApp() {
   const [countIn, setCountIn] = useState(false);
   const [loop, setLoop] = useState(false);
   const [mix, setMix] = useState<Record<string, StaffMix>>({});
+  const [masterMix, setMasterMix] = useState<MasterMix>(DEFAULT_MASTER_MIX);
   const [showMixer, setShowMixer] = useState(false);
+  const [soundLoading, setSoundLoading] = useState<number | null>(null);
   const [scanBusy, setScanBusy] = useState(false);
   const [scanProgress, setScanProgress] = useState<{ done: number; total: number } | null>(null);
   const [scanError, setScanError] = useState('');
@@ -149,7 +152,7 @@ export default function ProStaffApp() {
     setInput(nv);
   }, []);
 
-  if (import.meta.env.DEV) (window as any).__prostaff = { score: () => scoreRef.current, tk: () => tkRef.current, live };
+  if (import.meta.env.DEV) (window as any).__prostaff = { score: () => scoreRef.current, tk: () => tkRef.current, live, player };
 
   const showToast = useCallback((msg: string, err = false) => {
     if (import.meta.env.DEV) ((window as any).__psToasts ||= []).push((err ? 'ERR: ' : '') + msg);
@@ -330,6 +333,7 @@ export default function ProStaffApp() {
     const midis: number[] = [];
     let sample = 'piano';
     let staffN = '1';
+    let program = 0;
     for (const id of ids) {
       const e = s.byId(id);
       if (!e) continue;
@@ -338,8 +342,9 @@ export default function ProStaffApp() {
       staffN = ancestor(e, 'staff')?.getAttribute('n') || '1';
       const st = s.staves().find((x) => x.n === staffN);
       if (st?.instrumentId) sample = instrumentById(st.instrumentId).sample;
+      program = st?.program ?? 0;
     }
-    if (midis.length && sample !== 'drum_kit') void player.audition(sample, midis, 'audition');
+    if (midis.length && sample !== 'drum_kit') void player.audition(sample, midis, staffN, program);
   }, [player]);
 
   const replaceScore = useCallback((score: Score, id = newDocId(), created = Date.now()) => {
@@ -988,6 +993,33 @@ export default function ProStaffApp() {
     player.mix = mix;
     player.applyMix();
   }, [mix, player]);
+  useEffect(() => {
+    player.masterMix = masterMix;
+    player.applyMaster();
+  }, [masterMix, player]);
+  useEffect(() => {
+    player.onLoading = (f) => setSoundLoading(f);
+  }, [player]);
+  // the mixer is remembered per score
+  useEffect(() => {
+    if (!docId) return;
+    try {
+      const saved = JSON.parse(localStorage.getItem('prostaff:mix:' + docId) || 'null');
+      setMix(saved?.mix || {});
+      setMasterMix({ ...DEFAULT_MASTER_MIX, ...(saved?.master || {}) });
+    } catch {
+      setMix({});
+      setMasterMix(DEFAULT_MASTER_MIX);
+    }
+  }, [docId]);
+  useEffect(() => {
+    if (!docId) return;
+    try {
+      localStorage.setItem('prostaff:mix:' + docId, JSON.stringify({ mix, master: masterMix }));
+    } catch {
+      /* ignore */
+    }
+  }, [docId, mix, masterMix]);
 
   // ---------- file operations ----------
 
@@ -1081,7 +1113,7 @@ export default function ProStaffApp() {
       if (kind === 'pdf' || kind === 'svg') {
         // always engrave pages for printing, whatever the screen layout
         const conv = await getConverter();
-        conv.setOptions({ ...renderOptions({ ...view, layout: 'page', zoom: 40 }, descendants(s.doc, 'sb').length + descendants(s.doc, 'pb').length > 0), transpose: '' });
+        conv.setOptions({ ...printOptions(view, descendants(s.doc, 'sb').length + descendants(s.doc, 'pb').length > 0), transpose: '' });
         conv.loadData(partView === 'all' ? s.toString() : partMei(s, partView.split(',')));
         const out: string[] = [];
         for (let i = 1; i <= conv.getPageCount(); i++) out.push(conv.renderToSVG(i));
@@ -1296,6 +1328,7 @@ export default function ProStaffApp() {
           <Menu id="help" label="Help">
             <Item onClick={() => setDialog('shortcuts')} kbd="?">Keyboard shortcuts</Item>
             <Item onClick={() => showToast('Press N, then type A–G. Numbers 1–7 set the length, arrows move the pitch, Space plays.')}>Quick start</Item>
+            <Item onClick={() => showToast('Sounds: MuseScore General SoundFont (MIT) by S. Christian Collins, from FluidR3 by Frank Wen, played with spessasynth (Apache-2.0). Engraving: Verovio (LGPL-3.0).')}>Sounds & credits</Item>
           </Menu>
         </nav>
         <div className="ps-doc-title">
@@ -1380,6 +1413,22 @@ export default function ProStaffApp() {
         </div>
       </main>
 
+      {showMixer && (
+        <Mixer
+          parts={parts}
+          mix={mix}
+          master={masterMix}
+          engine={player.engineName === 'soundfont' ? 'MuseScore General SoundFont · hall reverb' : 'Sounds load when you press Play'}
+          onStrip={(ns, patch) => setMix((x) => {
+            const n = { ...x };
+            for (const sn of ns) n[sn] = { ...DEFAULT_STAFF_MIX, ...x[sn], ...patch };
+            return n;
+          })}
+          onMaster={(patch) => setMasterMix((x) => ({ ...x, ...patch }))}
+          onReset={() => { setMix({}); setMasterMix(DEFAULT_MASTER_MIX); }}
+          onClose={() => setShowMixer(false)}
+        />
+      )}
       <footer className="ps-bottom">
         <div className="ps-transport">
           <button className="ps-play" onClick={() => void togglePlay()} title="Play / pause (Space)" aria-label={playing ? 'Pause' : 'Play'}>{playing ? <Pause size={18} /> : <Play size={18} style={{ marginLeft: 2 }} />}</button>
@@ -1395,26 +1444,7 @@ export default function ProStaffApp() {
           </label>
           <div style={{ position: 'relative' }}>
             <button className={`ps-btn${showMixer ? ' ps-on' : ''}`} onClick={() => setShowMixer(!showMixer)} title="Mixer"><SlidersHorizontal size={15} /> <span className="ps-hide-sm">Mixer</span></button>
-            {showMixer && (
-              <div className="ps-mixer">
-                {parts.map((p) => {
-                  const m = mix[p.ns[0]] || { volume: 0.8, mute: false, solo: false };
-                  const setAll = (patch: Partial<StaffMix>) => setMix((x) => {
-                    const n = { ...x };
-                    for (const sn of p.ns) n[sn] = { ...(x[sn] || { volume: 0.8, mute: false, solo: false }), ...patch };
-                    return n;
-                  });
-                  return (
-                    <div key={p.ns.join(',')} className="ps-mixer-row">
-                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{p.name}</span>
-                      <input className="ps-range" style={{ width: 90 }} type="range" min={0} max={1} step={0.05} value={m.volume} onChange={(e) => setAll({ volume: Number(e.target.value) })} aria-label={`${p.name} volume`} />
-                      <button className={m.mute ? 'ps-on' : ''} onClick={() => setAll({ mute: !m.mute })} title="Mute">M</button>
-                      <button className={m.solo ? 'ps-on' : ''} onClick={() => setAll({ solo: !m.solo })} title="Solo">S</button>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+            {soundLoading !== null && <span className="ps-loading-sound">Loading orchestra sounds… {Math.round(soundLoading * 100)}%</span>}
           </div>
         </div>
         <div className="ps-status">
