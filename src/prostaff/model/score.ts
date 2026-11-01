@@ -565,8 +565,11 @@ export class Score {
     fd.appendChild(el(doc, 'pubStmt'));
     const music = mei.appendChild(el(doc, 'music'));
     const score = music.appendChild(el(doc, 'body')).appendChild(el(doc, 'mdiv')).appendChild(el(doc, 'score'));
+    // midi.bpm is quarter notes per minute; a dotted-quarter beat (6/8, 9/8, 12/8) is 1.5 quarters
+    const compound = opts.meterUnit === 8 && opts.meterCount % 3 === 0 && opts.meterCount > 3;
+    const quarterBpm = compound ? Math.round(opts.tempo * 1.5) : opts.tempo;
     const scoreDef = score.appendChild(
-      el(doc, 'scoreDef', { 'meter.count': opts.meterCount, 'meter.unit': opts.meterUnit, 'midi.bpm': opts.tempo }),
+      el(doc, 'scoreDef', { 'meter.count': opts.meterCount, 'meter.unit': opts.meterUnit, 'midi.bpm': quarterBpm }),
     );
     if (opts.meterCount === 4 && opts.meterUnit === 4) scoreDef.setAttribute('meter.sym', '');
     scoreDef.removeAttribute('meter.sym');
@@ -624,8 +627,8 @@ export class Score {
       if (i === total - 1) m.setAttribute('right', 'end');
     }
     const first = s.measures()[0];
-    const tempo = el(doc, 'tempo', { staff: 1, tstamp: 1, 'midi.bpm': opts.tempo, mm: opts.tempo, 'mm.unit': opts.meterUnit === 8 && opts.meterCount % 3 === 0 ? 4 : opts.meterUnit, place: 'above' });
-    if (opts.meterUnit === 8 && opts.meterCount % 3 === 0) tempo.setAttribute('mm.dots', '1');
+    const tempo = el(doc, 'tempo', { staff: 1, tstamp: 1, 'midi.bpm': quarterBpm, mm: opts.tempo, 'mm.unit': compound ? 4 : opts.meterUnit, place: 'above' });
+    if (compound) tempo.setAttribute('mm.dots', '1');
     tempo.textContent = `${opts.tempoText ? opts.tempoText + ' ' : ''}${tempoGlyph(tempo)} = ${opts.tempo}`;
     first.appendChild(tempo);
     s.invalidate();
