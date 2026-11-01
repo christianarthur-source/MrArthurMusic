@@ -33,6 +33,8 @@ Format rules (keep the output compact):
 - Omit layout and appearance data: no default-x/default-y/relative-x, no <print> layout, no <stem> or <beam> elements, no <defaults>, no <appearance>, no indentation or blank lines. Always include <type>, <duration>, <voice> and <staff> (when the part has several staves).`;
 
 export async function handleOmr(request: Request, env: OmrEnv, ctx?: { waitUntil(p: Promise<unknown>): void }): Promise<Response> {
+  // GET tells the app whether scanning is switched on (no secrets are revealed)
+  if (request.method === 'GET') return new Response(JSON.stringify({ ok: true, configured: !!env.ANTHROPIC_API_KEY }), { headers: { 'content-type': 'application/json', 'cache-control': 'no-store' } });
   if (request.method !== 'POST') return jsonError('Use POST.', 405);
   if (!env.ANTHROPIC_API_KEY) return jsonError('Sheet music scanning is not set up on the server yet (ANTHROPIC_API_KEY is missing).', 503);
   const len = Number(request.headers.get('content-length') || 0);
