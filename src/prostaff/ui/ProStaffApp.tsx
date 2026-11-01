@@ -990,7 +990,13 @@ export default function ProStaffApp() {
         if (el) {
           const r = el.getBoundingClientRect();
           const sr = root.getBoundingClientRect();
-          if (r.bottom > sr.bottom - 40 || r.top < sr.top + 20 || r.right > sr.right || r.left < sr.left) el.scrollIntoView({ block: 'center', inline: 'center', behavior: 'smooth' });
+          // follow the music only when the playing measure has actually left the view; then bring its
+          // system near the top (a tall system never fits "fully" in a small window, so don't insist on that)
+          const below = r.top > sr.bottom - 60;
+          const above = r.bottom < sr.top + 30;
+          const side = r.left > sr.right - 30 || r.right < sr.left + 30;
+          if (below || above) root.scrollTo({ top: root.scrollTop + (r.top - sr.top) - 24, behavior: 'smooth' });
+          if (side) root.scrollTo({ left: root.scrollLeft + (r.left - sr.left) - 60, behavior: 'smooth' });
         }
       }
     };
