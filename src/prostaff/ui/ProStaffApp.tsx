@@ -1,11 +1,11 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
-  Play, Pause, Square, SkipBack, Maximize, Minimize, Undo2, Redo2, ZoomIn, ZoomOut, PanelLeft, Repeat, Timer, SlidersHorizontal, Keyboard, ChevronDown, Pencil, Music, Home, Camera,
+  Play, Pause, Square, SkipBack, Maximize, Minimize, Undo2, Redo2, Settings, UserRound, MessageSquare, Wrench, ZoomIn, ZoomOut, PanelLeft, Repeat, Timer, SlidersHorizontal, Keyboard, ChevronDown, Pencil, Music, Home, Camera,
 } from 'lucide-react';
 import type { VerovioToolkit } from 'verovio/esm';
 import './prostaff.css';
 import { getToolkit, getConverter, renderOptions, printOptions, DEFAULT_VIEW, type ViewOptions, type EngravingFont } from '../engine/verovio';
-import { Score } from '../model/score';
+import { Score, isTabStaff } from '../model/score';
 import { ancestor, child, children, descendants, getId, keyAlter, midiOf, stepOf, fromStep } from '../model/mei';
 import * as E from '../model/edit';
 import { NONE, type Selection, type InputState, type CommandResult, type Clip, EditError } from '../model/edit';
@@ -14,6 +14,14 @@ import { Player, DEFAULT_MASTER_MIX, DEFAULT_STAFF_MIX, type MasterMix, type Sta
 import { Mixer } from './Mixer';
 import { WolfiBrand, wolfiFaviconHref } from './Logo';
 import { NoteIcon } from './NoteIcon';
+import { InlineEdit, HeaderEditor } from './TitleEdit';
+import * as T from '../model/tools';
+import { rangeIssues, partWritingIssues, outOfRangeNoteIds, type Issue } from '../model/analysis';
+import * as Cloud from '../io/cloud';
+import { AccountDialog, ShareDialog, VersionsDialog, CommentsPanel } from './CloudUI';
+import { SettingsDialog, IssuesPanel, PrintPartsDialog, ProgressDialog, DEFAULT_LAYOUT, type LayoutOptions, type AppPrefs } from './Extras';
+import { DEFAULT_PLAYBACK, CHORD_STAFF, type PlaybackOptions } from '../audio/schedule';
+import { renderWav } from '../audio/export';
 import { buildSchedule, type Schedule } from '../audio/schedule';
 import { importScoreFile, importScoreText, download, safeFileName, base64ToBytes, printPages, IMPORT_ACCEPT } from '../io/files';
 import { listScores, loadScore, saveScore, deleteScore, lastOpenedId, type StoredScore } from '../io/storage';
@@ -21,8 +29,8 @@ import { recognizePages, mergeMusicXml, type ScanPage } from '../io/omr';
 import { Palette, type PaletteActions } from './Palette';
 import { NewScoreDialog, LibraryDialog, PropertiesDialog, PartsDialog, TransposeDialog, ScanDialog, ShortcutsDialog, type NewScoreOptions } from './Dialogs';
 
-type DialogKind = null | 'new' | 'library' | 'props' | 'parts' | 'transpose' | 'scan' | 'shortcuts';
-type PromptKind = 'staff-text' | 'expression' | 'tempo' | 'rehearsal' | 'chord' | 'lyrics' | 'fingering' | 'meter';
+type DialogKind = null | 'new' | 'library' | 'props' | 'parts' | 'transpose' | 'scan' | 'shortcuts' | 'account' | 'share' | 'versions' | 'settings' | 'printParts';
+type PromptKind = 'staff-text' | 'expression' | 'tempo' | 'rehearsal' | 'chord' | 'lyrics' | 'fingering' | 'meter' | 'roman' | 'figbass';
 
 const DURATIONS: { dur: string; glyph: string; key: string; name: string }[] = [
   { dur: '1', glyph: '𝅝', key: '7', name: 'Whole' },
@@ -85,6 +93,15 @@ function partMei(score: Score, staffNs: string[]): string {
   return copy.toString();
 }
 
+/** What the screen shows: the full score or some parts (with multi-measure rests), optionally N measures per line. */
+function renderCopy(score: Score, staves: string[] | null, perLine: number): string {
+  if (!staves && !perLine) return score.toString();
+  const copy = staves ? Score.fromMei(partMei(score, staves)) : score.clone();
+  if (staves) T.condenseRests(copy);
+  if (perLine) T.breakEvery(copy, perLine);
+  return copy.toString();
+}
+
 function soundingMidi(score: Score, note: Element): number {
   const fifths = E.keyAt(score, note);
   const pname = note.getAttribute('pname') || 'c';
@@ -127,6 +144,26 @@ export default function ProStaffApp() {
   const [masterMix, setMasterMix] = useState<MasterMix>(DEFAULT_MASTER_MIX);
   const [showMixer, setShowMixer] = useState(false);
   const [soundLoading, setSoundLoading] = useState<number | null>(null);
+  const [headerEdit, setHeaderEdit] = useState<{ left: number; top: number } | null>(null);
+  // accounts & online saving
+  const [user, setUser] = useState<Cloud.WolfiUser | null>(null);
+  const [classes, setClasses] = useState<Cloud.WolfiClass[]>([]);
+  const [cloud, setCloud] = useState<Cloud.CloudScore | null>(null); // the open score's online record
+  const [readOnly, setReadOnly] = useState<string | null>(null); // why the score is view-only, if it is
+  const [cloudState, setCloudState] = useState<'off' | 'saved' | 'saving' | 'error'>('off');
+  const [side, setSide] = useState<null | 'comments' | 'issues'>(null);
+  const [issues, setIssues] = useState<Issue[]>([]);
+  const [progress, setProgress] = useState<{ title: string; text: string; fraction: number | null; abort?: AbortController } | null>(null);
+  const [prefs, setPrefs] = useState<AppPrefs>(() => {
+    try {
+      return { midiInput: false, showRange: true, ...JSON.parse(localStorage.getItem('wolfi:prefs') || '{}') };
+    } catch {
+      return { midiInput: false, showRange: true };
+    }
+  });
+  const [midiDevices, setMidiDevices] = useState<string[]>([]);
+  const cloudRef = useRef<{ id: string | null; version: number | null }>({ id: null, version: null });
+  const replaceScoreRef = useRef<(score: Score, id?: string, created?: number) => void>(() => {});
   const [scanBusy, setScanBusy] = useState(false);
   const [scanProgress, setScanProgress] = useState<{ done: number; total: number } | null>(null);
   const [scanError, setScanError] = useState('');
@@ -143,8 +180,8 @@ export default function ProStaffApp() {
 
   // latest values for event handlers; the setters below update them immediately so fast typing
   // never acts on a stale cursor between renders
-  const live = useRef({ sel, cursor, mode, input, prompt, dialog });
-  live.current = { sel, cursor, mode, input, prompt, dialog };
+  const live = useRef({ sel, cursor, mode, input, prompt, dialog, user: null as Cloud.WolfiUser | null, readOnly: null as string | null });
+  live.current = { sel, cursor, mode, input, prompt, dialog, user, readOnly };
   const updSel = useCallback((v: Selection) => { live.current.sel = v; setSel(v); }, []);
   const updCursor = useCallback((v: string | null) => { live.current.cursor = v; setCursor(v); }, []);
   const updMode = useCallback((v: 'input' | 'normal') => { live.current.mode = v; setMode(v); }, []);
@@ -184,10 +221,28 @@ export default function ProStaffApp() {
         const [tk] = await Promise.all([getToolkit()]);
         if (cancelled) return;
         tkRef.current = tk;
+        // who is signed in (online saving is optional)
+        if (Cloud.getToken()) Cloud.me().then((r) => { setUser(r.user); setClasses(r.classes); }).catch(() => {});
+        const shareToken = new URLSearchParams(location.search).get('share');
+        if (shareToken) {
+          try {
+            const shared = await Cloud.sharedGet(shareToken);
+            scoreRef.current = Score.fromMei(shared.mei);
+            setDocId(newDocId());
+            setReadOnly(`Shared by ${shared.ownerName} — view only. Edit to make your own copy.`);
+            setReady(true);
+            setVersion((v) => v + 1);
+            return;
+          } catch (e) {
+            showToast(e instanceof Error ? e.message : 'That shared link could not be opened.', true);
+          }
+        }
         const last = lastOpenedId();
         const rec = last ? await loadScore(last) : null;
         if (rec) {
           scoreRef.current = Score.fromMei(rec.mei);
+          T.syncTabs(scoreRef.current);
+          cloudRef.current = { id: (scoreRef.current.getSettings() as { cloudId?: string }).cloudId || null, version: null };
           createdRef.current = rec.createdAt;
           setDocId(rec.id);
         } else {
@@ -225,6 +280,26 @@ export default function ProStaffApp() {
     return () => ro.disconnect();
   }, [ready]);
 
+  // per-score settings (saved in the score) and per-computer preferences
+  const scoreSettings = (scoreRef.current?.getSettings() || {}) as { playback?: Partial<PlaybackOptions>; layout?: Partial<LayoutOptions> };
+  const playback: PlaybackOptions = { ...DEFAULT_PLAYBACK, ...scoreSettings.playback };
+  const layout: LayoutOptions = { ...DEFAULT_LAYOUT, ...scoreSettings.layout };
+  const updateScoreSettings = (patch: Record<string, unknown>) => {
+    const sc = scoreRef.current;
+    if (!sc) return;
+    sc.setSettings(patch);
+    scheduleRef.current = null;
+    setSaveState('unsaved');
+    setVersion((v) => v + 1);
+  };
+  useEffect(() => {
+    try {
+      localStorage.setItem('wolfi:prefs', JSON.stringify(prefs));
+    } catch {
+      /* ignore */
+    }
+  }, [prefs]);
+
   // ---------- render ----------
 
   useEffect(() => {
@@ -238,8 +313,8 @@ export default function ProStaffApp() {
       const phone = stageW > 0 && stageW < 600;
       const zoom = phone ? Math.min(view.zoom, 38) : view.zoom;
       const fitWidth = stageW ? Math.max(phone ? 800 : 1100, Math.min(view.pageWidth, Math.floor((stageW - (phone ? 24 : 56)) / (zoom / 100)))) : view.pageWidth;
-      tk.setOptions(renderOptions({ ...view, zoom, pageWidth: fitWidth }, hasBreaks));
-      const mei = partView === 'all' ? s.toString() : partMei(s, partView.split(','));
+      tk.setOptions({ ...renderOptions({ ...view, zoom, pageWidth: fitWidth }, hasBreaks), ...(layout.perLine ? { breaks: 'line' } : {}) });
+      const mei = renderCopy(s, partView === 'all' ? null : partView.split(','), layout.perLine);
       if (!tk.loadData(mei)) throw new Error('render failed');
       const n = tk.getPageCount();
       const out: string[] = [];
@@ -251,7 +326,7 @@ export default function ProStaffApp() {
     }
     scheduleRef.current = null;
     setRendering(false);
-  }, [ready, version, view, partView, showToast, stageW]);
+  }, [ready, version, view, partView, showToast, stageW, layout.perLine]);
 
   useEffect(() => {
     try {
@@ -260,6 +335,54 @@ export default function ProStaffApp() {
       /* ignore */
     }
   }, [view]);
+
+  // ---------- online saving ----------
+
+  const openCloud = useCallback(async (id: string) => {
+    try {
+      const rec = await Cloud.getScore(id);
+      const score = Score.fromMei(rec.mei);
+      score.setSettings({ cloudId: rec.id });
+      T.syncTabs(score);
+      replaceScoreRef.current(score, 'c_' + rec.id);
+      cloudRef.current = { id: rec.id, version: rec.version };
+      setCloud(rec);
+      setReadOnly(rec.canEdit ? null : `${rec.ownerName}'s score — view only. Edit to make your own copy.`);
+      setSaveState('saved');
+      setCloudState('saved');
+      setDialog(null);
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'That score could not be opened.', true);
+    }
+  }, [showToast]);
+
+  const saveOnline = useCallback(async (force = false): Promise<void> => {
+    const sc = scoreRef.current;
+    if (!sc || !live.current.user || live.current.readOnly) return;
+    const meta = sc.getMeta();
+    const id = cloudRef.current.id || ((sc.getSettings() as { cloudId?: string }).cloudId ?? undefined) || undefined;
+    setCloudState('saving');
+    try {
+      const r = await Cloud.saveScore({ id, title: meta.title || 'Untitled', composer: meta.composer, mei: sc.toString(), baseVersion: force || !id || cloudRef.current.version == null ? undefined : cloudRef.current.version });
+      cloudRef.current = { id: r.id, version: r.version };
+      if ((sc.getSettings() as { cloudId?: string }).cloudId !== r.id) sc.setSettings({ cloudId: r.id });
+      setCloudState('saved');
+    } catch (e) {
+      if (e instanceof Cloud.CloudError && e.data?.conflict) {
+        const keep = confirm(`${e.data.updatedBy || 'Someone'} saved a newer version of this score online.\n\nOK = keep YOUR version (replace theirs)\nCancel = open THEIR version`);
+        if (keep) return saveOnline(true);
+        if (id) await openCloud(id);
+        return;
+      }
+      if (e instanceof Cloud.CloudError && e.status === 404 && id) {
+        cloudRef.current = { id: null, version: null };
+        sc.setSettings({ cloudId: null });
+        return saveOnline();
+      }
+      if (e instanceof Cloud.CloudError && e.status === 401) setUser(null);
+      setCloudState('error');
+    }
+  }, [openCloud]);
 
   // ---------- autosave ----------
 
@@ -271,11 +394,12 @@ export default function ProStaffApp() {
     try {
       await saveScore({ id: docId, title: meta.title || 'Untitled', composer: meta.composer, mei: s.toString(), createdAt: createdRef.current, updatedAt: Date.now() });
       setSaveState('saved');
+      if (live.current.user && !live.current.readOnly) void saveOnline();
     } catch {
       setSaveState('unsaved');
       showToast('Could not save in this browser (storage may be full or blocked).', true);
     }
-  }, [docId, showToast]);
+  }, [docId, showToast, saveOnline]);
 
   useEffect(() => {
     if (!ready || saveState !== 'unsaved') return;
@@ -293,6 +417,17 @@ export default function ProStaffApp() {
     try {
       const r = fn(s) || {};
       s.invalidate();
+      T.syncTabs(s);
+      if (live.current.readOnly) {
+        // editing a view-only score makes it your own copy
+        live.current.readOnly = null;
+        setReadOnly(null);
+        cloudRef.current = { id: null, version: null };
+        s.setSettings({ cloudId: null });
+        setCloud(null);
+        setDocId(newDocId());
+        showToast('This is now your own copy.');
+      }
       undoRef.current.push({ mei: before, sel: curSel, cursor: curCursor });
       if (undoRef.current.length > 80) undoRef.current.shift();
       redoRef.current = [];
@@ -362,6 +497,12 @@ export default function ProStaffApp() {
     player.stop(false);
     setPlaying(false);
     scoreRef.current = score;
+    setReadOnly(null);
+    live.current.readOnly = null;
+    setCloud(null);
+    const cid = (score.getSettings() as { cloudId?: string }).cloudId;
+    cloudRef.current = { id: cid || null, version: null };
+    setSide(null);
     createdRef.current = created;
     undoRef.current = [];
     redoRef.current = [];
@@ -374,6 +515,7 @@ export default function ProStaffApp() {
     setVersion((v) => v + 1);
     stageRef.current?.scrollTo({ top: 0, left: 0 });
   }, [player]);
+  replaceScoreRef.current = replaceScore;
 
   /** Switches to note input with the cursor on the selected note/rest (or the selected measure's start). */
   const startInputCursor = useCallback((): string | null => {
@@ -565,9 +707,17 @@ export default function ProStaffApp() {
       if (hoverRef.current && mouseEnter()) return;
     }
     const t = ev.target as Element;
+    setHeaderEdit(null);
+    const head = t.closest?.('g.pgHead');
+    if (head) {
+      const r = head.getBoundingClientRect();
+      setHeaderEdit({ left: Math.max(8, Math.min(window.innerWidth - 340, r.left + r.width / 2 - 160)), top: r.bottom + 6 });
+      return;
+    }
     const hit = t.closest?.(CLICKABLE);
-    if (hit?.id && s.byId(hit.id)) {
-      let id = hit.id;
+    const hitId = hit?.id ? T.untabId(hit.id) : '';
+    if (hitId && s.byId(hitId)) {
+      let id = hitId;
       const el = s.byId(id)!;
       if (el.localName === 'syl') id = getId(ancestor(el, 'verse') || el);
       selectId(id, ev.shiftKey);
@@ -576,7 +726,7 @@ export default function ProStaffApp() {
     const staffG = t.closest?.('g.staff');
     const measureG = t.closest?.('g.measure');
     if (measureG?.id && staffG?.id) {
-      const staffEl = s.byId(staffG.id);
+      const staffEl = s.byId(T.untabId(staffG.id));
       const n = staffEl?.getAttribute('n') || '1';
       const cur = live.current.sel;
       if (ev.shiftKey && cur.kind === 'measures') {
@@ -674,6 +824,15 @@ export default function ProStaffApp() {
             return E.addControl(sc, sel1, 'reh', { place: 'above' }, text, { rend: 'box' });
           case 'fingering':
             return E.addControl(sc, sel1, 'fing', { place: 'above' }, text);
+          case 'roman':
+            return E.addControl(sc, sel1, 'harm', { type: 'roman', place: 'below' }, text);
+          case 'figbass': {
+            const r = E.addControl(sc, sel1, 'harm', { type: 'figbass', place: 'below' });
+            const h = sc.byId(r.createdIds![0])!;
+            const fb = h.appendChild(sc.doc.createElementNS(h.namespaceURI, 'fb'));
+            for (const f of text.split(/[\s,/]+|(?<=\d)(?=\d)/).filter(Boolean)) fb.appendChild(sc.doc.createElementNS(h.namespaceURI, 'f')).textContent = f.replace(/b/g, '♭').replace(/#/g, '♯');
+            return r;
+          }
           case 'tempo': {
             const bpm = Number((/(\d{2,3})/.exec(text) || [])[1] || 0);
             const words = text.replace(/\d{2,3}/, '').replace(/[♩=]/g, '').trim();
@@ -732,7 +891,17 @@ export default function ProStaffApp() {
     prompt: (kind) => openPrompt(kind),
     clef: (shape, line, dis, place) => run((s) => E.insertClef(s, live.current.sel, shape, line, dis, place)),
     key: (f) => run((s) => E.changeKey(s, live.current.sel, f)),
-    meter: (c, u, sym) => run((s) => E.changeMeter(s, live.current.sel, c, u, sym)),
+    meter: (c, u, sym) => run((s) => {
+      const m = E.measuresOf(s, live.current.sel)[0] || s.measures()[0];
+      const r = E.changeMeter(s, live.current.sel, c, u, sym);
+      T.rebar(s, m);
+      return { ...r, selection: NONE };
+    }),
+    drum: (id) => {
+      const startCursor = live.current.mode === 'input' ? live.current.cursor : null;
+      const r = run((s) => T.drumNote(s, startCursor, live.current.sel, id, live.current.input, live.current.mode));
+      if (r?.selection?.kind === 'events') audition(r.selection.ids);
+    },
     barline: (kind) => run((s) => E.setBarline(s, live.current.sel, kind)),
     ending: (n) => run((s) => E.addEnding(s, live.current.sel, n)),
     repeatMark: (func, text) => run((s) => E.addRepeatMark(s, live.current.sel, func, text)),
@@ -756,7 +925,7 @@ export default function ProStaffApp() {
       return E.deleteMeasures(s, { kind: 'measures', measureIds: ms.map(getId), staves: [] });
     }),
     pageBreak: (kind) => run((s) => E.addBreak(s, live.current.sel, kind)),
-  }), [run, openPrompt, updInput]);
+  }), [run, openPrompt, updInput, audition]);
 
   // ---------- keyboard ----------
 
@@ -942,7 +1111,7 @@ export default function ProStaffApp() {
     let sched = scheduleRef.current;
     if (!sched) {
       try {
-        sched = buildSchedule(tk, s, view.concertPitch);
+        sched = buildSchedule(tk, s, view.concertPitch, playback);
       } catch (e) {
         console.error(e);
         showToast('Playback could not be prepared for this score.', true);
@@ -1038,26 +1207,62 @@ export default function ProStaffApp() {
   useEffect(() => {
     player.onLoading = (f) => setSoundLoading(f);
   }, [player]);
-  // the mixer is remembered per score
+  // the mixer is saved inside the score (so it travels with online saves)
   useEffect(() => {
-    if (!docId) return;
-    try {
-      const saved = JSON.parse(localStorage.getItem('prostaff:mix:' + docId) || 'null');
-      setMix(saved?.mix || {});
-      setMasterMix({ ...DEFAULT_MASTER_MIX, ...(saved?.master || {}) });
-    } catch {
-      setMix({});
-      setMasterMix(DEFAULT_MASTER_MIX);
-    }
+    const st = (scoreRef.current?.getSettings() || {}) as { mix?: Record<string, StaffMix>; master?: Partial<MasterMix> };
+    setMix(st.mix || {});
+    setMasterMix({ ...DEFAULT_MASTER_MIX, ...(st.master || {}) });
   }, [docId]);
+  const saveMix = (nextMix: Record<string, StaffMix>, nextMaster: MasterMix) => {
+    const sc = scoreRef.current;
+    if (!sc) return;
+    sc.setSettings({ mix: nextMix, master: nextMaster });
+    setSaveState('unsaved');
+  };
+
+  // MIDI keyboard: notes played together become a chord at the cursor
   useEffect(() => {
-    if (!docId) return;
-    try {
-      localStorage.setItem('prostaff:mix:' + docId, JSON.stringify({ mix, master: masterMix }));
-    } catch {
-      /* ignore */
+    const nav = navigator as Navigator & { requestMIDIAccess?: () => Promise<MIDIAccess> };
+    if (!prefs.midiInput || !nav.requestMIDIAccess) {
+      setMidiDevices([]);
+      return;
     }
-  }, [docId, mix, masterMix]);
+    let access: MIDIAccess | null = null;
+    let held: number[] = [];
+    let timer = 0;
+    const onMsg = (e: MIDIMessageEvent) => {
+      const d = e.data;
+      if (!d || live.current.dialog || live.current.prompt) return;
+      if ((d[0] & 0xf0) === 0x90 && d[2] > 0) {
+        held.push(d[1]);
+        window.clearTimeout(timer);
+        timer = window.setTimeout(() => {
+          const notes = held;
+          held = [];
+          const startCursor = live.current.mode === 'input' ? live.current.cursor : startInputCursor();
+          const r = run((sc) => T.enterMidi(sc, startCursor, live.current.sel, notes, live.current.input));
+          if (r?.selection?.kind === 'events') audition(r.selection.ids);
+        }, 45);
+      }
+    };
+    nav.requestMIDIAccess().then((a) => {
+      access = a;
+      const bind = () => {
+        const names: string[] = [];
+        a.inputs.forEach((i) => {
+          i.onmidimessage = onMsg;
+          names.push(i.name || 'MIDI keyboard');
+        });
+        setMidiDevices(names);
+      };
+      bind();
+      a.onstatechange = bind;
+    }).catch(() => showToast('This browser did not allow MIDI keyboard access.', true));
+    return () => {
+      access?.inputs.forEach((i) => { i.onmidimessage = null; });
+      window.clearTimeout(timer);
+    };
+  }, [prefs.midiInput]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ---------- file operations ----------
 
@@ -1129,6 +1334,80 @@ export default function ProStaffApp() {
     }
   };
 
+  // ---------- tools ----------
+
+  const checkScore = () => {
+    const sc = scoreRef.current;
+    if (!sc) return;
+    // tab staves only mirror the guitar staff, so leave them out of the check
+    const tabNs = new Set(sc.staffDefs().filter(isTabStaff).map((d) => d.getAttribute('n') || ''));
+    const target = tabNs.size ? Score.fromMei(partMei(sc, sc.staffDefs().map((d) => d.getAttribute('n') || '').filter((n) => !tabNs.has(n)))) : sc;
+    const list = [...rangeIssues(target), ...partWritingIssues(target)];
+    setIssues(list);
+    setSide('issues');
+  };
+
+  const selectIssue = (i: Issue) => {
+    const ids = i.noteIds.filter((id) => scoreRef.current?.byId(id));
+    if (ids.length) updSel({ kind: 'events', ids });
+    const el = ids[0] ? stageRef.current?.querySelector(`[id="${CSS.escape(ids[0])}"]`) : null;
+    el?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  };
+
+  const cloudRecord = async (): Promise<Cloud.CloudScore | null> => {
+    if (!user) {
+      setDialog('account');
+      showToast('Sign in to save online, share and keep versions.');
+      return null;
+    }
+    if (!cloudRef.current.id) await saveOnline();
+    if (!cloudRef.current.id) {
+      showToast('This score could not be saved online yet.', true);
+      return null;
+    }
+    const rec = await Cloud.getScore(cloudRef.current.id);
+    setCloud(rec);
+    return rec;
+  };
+
+  const exportAudio = async () => {
+    const tk = tkRef.current;
+    const sc = scoreRef.current;
+    if (!tk || !sc) return;
+    const abort = new AbortController();
+    setProgress({ title: 'Export audio', text: 'Preparing…', fraction: null, abort });
+    try {
+      const sched = scheduleRef.current || buildSchedule(tk, sc, view.concertPitch, playback);
+      const blob = await renderWav(sched, mix, masterMix, (stage, f) => setProgress({ title: 'Export audio', text: stage === 'sounds' ? `Loading sounds… ${Math.round(f * 100)}%` : `Recording… ${Math.round(f * 100)}%`, fraction: f, abort }), abort.signal);
+      download(blob, `${safeFileName(sc.getMeta().title)}.wav`, 'audio/wav');
+    } catch (e) {
+      if (!abort.signal.aborted) showToast(e instanceof Error ? e.message : 'Audio export failed.', true);
+    } finally {
+      setProgress(null);
+    }
+  };
+
+  const printParts = async (groups: string[][]) => {
+    const sc = scoreRef.current;
+    if (!sc) return;
+    setDialog(null);
+    const conv = await getConverter();
+    const pagesOut: string[] = [];
+    for (const ns of groups) {
+      const copy = Score.fromMei(partMei(sc, ns));
+      T.condenseRests(copy);
+      if (layout.perLine) T.breakEvery(copy, layout.perLine);
+      conv.setOptions({ ...printOptions(view, true, layout), transpose: '' });
+      conv.loadData(copy.toString());
+      for (let i = 1; i <= conv.getPageCount(); i++) pagesOut.push(conv.renderToSVG(i));
+    }
+    try {
+      printPages(pagesOut, `${sc.getMeta().title || 'Score'} — parts`, layout.pageSize);
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'Printing failed.', true);
+    }
+  };
+
   const exportAs = async (kind: 'musicxml' | 'mei' | 'midi' | 'pdf' | 'svg') => {
     const s = scoreRef.current;
     const tk = tkRef.current;
@@ -1151,11 +1430,11 @@ export default function ProStaffApp() {
       if (kind === 'pdf' || kind === 'svg') {
         // always engrave pages for printing, whatever the screen layout
         const conv = await getConverter();
-        conv.setOptions({ ...printOptions(view, descendants(s.doc, 'sb').length + descendants(s.doc, 'pb').length > 0), transpose: '' });
-        conv.loadData(partView === 'all' ? s.toString() : partMei(s, partView.split(',')));
+        conv.setOptions({ ...printOptions(view, layout.perLine > 0 || descendants(s.doc, 'sb').length + descendants(s.doc, 'pb').length > 0, layout), transpose: '' });
+        conv.loadData(renderCopy(s, partView === 'all' ? null : partView.split(','), layout.perLine));
         const out: string[] = [];
         for (let i = 1; i <= conv.getPageCount(); i++) out.push(conv.renderToSVG(i));
-        if (kind === 'pdf') printPages(out, s.getMeta().title || 'Score');
+        if (kind === 'pdf') printPages(out, s.getMeta().title || 'Score', layout.pageSize);
         else out.forEach((svg, i) => download(svg, `${name}${out.length > 1 ? `-p${i + 1}` : ''}.svg`, 'image/svg+xml'));
       }
     } catch (e) {
@@ -1234,6 +1513,14 @@ export default function ProStaffApp() {
   const highlightCss = useMemo(() => {
     if (!s) return '';
     const rules: string[] = [];
+    if (prefs.showRange) {
+      try {
+        const out = [...outOfRangeNoteIds(s)].slice(0, 2000);
+        if (out.length) rules.push(`${out.map((id) => `.ps-page [id="${id}"]`).join(',')}{color:#d64545;fill:#d64545}`);
+      } catch {
+        /* checking is best effort */
+      }
+    }
     const ids: string[] = [];
     if (sel.kind === 'events') ids.push(...sel.ids);
     if (sel.kind === 'measures') {
@@ -1253,7 +1540,7 @@ export default function ProStaffApp() {
     }
     rules.push(`.ps-page .ps-playing,.ps-page .ps-playing *{color:var(--ps-play)!important;fill:var(--ps-play)!important}`);
     return rules.join('\n');
-  }, [s, sel, cursor, mode, version]);
+  }, [s, sel, cursor, mode, version, prefs.showRange]);
 
   // prompt position next to its anchor
   const [promptPos, setPromptPos] = useState<{ left: number; top: number } | null>(null);
@@ -1328,6 +1615,12 @@ export default function ProStaffApp() {
             <Item onClick={() => exportAs('midi')}>Export MIDI</Item>
             <Item onClick={() => exportAs('mei')}>Export MEI</Item>
             <Item onClick={() => exportAs('svg')}>Export SVG pages</Item>
+            <Item onClick={() => void exportAudio()}>Export audio (WAV)</Item>
+            <Item onClick={() => setDialog('printParts')}>Print parts…</Item>
+            <hr />
+            <Item onClick={() => setDialog('account')}>{user ? 'Online scores…' : 'Sign in to save online…'}</Item>
+            <Item onClick={async () => { if (await cloudRecord()) setDialog('share'); }}>Share…</Item>
+            <Item onClick={async () => { if (await cloudRecord()) setDialog('versions'); }}>Version history…</Item>
           </Menu>
           <Menu id="edit" label="Edit">
             <Item onClick={undo} kbd="Ctrl Z">Undo</Item>
@@ -1363,6 +1656,16 @@ export default function ProStaffApp() {
             <Item onClick={actions.insertMeasure}>Insert measure before selection</Item>
             <Item onClick={actions.deleteMeasures}>Delete selected measures</Item>
           </Menu>
+          <Menu id="tools" label="Tools">
+            <Item onClick={checkScore}>Check score (ranges & voice leading)</Item>
+            <Item onClick={() => run((sc) => T.suggestChords(sc))}>Suggest chord symbols</Item>
+            <hr />
+            <Item onClick={() => run((sc) => T.explode(sc, live.current.sel))}>Explode chords into staves below</Item>
+            <Item onClick={() => run((sc) => T.reduce(sc, live.current.sel))}>Reduce staves into one</Item>
+            <hr />
+            <Item onClick={async () => { if (await cloudRecord()) setSide('comments'); }}>Comments</Item>
+            <Item onClick={() => setDialog('settings')}>Settings…</Item>
+          </Menu>
           <Menu id="help" label="Help">
             <Item onClick={() => setDialog('shortcuts')} kbd="?">Keyboard shortcuts</Item>
             <Item onClick={() => showToast('Press N, then type A–G. Numbers 1–7 set the length, arrows move the pitch, Space plays.')}>Quick start</Item>
@@ -1370,10 +1673,19 @@ export default function ProStaffApp() {
           </Menu>
         </nav>
         <div className="ps-doc-title">
-          <strong>{meta.title || 'Untitled'}</strong>
-          <small>{[meta.composer, saveState === 'saved' ? 'Saved' : saveState === 'saving' ? 'Saving…' : 'Edited'].filter(Boolean).join(' · ')}</small>
+          <InlineEdit className="ps-inline-title" value={meta.title} placeholder="Untitled" onSave={(v) => run((sc) => { sc.setMeta({ title: v || 'Untitled' }); return {}; })} />
+          <div className="ps-doc-sub">
+            <InlineEdit value={meta.subtitle} placeholder="Add subtitle" onSave={(v) => run((sc) => { sc.setMeta({ subtitle: v }); return {}; })} />
+            <span>·</span>
+            <InlineEdit value={meta.composer} placeholder="Add composer" onSave={(v) => run((sc) => { sc.setMeta({ composer: v }); return {}; })} />
+          </div>
+          <small>{[readOnly ? 'View only' : saveState === 'saving' || cloudState === 'saving' ? 'Saving…' : saveState !== 'saved' ? 'Edited' : user && cloudRef.current.id ? (cloudState === 'error' ? 'Saved in this browser (online save failed)' : 'Saved online') : 'Saved in this browser'].filter(Boolean).join(' · ')}</small>
         </div>
         <button className="ps-btn ps-outline ps-hide-sm" onClick={() => { setScanError(''); setDialog('scan'); }}><Camera size={15} /> Scan</button>
+        {user && cloudRef.current.id && <button className={`ps-btn${side === 'comments' ? ' ps-on' : ''}`} title="Comments" onClick={async () => { if (side === 'comments') setSide(null); else if (await cloudRecord()) setSide('comments'); }}><MessageSquare size={16} /></button>}
+        <button className="ps-btn ps-outline" onClick={() => setDialog('account')} title={user ? 'Your account and online scores' : 'Sign in to save online'}>
+          <UserRound size={15} /> <span className="ps-hide-sm">{user ? user.displayName || user.username : 'Sign in'}</span>
+        </button>
         <input ref={fileRef} type="file" hidden accept={IMPORT_ACCEPT} onChange={(e) => { const f = e.target.files?.[0]; if (f) void importFile(f); e.target.value = ''; }} />
       </header>
 
@@ -1422,6 +1734,7 @@ export default function ProStaffApp() {
           <small style={{ minWidth: 34, textAlign: 'center' }}>{Math.round((view.zoom / 55) * 100)}%</small>
           <button className="ps-tool" title="Zoom in" onClick={() => setView({ ...view, zoom: Math.min(120, view.zoom + 5) })}><ZoomIn size={17} /></button>
           <button className="ps-tool" title="Keyboard shortcuts (?)" onClick={() => setDialog('shortcuts')}><Keyboard size={17} /></button>
+          <button className="ps-tool" title="Settings" onClick={() => setDialog('settings')}><Settings size={17} /></button>
           <button className="ps-tool" title={fullscreen ? 'Exit full screen' : 'Full screen'} aria-label="Full screen" onClick={toggleFullscreen}>{fullscreen ? <Minimize size={17} /> : <Maximize size={17} />}</button>
         </div>
       </div>
@@ -1449,22 +1762,38 @@ export default function ProStaffApp() {
             </div>
           )}
           {rendering && <div style={{ position: 'absolute', top: 10, right: 14 }}><div className="ps-spinner" /></div>}
+          {readOnly && <div className="ps-banner">{readOnly}</div>}
         </div>
+        {side === 'comments' && user && cloudRef.current.id && (
+          <CommentsPanel
+            scoreId={cloudRef.current.id}
+            user={user}
+            measureLabel={(() => { const ms = E.measuresOf(scoreRef.current!, sel); return ms[0]?.getAttribute('n') || null; })()}
+            onJump={(n) => { const m = scoreRef.current?.measures().find((x) => x.getAttribute('n') === n); if (m) { updSel({ kind: 'measures', measureIds: [getId(m)], staves: [] }); stageRef.current?.querySelector(`[id="${CSS.escape(getId(m))}"]`)?.scrollIntoView({ block: 'center', behavior: 'smooth' }); } }}
+            onClose={() => setSide(null)}
+          />
+        )}
+        {side === 'issues' && <IssuesPanel issues={issues} onSelect={selectIssue} onClose={() => setSide(null)} />}
       </main>
 
       {showMixer && (
         <Mixer
-          parts={parts}
+          parts={scoreRef.current && descendants(scoreRef.current.doc, 'harm').some((h) => !h.getAttribute('type') || h.getAttribute('type') === 'suggested') && playback.chords !== 'off' ? [...parts, { name: 'Chord symbols', ns: [CHORD_STAFF] }] : parts}
           mix={mix}
           master={masterMix}
           engine={player.engineName === 'soundfont' ? 'MuseScore General SoundFont · hall reverb' : 'Sounds load when you press Play'}
-          onStrip={(ns, patch) => setMix((x) => {
-            const n = { ...x };
-            for (const sn of ns) n[sn] = { ...DEFAULT_STAFF_MIX, ...x[sn], ...patch };
-            return n;
-          })}
-          onMaster={(patch) => setMasterMix((x) => ({ ...x, ...patch }))}
-          onReset={() => { setMix({}); setMasterMix(DEFAULT_MASTER_MIX); }}
+          onStrip={(ns, patch) => {
+            const n = { ...mix };
+            for (const sn of ns) n[sn] = { ...DEFAULT_STAFF_MIX, ...mix[sn], ...patch };
+            setMix(n);
+            saveMix(n, masterMix);
+          }}
+          onMaster={(patch) => {
+            const m = { ...masterMix, ...patch };
+            setMasterMix(m);
+            saveMix(mix, m);
+          }}
+          onReset={() => { setMix({}); setMasterMix(DEFAULT_MASTER_MIX); saveMix({}, DEFAULT_MASTER_MIX); }}
           onClose={() => setShowMixer(false)}
         />
       )}
@@ -1498,12 +1827,12 @@ export default function ProStaffApp() {
 
       {prompt && promptPos && (
         <div className="ps-popover" style={{ left: promptPos.left, top: promptPos.top }}>
-          <small>{({ 'staff-text': 'Text', expression: 'Expression', tempo: 'Tempo', rehearsal: 'Rehearsal', chord: 'Chord', lyrics: 'Lyric', fingering: 'Finger', meter: 'Time' } as Record<string, string>)[prompt.kind]}</small>
+          <small>{({ 'staff-text': 'Text', expression: 'Expression', tempo: 'Tempo', rehearsal: 'Rehearsal', chord: 'Chord', lyrics: 'Lyric', fingering: 'Finger', meter: 'Time', roman: 'Roman', figbass: 'Figures' } as Record<string, string>)[prompt.kind]}</small>
           <input
             className="ps-input"
             autoFocus
             value={prompt.value}
-            placeholder={prompt.kind === 'chord' ? 'e.g. Cmaj7, F#m7b5, Bb/D' : prompt.kind === 'lyrics' ? 'syllable (end with - to hyphenate)' : prompt.kind === 'tempo' ? 'e.g. Allegro 132' : ''}
+            placeholder={prompt.kind === 'roman' ? 'e.g. I, IV6, V7, viio' : prompt.kind === 'figbass' ? 'e.g. 6 4, 7, 6/5' : prompt.kind === 'chord' ? 'e.g. Cmaj7, F#m7b5, Bb/D' : prompt.kind === 'lyrics' ? 'syllable (end with - to hyphenate)' : prompt.kind === 'tempo' ? 'e.g. Allegro 132' : ''}
             onChange={(e) => setPrompt({ ...prompt, value: e.target.value })}
             onKeyDown={(e) => {
               if (e.key === 'Escape') { e.preventDefault(); setPrompt(null); return; }
@@ -1516,6 +1845,14 @@ export default function ProStaffApp() {
         </div>
       )}
 
+      {headerEdit && s && (
+        <HeaderEditor
+          meta={meta}
+          pos={headerEdit}
+          onSave={(m) => run((sc) => { sc.setMeta({ title: m.title || 'Untitled', subtitle: m.subtitle, composer: m.composer }); return {}; })}
+          onClose={() => setHeaderEdit(null)}
+        />
+      )}
       {toast && <div className={`ps-toast${toast.err ? ' ps-err' : ''}`} role="status">{toast.msg}</div>}
 
       {dialog === 'new' && <NewScoreDialog onClose={() => setDialog(null)} onCreate={createScore} />}
@@ -1535,6 +1872,43 @@ export default function ProStaffApp() {
       {dialog === 'transpose' && <TransposeDialog onClose={() => setDialog(null)} onApply={(spec) => void transposeScore(spec)} />}
       {dialog === 'scan' && <ScanDialog onClose={() => setDialog(null)} onRecognize={(p, pin, hint) => void recognize(p, pin, hint)} busy={scanBusy} progress={scanProgress} error={scanError} />}
       {dialog === 'shortcuts' && <ShortcutsDialog onClose={() => setDialog(null)} />}
+      {dialog === 'account' && (
+        <AccountDialog
+          user={user}
+          classes={classes}
+          onAuth={(u, c) => { setUser(u); setClasses(c); live.current.user = u; showToast(`Signed in as ${u.displayName || u.username}. Your score now saves online too.`); void saveOnline(); }}
+          onLogout={async () => { await Cloud.logout(); setUser(null); setClasses([]); setCloudState('off'); setDialog(null); showToast('Signed out. Scores still save in this browser.'); }}
+          onOpen={(id) => void openCloud(id)}
+          onClose={() => setDialog(null)}
+        />
+      )}
+      {dialog === 'share' && cloud && <ShareDialog score={cloud} onClose={() => setDialog(null)} onChanged={(p) => setCloud({ ...cloud, ...p })} />}
+      {dialog === 'versions' && cloudRef.current.id && (
+        <VersionsDialog scoreId={cloudRef.current.id} onClose={() => setDialog(null)} onRestore={(meiText, label) => {
+          run((sc) => {
+            const t = Score.fromMei(meiText);
+            t.setSettings({ cloudId: cloudRef.current.id });
+            sc.doc = t.doc;
+            sc.invalidate();
+            return { selection: NONE, message: `Restored the version from ${label}. Undo (Ctrl+Z) to go back.` };
+          });
+          setDialog(null);
+        }} />
+      )}
+      {dialog === 'settings' && (
+        <SettingsDialog
+          playback={playback}
+          layout={layout}
+          prefs={prefs}
+          midiDevices={midiDevices}
+          onPlayback={(p) => updateScoreSettings({ playback: p })}
+          onLayout={(l) => updateScoreSettings({ layout: l })}
+          onPrefs={setPrefs}
+          onClose={() => setDialog(null)}
+        />
+      )}
+      {dialog === 'printParts' && <PrintPartsDialog parts={parts} onClose={() => setDialog(null)} onPrint={(g) => void printParts(g)} />}
+      {progress && <ProgressDialog title={progress.title} text={progress.text} fraction={progress.fraction} onCancel={progress.abort ? () => progress.abort!.abort() : undefined} />}
     </div>
   );
 }

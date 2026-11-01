@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
+import { DRUMS } from '../model/tools';
 
 export interface PaletteActions {
   artic(name: string): void;
@@ -10,7 +11,8 @@ export interface PaletteActions {
   accidental(alter: number): void;
   cautionary(): void;
   tuplet(n: number): void;
-  prompt(kind: 'staff-text' | 'expression' | 'tempo' | 'rehearsal' | 'chord' | 'lyrics' | 'fingering' | 'meter'): void;
+  prompt(kind: 'staff-text' | 'expression' | 'tempo' | 'rehearsal' | 'chord' | 'lyrics' | 'fingering' | 'meter' | 'roman' | 'figbass'): void;
+  drum(id: string): void;
   clef(shape: string, line: number, dis?: number, place?: string): void;
   key(fifths: number): void;
   meter(count: number, unit: number, sym?: string): void;
@@ -107,6 +109,8 @@ const SECTIONS: { id: string; title: string; wide?: boolean; items: Item[] }[] =
       { label: T('Chord symbol'), title: 'Chord symbol (K)', run: (a) => a.prompt('chord') },
       { label: T('Lyrics'), title: 'Lyrics (L)', run: (a) => a.prompt('lyrics') },
       { label: T('Fingering'), title: 'Fingering', run: (a) => a.prompt('fingering') },
+      { label: T('Roman numeral'), title: 'Roman numeral analysis (below the staff)', run: (a) => a.prompt('roman') },
+      { label: T('Figured bass'), title: 'Figured bass numbers (below the staff)', run: (a) => a.prompt('figbass') },
       { label: T('rit.'), title: 'ritardando', run: (a) => a.dirText('rit.', true) },
       { label: T('a tempo'), title: 'a tempo', run: (a) => a.dirText('a tempo', false) },
     ],
@@ -153,6 +157,9 @@ const SECTIONS: { id: string; title: string; wide?: boolean; items: Item[] }[] =
       { label: T('D.S. al Coda'), title: 'D.S. al Coda', run: (a) => a.dirText('D.S. al Coda', true) },
       { label: T('To Coda'), title: 'To Coda', run: (a) => a.dirText('To Coda', true) },
     ],
+  },
+  {
+    id: 'drums', title: 'Drum set', wide: true, items: DRUMS.map((d) => ({ label: T(d.name), title: `${d.name} — writes at the cursor, or stacks on the selected note`, run: (a: PaletteActions) => a.drum(d.id) })),
   },
   {
     id: 'notes', title: 'Note style', wide: true, items: [

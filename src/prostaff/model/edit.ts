@@ -4,7 +4,7 @@ import {
   WHOLE, ancestor, child, children, cloneFresh, descendants, durToTicks, el, getId, setId, keyAlter, largestFit,
   midiOf, PNAMES, splitTicks, stepOf, fromStep, keySigString, alterToAccid,
 } from './mei';
-import { Score, LEAF_EVENTS, tempoGlyph, setKeySig } from './score';
+import { Score, LEAF_EVENTS, tempoGlyph, setKeySig, tabStaffDef } from './score';
 import { instrumentById, writtenFifths } from './instruments';
 
 export interface InputState {
@@ -1087,12 +1087,12 @@ export function changeMeter(score: Score, sel: Selection, count: number, unit: n
     sd.removeAttribute('meter.unit');
   }
   score.invalidate();
-  refit(score, m);
+  // the editor then re-flows the music into the new meter (tools.rebar)
   return { selection: sel };
 }
 
-/** Pads or trims every layer from `from` until the next meter change so measures add up. */
-function refit(score: Score, from: Element) {
+/** Pads or trims every layer from `from` until the next meter change so measures add up (older behaviour). */
+export function refit(score: Score, from: Element) {
   const all = score.measures();
   const startIdx = all.indexOf(from);
   for (let i = startIdx; i < all.length; i++) {
@@ -1329,8 +1329,9 @@ export function addInstrument(score: Score, instrumentId: string, concertFifths?
   let top = child(score.mainScoreDef, 'staffGrp')!;
   if (!top) top = score.mainScoreDef.appendChild(el(score.doc, 'staffGrp'));
   if (!top.getAttribute('symbol')) top.setAttribute('symbol', 'bracket');
-  const parent = def.clefs.length > 1 ? top.appendChild(el(score.doc, 'staffGrp', { symbol: 'brace', 'bar.thru': 'true' })) : top;
-  if (def.clefs.length > 1) {
+  const grouped = def.clefs.length > 1 || def.tab;
+  const parent = grouped ? top.appendChild(el(score.doc, 'staffGrp', { symbol: def.tab ? undefined : 'brace', 'bar.thru': 'true' })) : top;
+  if (grouped) {
     parent.appendChild(el(score.doc, 'label')).textContent = def.name;
     parent.appendChild(el(score.doc, 'labelAbbr')).textContent = def.abbr;
   }
@@ -1343,12 +1344,17 @@ export function addInstrument(score: Score, instrumentId: string, concertFifths?
       'trans.semi': def.semi, 'trans.diat': def.diat, type: `ps:${def.id}`,
     });
     setKeySig(sd, def.percussion ? '0' : keySigString(writtenFifths(concert, def.semi)));
-    if (def.clefs.length === 1) {
+    if (!grouped) {
       sd.appendChild(el(score.doc, 'label')).textContent = def.name;
       sd.appendChild(el(score.doc, 'labelAbbr')).textContent = def.abbr;
     }
     sd.appendChild(el(score.doc, 'instrDef', { 'midi.instrnum': def.program, 'midi.channel': def.percussion ? 9 : undefined }));
     parent.appendChild(sd);
+    if (def.tab) {
+      const tn = String(nextN + def.clefs.length);
+      newNs.push(tn);
+      parent.appendChild(tabStaffDef(score.doc, Number(tn), sd));
+    }
   });
   for (const m of score.measures()) {
     for (const n of newNs) {
