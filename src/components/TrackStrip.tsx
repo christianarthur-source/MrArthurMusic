@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { DEFAULT_TRACK_FX, HALLOWEEN_TRACK_FX_FIRST, HALLOWEEN_TRACK_FX_MELODIC, HALLOWEEN_TRACK_FX_DRUMS, Track, TrackFxSettings } from '../types/music';
+import { DEFAULT_TRACK_FX, THEME_TRACK_FX_FIRST, THEME_TRACK_FX_MELODIC, THEME_TRACK_FX_DRUMS, Track, TrackFxSettings } from '../types/music';
 import { INSTRUMENTS } from '../data/instruments';
 import {
   Volume2,
