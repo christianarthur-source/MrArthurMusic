@@ -15,9 +15,9 @@ import {
   UiMode,
   ViewLayout,
   VoltaEnding,
-  HALLOWEEN_TRACK_FX_FIRST,
-  HALLOWEEN_TRACK_FX_MELODIC,
-  HALLOWEEN_TRACK_FX_DRUMS,
+  THEME_TRACK_FX_FIRST,
+  THEME_TRACK_FX_MELODIC,
+  THEME_TRACK_FX_DRUMS,
 } from './types/music';
 import { DrumSound } from './data/drumGrooves';
 import { DrumKitType } from './audio/acousticSamples';
@@ -59,7 +59,7 @@ import { EdLawPrivacyModal } from './components/EdLawPrivacyModal';
 import { TransposeModal } from './components/TransposeModal';
 import { MusicLabLanding, MusicLabAppId } from './components/MusicLabLanding';
 import { ClassroomToolBoxModal, ToolId } from './components/tools/ClassroomToolBoxModal';
-import { HalloweenThemeOverlay } from './components/HalloweenThemeOverlay';
+import { ThanksgivingThemeOverlay } from './components/ThanksgivingThemeOverlay';
 // The other tools load only when opened, so the hub and Staff Composer start faster.
 const RhythmRockStarsApp = React.lazy(() => import('./rhythm-rockstars/RhythmRockStarsApp'));
 const BeatMachineApp = React.lazy(() => import('./beat-machine/App'));
@@ -324,7 +324,7 @@ export default function App() {
   // Secret "adminbaby" and "secret" keyboard shortcut tracking (only active when Mr. Arthur's avatar is enlarged)
   const adminKeyBufferRef = useRef<string>('');
   const secretKeyBufferRef = useRef<string>('');
-  const [isHalloweenTheme, setIsHalloweenTheme] = useState<boolean>(false);
+  const [isSecretTheme, setIsSecretTheme] = useState<boolean>(false);
 
   // Student Login & Teacher Project Editing State
   const [studentSession, setStudentSession] = useState<StudentSession | null>(() =>
@@ -1625,7 +1625,7 @@ export default function App() {
       // When Mr. Arthur's avatar popup is enlarged:
       // Keyboard input has NO effect on composition at all, but ONLY listens for secret shortcuts:
       // - "adminbaby" -> Teacher / Classroom Admin mode
-      // - "secret" -> Secret Halloween Theme
+      // - "secret" -> Secret seasonal theme (Thanksgiving)
       if (isAvatarOpen) {
         e.preventDefault();
         e.stopPropagation();
@@ -1666,24 +1666,24 @@ export default function App() {
               secretKeyBufferRef.current = '';
               adminKeyBufferRef.current = '';
               setIsAvatarOpen(false);
-              setIsHalloweenTheme(true);
+              setIsSecretTheme(true);
               soundEngine.playWelcomeChime();
 
-              // Spookify FX: Boost reverb & echo across all instruments, heavily on main/first track, and reverb on drums
+              // Seasonal FX: a warm, cozy room sound on every instrument (a little more on the first track)
               setScore((prev) => {
                 const updatedTracks = prev.tracks.map((track, idx) => {
                   const isDrums = track.instrumentId.startsWith('drum_');
-                  const spookyFx = isDrums
-                    ? { ...HALLOWEEN_TRACK_FX_DRUMS }
+                  const themeFx = isDrums
+                    ? { ...THEME_TRACK_FX_DRUMS }
                     : idx === 0
-                    ? { ...HALLOWEEN_TRACK_FX_FIRST }
-                    : { ...HALLOWEEN_TRACK_FX_MELODIC };
+                    ? { ...THEME_TRACK_FX_FIRST }
+                    : { ...THEME_TRACK_FX_MELODIC };
 
                   return {
                     ...track,
                     fx: {
                       ...(track.fx || {}),
-                      ...spookyFx,
+                      ...themeFx,
                     },
                   };
                 });
@@ -2061,10 +2061,10 @@ export default function App() {
         muted: false,
         soloed: false,
         measures: newMeasures,
-        ...(isHalloweenTheme
+        ...(isSecretTheme
           ? {
               fx: {
-                ...(nextScore.tracks.length === 0 ? HALLOWEEN_TRACK_FX_FIRST : HALLOWEEN_TRACK_FX_MELODIC),
+                ...(nextScore.tracks.length === 0 ? THEME_TRACK_FX_FIRST : THEME_TRACK_FX_MELODIC),
               },
             }
           : {}),
@@ -2073,7 +2073,7 @@ export default function App() {
       nextScore.tracks.push(newTrack);
       pushScoreState(nextScore);
     },
-    [pushScoreState, score, isHalloweenTheme]
+    [pushScoreState, score, isSecretTheme]
   );
 
   // Add Grand Staff
@@ -2092,9 +2092,9 @@ export default function App() {
       measures: Array.from({ length: measureCount }).map(() =>
         createEmptyMeasure(nextScore.timeSignature)
       ),
-      ...(isHalloweenTheme
+      ...(isSecretTheme
         ? {
-            fx: { ...HALLOWEEN_TRACK_FX_FIRST },
+            fx: { ...THEME_TRACK_FX_FIRST },
           }
         : {}),
     };
@@ -2110,16 +2110,16 @@ export default function App() {
       measures: Array.from({ length: measureCount }).map(() =>
         createEmptyMeasure(nextScore.timeSignature)
       ),
-      ...(isHalloweenTheme
+      ...(isSecretTheme
         ? {
-            fx: { ...HALLOWEEN_TRACK_FX_MELODIC },
+            fx: { ...THEME_TRACK_FX_MELODIC },
           }
         : {}),
     };
 
     nextScore.tracks.push(rhTrack, lhTrack);
     pushScoreState(nextScore);
-  }, [pushScoreState, score, isHalloweenTheme]);
+  }, [pushScoreState, score, isSecretTheme]);
 
   // Reset to single blank treble staff
   const handleNewBlankScore = useCallback(() => {
@@ -2127,8 +2127,8 @@ export default function App() {
     if (studentSession) {
       blank.composer = studentSession.firstName;
     }
-    if (isHalloweenTheme && blank.tracks && blank.tracks[0]) {
-      blank.tracks[0].fx = { ...HALLOWEEN_TRACK_FX_FIRST };
+    if (isSecretTheme && blank.tracks && blank.tracks[0]) {
+      blank.tracks[0].fx = { ...THEME_TRACK_FX_FIRST };
     }
     setCurrentProjectId(null);
     setEditingAsTeacher(null);
@@ -2136,7 +2136,7 @@ export default function App() {
     setHistory([JSON.parse(JSON.stringify(blank))]);
     setHistoryIndex(0);
     setSelection({ trackIndex: 0, measureIndex: 0, itemIndex: 0 });
-  }, [studentSession, isHalloweenTheme]);
+  }, [studentSession, isSecretTheme]);
 
   // Add Drum Track with selected beat
   const handleAddDrumTrack = useCallback(
@@ -2165,9 +2165,9 @@ export default function App() {
         muted: false,
         soloed: false,
         measures: newMeasures,
-        ...(isHalloweenTheme
+        ...(isSecretTheme
           ? {
-              fx: { ...HALLOWEEN_TRACK_FX_DRUMS },
+              fx: { ...THEME_TRACK_FX_DRUMS },
             }
           : {}),
       };
@@ -2187,7 +2187,7 @@ export default function App() {
         itemIndex: 0,
       });
     },
-    [pushScoreState, score, isHalloweenTheme]
+    [pushScoreState, score, isSecretTheme]
   );
 
   // Apply Drum Beat to currently selected track
@@ -2201,10 +2201,10 @@ export default function App() {
       targetTrack.name = `Drums (${groove.name})`;
       targetTrack.instrumentId = groove.kitType || 'drum_kit';
       targetTrack.clef = 'treble';
-      if (isHalloweenTheme) {
+      if (isSecretTheme) {
         targetTrack.fx = {
           ...(targetTrack.fx || {}),
-          ...HALLOWEEN_TRACK_FX_DRUMS,
+          ...THEME_TRACK_FX_DRUMS,
         };
       }
 
@@ -2221,7 +2221,7 @@ export default function App() {
 
       pushScoreState(nextScore);
     },
-    [pushScoreState, score, selection, isHalloweenTheme]
+    [pushScoreState, score, selection, isSecretTheme]
   );
 
   // Export JSON file
@@ -2591,7 +2591,7 @@ export default function App() {
       className={`${
         isFullScreen ? 'fixed inset-0 z-50' : 'min-h-screen'
       } bg-[#0B0F19] flex flex-col font-sans select-none text-slate-100 ${
-        isHalloweenTheme ? 'halloween-theme' : ''
+        isSecretTheme ? 'thanksgiving-theme' : ''
       }`}
     >
       <input
@@ -2730,7 +2730,7 @@ export default function App() {
           onOpenHelp={() => setIsHelpModalOpen(true)}
           midiDevices={midiDevices}
           onInitMidi={() => webMidiService.init()}
-          isHalloweenTheme={isHalloweenTheme}
+          isSecretTheme={isSecretTheme}
         />
       )}
 
@@ -3290,8 +3290,8 @@ export default function App() {
         }}
       />
 
-      {isHalloweenTheme && currentApp === 'staff-composer' && (
-        <HalloweenThemeOverlay onClose={() => setIsHalloweenTheme(false)} />
+      {isSecretTheme && currentApp === 'staff-composer' && (
+        <ThanksgivingThemeOverlay onClose={() => setIsSecretTheme(false)} />
       )}
 
       {renderSharedAuthAndModals()}

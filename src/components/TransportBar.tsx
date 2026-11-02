@@ -101,7 +101,7 @@ interface TransportBarProps {
   onOpenHelp?: () => void;
   midiDevices?: MidiDeviceInfo[];
   onInitMidi?: () => void;
-  isHalloweenTheme?: boolean;
+  isSecretTheme?: boolean;
 }
 
 export const TransportBar: React.FC<TransportBarProps> = ({
@@ -167,7 +167,7 @@ export const TransportBar: React.FC<TransportBarProps> = ({
   onOpenHelp,
   midiDevices,
   onInitMidi,
-  isHalloweenTheme,
+  isSecretTheme,
 }) => {
   const tempoInfo = getTempoDescription(tempo);
   const [openMenu, setOpenMenu] = useState<'ensemble' | 'helpers' | 'export' | null>(null);
@@ -222,11 +222,11 @@ export const TransportBar: React.FC<TransportBarProps> = ({
           </button>
           <div className="flex flex-col justify-center select-none">
             <span className="text-[11px] sm:text-xs font-extrabold tracking-wider uppercase text-amber-300/95 font-['Fredoka',sans-serif] leading-tight">
-              {isHalloweenTheme ? '🎃 Spooky Mr. Arthur\'s' : 'Mr. Arthur\'s'}
+              {isSecretTheme ? '🦃 Thankful Mr. Arthur\'s' : 'Mr. Arthur\'s'}
             </span>
             <span className={`text-2xl sm:text-3xl font-black tracking-wide font-['Fredoka',sans-serif] leading-none ${
-              isHalloweenTheme
-                ? 'bg-gradient-to-r from-orange-400 via-amber-300 to-purple-400 bg-clip-text text-transparent'
+              isSecretTheme
+                ? 'bg-gradient-to-r from-orange-400 via-amber-300 to-red-400 bg-clip-text text-transparent'
                 : 'bg-gradient-to-r from-amber-300 via-rose-300 via-sky-300 to-emerald-300 bg-clip-text text-transparent'
             }`}>
               Staff Composer
