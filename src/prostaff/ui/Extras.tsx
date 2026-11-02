@@ -19,9 +19,12 @@ export interface AppPrefs {
   theme: ThemeName;
   cursor: CursorStyle;
   clickOffset: number; // ms; negative = earlier
+  cursorOffset: number; // ms; negative = earlier
   textFont: string;
+  metronome: boolean;
+  countIn: boolean;
 }
-export const DEFAULT_PREFS: AppPrefs = { midiInput: false, showRange: true, theme: 'dark', cursor: 'line', clickOffset: 0, textFont: 'classic' };
+export const DEFAULT_PREFS: AppPrefs = { midiInput: false, showRange: true, theme: 'dark', cursor: 'line', clickOffset: 0, cursorOffset: 0, textFont: 'classic', metronome: false, countIn: false };
 
 const SWINGS: [number, string][] = [[0, 'Straight'], [0.08, 'Light swing'], [0.167, 'Swing (triplet feel)'], [0.25, 'Hard swing']];
 const MUSIC_FONTS: [EngravingFont, string][] = [
@@ -96,15 +99,10 @@ export function SettingsDialog({ tab: initialTab = 'appearance', playback, layou
               <button key={c} className={`ps-card${prefs.cursor === c ? ' ps-on' : ''}`} onClick={() => onPrefs({ ...prefs, cursor: c })}><b>{l}</b><small>{d}</small></button>
             ))}
           </div>
-          <h4 className="ps-set-head">Metronome timing</h4>
-          <div className="ps-offset">
-            <small>Earlier</small>
-            <input className="ps-range" type="range" min={-120} max={120} step={5} value={prefs.clickOffset} onChange={(e) => onPrefs({ ...prefs, clickOffset: Number(e.target.value) })} aria-label="Click timing offset" />
-            <small>Later</small>
-            <span className="ps-offset-val">{prefs.clickOffset === 0 ? 'In sync' : `${prefs.clickOffset > 0 ? '+' : '−'}${Math.abs(prefs.clickOffset)} ms`}</span>
-            {prefs.clickOffset !== 0 && <button className="ps-link" onClick={() => onPrefs({ ...prefs, clickOffset: 0 })}>Reset</button>}
-          </div>
-          <p className="ps-hint">The click already plays on the same clock as the instruments. If it still sounds off on your speakers or headphones, nudge it here while playing.</p>
+          <h4 className="ps-set-head">Timing</h4>
+          <Offset label="Click" value={prefs.clickOffset} onChange={(v) => onPrefs({ ...prefs, clickOffset: v })} />
+          <Offset label="Cursor" value={prefs.cursorOffset} onChange={(v) => onPrefs({ ...prefs, cursorOffset: v })} />
+          <p className="ps-hint">Both already follow the sound itself. Bluetooth speakers and headphones add a delay the browser can't always see; if the click or cursor feels early or late there, nudge it while playing.</p>
           <h4 className="ps-set-head">Performance</h4>
           <label className="ps-toggle"><input type="checkbox" checked={playback.repeats} onChange={(e) => onPlayback({ ...playback, repeats: e.target.checked })} /> Play repeats, 1st/2nd endings, D.C. / D.S. / Coda</label>
           <div className="ps-row">
@@ -151,6 +149,19 @@ export function SettingsDialog({ tab: initialTab = 'appearance', playback, layou
         </>
       )}
     </Dialog>
+  );
+}
+
+function Offset({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) {
+  return (
+    <div className="ps-offset">
+      <span className="ps-offset-label">{label}</span>
+      <small>Earlier</small>
+      <input className="ps-range" type="range" min={-300} max={300} step={10} value={value} onChange={(e) => onChange(Number(e.target.value))} aria-label={`${label} timing`} />
+      <small>Later</small>
+      <span className="ps-offset-val">{value === 0 ? 'In sync' : `${value > 0 ? '+' : '−'}${Math.abs(value)} ms`}</span>
+      <button className="ps-link" style={{ visibility: value ? 'visible' : 'hidden' }} onClick={() => onChange(0)}>Reset</button>
+    </div>
   );
 }
 

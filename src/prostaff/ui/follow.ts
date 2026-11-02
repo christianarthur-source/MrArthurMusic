@@ -124,8 +124,9 @@ export function followAt(points: FollowPoint[], t: number, end: number): FollowP
   const span = (b ? b.t : end) - a.t;
   const f = span > 0 ? Math.max(0, Math.min(1, (t - a.t) / span)) : 0;
   // keep gliding to the next note on the same line; otherwise run to this measure's barline
-  const target = b && b.sys === a.sys && b.x >= a.x - 1 ? b.x : a.endX - 3;
-  const x = a.x + (target - a.x) * f;
+  const glide = !!b && b.sys === a.sys && b.x >= a.x - 1;
+  const target = glide ? b!.x : a.endX - 3;
+  const x = a.x + (target - a.x) * (glide ? settle(f, span) : f);
   // the tinted measure: the one the cursor is in
   let mLeft = a.mLeft;
   let mRight = a.endX;
@@ -134,4 +135,17 @@ export function followAt(points: FollowPoint[], t: number, end: number): FollowP
     mRight = b.endX;
   }
   return { x, top: a.top, bottom: a.bottom, mLeft, mRight };
+}
+
+/**
+ * How far along the way to the next note the cursor is. A straight line would leave each note the
+ * moment it sounds, so the cursor looks early; instead it rests on the sounding note, then eases into
+ * the next one, arriving exactly as it plays. Very short notes (fast runs) stay close to linear.
+ */
+function settle(f: number, spanMs: number): number {
+  const hold = Math.max(0, Math.min(0.45, (spanMs - 150) / 800));
+  const u = f <= hold ? 0 : (f - hold) / (1 - hold);
+  const eased = u * u * (3 - 2 * u);
+  const w = Math.max(0, Math.min(1, (spanMs - 90) / 260));
+  return f + (eased - f) * w;
 }
