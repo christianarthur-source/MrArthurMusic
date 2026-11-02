@@ -188,31 +188,31 @@ export const DEFAULT_TRACK_FX: TrackFxSettings = {
   drive: 0,
 };
 
-// Spooky Halloween FX defaults: expansive eerie hall reverb + subtle ghostly echo reflections
-export const HALLOWEEN_TRACK_FX_FIRST: TrackFxSettings = {
-  reverb: 0.90, // Almost full reverb for maximum spooky cathedral/haunted atmosphere
-  delay: 0.45,  // Prominent eerie echo
-  chorus: 0.25, // Eerie stereo widening
+// Secret seasonal theme FX (Thanksgiving): a warm, cozy room around the music
+export const THEME_TRACK_FX_FIRST: TrackFxSettings = {
+  reverb: 0.5,
+  delay: 0.12, // a soft slapback
+  chorus: 0.18, // gentle width
+  eqBass: 2, // warm
+  eqTreble: -1, // mellow
+  drive: 0,
+};
+
+export const THEME_TRACK_FX_MELODIC: TrackFxSettings = {
+  reverb: 0.42,
+  delay: 0.08,
+  chorus: 0.12,
   eqBass: 1,
-  eqTreble: 2,
+  eqTreble: -1,
   drive: 0,
 };
 
-export const HALLOWEEN_TRACK_FX_MELODIC: TrackFxSettings = {
-  reverb: 0.85, // Almost full reverb
-  delay: 0.35,  // Ghostly echo
-  chorus: 0.15,
-  eqBass: 0,
-  eqTreble: 1,
-  drive: 0,
-};
-
-export const HALLOWEEN_TRACK_FX_DRUMS: TrackFxSettings = {
-  reverb: 0.80, // Heavy cavernous reverb for the beat without muddy echo
+export const THEME_TRACK_FX_DRUMS: TrackFxSettings = {
+  reverb: 0.35,
   delay: 0,
   chorus: 0,
   eqBass: 2,
-  eqTreble: 1,
+  eqTreble: 0,
   drive: 0,
 };
 

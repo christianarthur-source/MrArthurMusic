@@ -6,93 +6,86 @@
   }
 }
 
-/* Secret Halloween Theme Styling */
-.halloween-theme {
-  --halloween-orange: #f97316;
-  --halloween-purple: #9333ea;
-  --halloween-green: #84cc16;
+/* Secret Thanksgiving Theme Styling: an orange "harvest" staff with warm brown notes */
+.thanksgiving-theme #staff-composer-main-scroll {
+  background: radial-gradient(circle at 50% 0%, #7c2d12 0%, #451a03 45%, #1c0a02 100%) !important;
 }
 
-.halloween-theme #staff-composer-main-scroll {
-  background: radial-gradient(circle at 50% 10%, #230847 0%, #0c0217 50%, #030008 100%) !important;
+.thanksgiving-theme header {
+  background: linear-gradient(90deg, #431407 0%, #7c2d12 50%, #431407 100%) !important;
+  border-bottom-color: rgba(251, 146, 60, 0.5) !important;
 }
 
-.halloween-theme header {
-  background: linear-gradient(90deg, #180828 0%, #2e1065 50%, #180828 100%) !important;
-  border-bottom-color: rgba(249, 115, 22, 0.4) !important;
+/* Orange paper under the staff */
+.thanksgiving-theme #staff-composer-scroll-container {
+  background: linear-gradient(180deg, #fdba74 0%, #fb923c 100%) !important;
+  color: #3b1d0b !important;
+  border: 3px solid rgba(194, 65, 12, 0.75) !important;
+  box-shadow: 0 0 40px rgba(251, 146, 60, 0.35), 0 25px 50px -12px rgba(0, 0, 0, 0.8) !important;
 }
 
-/* Invert staff score: Pitch Black background with crisp White notes, lines, clefs, and symbols */
-.halloween-theme #staff-composer-scroll-container {
-  background-color: #0b0c10 !important;
-  color: #f8fafc !important;
-  border: 3px solid rgba(249, 115, 22, 0.65) !important;
-  box-shadow: 0 0 45px rgba(249, 115, 22, 0.3), 0 0 20px rgba(168, 85, 247, 0.25), 0 25px 50px -12px rgba(0, 0, 0, 0.9) !important;
+/* Staff lines & barlines in a deep autumn brown */
+.thanksgiving-theme #staff-composer-score-svg line[stroke="#94A3B8"],
+.thanksgiving-theme #staff-composer-score-svg line[stroke="#64748B"],
+.thanksgiving-theme #staff-composer-score-svg line[stroke="#334155"],
+.thanksgiving-theme #staff-composer-score-svg line[stroke="#0F172A"] {
+  stroke: #7c2d12 !important;
 }
 
-/* Staff lines & barlines inversion */
-.halloween-theme #staff-composer-score-svg line {
-  stroke: #e2e8f0;
+/* Noteheads, stems, beams, rests & clefs in dark chocolate brown */
+.thanksgiving-theme #staff-composer-score-svg path[fill="#0F172A"],
+.thanksgiving-theme #staff-composer-score-svg path[fill="#000000"],
+.thanksgiving-theme #staff-composer-score-svg path[fill="#1E293B"],
+.thanksgiving-theme #staff-composer-score-svg path[fill="#020617"],
+.thanksgiving-theme #staff-composer-score-svg path[fill="#334155"],
+.thanksgiving-theme #staff-composer-score-svg polygon[fill="#0F172A"],
+.thanksgiving-theme #staff-composer-score-svg polygon[fill="#000000"],
+.thanksgiving-theme #staff-composer-score-svg circle[fill="#0F172A"],
+.thanksgiving-theme #staff-composer-score-svg circle[fill="#000000"],
+.thanksgiving-theme #staff-composer-score-svg circle[fill="#1E293B"],
+.thanksgiving-theme #staff-composer-score-svg circle[fill="#020617"],
+.thanksgiving-theme #staff-composer-score-svg circle[fill="#334155"],
+.thanksgiving-theme #staff-composer-score-svg ellipse[fill="#0F172A"],
+.thanksgiving-theme #staff-composer-score-svg ellipse[fill="#000000"],
+.thanksgiving-theme #staff-composer-score-svg ellipse[fill="#1E293B"],
+.thanksgiving-theme #staff-composer-score-svg ellipse[fill="#020617"],
+.thanksgiving-theme #staff-composer-score-svg ellipse[fill="#334155"] {
+  fill: #3b1d0b !important;
 }
-.halloween-theme #staff-composer-score-svg line[stroke="#94A3B8"],
-.halloween-theme #staff-composer-score-svg line[stroke="#64748B"],
-.halloween-theme #staff-composer-score-svg line[stroke="#334155"],
-.halloween-theme #staff-composer-score-svg line[stroke="#0F172A"] {
-  stroke: #cbd5e1 !important;
-}
-
-/* Noteheads, dots, stems, beams & clefs inversion: black fills and strokes become white */
-.halloween-theme #staff-composer-score-svg path[fill="#0F172A"],
-.halloween-theme #staff-composer-score-svg path[fill="#000000"],
-.halloween-theme #staff-composer-score-svg path[fill="#1E293B"],
-.halloween-theme #staff-composer-score-svg path[fill="#020617"],
-.halloween-theme #staff-composer-score-svg path[fill="#334155"] {
-  fill: #ffffff !important;
-}
-.halloween-theme #staff-composer-score-svg polygon[fill="#0F172A"],
-.halloween-theme #staff-composer-score-svg polygon[fill="#000000"] {
-  fill: #ffffff !important;
-}
-.halloween-theme #staff-composer-score-svg circle[fill="#0F172A"],
-.halloween-theme #staff-composer-score-svg circle[fill="#000000"],
-.halloween-theme #staff-composer-score-svg circle[fill="#1E293B"],
-.halloween-theme #staff-composer-score-svg circle[fill="#020617"],
-.halloween-theme #staff-composer-score-svg circle[fill="#334155"] {
-  fill: #ffffff !important;
-}
-.halloween-theme #staff-composer-score-svg ellipse[fill="#0F172A"],
-.halloween-theme #staff-composer-score-svg ellipse[fill="#000000"],
-.halloween-theme #staff-composer-score-svg ellipse[fill="#1E293B"],
-.halloween-theme #staff-composer-score-svg ellipse[fill="#020617"],
-.halloween-theme #staff-composer-score-svg ellipse[fill="#334155"] {
-  fill: #ffffff !important;
-}
-/* Half and whole note open notehead strokes */
-.halloween-theme #staff-composer-score-svg ellipse[stroke="#0F172A"],
-.halloween-theme #staff-composer-score-svg ellipse[stroke="#000000"],
-.halloween-theme #staff-composer-score-svg ellipse[stroke="#334155"] {
-  stroke: #ffffff !important;
-}
-.halloween-theme #staff-composer-score-svg circle[stroke="#0F172A"],
-.halloween-theme #staff-composer-score-svg circle[stroke="#000000"] {
-  stroke: #ffffff !important;
+/* Half and whole note open noteheads */
+.thanksgiving-theme #staff-composer-score-svg ellipse[stroke="#0F172A"],
+.thanksgiving-theme #staff-composer-score-svg ellipse[stroke="#000000"],
+.thanksgiving-theme #staff-composer-score-svg ellipse[stroke="#334155"],
+.thanksgiving-theme #staff-composer-score-svg circle[stroke="#0F172A"],
+.thanksgiving-theme #staff-composer-score-svg circle[stroke="#000000"] {
+  stroke: #3b1d0b !important;
 }
 
-/* Time signature, Clef numbers, Text typography */
-.halloween-theme #staff-composer-score-svg text {
-  fill: #f8fafc;
+/* Time signatures, measure numbers and labels */
+.thanksgiving-theme #staff-composer-score-svg text[fill="#64748B"],
+.thanksgiving-theme #staff-composer-score-svg text[fill="#94A3B8"] {
+  fill: #431407 !important;
 }
-.halloween-theme #staff-composer-score-svg text[fill="#64748B"],
-.halloween-theme #staff-composer-score-svg text[fill="#94A3B8"] {
-  fill: #fb923c !important;
+.thanksgiving-theme #staff-composer-score-svg text[fill="#0F172A"] {
+  fill: #3b1d0b !important;
 }
-.halloween-theme #staff-composer-score-svg text[fill="#0F172A"] {
-  fill: #fed7aa !important;
+
+/* Falling leaves */
+@keyframes tg-fall {
+  0% { transform: translate3d(0, 0, 0) rotate(0deg); }
+  25% { transform: translate3d(28px, 27vh, 0) rotate(80deg); }
+  50% { transform: translate3d(-18px, 55vh, 0) rotate(170deg); }
+  75% { transform: translate3d(24px, 82vh, 0) rotate(250deg); }
+  100% { transform: translate3d(-10px, 112vh, 0) rotate(340deg); }
 }
-/* Pitch name label outline on notes */
-.halloween-theme #staff-composer-score-svg text[stroke="#FFFFFF"] {
-  stroke: #090a0f !important;
-  fill: #facc15 !important;
+.tg-leaf {
+  animation-name: tg-fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tg-leaf { animation: none; display: none; }
 }
 
 @media print {
