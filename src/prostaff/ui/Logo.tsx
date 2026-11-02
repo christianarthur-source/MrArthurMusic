@@ -4,12 +4,12 @@ import React from 'react';
  * Wolfi's mark: a quarter note whose stem crosses a staff line, framed by an open circle.
  * The bottom-left quarter of the circle is left open for the note head. Fine gold lines.
  */
-export function WolfiMark({ size = 30, color = '#e0b45e', weight = 1.1 }: { size?: number; color?: string; weight?: number }) {
+export function WolfiMark({ size = 30, color = '#e0b45e', weight = 1.1, staffLine = true }: { size?: number; color?: string; weight?: number; staffLine?: boolean }) {
   return (
     <svg width={size} height={size} viewBox="0 0 48 48" aria-hidden="true" focusable="false">
       <g fill="none" stroke={color} strokeWidth={weight} strokeLinecap="round">
         <path d="M9 24 A15 15 0 1 1 24 39" />
-        <path d="M1.5 24 H24" />
+        {staffLine ? <path d="M1.5 24 H24" /> : <path d="M9 24 H24" />}
         <path d="M24 1.5 V46.5" />
       </g>
       <ellipse cx="19.2" cy="31.4" rx="4.9" ry="3.5" transform="rotate(-24 19.2 31.4)" fill={color} />
@@ -24,13 +24,12 @@ export function wolfiFaviconHref() {
   return 'data:image/svg+xml,' + encodeURIComponent(svg);
 }
 
-/** Header lockup: the wordmark starts inside the circle, so the mark and the name read as one logo. */
+/** Header lockup: the mark stands in for the O of WOLFI, with the subtitle beneath. */
 export function WolfiBrand() {
   return (
     <div className="ps-brand" aria-label="Wolfi — Pro Staff Notation">
-      <WolfiMark size={54} />
       <div className="ps-brand-text">
-        <b>Wolfi</b>
+        <b>W<WolfiMark size={34} weight={1.5} staffLine={false} />LFI</b>
         <span>Pro Staff Notation</span>
       </div>
     </div>
