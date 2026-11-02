@@ -46,10 +46,13 @@
   background: linear-gradient(180deg, #181b21, #15181d); border-bottom: 1px solid var(--ps-line);
   min-height: 50px;
 }
-.ps-brand { display: flex; align-items: center; gap: 9px; padding-right: 12px; border-right: 1px solid var(--ps-line); margin-right: 2px; white-space: nowrap; }
-.ps-brand-text { display: flex; flex-direction: column; line-height: 1; }
-.ps-brand b { font-family: var(--ps-serif); font-size: 25px; font-weight: 600; font-style: italic; letter-spacing: .4px; color: var(--ps-accent-2); }
-.ps-brand span { margin-top: 3px; font-size: 9px; letter-spacing: 2.2px; text-transform: uppercase; color: var(--ps-muted); }
+.ps-brand { display: flex; align-items: center; padding-right: 14px; border-right: 1px solid var(--ps-line); margin-right: 2px; white-space: nowrap; color: var(--ps-accent); }
+.ps-brand svg { flex: none; margin: -9px 0; }
+/* the wordmark starts just right of the stem, inside the circle */
+/* the subtitle is right-aligned so it clears the circle's lower edge */
+.ps-brand-text { display: flex; flex-direction: column; align-items: flex-end; line-height: 1; margin-left: -21px; position: relative; }
+.ps-brand b { font-family: var(--ps-serif); font-size: 24px; font-weight: 500; text-transform: uppercase; letter-spacing: 6px; margin-right: -6px; color: #efe3c6; }
+.ps-brand span { margin-top: 4px; font-size: 6.5px; letter-spacing: 1.1px; text-transform: uppercase; color: var(--ps-muted); }
 .ps-doc-title { min-width: 0; flex: 1; display: flex; flex-direction: column; }
 .ps-inline { border: 0; background: none; padding: 1px 4px; margin-left: -4px; border-radius: 5px; color: inherit; font: inherit; text-align: left; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: text; }
 .ps-inline:hover { background: var(--ps-raise); }
