@@ -87,7 +87,7 @@ export function base64ToBytes(b64: string): Uint8Array<ArrayBuffer> {
 }
 
 /** Opens a print window with the engraved pages (US Letter), which the browser can save as PDF. */
-export function printPages(svgPages: string[], title: string, pageSize: 'letter' | 'a4' = 'letter') {
+export function printPages(svgPages: string[], title: string, pageSize: 'letter' | 'a4' = 'letter', fontsHref?: string) {
   const [pw, ph] = pageSize === 'a4' ? ['210mm', '297mm'] : ['8.5in', '11in'];
   const w = window.open('', '_blank');
   if (!w) throw new Error('Allow pop-ups to print or save as PDF.');
@@ -98,7 +98,7 @@ export function printPages(svgPages: string[], title: string, pageSize: 'letter'
       return `<section class="page">${fitted}</section>`;
     })
     .join('');
-  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(title)}</title>
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(title)}</title>${fontsHref ? `<link rel="stylesheet" href="${escapeHtml(fontsHref)}">` : ''}
 <style>
 @page { size: ${pageSize === 'a4' ? 'A4' : 'letter'} portrait; margin: 0; }
 html, body { margin: 0; padding: 0; background: #fff; }
@@ -106,7 +106,7 @@ html, body { margin: 0; padding: 0; background: #fff; }
 .page:last-child { page-break-after: auto; break-after: auto; }
 .page svg { display: block; width: 100%; height: 100%; }
 @media screen { body { background: #e7e5e4; padding: 0.25in 0; } .page { background: #fff; margin: 0 auto 0.25in; box-shadow: 0 2px 12px rgba(0,0,0,.15); } }
-</style></head><body>${pages}<script>window.onload=()=>setTimeout(()=>window.print(),400)<\/script></body></html>`);
+</style></head><body>${pages}<script>window.onload=()=>(document.fonts?document.fonts.ready:Promise.resolve()).then(()=>setTimeout(()=>window.print(),400))<\/script></body></html>`);
   w.document.close();
 }
 
