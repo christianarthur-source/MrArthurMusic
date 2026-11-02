@@ -589,7 +589,21 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
     }
   };
 
+  // A class is "mine" when it's starred or its teacher name is the signed-in teacher's
+  // ("Mrs. Mcmyler", "Mcmyler" and "mrs mcmyler" all match).
+  const bareName = (n: string | undefined) =>
+    (n || '').toLowerCase().replace(/[.,]/g, ' ').replace(/\b(mr|mrs|ms|miss|mx|dr)\b/g, ' ').replace(/\s+/g, ' ').trim();
+  const myBareName = bareName(signedInTeacher?.name || 'Mr. Arthur');
+  const labeledMine = (c: ClassroomRecord) => !!myBareName && bareName(c.teacherName) === myBareName;
+  const isMyClass = (c: ClassroomRecord) => myClassIds.includes(c.id) || labeledMine(c);
+
   const toggleMyClass = async (classId: string) => {
+    const cls = classrooms.find((c) => c.id === classId);
+    if (cls && labeledMine(cls) && !myClassIds.includes(classId)) {
+      setTeacherNotice(`${cls.name} is labeled with your name, so it's always in My Classes. Edit the class to change its teacher.`);
+      window.setTimeout(() => setTeacherNotice(null), 4500);
+      return;
+    }
     const before = myClassIds;
     const next = before.includes(classId) ? before.filter((x) => x !== classId) : [...before, classId];
     setMyClassIds(next);
@@ -1961,7 +1975,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                     }`}
                   >
                     <Star className="w-3.5 h-3.5" />
-                    <span>My Classes ({classrooms.filter((c) => myClassIds.includes(c.id)).length})</span>
+                    <span>My Classes ({classrooms.filter(isMyClass).length})</span>
                   </button>
                   <button
                     type="button"
@@ -2460,8 +2474,8 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                       </h3>
                       <p className="text-[11px] text-slate-400">
                         {classView === 'mine'
-                          ? 'The classes you teach. Star or unstar classes in All Classrooms.'
-                          : 'Star (☆) the classes you teach to add them to My Classes'}
+                          ? 'Classes labeled with your name, plus any you star in All Classrooms.'
+                          : 'Classes labeled with your name are yours automatically; star (☆) any others you teach'}
                       </p>
                     </div>
                     <button
@@ -2680,8 +2694,8 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                           <span className="font-bold">👉 Interactive Classroom Selector:</span> Click any classroom below or use its <strong className="text-white">View Students</strong> button to see all students enrolled in that class, inspect their compositions, or share work.
                         </div>
                       </div>
-                      {(classView === 'mine' ? classrooms.filter((c) => myClassIds.includes(c.id)) : classrooms).map((cls) => {
-                        const mine = myClassIds.includes(cls.id);
+                      {(classView === 'mine' ? classrooms.filter(isMyClass) : classrooms).map((cls) => {
+                        const mine = isMyClass(cls);
                         const studentCount = allStudents.filter(
                           (s) => s.classId === cls.id || (cls.name && s.classGroup === cls.name)
                         ).length;
@@ -2773,7 +2787,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                           </div>
                         );
                       })}
-                      {classView === 'mine' && classrooms.length > 0 && !classrooms.some((c) => myClassIds.includes(c.id)) && (
+                      {classView === 'mine' && classrooms.length > 0 && !classrooms.some(isMyClass) && (
                         <div className="p-6 rounded-xl bg-slate-950/40 border border-slate-800 text-center text-xs text-slate-400 space-y-2">
                           <div>No classes yet. Open All Classrooms and tap the ☆ next to each class you teach.</div>
                           <button
