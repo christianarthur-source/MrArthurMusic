@@ -74,6 +74,7 @@ const DEFAULT_CLASSROOMS: ClassroomRecord[] = [
 interface ClassroomDb {
   teacherPin: string;
   allowSelfRegister: boolean;
+  myClasses?: Record<string, string[]>;
   classrooms?: ClassroomRecord[];
   students: StudentRecord[];
   projects: ProjectRecord[];
@@ -394,13 +395,41 @@ function classroomApiPlugin(): Plugin {
             return send(200, { ok: true });
           }
 
+          // dev-only sample teachers for the sign-in picker (the real list lives in the database)
+          const devTeachers = [
+            { id: 'teach_master', name: 'Mr. Arthur', pin: db.teacherPin || '1138' },
+            { id: 'teach_dev_mcmyler', name: 'Mrs. McMyler', pin: '2222' },
+            { id: 'teach_dev_yerrick', name: 'Mrs. Yerrick', pin: '3333' },
+          ];
+          const devTeacherFor = (pin: string) =>
+            pin === '1138' || pin === 'adminbaby' ? devTeachers[0] : devTeachers.find((t) => t.pin === pin) || null;
+
+          if (action === 'public_teachers') {
+            return send(200, { ok: true, teachers: devTeachers.map(({ id, name }) => ({ id, name })) });
+          }
+
+          if (action === 'teacher_set_my_classes') {
+            const t = devTeacherFor(String(body.teacherPin || ''));
+            if (!t) return send(401, { ok: false, error: 'Invalid Teacher PIN.' });
+            db.myClasses = { ...(db.myClasses || {}), [t.id]: Array.isArray(body.classIds) ? body.classIds.map(String) : [] };
+            saveClassroomDb(db);
+            return send(200, { ok: true, myClassIds: db.myClasses[t.id] });
+          }
+
           if (action === 'teacher_login' || action === 'teacher_overview') {
-            if (body.teacherPin !== db.teacherPin && body.teacherPin !== '1138' && body.teacherPin !== 'adminbaby') {
+            const t = devTeacherFor(String(body.teacherPin || ''));
+            if (!t) {
               return send(401, { ok: false, error: 'Incorrect Teacher PIN / Password.' });
+            }
+            if (body.teacherId && body.teacherId !== t.id) {
+              return send(401, { ok: false, error: "That PIN doesn't match the teacher you picked." });
             }
             return send(200, {
               ok: true,
-              isMasterAdmin: true,
+              isMasterAdmin: t.id === 'teach_master',
+              currentTeacher: { id: t.id, name: t.name, pin: body.teacherPin, isMasterAdmin: t.id === 'teach_master' },
+              teachers: devTeachers.map(({ id, name }) => ({ id, name, pin: '' })),
+              myClassIds: (db.myClasses || {})[t.id] || [],
               allowSelfRegister: Boolean(db.allowSelfRegister),
               classrooms: db.classrooms || DEFAULT_CLASSROOMS,
               students: db.students,

@@ -200,6 +200,17 @@ async function listTeachers(db: Db, showPins: boolean) {
   return ((await db.fetch('teachers?select=*&order=name.asc')) || []).map((t: any) => teacherOut(t, showPins));
 }
 
+/** Which classes each teacher has marked as theirs ("My Classes"): { teacherId: classId[] }. */
+async function myClassesMap(db: Db): Promise<Record<string, string[]>> {
+  const rows = await db.fetch('classroom_config?key=eq.myClasses').catch(() => []);
+  const v = rows && rows[0] ? rows[0].value : null;
+  return v && typeof v === 'object' && !Array.isArray(v) ? v : {};
+}
+
+/** The account a sign-in acts as: the master PIN is always Mr. Arthur's account. */
+const accountIdOf = (auth: TeacherAuth, pin: string, env: ClassroomEnv) =>
+  pin === String(env.MASTER_TEACHER_PIN ?? '').trim() || !auth.teacher ? MASTER_ACCOUNT_ID : String(auth.teacher.id);
+
 async function selfCreateAllowed(db: Db) {
   const configs = await db.fetch('classroom_config?key=eq.allowStudentSelfCreate').catch(() => []);
   return configs && configs.length > 0 && configs[0].value !== undefined ? Boolean(configs[0].value) : true;
@@ -431,16 +442,32 @@ async function runAction(payload: Record<string, any>, db: Db, env: ClassroomEnv
     return { ok: true };
   }
 
+  // 1b. PUBLIC TEACHER NAMES (for the teacher picker before the PIN; no PINs)
+  if (action === 'public_teachers') {
+    const rows = ((await db.fetch('teachers?select=id,name&order=name.asc')) || []).filter((t: any) => t.name);
+    const list = rows.map((t: any) => ({ id: isMasterAccountId(t.id) ? MASTER_ACCOUNT_ID : t.id, name: t.name }));
+    if (!list.some((t: any) => t.id === MASTER_ACCOUNT_ID)) list.unshift({ id: MASTER_ACCOUNT_ID, name: 'Mr. Arthur' });
+    return { ok: true, teachers: list };
+  }
+
   // 7. TEACHER PORTAL & OVERVIEW
   if (action === 'teacher_login' || action === 'teacher_overview') {
-    const { isMaster, teacher } = await requireTeacher(db, env, payload);
+    const auth = await requireTeacher(db, env, payload);
+    const { isMaster, teacher } = auth;
     const teacherPin = String(payload.teacherPin).trim();
-    const [students, projects, classrooms, teachers, allowStudentSelfCreate] = await Promise.all([
+    const accountId = accountIdOf(auth, teacherPin, env);
+    // when a name was picked first, the PIN has to be that teacher's own
+    const picked = String(payload.teacherId || '').trim();
+    if (picked && !(picked === accountId || (isMasterAccountId(picked) && isMasterAccountId(accountId)))) {
+      throw new UserError("That PIN doesn't match the teacher you picked.", 401);
+    }
+    const [students, projects, classrooms, teachers, allowStudentSelfCreate, myClasses] = await Promise.all([
       db.fetch('students?select=*&order=first_name.asc'),
       db.fetch('projects?select=*&order=updated_at.desc'),
       listClassrooms(db),
       db.fetch('teachers?select=*&order=name.asc'),
       selfCreateAllowed(db),
+      myClassesMap(db),
     ]);
     return {
       ok: true,
@@ -462,8 +489,20 @@ async function runAction(payload: Record<string, any>, db: Db, env: ClassroomEnv
       })),
       projects: (projects || []).map(projectOut),
       allowStudentSelfCreate,
+      myClassIds: myClasses[accountId] || [],
       teacherPin,
     };
+  }
+
+  // 7b. A TEACHER'S OWN CLASS LIST ("My Classes")
+  if (action === 'teacher_set_my_classes') {
+    const auth = await requireTeacher(db, env, payload);
+    const accountId = accountIdOf(auth, String(payload.teacherPin).trim(), env);
+    const ids = Array.isArray(payload.classIds) ? [...new Set(payload.classIds.map((x: unknown) => String(x)).filter(Boolean))].slice(0, 200) : [];
+    const map = await myClassesMap(db);
+    map[accountId] = ids as string[];
+    await db.upsert('classroom_config', [{ key: 'myClasses', value: map }]);
+    return { ok: true, myClassIds: map[accountId] };
   }
 
   // 8. TEACHER ADD / SAVE STUDENT

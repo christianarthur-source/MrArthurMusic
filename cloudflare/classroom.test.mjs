@@ -129,6 +129,26 @@ expect('teacher adds a student', r[0] === 200 && T.students.some((s) => s.first_
 r = await call({ action: 'teacher_assign_project', teacherPin: 'tpin1', sourceProject: { title: 'Assign 1', appType: 'daw', projectData: { a: 1 } }, targetStudentIds: ['stu_a', 'stu_b', 'stu_fake'] });
 expect('assign skips unknown students', r[0] === 200 && r[1].assignedCount === 2, r);
 
+r = await call({ action: 'public_teachers' });
+expect('teacher picker lists names, no PINs', r[0] === 200 && r[1].teachers.some((t) => t.id === 'teach_master' && t.name === 'Mr. Arthur') && r[1].teachers.some((t) => t.name === 'Ms T') && r[1].teachers.every((t) => !('pin' in t)), r);
+r = await call({ action: 'teacher_login', teacherPin: 'tpin1', teacherId: 'teach_1' });
+expect('picked teacher + own PIN signs in', r[0] === 200 && r[1].currentTeacher.name === 'Ms T', r);
+r = await call({ action: 'teacher_login', teacherPin: 'tpin1', teacherId: 'teach_master' });
+expect("another teacher's PIN is refused for Mr. Arthur", r[0] === 401, r);
+r = await call({ action: 'teacher_login', teacherPin: 'M4ster!', teacherId: 'teach_1' });
+expect('master PIN is refused for another teacher', r[0] === 401, r);
+r = await call({ action: 'teacher_login', teacherPin: 'M4ster!', teacherId: 'teach_master' });
+expect('master PIN signs in as Mr. Arthur when picked', r[0] === 200 && r[1].currentTeacher.id === 'teach_master', r);
+r = await call({ action: 'teacher_set_my_classes', teacherPin: 'tpin1', classIds: ['c1', 'c1', 'c9'] });
+expect('teacher saves My Classes', r[0] === 200 && r[1].myClassIds.join() === 'c1,c9', r);
+r = await call({ action: 'teacher_set_my_classes', teacherPin: 'M4ster!', classIds: ['c2'] });
+r = await call({ action: 'teacher_login', teacherPin: 'tpin1' });
+expect('My Classes are per teacher', r[1].myClassIds.join() === 'c1,c9', r[1].myClassIds);
+r = await call({ action: 'teacher_login', teacherPin: 'M4ster!' });
+expect("Mr. Arthur's My Classes", r[1].myClassIds.join() === 'c2', r[1].myClassIds);
+r = await call({ action: 'teacher_set_my_classes', classIds: ['c1'] });
+expect('My Classes needs a PIN', r[0] === 401, r);
+
 await call({ action: 'staff_wars_submit_score', name: 'Test A.', score: 50, level: 1 });
 r = await call({ action: 'staff_wars_leaderboard', level: 1 });
 expect('Staff Wars leaderboard', r[1].leaderboard[0].score === 50, r);
