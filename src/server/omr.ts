@@ -95,7 +95,9 @@ export async function handleOmr(request: Request, env: OmrEnv, ctx?: { waitUntil
       await writer.write(enc.encode(JSON.stringify({ ok: true, musicxml, truncated: msg.stop_reason === 'max_tokens', usage: msg.usage }) + '\n'));
     } catch (err) {
       let message = err instanceof Error ? err.message : 'Recognition failed.';
-      if (err instanceof Anthropic.RateLimitError) message = 'The scanner is busy. Wait a minute and try again.';
+      const raw = err instanceof Error ? err.message : '';
+      if (/credit balance|billing|purchase credits|spend limit|usage limit/i.test(raw)) message = 'The scanner is out of credit. Add credit at console.anthropic.com (Settings → Billing), then try again.';
+      else if (err instanceof Anthropic.RateLimitError) message = 'The scanner is busy. Wait a minute and try again.';
       else if (err instanceof Anthropic.AuthenticationError) message = 'The server API key is not valid.';
       else if (err instanceof Anthropic.BadRequestError) message = 'The page could not be sent to the scanner (' + err.message.slice(0, 160) + ').';
       else if (err instanceof Anthropic.APIError) message = `The scanner had a problem (${err.status}). Try again.`;
