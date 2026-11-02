@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
-  Play, Pause, Square, SkipBack, Maximize, Minimize, Undo2, Redo2, Settings, UserRound, MessageSquare, Wrench, ZoomIn, ZoomOut, PanelLeft, Repeat, Timer, SlidersHorizontal, Keyboard, ChevronDown, Pencil, Music, Home, Camera,
+  Play, Pause, Square, SkipBack, Maximize, Minimize, Undo2, Redo2, Settings, UserRound, MessageSquare, Wrench, ZoomIn, ZoomOut, PanelLeft, Repeat, Timer, SlidersHorizontal, Keyboard, ChevronDown, Pencil, Music, Camera,
 } from 'lucide-react';
 import type { VerovioToolkit } from 'verovio/esm';
 import './prostaff.css';
@@ -1604,7 +1604,6 @@ export default function ProStaffApp() {
     <div className="ps-root" onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) void importFile(f); }}>
       <style>{highlightCss}</style>
       <header className="ps-top">
-        <a href="/" className="ps-btn" title="Back to Mr. Arthur’s Music Lab" aria-label="Music Lab home"><Home size={16} /></a>
         <WolfiBrand />
         <nav className="ps-menus" onClick={(e) => e.stopPropagation()}>
           <Menu id="file" label="File">
