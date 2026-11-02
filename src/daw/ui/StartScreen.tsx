@@ -55,8 +55,12 @@ export function StartScreen({
       <div className="mx-auto max-w-5xl px-6 py-8">
         <div className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="daw-display text-4xl text-amber-300">Mr. Arthur&apos;s Studio</h1>
-            <p className="mt-1 text-slate-400">{studentName ? `Welcome back, ${studentName}! ` : ''}Make music with real recorded loops, instruments and effects.</p>
+            <h1 className="daw-display text-4xl text-amber-300">The Studio DAW</h1>
+            <p className="mt-1 text-sm text-slate-300">
+              <strong className="text-amber-200">DAW</strong> stands for <strong className="text-amber-200">Digital Audio Workstation</strong>: a music
+              studio on your computer. Layer loops and beats, play instruments, record your voice, add effects, and mix it all into a finished song.
+            </p>
+            {studentName && <p className="mt-1 text-slate-400">Welcome back, {studentName}!</p>}
           </div>
           {onExit && (
             <button type="button" className="rounded-lg bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700" onClick={onExit}>
