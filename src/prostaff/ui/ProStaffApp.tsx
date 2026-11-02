@@ -979,7 +979,7 @@ export default function ProStaffApp() {
         return;
       }
       if (mod && !k.startsWith('Arrow')) return;
-      if (k === ' ') { handled(); void togglePlay(); return; }
+      if (k === ' ') { handled(); void togglePlayRef.current(); return; }
       if (k === 'Home') { handled(); rewind(); return; }
       if (k === 'Escape') {
         handled();
@@ -1250,6 +1250,10 @@ export default function ProStaffApp() {
       showToast('Audio could not start. Click the page and try again.', true);
     }
   }
+
+  // the keyboard handler is set up once; it must always reach the latest Play (current click, count-in, tempo, loop…)
+  const togglePlayRef = useRef(togglePlay);
+  togglePlayRef.current = togglePlay;
 
   useEffect(() => {
     player.metronome = metronome;
