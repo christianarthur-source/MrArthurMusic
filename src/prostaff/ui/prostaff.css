@@ -471,7 +471,8 @@ textarea.ps-input { height: auto; padding: 8px 10px; resize: vertical; }
 }
 .ps-ribbon-top { overflow-x: auto; scrollbar-width: none; }
 .ps-ribbon-top::-webkit-scrollbar { display: none; }
-.ps-top { overflow: hidden; }
+.ps-top { position: relative; z-index: 45; } /* above the playback bar and toolbar, so the menus open over them */
+.ps-top .ps-doc-title { overflow: hidden; }
 @media (max-width: 820px) {
   .ps-props { position: absolute; right: 0; top: 0; bottom: 0; z-index: 35; box-shadow: -10px 0 30px var(--ps-shadow); }
   .ps-ribbon-tabs button { padding: 0 9px; }
