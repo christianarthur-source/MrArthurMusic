@@ -258,18 +258,37 @@ const INTERVALS: [string, string][] = [
   ['d5', 'Diminished 5th'], ['P5', 'Perfect 5th'], ['m6', 'Minor 6th'], ['M6', 'Major 6th'], ['m7', 'Minor 7th'], ['M7', 'Major 7th'], ['P8', 'Octave'],
 ];
 
-export function TransposeDialog({ onApply, onClose }: { onApply: (spec: string) => void; onClose: () => void }) {
+/** Semitones in each interval, for transposing a selection. */
+export const INTERVAL_SEMITONES: Record<string, number> = { m2: 1, M2: 2, m3: 3, M3: 4, P4: 5, A4: 6, d5: 6, P5: 7, m6: 8, M6: 9, m7: 10, M7: 11, P8: 12 };
+
+export function TransposeDialog({ selection, onApply, onApplySelection, onClose }: {
+  selection: string | null; // e.g. "3 notes" or "measures 2–4"; null when nothing is selected
+  onApply: (spec: string) => void;
+  onApplySelection: (semitones: number) => void;
+  onClose: () => void;
+}) {
+  const [scope, setScope] = useState<'selection' | 'score'>(selection ? 'selection' : 'score');
   const [mode, setMode] = useState<'interval' | 'key'>('interval');
   const [dir, setDir] = useState<'+' | '-'>('+');
   const [iv, setIv] = useState('M2');
   const [key, setKey] = useState('D');
+  const onSel = scope === 'selection' && !!selection;
+  const apply = () => (onSel ? onApplySelection((dir === '+' ? 1 : -1) * INTERVAL_SEMITONES[iv]) : onApply(mode === 'key' ? key : `${dir}${iv}`));
   return (
-    <Dialog title="Transpose score" subtitle="Moves every part, rewriting key signatures and spelling." onClose={onClose} size="small"
-      footer={<><button className="ps-btn ps-outline" onClick={onClose}>Cancel</button><button className="ps-btn ps-primary" onClick={() => onApply(mode === 'key' ? key : `${dir}${iv}`)}>Transpose</button></>}>
-      <div className="ps-field"><label>By</label>
-        <select className="ps-select" value={mode} onChange={(e) => setMode(e.target.value as any)}><option value="interval">Interval</option><option value="key">To a key</option></select>
+    <Dialog title="Transpose" subtitle={onSel ? `Moves the selected notes (${selection}); key signatures stay as they are.` : 'Moves every part, rewriting key signatures and spelling.'} onClose={onClose} size="small"
+      footer={<><button className="ps-btn ps-outline" onClick={onClose}>Cancel</button><button className="ps-btn ps-primary" onClick={apply}>Transpose</button></>}>
+      <div className="ps-field"><label>What</label>
+        <select className="ps-select" value={onSel ? 'selection' : 'score'} onChange={(e) => setScope(e.target.value as 'selection' | 'score')}>
+          <option value="selection" disabled={!selection}>{selection ? `Selection (${selection})` : 'Selection (select notes or measures first)'}</option>
+          <option value="score">Whole score</option>
+        </select>
       </div>
-      {mode === 'interval' ? (
+      {!onSel && (
+        <div className="ps-field"><label>By</label>
+          <select className="ps-select" value={mode} onChange={(e) => setMode(e.target.value as any)}><option value="interval">Interval</option><option value="key">To a key</option></select>
+        </div>
+      )}
+      {mode === 'interval' || onSel ? (
         <div className="ps-row">
           <div className="ps-field"><label>Direction</label><select className="ps-select" value={dir} onChange={(e) => setDir(e.target.value as any)}><option value="+">Up</option><option value="-">Down</option></select></div>
           <div className="ps-field"><label>Interval</label><select className="ps-select" value={iv} onChange={(e) => setIv(e.target.value)}>{INTERVALS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></div>

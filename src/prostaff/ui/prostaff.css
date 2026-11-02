@@ -395,17 +395,17 @@ textarea.ps-input { height: auto; padding: 8px 10px; resize: vertical; }
 .ps-ribbon-right .ps-tool[disabled] { opacity: .35; cursor: default; }
 .ps-ribbon-sep { width: 1px; height: 20px; background: var(--ps-line); margin: 0 4px; }
 .ps-zoom-val { min-width: 36px; text-align: center; color: var(--ps-muted); font-size: 11px; }
-.ps-ribbon-body { display: flex; align-items: center; gap: 4px; padding: 5px 10px; background: var(--ps-panel-2); min-height: 48px; overflow-x: auto; scrollbar-width: thin; }
+.ps-ribbon-body { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 4px; padding: 5px 10px; background: var(--ps-panel-2); min-height: 48px; }
 .ps-seg { display: inline-flex; padding: 2px; gap: 2px; border-radius: 9px; background: var(--ps-field); border: 1px solid var(--ps-line-2); margin-bottom: 4px; }
 .ps-seg-btn { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 11px; border: 0; border-radius: 7px; background: none; color: var(--ps-muted); font-weight: 600; white-space: nowrap; }
 .ps-seg-btn:hover { color: var(--ps-text); }
 .ps-seg-btn.ps-on { background: var(--ps-accent); color: var(--ps-accent-ink); }
 .ps-seg-btn.ps-on kbd { background: rgba(0,0,0,.15); color: inherit; border-color: transparent; }
 .ps-select-sm { height: 30px; width: auto; }
-.ps-strip-group { display: flex; flex-direction: column; gap: 2px; padding: 0 8px; border-right: 1px solid var(--ps-line); }
+.ps-strip-group { display: flex; flex-direction: column; gap: 2px; padding: 0 8px; border-right: 1px solid var(--ps-line); max-width: 100%; }
 .ps-strip-group:last-child { border-right: 0; }
 .ps-strip-label { font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--ps-faint); white-space: nowrap; }
-.ps-strip-items { display: flex; gap: 3px; }
+.ps-strip-items { display: flex; flex-wrap: wrap; gap: 3px; }
 .ps-strip-item { height: 32px; min-width: 34px; padding: 0 6px; flex: none; }
 .ps-strip-item.ps-wide { min-width: 0; padding: 0 9px; }
 .ps-strip-item .ps-txt { white-space: nowrap; }

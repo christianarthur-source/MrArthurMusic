@@ -125,6 +125,19 @@ function keepFocus(e: React.MouseEvent) {
   if ((e.target as HTMLElement).closest('button')) e.preventDefault();
 }
 
+/** The staff under a screen point, by its staff lines (the space between lines isn't drawn, so it can't be hit-tested). */
+function staffAtPoint(root: Element, x: number, y: number): { staffG: Element; measureG: Element } | null {
+  for (const st of Array.from(root.querySelectorAll('.ps-page g.measure > g.staff'))) {
+    const lines = Array.from(st.children).filter((c) => c.tagName === 'path');
+    if (!lines.length) continue;
+    const a = lines[0].getBoundingClientRect();
+    const b = lines[lines.length - 1].getBoundingClientRect();
+    const pad = Math.max(4, (b.top - a.top) / 8);
+    if (x >= a.left && x <= a.right && y >= a.top - pad && y <= b.bottom + pad) return { staffG: st, measureG: st.parentElement! };
+  }
+  return null;
+}
+
 const PITCH_NAMES: Record<string, string> = { s: '♯', f: '♭', n: '', ss: '𝄪', x: '𝄪', ff: '𝄫' };
 
 export default function ProStaffApp() {
@@ -797,19 +810,8 @@ export default function ProStaffApp() {
     let staffG = t.closest?.('g.staff');
     let measureG = t.closest?.('g.measure');
     if (!measureG && pagesRef.current) {
-      // the space between staff lines isn't drawn, so find the staff under the pointer by position
-      for (const st of Array.from(pagesRef.current.querySelectorAll('.ps-page g.measure > g.staff'))) {
-        const lines = Array.from(st.children).filter((c) => c.tagName === 'path');
-        if (!lines.length) continue;
-        const a = lines[0].getBoundingClientRect();
-        const b = lines[lines.length - 1].getBoundingClientRect();
-        const pad = Math.max(4, (b.top - a.top) / 8);
-        if (ev.clientX >= a.left && ev.clientX <= a.right && ev.clientY >= a.top - pad && ev.clientY <= b.bottom + pad) {
-          staffG = st;
-          measureG = st.parentElement;
-          break;
-        }
-      }
+      const hitStaff = staffAtPoint(pagesRef.current, ev.clientX, ev.clientY);
+      if (hitStaff) ({ staffG, measureG } = hitStaff);
     }
     if (measureG?.id && staffG?.id) {
       const staffEl = s.byId(T.untabId(staffG.id));
@@ -842,8 +844,29 @@ export default function ProStaffApp() {
   // ---------- select tool: drag notes to a new pitch, or drag a box to select ----------
 
   const suppressClickRef = useRef(false);
-  const dragRef = useRef<{ kind: 'move' | 'box'; x0: number; y0: number; moved: boolean; els: SVGGraphicsElement[]; half: number; dy: number; additive: boolean; pick?: string } | null>(null);
+  const dragRef = useRef<{ kind: 'move' | 'box'; x0: number; y0: number; moved: boolean; els: SVGGraphicsElement[]; half: number; steps: number; additive: boolean; pick?: string; under?: string } | null>(null);
   const [selBox, setSelBox] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+
+  /** Plays the dragged note (or the first selected one) moved by `steps` staff steps, as you drag. */
+  const previewPitch = useCallback((sc: Score, underId: string | undefined, steps: number) => {
+    const sel0 = live.current.sel;
+    let notes: Element[] = [];
+    const under = underId ? sc.byId(underId) : null;
+    if (under) notes = under.localName === 'chord' ? children(under, 'note') : [under];
+    if (!notes.length) notes = E.selectedNotes(sc, sel0).slice(0, 1);
+    if (!notes.length) return;
+    const midis = notes.map((n) => {
+      const fifths = E.keyAt(sc, n);
+      const p = fromStep(stepOf(n.getAttribute('pname') || 'c', Number(n.getAttribute('oct') || 4)) + steps);
+      const staffN = ancestor(n, 'staff')?.getAttribute('n') || '1';
+      const sd = sc.staffDefs().find((x) => x.getAttribute('n') === staffN);
+      return midiOf(p.pname, p.oct, keyAlter(fifths, p.pname)) + Number(sd?.getAttribute('trans.semi') || 0);
+    });
+    const staffN = ancestor(notes[0], 'staff')?.getAttribute('n') || '1';
+    const st = sc.staves().find((x) => x.n === staffN);
+    const sample = st?.instrumentId ? instrumentById(st.instrumentId).sample : 'piano';
+    if (sample !== 'drum_kit') void player.audition(sample, midis, staffN, st?.program ?? 0);
+  }, [player]);
 
   const onStagePointerDown = useCallback((ev: React.PointerEvent) => {
     const s = scoreRef.current;
@@ -851,21 +874,33 @@ export default function ProStaffApp() {
     if (!s || !root || ev.button !== 0 || ev.pointerType === 'touch' || live.current.mode === 'input' || live.current.readOnly) return;
     const t = ev.target as Element;
     if (t.closest('g.pgHead')) return;
+    const base = root.getBoundingClientRect();
+    const yRel = ev.clientY - base.top;
+    const g = geomRef.current.reduce<StaffGeom | null>((best, x) => (!best || Math.abs(x.top - yRel) < Math.abs(best.top - yRel) ? x : best), null);
+    const half = (g?.space || 8) / 2;
+    const cur = live.current.sel;
+    // inside a selected measure: drag every note in the selection
+    const inSelectedMeasure = () => {
+      if (cur.kind !== 'measures') return false;
+      const at = staffAtPoint(root, ev.clientX, ev.clientY);
+      const n = at ? s.byId(T.untabId(at.staffG.id))?.getAttribute('n') || '' : '';
+      return !!at && cur.measureIds.includes(at.measureG.id) && (!cur.staves.length || cur.staves.includes(n));
+    };
     const hit = t.closest('g.note, g.chord');
     if (hit?.id) {
       const id = T.untabId(hit.id);
       if (!s.byId(id)) return;
       // selecting happens on click (restyling the note mid-click would retarget the click); a drag selects when it starts
-      const cur = live.current.sel;
-      const already = cur.kind === 'events' && cur.ids.some((x) => x === id || s.byId(x)?.contains(s.byId(id)!) || s.byId(id)?.contains(s.byId(x)!));
-      const base = root.getBoundingClientRect();
-      const y = ev.clientY - base.top;
-      const g = geomRef.current.reduce<StaffGeom | null>((best, x) => (!best || Math.abs(x.top - y) < Math.abs(best.top - y) ? x : best), null);
-      dragRef.current = { kind: 'move', x0: ev.clientX, y0: ev.clientY, moved: false, els: [], half: (g?.space || 8) / 2, dy: 0, additive: ev.shiftKey, pick: already ? undefined : id };
+      const already = (cur.kind === 'events' && cur.ids.some((x) => x === id || s.byId(x)?.contains(s.byId(id)!) || s.byId(id)?.contains(s.byId(x)!))) || inSelectedMeasure();
+      dragRef.current = { kind: 'move', x0: ev.clientX, y0: ev.clientY, moved: false, els: [], half, steps: 0, additive: ev.shiftKey, pick: already ? undefined : id, under: id };
       return;
     }
     if (t.closest(CLICKABLE)) return; // markings are click-to-select only
-    dragRef.current = { kind: 'box', x0: ev.clientX, y0: ev.clientY, moved: false, els: [], half: 0, dy: 0, additive: ev.shiftKey };
+    if (inSelectedMeasure()) {
+      dragRef.current = { kind: 'move', x0: ev.clientX, y0: ev.clientY, moved: false, els: [], half, steps: 0, additive: false };
+      return;
+    }
+    dragRef.current = { kind: 'box', x0: ev.clientX, y0: ev.clientY, moved: false, els: [], half: 0, steps: 0, additive: ev.shiftKey };
   }, [selectId]);
 
   useEffect(() => {
@@ -876,18 +911,25 @@ export default function ProStaffApp() {
       const dx = ev.clientX - d.x0;
       const dy = ev.clientY - d.y0;
       if (!d.moved && Math.hypot(dx, dy) < 5) return;
-      if (!d.moved && d.kind === 'move') {
+      const sc = scoreRef.current;
+      if (!d.moved && d.kind === 'move' && sc) {
         if (d.pick) selectId(d.pick, d.additive);
-        const sel2 = live.current.sel;
-        const ids = sel2.kind === 'events' ? sel2.ids : [];
-        d.els = ids.map((x) => root.querySelector(`[id="${CSS.escape(x)}"]`)).filter(Boolean) as SVGGraphicsElement[];
+        // move the drawn notes of the whole selection (chords move note by note)
+        const notes = E.selectedNotes(sc, live.current.sel);
+        d.els = notes.map((n) => root.querySelector(`[id="${CSS.escape(getId(n))}"]`)).filter(Boolean) as SVGGraphicsElement[];
       }
       d.moved = true;
       if (d.kind === 'move') {
-        d.dy = Math.round(dy / d.half) * d.half;
-        for (const el of d.els) {
-          el.style.transform = `translateY(${d.dy}px)`;
-          el.classList.add('ps-dragging');
+        const steps = -Math.round(dy / d.half);
+        if (steps !== d.steps && sc) {
+          d.steps = steps;
+          // the page is drawn in its own units: convert screen pixels before moving the notes
+          const scale = d.els[0]?.getScreenCTM()?.d || 1;
+          for (const el of d.els) {
+            el.style.transform = steps ? `translateY(${(-steps * d.half) / scale}px)` : '';
+            el.classList.toggle('ps-dragging', !!steps);
+          }
+          previewPitch(sc, d.under, steps);
         }
       } else {
         const base = root.getBoundingClientRect();
@@ -907,11 +949,9 @@ export default function ProStaffApp() {
           el.style.transform = '';
           el.classList.remove('ps-dragging');
         }
-        const steps = -Math.round(d.dy / d.half);
-        if (steps) {
+        if (d.steps) {
           const cur = live.current.sel;
-          run((sc) => E.transposeNotes(sc, cur, steps, 'step'));
-          if (cur.kind === 'events') audition(cur.ids);
+          run((sc) => E.transposeNotes(sc, cur, d.steps, 'step'));
         }
         return;
       }
@@ -941,7 +981,7 @@ export default function ProStaffApp() {
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', up);
     };
-  }, [run, audition, updSel, selectId]);
+  }, [run, updSel, selectId, previewPitch]);
 
   // ---------- prompts (text entry) ----------
 
@@ -1842,7 +1882,7 @@ export default function ProStaffApp() {
       c('select', 'Select tool', 'Suggested', () => updMode('normal'), 'Esc', 'cursor arrow pointer move'),
       c('play', playing ? 'Stop playback' : 'Play', 'Suggested', () => void togglePlay(), 'Space', 'listen'),
       c('add-measure', 'Add a measure', 'Suggested', () => actions.addMeasures(1), 'Ctrl B', 'bar'),
-      c('transpose', 'Transpose…', 'Suggested', () => setDialog('transpose'), undefined, 'key change shift'),
+      c('transpose', 'Transpose…', 'Suggested', () => setDialog('transpose'), undefined, 'key change shift selection interval up down'),
       c('instruments', 'Instruments…', 'Suggested', () => setDialog('parts'), undefined, 'parts add instrument staff'),
       c('mode-write', 'Write mode', 'Modes', () => setAppMode('write'), undefined, 'edit'),
       c('mode-play', 'Play mode', 'Modes', () => setAppMode('play'), undefined, 'listen mixer'),
@@ -2093,6 +2133,9 @@ export default function ProStaffApp() {
                   <button className="ps-tool" title="Slur (S)" onClick={() => actions.spanner('slur')}><span className="ps-glyph">⁀</span></button>
                   <button className="ps-tool" title="Triplet (Ctrl+3)" onClick={() => actions.tuplet(3)}><small style={{ color: 'inherit', fontWeight: 700 }}>3</small></button>
                 </div>
+                <div className="ps-tool-group">
+                  <button className="ps-btn" title="Transpose the selected notes or measures (or the whole score)" onClick={() => setDialog('transpose')}>Transpose…</button>
+                </div>
                 <div className="ps-tool-group" title="Voice (Ctrl+Alt+1–4)">
                   {['1', '2', '3', '4'].map((v, i) => (
                     <button key={v} className="ps-tool" onClick={() => updInput({ ...input, voice: v })} aria-pressed={input.voice === v} title={`Voice ${v}`}>
@@ -2247,7 +2290,28 @@ export default function ProStaffApp() {
           onProgram={(n, p) => run((sc) => { E.setPartProgram(sc, n, p); return {}; })}
         />
       )}
-      {dialog === 'transpose' && <TransposeDialog onClose={() => setDialog(null)} onApply={(spec) => void transposeScore(spec)} />}
+      {dialog === 'transpose' && (
+        <TransposeDialog
+          selection={(() => {
+            if (!s) return null;
+            if (sel.kind === 'measures') {
+              const ms = E.measuresOf(s, sel);
+              const a = ms[0]?.getAttribute('n');
+              const b = ms[ms.length - 1]?.getAttribute('n');
+              return ms.length > 1 ? `measures ${a}–${b}` : `measure ${a}`;
+            }
+            const n = E.selectedNotes(s, sel).length;
+            return n ? `${n} note${n === 1 ? '' : 's'}` : null;
+          })()}
+          onClose={() => setDialog(null)}
+          onApply={(spec) => void transposeScore(spec)}
+          onApplySelection={(semis) => {
+            const cur = live.current.sel;
+            run((sc) => (semis % 12 === 0 ? E.transposeNotes(sc, cur, semis / 12, 'octave') : E.transposeNotes(sc, cur, semis, 'semitone')));
+            setDialog(null);
+          }}
+        />
+      )}
       {dialog === 'scan' && <ScanDialog onClose={() => setDialog(null)} onRecognize={(p, pin, hint) => void recognize(p, pin, hint)} busy={scanBusy} progress={scanProgress} error={scanError} />}
       {dialog === 'shortcuts' && <ShortcutsDialog onClose={() => setDialog(null)} />}
       {dialog === 'account' && (
