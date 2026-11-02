@@ -92,11 +92,20 @@ export interface TeacherPortalData {
   teachers?: TeacherRecord[];
   isMasterAdmin?: boolean;
   currentTeacher?: TeacherRecord;
+  /** Classes this teacher marked as theirs ("My Classes"). */
+  myClassIds: string[];
+}
+
+/** A teacher's name for the sign-in picker (no PIN). */
+export interface PublicTeacher {
+  id: string;
+  name: string;
 }
 
 interface ClassroomDbShape {
   teacherPin: string;
   allowStudentSelfCreate: boolean;
+  myClasses?: Record<string, string[]>;
   teachers?: TeacherRecord[];
   classrooms?: ClassroomRecord[];
   students: StudentRecord[];
@@ -466,6 +475,19 @@ function executeLocalFallback(payload: Record<string, any>): any {
     return { isMaster, teacher: matchedTeacher };
   };
 
+  if (action === 'public_teachers') {
+    const list = (db.teachers || DEFAULT_TEACHERS).map((t) => ({ id: t.id, name: t.name }));
+    return { ok: true, teachers: list };
+  }
+
+  if (action === 'teacher_set_my_classes') {
+    const { teacher } = verifyTeacher();
+    const id = teacher?.id || 'teach_master';
+    db.myClasses = { ...(db.myClasses || {}), [id]: Array.isArray(payload.classIds) ? payload.classIds.map(String) : [] };
+    writeLocalDb(db);
+    return { ok: true, myClassIds: db.myClasses[id] };
+  }
+
   if (action === 'teacher_login' || action === 'teacher_overview') {
     const { isMaster, teacher } = verifyTeacher();
     const currentTeacher: TeacherRecord = teacher || {
@@ -485,6 +507,7 @@ function executeLocalFallback(payload: Record<string, any>): any {
       students: db.students,
       projects: db.projects,
       allowStudentSelfCreate: db.allowStudentSelfCreate,
+      myClassIds: (db.myClasses || {})[currentTeacher.id] || [],
       teacherPin: db.teacherPin,
     };
   }
@@ -1037,10 +1060,24 @@ export async function deleteStudentProject(params: {
   });
 }
 
-export async function loginTeacher(teacherPin: string): Promise<TeacherPortalData> {
+/** Teacher names for the sign-in picker. */
+export async function fetchPublicTeachers(): Promise<PublicTeacher[]> {
+  const res = await callClassroomBackend({ action: 'public_teachers' });
+  return res.teachers || [];
+}
+
+/** Saves which classes are the signed-in teacher's own ("My Classes"). */
+export async function setMyClasses(teacherPin: string, classIds: string[]): Promise<string[]> {
+  const res = await callClassroomBackend({ action: 'teacher_set_my_classes', teacherPin, classIds });
+  return res.myClassIds || classIds;
+}
+
+/** Signs a teacher in. With `teacherId` (picked from the list), the PIN must be that teacher's. */
+export async function loginTeacher(teacherPin: string, teacherId?: string): Promise<TeacherPortalData> {
   const res = await callClassroomBackend({
     action: 'teacher_login',
     teacherPin,
+    ...(teacherId ? { teacherId } : {}),
   });
   return {
     students: res.students || [],
@@ -1050,6 +1087,7 @@ export async function loginTeacher(teacherPin: string): Promise<TeacherPortalDat
     isMasterAdmin: Boolean(res.isMasterAdmin),
     currentTeacher: res.currentTeacher,
     allowStudentSelfCreate: res.allowStudentSelfCreate ?? true,
+    myClassIds: res.myClassIds || [],
     teacherPin: res.teacherPin || teacherPin,
   };
 }
@@ -1178,6 +1216,7 @@ export async function teacherUpdateSettings(params: {
     isMasterAdmin: Boolean(res.isMasterAdmin),
     currentTeacher: res.currentTeacher,
     allowStudentSelfCreate: res.allowStudentSelfCreate ?? true,
+    myClassIds: res.myClassIds || [],
     teacherPin: res.teacherPin || params.newTeacherPin || params.teacherPin,
   };
 }

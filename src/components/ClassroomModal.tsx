@@ -33,6 +33,7 @@ import {
   Eye,
   CheckCircle2,
   Save,
+  Star,
 } from 'lucide-react';
 import { EdLawPrivacyModal } from './EdLawPrivacyModal';
 import { Score } from '../types/music';
@@ -50,6 +51,9 @@ import {
   fetchStudentProjects,
   loginStudent,
   loginTeacher,
+  fetchPublicTeachers,
+  setMyClasses,
+  PublicTeacher,
   saveStudentProject,
   teacherBulkAddStudents,
   teacherDeleteStudent,
@@ -213,6 +217,12 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
   const [activeTeacherPin, setActiveTeacherPin] = useState<string>('');
   // The account the server says this PIN belongs to (the master PIN signs in as "Mr. Arthur").
   const [signedInTeacher, setSignedInTeacher] = useState<TeacherRecord | null>(null);
+  // Sign-in picker: the teacher clicks their name first, then types their PIN.
+  const [publicTeachers, setPublicTeachers] = useState<PublicTeacher[] | null>(null);
+  const [pickedTeacher, setPickedTeacher] = useState<PublicTeacher | null>(null);
+  // "My Classes": the classes the signed-in teacher has starred
+  const [myClassIds, setMyClassIds] = useState<string[]>([]);
+  const [classView, setClassView] = useState<'mine' | 'all'>('all');
   const [newTeacherPinField, setNewTeacherPinField] = useState<string>('');
   const [teacherTab, setTeacherTab] = useState<'students' | 'classrooms' | 'projects' | 'teachers' | 'settings'>('students');
   const [allStudents, setAllStudents] = useState<StudentRecord[]>([]);
@@ -301,6 +311,10 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
       setTeacherPinInput('');
       setTeacherError(null);
       setTeacherNotice(null);
+      setPickedTeacher(null);
+      fetchPublicTeachers()
+        .then(setPublicTeachers)
+        .catch(() => setPublicTeachers([]));
       setMode('teacher_auth');
       return;
     }
@@ -311,6 +325,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
         .then((data) => {
           setActiveTeacherPin(pinToTry);
           setSignedInTeacher(data.currentTeacher ?? null);
+          setMyClassIds(data.myClassIds);
           setAllStudents(data.students);
           setAllProjects(data.projects);
           setAllowSelfCreate(data.allowStudentSelfCreate);
@@ -554,9 +569,11 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
     setIsLoading(true);
     const pin = teacherPinInput.trim();
     try {
-      const data = await loginTeacher(pin);
+      const data = await loginTeacher(pin, pickedTeacher?.id);
       setActiveTeacherPin(pin);
       setSignedInTeacher(data.currentTeacher ?? null);
+      setMyClassIds(data.myClassIds);
+      setClassView(data.myClassIds.length ? 'mine' : 'all');
       setAllStudents(data.students);
       setAllProjects(data.projects);
       setAllowSelfCreate(data.allowStudentSelfCreate);
@@ -569,6 +586,18 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
       setTeacherError(err.message || 'Incorrect Teacher PIN.');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const toggleMyClass = async (classId: string) => {
+    const before = myClassIds;
+    const next = before.includes(classId) ? before.filter((x) => x !== classId) : [...before, classId];
+    setMyClassIds(next);
+    try {
+      setMyClassIds(await setMyClasses(activeTeacherPin, next));
+    } catch (err: any) {
+      setMyClassIds(before);
+      setTeacherError(err.message || 'Could not update My Classes.');
     }
   };
 
@@ -1135,7 +1164,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
             <div>
               <h2 className="text-base font-bold leading-tight">
                 {mode === 'teacher_portal'
-                  ? "Mr. Arthur's Teacher Admin Portal"
+                  ? `${signedInTeacher?.name || 'Mr. Arthur'}'s Teacher Portal`
                   : mode === 'teacher_auth'
                   ? 'Teacher Admin Sign In'
                   : studentSession
@@ -1146,7 +1175,9 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                 {mode === 'teacher_portal'
                   ? 'Manage student names, PINs, and saved compositions'
                   : mode === 'teacher_auth'
-                  ? 'Enter your Teacher PIN to manage students & projects'
+                  ? pickedTeacher
+                    ? `Enter ${pickedTeacher.name}'s Teacher PIN`
+                    : 'Choose your name, then enter your PIN'
                   : studentSession
                   ? 'Songs with a title save automatically to your account'
                   : 'Sign in with your First Name, Last Initial, and PIN — no email needed'}
@@ -1791,8 +1822,35 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
             </div>
           )}
 
-          {/* 3. TEACHER AUTH VIEW */}
-          {mode === 'teacher_auth' && (
+          {/* 3. TEACHER AUTH VIEW: pick your name, then enter your PIN */}
+          {mode === 'teacher_auth' && !pickedTeacher && publicTeachers !== null && publicTeachers.length > 0 && (
+            <div className="max-w-md mx-auto py-4 space-y-4">
+              <div className="space-y-1 text-center">
+                <KeyRound className="w-8 h-8 text-amber-300 mx-auto" />
+                <div className="text-sm font-bold text-white">Who&apos;s signing in?</div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {publicTeachers.map((t) => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => {
+                      setPickedTeacher(t);
+                      setTeacherPinInput('');
+                      setTeacherError(null);
+                    }}
+                    className="px-4 py-3 rounded-xl bg-slate-950 border border-slate-700 hover:border-amber-400 hover:bg-slate-900 text-white font-bold text-sm cursor-pointer transition-all"
+                  >
+                    {t.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          {mode === 'teacher_auth' && publicTeachers === null && (
+            <div className="py-8 text-center text-xs text-slate-400">Loading teachers…</div>
+          )}
+          {mode === 'teacher_auth' && (pickedTeacher || (publicTeachers !== null && publicTeachers.length === 0)) && (
             <form onSubmit={handleTeacherUnlock} className="max-w-sm mx-auto py-4 space-y-4">
               {teacherError && (
                 <div className="p-3 rounded-xl bg-rose-500/15 border border-rose-500/40 text-rose-200 text-xs font-medium">
@@ -1803,10 +1861,11 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
               <div className="space-y-2 text-center">
                 <KeyRound className="w-8 h-8 text-amber-300 mx-auto" />
                 <label className="block text-sm font-bold text-white">
-                  Enter Admin PIN
+                  {pickedTeacher ? `Hi, ${pickedTeacher.name}! Enter your PIN` : 'Enter Admin PIN'}
                 </label>
                 <input
                   type="password"
+                  inputMode="numeric"
                   value={teacherPinInput}
                   onChange={(e) => setTeacherPinInput(e.target.value)}
                   placeholder="••••"
@@ -1820,8 +1879,21 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                 disabled={isLoading}
                 className="w-full py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-sm shadow-lg cursor-pointer"
               >
-                {isLoading ? 'Unlocking...' : 'Unlock Admin Portal'}
+                {isLoading ? 'Unlocking...' : 'Unlock Teacher Portal'}
               </button>
+              {pickedTeacher && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPickedTeacher(null);
+                    setTeacherPinInput('');
+                    setTeacherError(null);
+                  }}
+                  className="w-full text-xs text-slate-400 hover:text-white cursor-pointer"
+                >
+                  ← Not {pickedTeacher.name}? Choose another name
+                </button>
+              )}
             </form>
           )}
 
@@ -1862,16 +1934,34 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                     type="button"
                     onClick={() => {
                       setTeacherTab('classrooms');
+                      setClassView('all');
                       setSelectedClassroomForView(null);
                     }}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer transition-all ${
-                      teacherTab === 'classrooms'
+                      teacherTab === 'classrooms' && classView === 'all'
                         ? 'bg-amber-400 text-slate-950 shadow-sm'
                         : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
                     }`}
                   >
                     <School className="w-3.5 h-3.5" />
                     <span>Classrooms ({classrooms.length})</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTeacherTab('classrooms');
+                      setClassView('mine');
+                      setSelectedClassroomForView(null);
+                    }}
+                    title="The classes you've starred as yours"
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer ${
+                      teacherTab === 'classrooms' && classView === 'mine'
+                        ? 'bg-amber-400 text-slate-950 shadow-sm'
+                        : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                    }`}
+                  >
+                    <Star className="w-3.5 h-3.5" />
+                    <span>My Classes ({classrooms.filter((c) => myClassIds.includes(c.id)).length})</span>
                   </button>
                   <button
                     type="button"
@@ -2365,11 +2455,13 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                   <div className="flex items-center justify-between">
                     <div>
                       <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                        <School className="w-4 h-4 text-amber-400" />
-                        <span>Classrooms &amp; Grades Manager</span>
+                        {classView === 'mine' ? <Star className="w-4 h-4 text-amber-400" /> : <School className="w-4 h-4 text-amber-400" />}
+                        <span>{classView === 'mine' ? `${signedInTeacher?.name || 'Mr. Arthur'}'s Classes` : 'Classrooms & Grades Manager'}</span>
                       </h3>
                       <p className="text-[11px] text-slate-400">
-                        Organize students by grade and classroom so they can easily find their class
+                        {classView === 'mine'
+                          ? 'The classes you teach. Star or unstar classes in All Classrooms.'
+                          : 'Star (☆) the classes you teach to add them to My Classes'}
                       </p>
                     </div>
                     <button
@@ -2588,7 +2680,8 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                           <span className="font-bold">👉 Interactive Classroom Selector:</span> Click any classroom below or use its <strong className="text-white">View Students</strong> button to see all students enrolled in that class, inspect their compositions, or share work.
                         </div>
                       </div>
-                      {classrooms.map((cls) => {
+                      {(classView === 'mine' ? classrooms.filter((c) => myClassIds.includes(c.id)) : classrooms).map((cls) => {
+                        const mine = myClassIds.includes(cls.id);
                         const studentCount = allStudents.filter(
                           (s) => s.classId === cls.id || (cls.name && s.classGroup === cls.name)
                         ).length;
@@ -2599,6 +2692,18 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                             className="group p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 hover:border-amber-400/70 hover:bg-slate-900/90 transition-all flex items-center justify-between gap-3 text-xs cursor-pointer shadow-sm"
                           >
                             <div className="flex items-center gap-3 flex-wrap flex-1">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  void toggleMyClass(cls.id);
+                                }}
+                                title={mine ? 'Remove from My Classes' : 'Add to My Classes'}
+                                aria-pressed={mine}
+                                className={`p-1 rounded-md cursor-pointer ${mine ? 'text-amber-300' : 'text-slate-500 hover:text-amber-300'}`}
+                              >
+                                <Star className="w-4 h-4" fill={mine ? 'currentColor' : 'none'} />
+                              </button>
                               <span className="px-2.5 py-1 rounded-md bg-sky-500/20 text-sky-300 font-extrabold border border-sky-500/30 text-xs">
                                 {cls.grade}
                               </span>
@@ -2668,6 +2773,18 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                           </div>
                         );
                       })}
+                      {classView === 'mine' && classrooms.length > 0 && !classrooms.some((c) => myClassIds.includes(c.id)) && (
+                        <div className="p-6 rounded-xl bg-slate-950/40 border border-slate-800 text-center text-xs text-slate-400 space-y-2">
+                          <div>No classes yet. Open All Classrooms and tap the ☆ next to each class you teach.</div>
+                          <button
+                            type="button"
+                            onClick={() => setClassView('all')}
+                            className="px-3 py-1.5 rounded-lg bg-amber-400 text-slate-950 font-bold cursor-pointer"
+                          >
+                            Show All Classrooms
+                          </button>
+                        </div>
+                      )}
                       {classrooms.length === 0 && (
                         <div className="p-6 rounded-xl bg-slate-950/40 border border-slate-800 text-center text-xs text-slate-400">
                           No classrooms created yet. Click "+ Add Classroom" to start organizing grades and classes.
