@@ -326,7 +326,7 @@ function AboutDialog({ onClose }: { onClose: () => void }) {
   return (
     <Modal title="About & sound credits" onClose={onClose}>
       <div className="space-y-3 text-sm text-slate-300">
-        <p>Mr. Arthur&apos;s Studio — a browser DAW for music students. Audio is processed on your computer; nothing is uploaded unless you save to a class account.</p>
+        <p>The Studio DAW (Digital Audio Workstation) — a browser music studio for students. Audio is processed on your computer; nothing is uploaded unless you save to a class account.</p>
         <h3 className="font-semibold text-slate-100">Loops used in this song</h3>
         {credits.length === 0 ? (
           <p className="text-slate-500">No library loops yet.</p>
