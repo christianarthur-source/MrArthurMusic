@@ -113,6 +113,11 @@ function soundingMidi(score: Score, note: Element): number {
   return midi + Number(sd?.getAttribute('trans.semi') || 0);
 }
 
+/** Toolbar buttons shouldn't take keyboard focus: Space must always play/pause, not re-press the last button. */
+function keepFocus(e: React.MouseEvent) {
+  if ((e.target as HTMLElement).closest('button')) e.preventDefault();
+}
+
 const PITCH_NAMES: Record<string, string> = { s: '♯', f: '♭', n: '', ss: '𝄪', x: '𝄪', ff: '𝄫' };
 
 export default function ProStaffApp() {
@@ -139,8 +144,6 @@ export default function ProStaffApp() {
   const [palette, setPalette] = useState(() => window.innerWidth > 820);
   const [playing, setPlaying] = useState(false);
   const [tempoPct, setTempoPct] = useState(100);
-  const [metronome, setMetronome] = useState(false);
-  const [countIn, setCountIn] = useState(false);
   const [loop, setLoop] = useState(false);
   const [mix, setMix] = useState<Record<string, StaffMix>>({});
   const [masterMix, setMasterMix] = useState<MasterMix>(DEFAULT_MASTER_MIX);
@@ -173,6 +176,11 @@ export default function ProStaffApp() {
       return DEFAULT_PREFS;
     }
   });
+  // the click and count-in stay as you left them (on this device)
+  const metronome = prefs.metronome;
+  const countIn = prefs.countIn;
+  const setMetronome = (on: boolean) => setPrefs((p) => ({ ...p, metronome: on }));
+  const setCountIn = (on: boolean) => setPrefs((p) => ({ ...p, countIn: on }));
   const [midiDevices, setMidiDevices] = useState<string[]>([]);
   const cloudRef = useRef<{ id: string | null; version: number | null }>({ id: null, version: null });
   const replaceScoreRef = useRef<(score: Score, id?: string, created?: number) => void>(() => {});
@@ -1210,7 +1218,7 @@ export default function ProStaffApp() {
       const box = measureHiRef.current;
       if (style !== 'line' && style !== 'measure') return;
       if (!followRef.current && pagesRef.current) followRef.current = { points: buildFollow(pagesRef.current, sched!.cues), end: sched!.duration };
-      const pos = followRef.current ? followAt(followRef.current.points, ms, followRef.current.end) : null;
+      const pos = followRef.current ? followAt(followRef.current.points, ms - prefsRef.current.cursorOffset * (tempoPct / 100), followRef.current.end) : null;
       if (!pos) return;
       const pad = (pos.bottom - pos.top) * 0.12 + 6;
       if (style === 'line' && line) {
@@ -1743,7 +1751,7 @@ export default function ProStaffApp() {
         <input ref={fileRef} type="file" hidden accept={IMPORT_ACCEPT} onChange={(e) => { const f = e.target.files?.[0]; if (f) void importFile(f); e.target.value = ''; }} />
       </header>
 
-      <div className="ps-bar" role="toolbar" aria-label="Playback">
+      <div className="ps-bar" role="toolbar" aria-label="Playback" onMouseDown={keepFocus}>
         <div className="ps-transport">
           <button className="ps-play" onClick={() => void togglePlay()} title="Play / pause (Space)" aria-label={playing ? 'Pause' : 'Play'}>{playing ? <Pause size={18} /> : <Play size={18} style={{ marginLeft: 2 }} />}</button>
           <button className="ps-btn" onClick={stop} title="Stop" aria-label="Stop"><Square size={15} /></button>
@@ -1792,7 +1800,7 @@ export default function ProStaffApp() {
         )}
       </div>
 
-      <div className="ps-toolbar" role="toolbar" aria-label="Note input">
+      <div className="ps-toolbar" role="toolbar" aria-label="Note input" onMouseDown={keepFocus}>
         <div className="ps-tool-group">
           <button className="ps-tool" title="Palettes" onClick={() => setPalette(!palette)} aria-pressed={palette}><PanelLeft size={17} /></button>
           <button className={`ps-mode${mode === 'input' ? ' ps-on' : ''}`} title="Note input (N)" onClick={() => {
