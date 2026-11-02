@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
-  Play, Pause, Square, SkipBack, Maximize, Minimize, Undo2, Redo2, Settings, UserRound, MessageSquare, Wrench, ZoomIn, ZoomOut, PanelLeft, Repeat, Timer, SlidersHorizontal, Keyboard, ChevronDown, Pencil, Music, Camera,
+  Play, Pause, Square, SkipBack, Maximize, Minimize, Undo2, Redo2, Settings, UserRound, MessageSquare, ZoomIn, ZoomOut, PanelLeft, Repeat, Timer, SlidersHorizontal, ChevronDown, Pencil, Music,
+  MousePointer2, Search, Share2, Trash2, SlidersVertical, PenLine, Headphones, Printer,
 } from 'lucide-react';
 import type { VerovioToolkit } from 'verovio/esm';
 import './prostaff.css';
@@ -19,7 +20,7 @@ import * as T from '../model/tools';
 import { rangeIssues, partWritingIssues, outOfRangeNoteIds, type Issue } from '../model/analysis';
 import * as Cloud from '../io/cloud';
 import { AccountDialog, ShareDialog, VersionsDialog, CommentsPanel } from './CloudUI';
-import { SettingsDialog, IssuesPanel, PrintPartsDialog, ProgressDialog, DEFAULT_LAYOUT, DEFAULT_PREFS, type LayoutOptions, type AppPrefs, type SettingsTab } from './Extras';
+import { SettingsDialog, IssuesPanel, PrintPartsDialog, ProgressDialog, PrintPanel, DEFAULT_LAYOUT, DEFAULT_PREFS, type LayoutOptions, type AppPrefs, type SettingsTab } from './Extras';
 import { FONTS_HREF, applyTextFont } from './appearance';
 import { buildFollow, followAt, type FollowPoint } from './follow';
 import { DEFAULT_PLAYBACK, CHORD_STAFF, type PlaybackOptions } from '../audio/schedule';
@@ -28,10 +29,16 @@ import { buildSchedule, type Schedule } from '../audio/schedule';
 import { importScoreFile, importScoreText, download, safeFileName, base64ToBytes, printPages, IMPORT_ACCEPT } from '../io/files';
 import { listScores, loadScore, saveScore, deleteScore, lastOpenedId, type StoredScore } from '../io/storage';
 import { recognizePages, mergeMusicXml, type ScanPage } from '../io/omr';
-import { Palette, type PaletteActions } from './Palette';
+import { Palette, PaletteStrip, SECTIONS, type PaletteActions } from './Palette';
+import { CommandPalette, type Command } from './CommandPalette';
+import { PropertiesPanel } from './PropertiesPanel';
+import { FirstRunTour, EmptyScoreHint } from './Hints';
 import { NewScoreDialog, LibraryDialog, PropertiesDialog, PartsDialog, TransposeDialog, ScanDialog, ShortcutsDialog, type NewScoreOptions } from './Dialogs';
 
 type DialogKind = null | 'new' | 'library' | 'props' | 'parts' | 'transpose' | 'scan' | 'shortcuts' | 'account' | 'share' | 'versions' | 'settings' | 'printParts';
+type AppMode = 'write' | 'play' | 'print';
+type ToolTab = 'notes' | 'marks' | 'text' | 'measures' | 'layout';
+const TOOL_TABS: [ToolTab, string][] = [['notes', 'Notes'], ['marks', 'Marks'], ['text', 'Text'], ['measures', 'Measures'], ['layout', 'Layout']];
 type PromptKind = 'staff-text' | 'expression' | 'tempo' | 'rehearsal' | 'chord' | 'lyrics' | 'fingering' | 'meter' | 'roman' | 'figbass';
 
 const DURATIONS: { dur: string; glyph: string; key: string; name: string }[] = [
@@ -141,7 +148,34 @@ export default function ProStaffApp() {
   const [library, setLibrary] = useState<Omit<StoredScore, 'mei'>[]>([]);
   const [prompt, setPrompt] = useState<{ kind: PromptKind; anchor: string; value: string } | null>(null);
   const [saveState, setSaveState] = useState<'saved' | 'saving' | 'unsaved'>('saved');
-  const [palette, setPalette] = useState(() => window.innerWidth > 820);
+  const [palette, setPalette] = useState(false); // the full palette; the toolbar tabs cover the everyday marks
+  // Write (edit), Play (listen and mix) or Print (layout and export): each shows only what that job needs
+  const [appMode, setAppModeRaw] = useState<AppMode>(() => {
+    try {
+      const m = localStorage.getItem('wolfi:mode');
+      return m === 'play' || m === 'print' ? m : 'write';
+    } catch {
+      return 'write';
+    }
+  });
+  const [toolTab, setToolTab] = useState<ToolTab>('notes');
+  const [showProps, setShowPropsRaw] = useState<boolean>(() => {
+    try {
+      const v = localStorage.getItem('wolfi:props');
+      return v === null ? window.innerWidth > 1100 : v === '1';
+    } catch {
+      return window.innerWidth > 1100;
+    }
+  });
+  const setShowProps = (on: boolean) => {
+    setShowPropsRaw(on);
+    try {
+      localStorage.setItem('wolfi:props', on ? '1' : '0');
+    } catch {
+      /* ignore */
+    }
+  };
+  const [cmdk, setCmdk] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [tempoPct, setTempoPct] = useState(100);
   const [loop, setLoop] = useState(false);
@@ -154,6 +188,19 @@ export default function ProStaffApp() {
   const openSettings = (tab: SettingsTab) => {
     setSettingsTab(tab);
     setDialog('settings');
+  };
+  const setAppMode = (m: AppMode) => {
+    setAppModeRaw(m);
+    try {
+      localStorage.setItem('wolfi:mode', m);
+    } catch {
+      /* ignore */
+    }
+    setShowMixer(m === 'play');
+    if (m !== 'write') {
+      live.current.mode = 'normal';
+      setMode('normal');
+    }
   };
   // the scanner turns itself on once the server has its API key
   const [scanReady, setScanReady] = useState(false);
@@ -721,6 +768,10 @@ export default function ProStaffApp() {
   const onStageClick = useCallback((ev: React.MouseEvent) => {
     const s = scoreRef.current;
     if (!s) return;
+    if (suppressClickRef.current) {
+      suppressClickRef.current = false; // this click ended a drag
+      return;
+    }
     setMenu(null);
     if (live.current.mode === 'input' && !ev.shiftKey) {
       onStageMove(ev); // taps on touch screens have no hover before the click
@@ -743,8 +794,23 @@ export default function ProStaffApp() {
       selectId(id, ev.shiftKey);
       return;
     }
-    const staffG = t.closest?.('g.staff');
-    const measureG = t.closest?.('g.measure');
+    let staffG = t.closest?.('g.staff');
+    let measureG = t.closest?.('g.measure');
+    if (!measureG && pagesRef.current) {
+      // the space between staff lines isn't drawn, so find the staff under the pointer by position
+      for (const st of Array.from(pagesRef.current.querySelectorAll('.ps-page g.measure > g.staff'))) {
+        const lines = Array.from(st.children).filter((c) => c.tagName === 'path');
+        if (!lines.length) continue;
+        const a = lines[0].getBoundingClientRect();
+        const b = lines[lines.length - 1].getBoundingClientRect();
+        const pad = Math.max(4, (b.top - a.top) / 8);
+        if (ev.clientX >= a.left && ev.clientX <= a.right && ev.clientY >= a.top - pad && ev.clientY <= b.bottom + pad) {
+          staffG = st;
+          measureG = st.parentElement;
+          break;
+        }
+      }
+    }
     if (measureG?.id && staffG?.id) {
       const staffEl = s.byId(T.untabId(staffG.id));
       const n = staffEl?.getAttribute('n') || '1';
@@ -772,6 +838,110 @@ export default function ProStaffApp() {
     }
     updSel(NONE);
   }, [selectId, mouseEnter, onStageMove]);
+
+  // ---------- select tool: drag notes to a new pitch, or drag a box to select ----------
+
+  const suppressClickRef = useRef(false);
+  const dragRef = useRef<{ kind: 'move' | 'box'; x0: number; y0: number; moved: boolean; els: SVGGraphicsElement[]; half: number; dy: number; additive: boolean; pick?: string } | null>(null);
+  const [selBox, setSelBox] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+
+  const onStagePointerDown = useCallback((ev: React.PointerEvent) => {
+    const s = scoreRef.current;
+    const root = pagesRef.current;
+    if (!s || !root || ev.button !== 0 || ev.pointerType === 'touch' || live.current.mode === 'input' || live.current.readOnly) return;
+    const t = ev.target as Element;
+    if (t.closest('g.pgHead')) return;
+    const hit = t.closest('g.note, g.chord');
+    if (hit?.id) {
+      const id = T.untabId(hit.id);
+      if (!s.byId(id)) return;
+      // selecting happens on click (restyling the note mid-click would retarget the click); a drag selects when it starts
+      const cur = live.current.sel;
+      const already = cur.kind === 'events' && cur.ids.some((x) => x === id || s.byId(x)?.contains(s.byId(id)!) || s.byId(id)?.contains(s.byId(x)!));
+      const base = root.getBoundingClientRect();
+      const y = ev.clientY - base.top;
+      const g = geomRef.current.reduce<StaffGeom | null>((best, x) => (!best || Math.abs(x.top - y) < Math.abs(best.top - y) ? x : best), null);
+      dragRef.current = { kind: 'move', x0: ev.clientX, y0: ev.clientY, moved: false, els: [], half: (g?.space || 8) / 2, dy: 0, additive: ev.shiftKey, pick: already ? undefined : id };
+      return;
+    }
+    if (t.closest(CLICKABLE)) return; // markings are click-to-select only
+    dragRef.current = { kind: 'box', x0: ev.clientX, y0: ev.clientY, moved: false, els: [], half: 0, dy: 0, additive: ev.shiftKey };
+  }, [selectId]);
+
+  useEffect(() => {
+    const move = (ev: PointerEvent) => {
+      const d = dragRef.current;
+      const root = pagesRef.current;
+      if (!d || !root) return;
+      const dx = ev.clientX - d.x0;
+      const dy = ev.clientY - d.y0;
+      if (!d.moved && Math.hypot(dx, dy) < 5) return;
+      if (!d.moved && d.kind === 'move') {
+        if (d.pick) selectId(d.pick, d.additive);
+        const sel2 = live.current.sel;
+        const ids = sel2.kind === 'events' ? sel2.ids : [];
+        d.els = ids.map((x) => root.querySelector(`[id="${CSS.escape(x)}"]`)).filter(Boolean) as SVGGraphicsElement[];
+      }
+      d.moved = true;
+      if (d.kind === 'move') {
+        d.dy = Math.round(dy / d.half) * d.half;
+        for (const el of d.els) {
+          el.style.transform = `translateY(${d.dy}px)`;
+          el.classList.add('ps-dragging');
+        }
+      } else {
+        const base = root.getBoundingClientRect();
+        setSelBox({ x: Math.min(d.x0, ev.clientX) - base.left, y: Math.min(d.y0, ev.clientY) - base.top, w: Math.abs(dx), h: Math.abs(dy) });
+      }
+    };
+    const up = (ev: PointerEvent) => {
+      const d = dragRef.current;
+      dragRef.current = null;
+      const s = scoreRef.current;
+      const root = pagesRef.current;
+      if (!d || !d.moved || !s || !root) return;
+      suppressClickRef.current = true;
+      window.setTimeout(() => { suppressClickRef.current = false; }, 0);
+      if (d.kind === 'move') {
+        for (const el of d.els) {
+          el.style.transform = '';
+          el.classList.remove('ps-dragging');
+        }
+        const steps = -Math.round(d.dy / d.half);
+        if (steps) {
+          const cur = live.current.sel;
+          run((sc) => E.transposeNotes(sc, cur, steps, 'step'));
+          if (cur.kind === 'events') audition(cur.ids);
+        }
+        return;
+      }
+      setSelBox(null);
+      const x1 = Math.min(d.x0, ev.clientX);
+      const x2 = Math.max(d.x0, ev.clientX);
+      const y1 = Math.min(d.y0, ev.clientY);
+      const y2 = Math.max(d.y0, ev.clientY);
+      const ids: string[] = [];
+      const seen = new Set<string>();
+      root.querySelectorAll('.ps-page g.note, .ps-page g.rest, .ps-page g.mRest').forEach((g) => {
+        const r = g.getBoundingClientRect();
+        if (r.right < x1 || r.left > x2 || r.bottom < y1 || r.top > y2) return;
+        const el = g.closest('g.chord') || g;
+        const id = T.untabId(el.id);
+        if (!id || seen.has(id) || !s.byId(id)) return;
+        seen.add(id);
+        ids.push(id);
+      });
+      const cur = live.current.sel;
+      const merged = d.additive && cur.kind === 'events' ? [...cur.ids, ...ids.filter((x) => !cur.ids.includes(x))] : ids;
+      updSel(merged.length ? { kind: 'events', ids: merged } : NONE);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+    return () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+    };
+  }, [run, audition, updSel, selectId]);
 
   // ---------- prompts (text entry) ----------
 
@@ -968,7 +1138,7 @@ export default function ProStaffApp() {
       if (mod && k.toLowerCase() === 'x') { handled(); const c = E.copySelection(scoreRef.current, cur); if (c) { clipRef.current = c; run((s) => E.deleteSelection(s, cur)); } return; }
       if (mod && k.toLowerCase() === 'v') { handled(); const c = clipRef.current; if (c) run((s) => E.paste(s, cur, c, m === 'input' ? cc : null, inp)); return; }
       if (mod && k.toLowerCase() === 'b') { handled(); actions.addMeasures(1); return; }
-      if (mod && k.toLowerCase() === 'k') { handled(); openPrompt('chord'); return; }
+      if (mod && k.toLowerCase() === 'k') { handled(); setCmdk(true); return; }
       if (mod && k.toLowerCase() === 'l') { handled(); openPrompt('lyrics'); return; }
       if (mod && e.altKey && /^[1-4]$/.test(e.code.replace('Digit', ''))) { handled(); updInput((x) => ({ ...x, voice: e.code.replace('Digit', '') })); return; }
       if (mod && /^Digit[3-9]$/.test(e.code)) { handled(); actions.tuplet(Number(e.code.slice(5))); return; }
@@ -1657,8 +1827,98 @@ export default function ProStaffApp() {
     if (mode === 'normal' && sel.kind === 'events') run((sc) => E.setDuration(sc, sel, dur, 0));
   };
 
+  const startInput = () => {
+    if (!scoreRef.current) return;
+    if (appMode !== 'write') setAppMode('write');
+    updMode('input');
+    updCursor(getId(E.cursorTarget(scoreRef.current, null, live.current.sel, live.current.input)));
+  };
+
+  /** Everything the command search (Ctrl/⌘+K) can find: app commands plus every palette item. */
+  const buildCommands = (): Command[] => {
+    const c = (id: string, label: string, group: string, runIt: () => void, kbd?: string, keywords?: string): Command => ({ id, label, group, run: runIt, kbd, keywords });
+    const list: Command[] = [
+      c('add-notes', 'Add notes', 'Suggested', startInput, 'N', 'note input write pencil'),
+      c('select', 'Select tool', 'Suggested', () => updMode('normal'), 'Esc', 'cursor arrow pointer move'),
+      c('play', playing ? 'Stop playback' : 'Play', 'Suggested', () => void togglePlay(), 'Space', 'listen'),
+      c('add-measure', 'Add a measure', 'Suggested', () => actions.addMeasures(1), 'Ctrl B', 'bar'),
+      c('transpose', 'Transpose…', 'Suggested', () => setDialog('transpose'), undefined, 'key change shift'),
+      c('instruments', 'Instruments…', 'Suggested', () => setDialog('parts'), undefined, 'parts add instrument staff'),
+      c('mode-write', 'Write mode', 'Modes', () => setAppMode('write'), undefined, 'edit'),
+      c('mode-play', 'Play mode', 'Modes', () => setAppMode('play'), undefined, 'listen mixer'),
+      c('mode-print', 'Print mode', 'Modes', () => setAppMode('print'), undefined, 'layout export pdf'),
+      c('new', 'New score…', 'File', () => setDialog('new')),
+      c('open', 'Open…', 'File', openLibrary, undefined, 'library load'),
+      c('import', 'Import MusicXML / MEI / ABC…', 'File', () => fileRef.current?.click()),
+      c('save', 'Save', 'File', () => void saveNow().then(() => showToast('Saved in this browser.')), 'Ctrl S'),
+      c('pdf', 'Print / save as PDF', 'File', () => exportAs('pdf'), undefined, 'print'),
+      c('mxl', 'Export MusicXML', 'File', () => exportAs('musicxml')),
+      c('midi', 'Export MIDI', 'File', () => exportAs('midi')),
+      c('wav', 'Export audio (WAV)', 'File', () => void exportAudio(), undefined, 'mp3 sound recording'),
+      c('printparts', 'Print parts…', 'File', () => setDialog('printParts')),
+      c('share', 'Share…', 'File', async () => { if (await cloudRecord()) setDialog('share'); }, undefined, 'link send'),
+      c('undo', 'Undo', 'Edit', undo, 'Ctrl Z'),
+      c('redo', 'Redo', 'Edit', redo, 'Ctrl ⇧ Z'),
+      c('delete', 'Delete selection', 'Edit', () => run((sc) => E.deleteSelection(sc, live.current.sel)), 'Del', 'remove erase'),
+      c('selectall', 'Select all', 'Edit', () => { const sc = scoreRef.current!; updSel({ kind: 'measures', measureIds: sc.measures().map(getId), staves: sc.staffDefs().map((d) => d.getAttribute('n') || '1') }); }, 'Ctrl A'),
+      c('up-octave', 'Up an octave', 'Pitch', () => run((sc) => E.transposeNotes(sc, live.current.sel, 1, 'octave')), 'Ctrl ↑'),
+      c('down-octave', 'Down an octave', 'Pitch', () => run((sc) => E.transposeNotes(sc, live.current.sel, -1, 'octave')), 'Ctrl ↓'),
+      c('page', 'Page view', 'View', () => setView({ ...view, layout: 'page' })),
+      c('continuous', 'Continuous view', 'View', () => setView({ ...view, layout: 'continuous' }), undefined, 'scroll one line'),
+      c('concert', 'Concert pitch on/off', 'View', () => setView({ ...view, concertPitch: !view.concertPitch }), undefined, 'transposing'),
+      c('palettes', 'Show / hide all palettes', 'View', () => setPalette(!palette), undefined, 'side panel'),
+      c('props', 'Show / hide properties', 'View', () => setShowProps(!showProps), undefined, 'inspector panel'),
+      c('zoomin', 'Zoom in', 'View', () => setView({ ...view, zoom: Math.min(120, view.zoom + 5) })),
+      c('zoomout', 'Zoom out', 'View', () => setView({ ...view, zoom: Math.max(20, view.zoom - 5) })),
+      c('fullscreen', 'Full screen', 'View', toggleFullscreen),
+      c('title', 'Title & credits…', 'Score', () => setDialog('props'), undefined, 'composer subtitle name'),
+      c('insert-measure', 'Insert measure before selection', 'Score', actions.insertMeasure),
+      c('delete-measures', 'Delete selected measures', 'Score', actions.deleteMeasures),
+      c('check', 'Check score (ranges & voice leading)', 'Tools', checkScore, undefined, 'errors parallel fifths'),
+      c('suggest', 'Suggest chord symbols', 'Tools', () => run((sc) => T.suggestChords(sc)), undefined, 'harmony'),
+      c('explode', 'Explode chords into staves below', 'Tools', () => run((sc) => T.explode(sc, live.current.sel))),
+      c('reduce', 'Reduce staves into one', 'Tools', () => run((sc) => T.reduce(sc, live.current.sel))),
+      c('metronome', `Metronome ${metronome ? 'off' : 'on'}`, 'Playback', () => setMetronome(!metronome), undefined, 'click'),
+      c('countin', `Count-in ${countIn ? 'off' : 'on'}`, 'Playback', () => setCountIn(!countIn)),
+      c('loop', `Loop ${loop ? 'off' : 'on'}`, 'Playback', () => setLoop(!loop), undefined, 'repeat practice'),
+      c('mixer', 'Mixer', 'Playback', () => setShowMixer(!showMixer), undefined, 'volume reverb'),
+      c('settings', 'Settings…', 'Settings', () => openSettings('appearance'), undefined, 'preferences options'),
+      c('theme', 'Theme & fonts…', 'Settings', () => openSettings('appearance'), undefined, 'dark light font'),
+      c('shortcuts', 'Keyboard shortcuts', 'Help', () => setDialog('shortcuts'), '?'),
+      ...DURATIONS.map((d) => c(`dur-${d.dur}`, `${d.name} note`, 'Note length', () => setDur(d.dur), d.key)),
+    ];
+    for (const sec of SECTIONS) {
+      sec.items.forEach((it, i) => list.push(c(`pal-${sec.id}-${i}`, it.title.replace(/\s*\([^)]*\)\s*$/, ''), sec.title.replace(/ \(concert\)/, ''), () => it.run(actions), (/\(([^)]{1,9})\)$/.exec(it.title) || [])[1])));
+    }
+    // key names read naturally: "key of D"
+    return list.map((x) => (x.group === 'Key signatures' ? { ...x, label: `Key of ${x.label.replace(/ major.*$/, '')} major`, keywords: 'key signature' } : x));
+  };
+
+  const scoreIsEmpty = !!s && !descendants(s.doc, 'note').length;
+  const mixerEl = (
+    <Mixer
+      parts={scoreRef.current && descendants(scoreRef.current.doc, 'harm').some((h) => !h.getAttribute('type') || h.getAttribute('type') === 'suggested') && playback.chords !== 'off' ? [...parts, { name: 'Chord symbols', ns: [CHORD_STAFF] }] : parts}
+      mix={mix}
+      master={masterMix}
+      engine={player.engineName === 'soundfont' ? 'MuseScore General SoundFont · hall reverb' : 'Sounds load when you press Play'}
+      onStrip={(ns, patch) => {
+        const n = { ...mix };
+        for (const sn of ns) n[sn] = { ...DEFAULT_STAFF_MIX, ...mix[sn], ...patch };
+        setMix(n);
+        saveMix(n, masterMix);
+      }}
+      onMaster={(patch) => {
+        const m = { ...masterMix, ...patch };
+        setMasterMix(m);
+        saveMix(mix, m);
+      }}
+      onReset={() => { setMix({}); setMasterMix(DEFAULT_MASTER_MIX); saveMix({}, DEFAULT_MASTER_MIX); }}
+      onClose={() => setShowMixer(false)}
+    />
+  );
+
   return (
-    <div className="ps-root" data-theme={prefs.theme} onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) void importFile(f); }}>
+    <div className={`ps-root ps-mode-${appMode}`} data-theme={prefs.theme} onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) void importFile(f); }}>
       <style>{highlightCss}</style>
       <header className="ps-top">
         <WolfiBrand />
@@ -1742,20 +2002,24 @@ export default function ProStaffApp() {
           </div>
           <small>{[readOnly ? 'View only' : saveState === 'saving' || cloudState === 'saving' ? 'Saving…' : saveState !== 'saved' ? 'Edited' : user && cloudRef.current.id ? (cloudState === 'error' ? 'Saved in this browser (online save failed)' : 'Saved online') : 'Saved in this browser'].filter(Boolean).join(' · ')}</small>
         </div>
-        {scanReady ? (
-          <button className="ps-btn ps-outline ps-hide-sm" onClick={() => { setScanError(''); setDialog('scan'); }}><Camera size={15} /> Scan</button>
-        ) : (
-          <button className="ps-btn ps-outline ps-hide-sm ps-soon" title="Scanning sheet music is coming soon" onClick={() => showToast('Scanning sheet music is coming soon.')}><Camera size={15} /> Scan <small>soon</small></button>
-        )}
+        <div className="ps-modes" role="tablist" aria-label="Mode">
+          {([['write', 'Write', <PenLine key="w" size={14} />], ['play', 'Play', <Headphones key="p" size={14} />], ['print', 'Print', <Printer key="r" size={14} />]] as [AppMode, string, React.ReactNode][]).map(([m, label, icon]) => (
+            <button key={m} role="tab" aria-selected={appMode === m} className={appMode === m ? 'ps-on' : ''} onClick={() => setAppMode(m)} title={m === 'write' ? 'Write: enter and edit notes' : m === 'play' ? 'Play: listen, mix and practise' : 'Print: page layout and export'}>
+              {icon}<span className="ps-hide-md">{label}</span>
+            </button>
+          ))}
+        </div>
+        <button className="ps-btn ps-search-btn" onClick={() => setCmdk(true)} title="Find a command (Ctrl/⌘+K)"><Search size={15} /><span className="ps-hide-md">Find</span><kbd className="ps-hide-md">⌘K</kbd></button>
+        <button className="ps-btn ps-outline ps-hide-sm" onClick={async () => { if (await cloudRecord()) setDialog('share'); }} title="Share a link to this score"><Share2 size={15} /> <span className="ps-hide-md">Share</span></button>
         {user && cloudRef.current.id && <button className={`ps-btn${side === 'comments' ? ' ps-on' : ''}`} title="Comments" onClick={async () => { if (side === 'comments') setSide(null); else if (await cloudRecord()) setSide('comments'); }}><MessageSquare size={16} /></button>}
         <button className="ps-btn" onClick={() => openSettings('appearance')} title="Settings" aria-label="Settings"><Settings size={17} /></button>
-        <button className="ps-btn ps-outline" onClick={() => setDialog('account')} title={user ? 'Your account and online scores' : 'Sign in to save online'}>
-          <UserRound size={15} /> <span className="ps-hide-sm">{user ? user.displayName || user.username : 'Sign in'}</span>
+        <button className="ps-btn ps-account" onClick={() => setDialog('account')} title={user ? `${user.displayName || user.username}: your account and online scores` : 'Sign in to save online'}>
+          <UserRound size={16} /> <span className="ps-hide-md">{user ? user.displayName || user.username : 'Sign in'}</span>
         </button>
         <input ref={fileRef} type="file" hidden accept={IMPORT_ACCEPT} onChange={(e) => { const f = e.target.files?.[0]; if (f) void importFile(f); e.target.value = ''; }} />
       </header>
 
-      <div className="ps-bar" role="toolbar" aria-label="Playback" onMouseDown={keepFocus}>
+      <div className={`ps-bar${appMode === 'play' ? ' ps-bar-play' : ''}`} role="toolbar" aria-label="Playback" onMouseDown={keepFocus}>
         <div className="ps-transport">
           <button className="ps-play" onClick={() => void togglePlay()} title="Play / pause (Space)" aria-label={playing ? 'Pause' : 'Play'}>{playing ? <Pause size={18} /> : <Play size={18} style={{ marginLeft: 2 }} />}</button>
           <button className="ps-btn" onClick={stop} title="Stop" aria-label="Stop"><Square size={15} /></button>
@@ -1776,85 +2040,100 @@ export default function ProStaffApp() {
         </div>
         <div className="ps-status">
           {status && <span>{status}</span>}
-          <span><b>{mode === 'input' ? 'Adding notes — click the staff or type A–G' : 'Select — press N or type A–G to add notes'}</b> · {DURATIONS.find((d) => d.dur === input.dur)?.name}{input.dots ? ' dotted' : ''} · voice {input.voice}</span>
+          <span><b>{appMode === 'play' ? 'Play mode — Space plays, the mixer is open' : appMode === 'print' ? 'Print mode — set up pages and export' : mode === 'input' ? 'Adding notes — click the staff or type A–G' : 'Select — click, drag across, or drag notes up and down'}</b> · {DURATIONS.find((d) => d.dur === input.dur)?.name}{input.dots ? ' dotted' : ''} · voice {input.voice}</span>
           {view.concertPitch && <span style={{ color: 'var(--ps-accent)' }}>Concert pitch</span>}
           {partView !== 'all' && <span style={{ color: 'var(--ps-accent)' }}>Part view</span>}
           <span>{pages.length} page{pages.length === 1 ? '' : 's'}</span>
         </div>
-        {showMixer && (
-          <Mixer
-            parts={scoreRef.current && descendants(scoreRef.current.doc, 'harm').some((h) => !h.getAttribute('type') || h.getAttribute('type') === 'suggested') && playback.chords !== 'off' ? [...parts, { name: 'Chord symbols', ns: [CHORD_STAFF] }] : parts}
-            mix={mix}
-            master={masterMix}
-            engine={player.engineName === 'soundfont' ? 'MuseScore General SoundFont · hall reverb' : 'Sounds load when you press Play'}
-            onStrip={(ns, patch) => {
-              const n = { ...mix };
-              for (const sn of ns) n[sn] = { ...DEFAULT_STAFF_MIX, ...mix[sn], ...patch };
-              setMix(n);
-              saveMix(n, masterMix);
-            }}
-            onMaster={(patch) => {
-              const m = { ...masterMix, ...patch };
-              setMasterMix(m);
-              saveMix(mix, m);
-            }}
-            onReset={() => { setMix({}); setMasterMix(DEFAULT_MASTER_MIX); saveMix({}, DEFAULT_MASTER_MIX); }}
-            onClose={() => setShowMixer(false)}
-          />
-        )}
+        {showMixer && appMode !== 'play' && mixerEl}
       </div>
 
-      <div className="ps-toolbar" role="toolbar" aria-label="Note input" onMouseDown={keepFocus}>
-        <div className="ps-tool-group">
-          <button className="ps-tool" title="Palettes" onClick={() => setPalette(!palette)} aria-pressed={palette}><PanelLeft size={17} /></button>
-          <button className={`ps-mode${mode === 'input' ? ' ps-on' : ''}`} title="Note input (N)" onClick={() => {
-            if (mode === 'input') updMode('normal');
-            else if (scoreRef.current) {
-              updMode('input');
-              const t = E.cursorTarget(scoreRef.current, null, sel, input);
-              updCursor(getId(t));
-            }
-          }}><Pencil size={14} /> {mode === 'input' ? 'Adding notes' : 'Add notes'} <kbd style={{ marginLeft: 2 }}>N</kbd></button>
+      {appMode === 'write' && (
+        <div className="ps-toolbar ps-ribbon" role="toolbar" aria-label="Editing" onMouseDown={keepFocus}>
+          <div className="ps-ribbon-top">
+            <div className="ps-seg" role="group" aria-label="Tool">
+              <button className={`ps-seg-btn${mode === 'normal' ? ' ps-on' : ''}`} aria-pressed={mode === 'normal'} title="Select (Esc): click things, drag across to select several, drag notes up or down" onClick={() => updMode('normal')}><MousePointer2 size={14} /> Select</button>
+              <button className={`ps-seg-btn${mode === 'input' ? ' ps-on' : ''}`} aria-pressed={mode === 'input'} title="Add notes (N)" onClick={startInput}><Pencil size={14} /> Add notes <kbd>N</kbd></button>
+            </div>
+            <nav className="ps-ribbon-tabs" role="tablist" aria-label="Tool groups">
+              {TOOL_TABS.map(([id, label]) => (
+                <button key={id} role="tab" aria-selected={toolTab === id} className={toolTab === id ? 'ps-on' : ''} onClick={() => setToolTab(id)}>{label}</button>
+              ))}
+            </nav>
+            <span style={{ flex: 1 }} />
+            <div className="ps-ribbon-right">
+              <button className="ps-tool" title="Undo (Ctrl+Z)" onClick={undo}><Undo2 size={16} /></button>
+              <button className="ps-tool" title="Redo (Ctrl+Shift+Z)" onClick={redo}><Redo2 size={16} /></button>
+              <button className="ps-tool" title="Delete selection (Delete)" disabled={sel.kind === 'none'} onClick={() => run((sc) => E.deleteSelection(sc, sel))}><Trash2 size={16} /></button>
+              <span className="ps-ribbon-sep ps-hide-md" />
+              <button className="ps-tool ps-hide-md" title="Zoom out" onClick={() => setView({ ...view, zoom: Math.max(20, view.zoom - 5) })}><ZoomOut size={16} /></button>
+              <small className="ps-zoom-val ps-hide-md">{Math.round((view.zoom / 55) * 100)}%</small>
+              <button className="ps-tool ps-hide-md" title="Zoom in" onClick={() => setView({ ...view, zoom: Math.min(120, view.zoom + 5) })}><ZoomIn size={16} /></button>
+              <button className={`ps-tool${showProps ? ' ps-on' : ''}`} title="Properties panel" aria-pressed={showProps} onClick={() => setShowProps(!showProps)}><SlidersVertical size={16} /></button>
+              <button className="ps-tool" title={fullscreen ? 'Exit full screen' : 'Full screen'} aria-label="Full screen" onClick={toggleFullscreen}>{fullscreen ? <Minimize size={16} /> : <Maximize size={16} />}</button>
+            </div>
+          </div>
+          <div className="ps-ribbon-body">
+            {toolTab === 'notes' && (
+              <>
+                <div className="ps-tool-group">
+                  {DURATIONS.map((d) => (
+                    <button key={d.dur} className={`ps-tool${input.dur === d.dur ? ' ps-on' : ''}`} title={`${d.name} (${d.key})`} aria-label={d.name} onClick={() => setDur(d.dur)}><NoteIcon dur={d.dur} /></button>
+                  ))}
+                  <button className={`ps-tool${input.dots ? ' ps-on' : ''}`} title="Dot (.)" onClick={() => (mode === 'input' ? updInput({ ...input, dots: input.dots ? 0 : 1 }) : run((sc) => E.toggleDot(sc, sel)))}><b>•</b></button>
+                  <button className="ps-tool" title="Rest (0)" onClick={() => run((sc) => E.enterRest(sc, cursor, sel, input, mode))}><span className="ps-glyph">𝄽</span></button>
+                </div>
+                <div className="ps-tool-group">
+                  <button className="ps-tool" title="Flat (-)" onClick={() => actions.accidental(-1)}><span className="ps-glyph">♭</span></button>
+                  <button className="ps-tool" title="Natural (=)" onClick={() => actions.accidental(0)}><span className="ps-glyph">♮</span></button>
+                  <button className="ps-tool" title="Sharp (+)" onClick={() => actions.accidental(1)}><span className="ps-glyph">♯</span></button>
+                </div>
+                <div className="ps-tool-group">
+                  <button className="ps-tool" title="Tie (T)" onClick={() => run((sc) => E.toggleTie(sc, sel, cursor, input, mode))}><span className="ps-glyph">‿</span></button>
+                  <button className="ps-tool" title="Slur (S)" onClick={() => actions.spanner('slur')}><span className="ps-glyph">⁀</span></button>
+                  <button className="ps-tool" title="Triplet (Ctrl+3)" onClick={() => actions.tuplet(3)}><small style={{ color: 'inherit', fontWeight: 700 }}>3</small></button>
+                </div>
+                <div className="ps-tool-group" title="Voice (Ctrl+Alt+1–4)">
+                  {['1', '2', '3', '4'].map((v, i) => (
+                    <button key={v} className="ps-tool" onClick={() => updInput({ ...input, voice: v })} aria-pressed={input.voice === v} title={`Voice ${v}`}>
+                      <span className={`ps-voice${input.voice === v ? ' ps-on' : ''}`} style={{ color: VOICE_COLORS[i] }}>{v}</span>
+                    </button>
+                  ))}
+                </div>
+                {staves.some((st) => st.instrumentId.startsWith('drum')) && <PaletteStrip actions={actions} ids={['drums']} />}
+              </>
+            )}
+            {toolTab === 'marks' && <PaletteStrip actions={actions} ids={['dynamics', 'articulations', 'lines', 'ornaments']} />}
+            {toolTab === 'text' && <PaletteStrip actions={actions} ids={['text']} />}
+            {toolTab === 'measures' && <PaletteStrip actions={actions} ids={['time', 'barlines', 'measures', 'clefs', 'keys']} />}
+            {toolTab === 'layout' && (
+              <>
+                <div className="ps-tool-group">
+                  <div className="ps-seg" role="group" aria-label="View">
+                    <button className={`ps-seg-btn${view.layout === 'page' ? ' ps-on' : ''}`} onClick={() => setView({ ...view, layout: 'page' })}>Pages</button>
+                    <button className={`ps-seg-btn${view.layout === 'continuous' ? ' ps-on' : ''}`} onClick={() => setView({ ...view, layout: 'continuous' })}>Continuous</button>
+                  </div>
+                </div>
+                <div className="ps-tool-group">
+                  <button className={`ps-btn${view.concertPitch ? ' ps-on' : ''}`} onClick={() => setView({ ...view, concertPitch: !view.concertPitch })}>Concert pitch</button>
+                  {parts.length > 1 && (
+                    <select className="ps-select ps-select-sm" value={partView} onChange={(e) => setPartView(e.target.value)} aria-label="Show part">
+                      <option value="all">Full score</option>
+                      {parts.map((p) => <option key={p.ns.join(',')} value={p.ns.join(',')}>Part: {p.name}</option>)}
+                    </select>
+                  )}
+                  <button className={`ps-btn${palette ? ' ps-on' : ''}`} onClick={() => setPalette(!palette)}><PanelLeft size={15} /> All palettes</button>
+                  <button className="ps-btn" onClick={() => openSettings('page')}>Page settings…</button>
+                </div>
+                <PaletteStrip actions={actions} ids={['notes']} />
+              </>
+            )}
+          </div>
         </div>
-        <div className="ps-tool-group">
-          {DURATIONS.map((d) => (
-            <button key={d.dur} className={`ps-tool${input.dur === d.dur ? ' ps-on' : ''}`} title={`${d.name} (${d.key})`} aria-label={d.name} onClick={() => setDur(d.dur)}><NoteIcon dur={d.dur} /></button>
-          ))}
-          <button className={`ps-tool${input.dots ? ' ps-on' : ''}`} title="Dot (.)" onClick={() => (mode === 'input' ? updInput({ ...input, dots: input.dots ? 0 : 1 }) : run((sc) => E.toggleDot(sc, sel)))}><b>•</b></button>
-          <button className="ps-tool" title="Rest (0)" onClick={() => run((sc) => E.enterRest(sc, cursor, sel, input, mode))}><span className="ps-glyph">𝄽</span></button>
-        </div>
-        <div className="ps-tool-group">
-          <button className="ps-tool" title="Flat (-)" onClick={() => actions.accidental(-1)}><span className="ps-glyph">♭</span></button>
-          <button className="ps-tool" title="Natural (=)" onClick={() => actions.accidental(0)}><span className="ps-glyph">♮</span></button>
-          <button className="ps-tool" title="Sharp (+)" onClick={() => actions.accidental(1)}><span className="ps-glyph">♯</span></button>
-        </div>
-        <div className="ps-tool-group">
-          <button className="ps-tool" title="Tie (T)" onClick={() => run((sc) => E.toggleTie(sc, sel, cursor, input, mode))}><span className="ps-glyph">‿</span></button>
-          <button className="ps-tool" title="Slur (S)" onClick={() => actions.spanner('slur')}><span className="ps-glyph">⁀</span></button>
-          <button className="ps-tool" title="Triplet (Ctrl+3)" onClick={() => actions.tuplet(3)}><small style={{ color: 'inherit', fontWeight: 700 }}>3</small></button>
-        </div>
-        <div className="ps-tool-group" title="Voice (Ctrl+Alt+1–4)">
-          {['1', '2', '3', '4'].map((v, i) => (
-            <button key={v} className={`ps-tool`} onClick={() => updInput({ ...input, voice: v })} aria-pressed={input.voice === v} title={`Voice ${v}`}>
-              <span className={`ps-voice${input.voice === v ? ' ps-on' : ''}`} style={{ color: VOICE_COLORS[i] }}>{v}</span>
-            </button>
-          ))}
-        </div>
-        <div className="ps-tool-group">
-          <button className="ps-tool" title="Undo (Ctrl+Z)" onClick={undo}><Undo2 size={17} /></button>
-          <button className="ps-tool" title="Redo (Ctrl+Shift+Z)" onClick={redo}><Redo2 size={17} /></button>
-        </div>
-        <div className="ps-tool-group">
-          <button className="ps-tool" title="Zoom out" onClick={() => setView({ ...view, zoom: Math.max(20, view.zoom - 5) })}><ZoomOut size={17} /></button>
-          <small style={{ minWidth: 34, textAlign: 'center' }}>{Math.round((view.zoom / 55) * 100)}%</small>
-          <button className="ps-tool" title="Zoom in" onClick={() => setView({ ...view, zoom: Math.min(120, view.zoom + 5) })}><ZoomIn size={17} /></button>
-          <button className="ps-tool" title="Keyboard shortcuts (?)" onClick={() => setDialog('shortcuts')}><Keyboard size={17} /></button>
-          <button className="ps-tool" title={fullscreen ? 'Exit full screen' : 'Full screen'} aria-label="Full screen" onClick={toggleFullscreen}>{fullscreen ? <Minimize size={17} /> : <Maximize size={17} />}</button>
-        </div>
-      </div>
+      )}
 
       <main className="ps-main">
-        <Palette actions={actions} collapsed={!palette} />
+        <Palette actions={actions} collapsed={!palette || appMode !== 'write'} />
         <div className="ps-stage" ref={stageRef}>
           {!ready ? (
             <div className="ps-loading"><div className="ps-spinner" /> Loading the engraving engine…</div>
@@ -1863,12 +2142,14 @@ export default function ProStaffApp() {
               ref={pagesRef}
               className={`ps-pages${view.layout === 'continuous' ? ' ps-continuous' : ''}${mode === 'input' ? ' ps-entering' : ''}`}
               onClick={onStageClick}
+              onPointerDown={onStagePointerDown}
               onMouseMove={onStageMove}
               onMouseLeave={() => { hoverRef.current = null; setGhost(null); }}
             >
               {pages.map((svg, i) => <div key={i} className="ps-page" dangerouslySetInnerHTML={{ __html: svg }} />)}
               <div ref={measureHiRef} className="ps-follow-measure" aria-hidden="true" />
               <div ref={lineRef} className="ps-follow-line" aria-hidden="true" />
+              {selBox && <div className="ps-sel-box" style={{ left: selBox.x, top: selBox.y, width: selBox.w, height: selBox.h }} />}
               {ghost && mode === 'input' && (
                 <>
                   {ghost.ledgers.map((ly, i) => <div key={i} className="ps-ghost-ledger" style={{ left: ghost.x - ghost.space * 1.1, top: ly - 0.75, width: ghost.space * 2.2 }} />)}
@@ -1879,6 +2160,7 @@ export default function ProStaffApp() {
           )}
           {rendering && <div style={{ position: 'absolute', top: 10, right: 14 }}><div className="ps-spinner" /></div>}
           {readOnly && <div className="ps-banner">{readOnly}</div>}
+          {ready && scoreIsEmpty && !readOnly && appMode === 'write' && mode !== 'input' && <EmptyScoreHint onAddNotes={startInput} />}
         </div>
         {side === 'comments' && user && cloudRef.current.id && (
           <CommentsPanel
@@ -1890,7 +2172,35 @@ export default function ProStaffApp() {
           />
         )}
         {side === 'issues' && <IssuesPanel issues={issues} onSelect={selectIssue} onClose={() => setSide(null)} />}
+        {!side && appMode === 'print' && (
+          <PrintPanel
+            layout={layout}
+            pageView={view.layout === 'page'}
+            parts={parts.length}
+            onLayout={(l) => updateScoreSettings({ layout: l })}
+            onPageView={() => setView({ ...view, layout: 'page' })}
+            onExport={(k) => (k === 'wav' ? void exportAudio() : exportAs(k))}
+            onPrintParts={() => setDialog('printParts')}
+          />
+        )}
+        {!side && appMode === 'write' && showProps && s && (
+          <PropertiesPanel
+            score={s}
+            sel={sel}
+            ops={{
+              run,
+              actions,
+              tie: () => run((sc) => E.toggleTie(sc, live.current.sel, live.current.cursor, live.current.input, live.current.mode)),
+              openDialog: (k) => setDialog(k),
+              select: updSel,
+            }}
+            onClose={() => setShowProps(false)}
+          />
+        )}
       </main>
+      {appMode === 'play' && showMixer && <div className="ps-play-dock">{mixerEl}</div>}
+      {ready && appMode === 'write' && <FirstRunTour />}
+      {cmdk && <CommandPalette commands={buildCommands()} onClose={() => setCmdk(false)} />}
 
 
       {prompt && promptPos && (

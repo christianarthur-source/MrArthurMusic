@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AlertTriangle, Info, Palette, Play, FileText, Keyboard } from 'lucide-react';
+import { AlertTriangle, Info, Palette, Play, FileText, Keyboard, Printer } from 'lucide-react';
 import { Dialog } from './Dialogs';
 import type { PlaybackOptions } from '../audio/schedule';
 import type { Issue } from '../model/analysis';
@@ -210,5 +210,52 @@ export function ProgressDialog({ title, text, fraction, onCancel }: { title: str
       <div className={`ps-progress${fraction === null ? ' ps-indeterminate' : ''}`}><div style={fraction !== null ? { width: Math.round(fraction * 100) + '%' } : undefined} /></div>
       <p style={{ color: 'var(--ps-muted)' }}>{text}</p>
     </Dialog>
+  );
+}
+
+/** Print mode: everything for getting the score onto paper or out of the app, in one place. */
+export function PrintPanel({ layout, pageView, parts, onLayout, onPageView, onExport, onPrintParts }: {
+  layout: LayoutOptions;
+  pageView: boolean;
+  parts: number;
+  onLayout: (l: LayoutOptions) => void;
+  onPageView: () => void;
+  onExport: (kind: 'pdf' | 'musicxml' | 'midi' | 'mei' | 'svg' | 'wav') => void;
+  onPrintParts: () => void;
+}) {
+  return (
+    <aside className="ps-props ps-print-panel" aria-label="Print and export">
+      <header><Printer size={15} /> <b>Print &amp; export</b></header>
+      <div className="ps-props-body">
+        <button className="ps-btn ps-primary ps-print-main" onClick={() => onExport('pdf')}><Printer size={15} /> Print / save as PDF</button>
+        {parts > 1 && <button className="ps-btn ps-outline ps-print-main" onClick={onPrintParts}>Print parts…</button>}
+        {!pageView && <p className="ps-hint">You're in continuous view. <button className="ps-link" onClick={onPageView}>Show pages</button> to see the layout.</p>}
+        <h4 className="ps-set-head">Page</h4>
+        <div className="ps-field"><label>Paper</label>
+          <select className="ps-select" value={layout.pageSize} onChange={(e) => onLayout({ ...layout, pageSize: e.target.value as LayoutOptions['pageSize'] })}>
+            <option value="letter">US Letter</option><option value="a4">A4</option>
+          </select>
+        </div>
+        <div className="ps-field"><label>Staff size</label>
+          <select className="ps-select" value={layout.staffSize} onChange={(e) => onLayout({ ...layout, staffSize: Number(e.target.value) })}>
+            {[70, 80, 90, 100, 110, 120, 130].map((v) => <option key={v} value={v}>{v === 100 ? 'Normal' : `${v}%`}</option>)}
+          </select>
+        </div>
+        <div className="ps-field"><label>Measures per line</label>
+          <select className="ps-select" value={layout.perLine} onChange={(e) => onLayout({ ...layout, perLine: Number(e.target.value) })}>
+            <option value={0}>Automatic</option>{[2, 3, 4, 5, 6, 8].map((v) => <option key={v} value={v}>{v}</option>)}
+          </select>
+        </div>
+        <h4 className="ps-set-head">Export</h4>
+        <div className="ps-export-grid">
+          <button className="ps-btn ps-outline" onClick={() => onExport('musicxml')}>MusicXML</button>
+          <button className="ps-btn ps-outline" onClick={() => onExport('midi')}>MIDI</button>
+          <button className="ps-btn ps-outline" onClick={() => onExport('wav')}>Audio (WAV)</button>
+          <button className="ps-btn ps-outline" onClick={() => onExport('svg')}>SVG pages</button>
+          <button className="ps-btn ps-outline" onClick={() => onExport('mei')}>MEI</button>
+        </div>
+        <p className="ps-hint">MusicXML opens in MuseScore, Sibelius, Finale, Dorico and Noteflight.</p>
+      </div>
+    </aside>
   );
 }
