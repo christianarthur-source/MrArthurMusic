@@ -156,6 +156,8 @@ export class Player {
   private loopEnd: number | null = null;
   private loopStart = 0;
   metronome = false;
+  /** Moves the metronome earlier (negative) or later (positive), in ms, to match what the ear hears. */
+  clickOffsetMs = 0;
   mix: Record<string, StaffMix> = {};
   masterMix: MasterMix = { ...DEFAULT_MASTER_MIX };
   playing = false;
@@ -289,7 +291,7 @@ export class Player {
     }
   }
 
-  async play(data: { notes: PlayNote[]; cues: Cue[]; clicks: Click[]; pedals: PedalEvent[]; channels: import('./soundfont').ChannelSetup[] }, fromMs: number, tempoFactor: number, loop?: { start: number; end: number } | null) {
+  async play(data: { notes: PlayNote[]; cues: Cue[]; clicks: Click[]; pedals: PedalEvent[]; channels: import('./soundfont').ChannelSetup[] }, fromMs: number, tempoFactor: number, loop?: { start: number; end: number } | null, startAt?: number) {
     await this.init();
     this.stop(false);
     const sfOk = await this.loadSoundFont();
@@ -309,21 +311,28 @@ export class Player {
       await this.sampler!.preload(this.notes.filter((n) => n.time >= fromMs && n.time < fromMs + 8000));
       void this.sampler!.preload(this.notes);
     }
-    this.seek(fromMs);
+    this.seek(fromMs, startAt);
     this.playing = true;
     this.timer = window.setInterval(() => this.schedule(), 25);
+    // the screen follows what is heard (the audio clock minus the output delay), every frame
     const tick = () => {
       if (!this.playing) return;
-      this.onTime?.(this.position());
+      const heard = this.heardPosition();
+      while (this.cueIdx < this.cues.length && this.cues[this.cueIdx].time <= heard) {
+        const c = this.cues[this.cueIdx];
+        this.onCue?.(c.on, c.off, c.measureOn);
+        this.cueIdx++;
+      }
+      this.onTime?.(heard);
       this.raf = requestAnimationFrame(tick);
     };
     this.raf = requestAnimationFrame(tick);
     this.schedule();
   }
 
-  private seek(ms: number) {
+  private seek(ms: number, startAt?: number) {
     this.startOffset = ms;
-    this.startCtxTime = this.ctx!.currentTime + 0.1;
+    this.startCtxTime = Math.max(startAt ?? 0, this.ctx!.currentTime + 0.1);
     const first = <T extends { time: number }>(list: T[]) => {
       const i = list.findIndex((n) => n.time >= ms - 1);
       return i < 0 ? list.length : i;
@@ -343,6 +352,13 @@ export class Player {
   position(): number {
     if (!this.ctx) return 0;
     return this.startOffset + Math.max(0, this.ctx.currentTime - this.startCtxTime) * 1000 * this.tempoFactor;
+  }
+
+  /** The score position the listener is hearing right now (sound leaves the speakers a little after it is rendered). */
+  heardPosition(): number {
+    if (!this.ctx) return 0;
+    const delay = (this.ctx.outputLatency || 0) + (this.ctx.baseLatency || 0);
+    return Math.max(this.startOffset, this.position() - delay * 1000 * this.tempoFactor);
   }
 
   private ctxTimeOf(ms: number) {
@@ -376,15 +392,10 @@ export class Player {
       if (this.loopEnd != null && c.time >= this.loopEnd) break;
       const at = this.ctxTimeOf(c.time);
       if (at > horizon) break;
-      if (this.metronome) this.click(at, c.accent);
+      if (this.metronome) this.click(at + this.clickOffsetMs / 1000, c.accent);
       this.clickIdx++;
     }
     const pos = this.position();
-    while (this.cueIdx < this.cues.length && this.cues[this.cueIdx].time <= pos) {
-      const c = this.cues[this.cueIdx];
-      this.onCue?.(c.on, c.off, c.measureOn);
-      this.cueIdx++;
-    }
     const end = this.loopEnd ?? Math.max(this.notes.length ? this.notes[this.notes.length - 1].time + this.notes[this.notes.length - 1].dur : 0, this.cues.length ? this.cues[this.cues.length - 1].time : 0);
     if (pos >= end + 50) {
       if (this.loopEnd != null) {
@@ -397,6 +408,11 @@ export class Player {
 
   private click(at: number, accent: boolean) {
     const ctx = this.ctx!;
+    at = Math.max(at, ctx.currentTime);
+    if (this.sf?.ready) {
+      this.sf.click(at, accent);
+      return;
+    }
     const o = ctx.createOscillator();
     const g = ctx.createGain();
     o.frequency.value = accent ? 1760 : 1175;
@@ -408,12 +424,14 @@ export class Player {
     o.stop(at + 0.08);
   }
 
-  /** A short count-in of clicks before playback (one bar). */
-  async countIn(beats: number, beatMs: number, tempoFactor: number) {
+  /** Schedules a one-bar count-in and returns the audio-clock time the music should start (exactly one beat after the last click). */
+  async countIn(beats: number, beatMs: number, tempoFactor: number): Promise<number> {
     await this.init();
-    const t0 = this.ctx!.currentTime + 0.05;
-    for (let i = 0; i < beats; i++) this.click(t0 + (i * beatMs) / 1000 / tempoFactor, i === 0);
-    await new Promise((r) => setTimeout(r, (beats * beatMs) / tempoFactor));
+    await this.loadSoundFont();
+    const beat = beatMs / 1000 / tempoFactor;
+    const t0 = this.ctx!.currentTime + 0.15;
+    for (let i = 0; i < beats; i++) this.click(t0 + i * beat + this.clickOffsetMs / 1000, i === 0);
+    return t0 + beats * beat;
   }
 
   stop(notify = true) {
