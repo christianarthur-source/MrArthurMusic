@@ -461,9 +461,9 @@ export function ScanDialog({ onClose, onRecognize, busy, progress, error }: {
 const SHORTCUTS: [string, [string, string][]][] = [
   ['Note input', [['N', 'Start / stop note input'], ['A – G', 'Enter a note'], ['Shift + A – G', 'Add a note to the chord'], ['0 or R', 'Rest'], ['1 – 7', 'Duration: 64th … whole'], ['.', 'Dot'], ['Ctrl + Alt + 1 – 4', 'Voice 1 – 4'], ['Ctrl + 3 / 5 / 6', 'Tuplet']]],
   ['Pitch', [['↑ / ↓', 'Up / down a semitone'], ['Ctrl + ↑ / ↓  or  Shift + ↑ / ↓', 'Up / down an octave'], ['Alt + Shift + ↑ / ↓', 'Up / down a step in the key'], ['+  -  =', 'Sharp, flat, natural']]],
-  ['Selection', [['← / →', 'Previous / next note'], ['Shift + ← / →', 'Extend selection'], ['Ctrl + ← / →', 'Previous / next measure'], ['Click empty staff', 'Select measure'], ['Shift + click', 'Select a range'], ['Esc', 'Leave input / clear selection']]],
+  ['Selection', [['← / →', 'Previous / next note'], ['Shift + ← / →', 'Extend selection'], ['Ctrl + ← / →', 'Previous / next measure'], ['Click empty staff', 'Select measure'], ['Shift + click', 'Select a range'], ['Drag across the staff', 'Select several notes'], ['Drag a note up / down', 'Change its pitch'], ['Esc', 'Select tool / clear selection']]],
   ['Markings', [['T', 'Tie'], ['S', 'Slur'], ['K', 'Chord symbol'], ['L', 'Lyrics'], ['X', 'Staff text'], ['Delete', 'Delete selection']]],
-  ['Score', [['Ctrl + Z / Ctrl + Shift + Z', 'Undo / redo'], ['Ctrl + C / X / V', 'Copy, cut, paste'], ['Ctrl + B', 'Add a measure'], ['Space', 'Play / pause'], ['Home', 'Return to start'], ['Ctrl + S', 'Save'], ['?', 'This list']]],
+  ['Score', [['Ctrl + K', 'Find any command'], ['Ctrl + Z / Ctrl + Shift + Z', 'Undo / redo'], ['Ctrl + C / X / V', 'Copy, cut, paste'], ['Ctrl + B', 'Add a measure'], ['Space', 'Play / pause'], ['Home', 'Return to start'], ['Ctrl + S', 'Save'], ['?', 'This list']]],
 ];
 
 export function ShortcutsDialog({ onClose }: { onClose: () => void }) {

@@ -26,7 +26,7 @@ export interface PaletteActions {
   pageBreak(kind: 'sb' | 'pb'): void;
 }
 
-interface Item {
+export interface PaletteItem {
   label: React.ReactNode;
   title: string;
   run: (a: PaletteActions) => void;
@@ -41,7 +41,7 @@ const KEYS: [number, string][] = [
   [-7, 'C♭'], [-6, 'G♭'], [-5, 'D♭'], [-4, 'A♭'], [-3, 'E♭'], [-2, 'B♭'], [-1, 'F'], [0, 'C'], [1, 'G'], [2, 'D'], [3, 'A'], [4, 'E'], [5, 'B'], [6, 'F♯'], [7, 'C♯'],
 ];
 
-const SECTIONS: { id: string; title: string; wide?: boolean; items: Item[] }[] = [
+export const SECTIONS: { id: string; title: string; wide?: boolean; items: PaletteItem[] }[] = [
   {
     id: 'accidentals', title: 'Accidentals', items: [
       { label: G('𝄫'), title: 'Double flat', run: (a) => a.accidental(-2) },
@@ -185,6 +185,30 @@ const SECTIONS: { id: string; title: string; wide?: boolean; items: Item[] }[] =
     ],
   },
 ];
+
+/** Some palette sections laid out in one row (for the toolbar tabs), each with a small label. */
+export function PaletteStrip({ actions, ids }: { actions: PaletteActions; ids: string[] }) {
+  return (
+    <>
+      {ids.map((id) => {
+        const s = SECTIONS.find((x) => x.id === id);
+        if (!s) return null;
+        return (
+          <div key={id} className="ps-strip-group" role="group" aria-label={s.title}>
+            <span className="ps-strip-label">{s.title.replace(/ \(concert\)/, '')}</span>
+            <div className="ps-strip-items">
+              {s.items.map((it, i) => (
+                <button key={i} className={`ps-pal-item ps-strip-item${s.wide ? ' ps-wide' : ''}`} title={it.title} aria-label={it.title} onMouseDown={(e) => e.preventDefault()} onClick={() => it.run(actions)}>
+                  {it.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+    </>
+  );
+}
 
 export function Palette({ actions, collapsed }: { actions: PaletteActions; collapsed: boolean }) {
   const [open, setOpen] = useState<Record<string, boolean>>(() => {

@@ -1,6 +1,7 @@
 // Importing and exporting score files.
 import { getConverter } from '../engine/verovio';
 import { Score } from '../model/score';
+import { renumber } from '../model/edit';
 import { descendants, children, el } from '../model/mei';
 
 export const IMPORT_ACCEPT = '.mei,.xml,.musicxml,.mxl,.abc,.txt';
@@ -60,6 +61,8 @@ export function normalizeImported(score: Score, fileName: string): Score {
     if (short.length >= 2) score.rebeam(layer);
   }
   score.invalidate();
+  // some files (ABC) come without measure numbers; the status bar and comments use them
+  if (score.measures().some((m) => !m.getAttribute('n'))) renumber(score);
   return score;
 }
 
