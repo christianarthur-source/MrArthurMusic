@@ -71,6 +71,8 @@
 }
 .ps-menu > button:hover, .ps-btn:hover { background: var(--ps-raise); }
 .ps-btn[disabled] { opacity: .4; cursor: default; }
+.ps-btn.ps-soon { opacity: .5; }
+.ps-btn.ps-soon small { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; padding: 1px 5px; border-radius: 6px; background: var(--ps-raise); color: var(--ps-muted); }
 .ps-btn.ps-primary { background: var(--ps-accent); color: var(--ps-accent-ink); font-weight: 600; }
 .ps-btn.ps-primary:hover { background: var(--ps-accent-2); }
 .ps-btn.ps-outline { border-color: var(--ps-line-2); }

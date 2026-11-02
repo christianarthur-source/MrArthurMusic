@@ -145,6 +145,11 @@ export default function ProStaffApp() {
   const [showMixer, setShowMixer] = useState(false);
   const [soundLoading, setSoundLoading] = useState<number | null>(null);
   const [headerEdit, setHeaderEdit] = useState<{ left: number; top: number } | null>(null);
+  // the scanner turns itself on once the server has its API key
+  const [scanReady, setScanReady] = useState(false);
+  useEffect(() => {
+    fetch('/api/omr').then((r) => r.json()).then((d) => setScanReady(!!d?.configured)).catch(() => setScanReady(false));
+  }, []);
   // accounts & online saving
   const [user, setUser] = useState<Cloud.WolfiUser | null>(null);
   const [classes, setClasses] = useState<Cloud.WolfiClass[]>([]);
@@ -1606,7 +1611,9 @@ export default function ProStaffApp() {
             <Item onClick={() => setDialog('new')}>New score…</Item>
             <Item onClick={openLibrary}>Open…</Item>
             <Item onClick={() => fileRef.current?.click()}>Import MusicXML / MEI / ABC…</Item>
-            <Item onClick={() => { setScanError(''); setDialog('scan'); }}>Scan sheet music…</Item>
+            {scanReady
+              ? <Item onClick={() => { setScanError(''); setDialog('scan'); }}>Scan sheet music…</Item>
+              : <Item onClick={() => showToast('Scanning sheet music is coming soon.')}><span style={{ opacity: 0.5 }}>Scan sheet music — coming soon</span></Item>}
             <hr />
             <Item onClick={() => void saveNow().then(() => showToast('Saved in this browser.'))} kbd="Ctrl S">Save</Item>
             <hr />
@@ -1681,7 +1688,11 @@ export default function ProStaffApp() {
           </div>
           <small>{[readOnly ? 'View only' : saveState === 'saving' || cloudState === 'saving' ? 'Saving…' : saveState !== 'saved' ? 'Edited' : user && cloudRef.current.id ? (cloudState === 'error' ? 'Saved in this browser (online save failed)' : 'Saved online') : 'Saved in this browser'].filter(Boolean).join(' · ')}</small>
         </div>
-        <button className="ps-btn ps-outline ps-hide-sm" onClick={() => { setScanError(''); setDialog('scan'); }}><Camera size={15} /> Scan</button>
+        {scanReady ? (
+          <button className="ps-btn ps-outline ps-hide-sm" onClick={() => { setScanError(''); setDialog('scan'); }}><Camera size={15} /> Scan</button>
+        ) : (
+          <button className="ps-btn ps-outline ps-hide-sm ps-soon" title="Scanning sheet music is coming soon" onClick={() => showToast('Scanning sheet music is coming soon.')}><Camera size={15} /> Scan <small>soon</small></button>
+        )}
         {user && cloudRef.current.id && <button className={`ps-btn${side === 'comments' ? ' ps-on' : ''}`} title="Comments" onClick={async () => { if (side === 'comments') setSide(null); else if (await cloudRecord()) setSide('comments'); }}><MessageSquare size={16} /></button>}
         <button className="ps-btn ps-outline" onClick={() => setDialog('account')} title={user ? 'Your account and online scores' : 'Sign in to save online'}>
           <UserRound size={15} /> <span className="ps-hide-sm">{user ? user.displayName || user.username : 'Sign in'}</span>
