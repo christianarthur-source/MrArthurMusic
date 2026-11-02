@@ -73,6 +73,7 @@ export function PropertiesPanel({ score, sel, ops, onClose }: { score: Score; se
               <button className="ps-btn ps-outline" title="Down a step (↓)" onClick={() => run((s) => E.transposeNotes(s, sel, -1, 'step'))}>▼ Step</button>
               <button className="ps-btn ps-outline" title="Up an octave (Ctrl+↑)" onClick={() => run((s) => E.transposeNotes(s, sel, 1, 'octave'))}>▲ 8ve</button>
               <button className="ps-btn ps-outline" title="Down an octave (Ctrl+↓)" onClick={() => run((s) => E.transposeNotes(s, sel, -1, 'octave'))}>▼ 8ve</button>
+              <button className="ps-btn ps-outline" title="Transpose by any interval" onClick={() => ops.openDialog('transpose')}>Transpose…</button>
             </Row>
             <Row label="Accidental">
               {([[-1, '♭', 'Flat'], [0, '♮', 'Natural'], [1, '♯', 'Sharp']] as [number, string, string][]).map(([a, g, name]) => (
@@ -169,6 +170,12 @@ export function PropertiesPanel({ score, sel, ops, onClose }: { score: Score; se
           <button className="ps-btn ps-outline" onClick={() => actions.ending('1')}>1st</button>
           <button className="ps-btn ps-outline" onClick={() => actions.ending('2')}>2nd</button>
         </Row>
+        <Row label="Notes">
+          <button className="ps-btn ps-outline" title="Up a step" onClick={() => run((s) => E.transposeNotes(s, sel, 1, 'step'))}>▲ Step</button>
+          <button className="ps-btn ps-outline" title="Down a step" onClick={() => run((s) => E.transposeNotes(s, sel, -1, 'step'))}>▼ Step</button>
+          <button className="ps-btn ps-outline" title="Transpose by any interval" onClick={() => ops.openDialog('transpose')}>Transpose…</button>
+        </Row>
+        <p className="ps-hint">Drag inside the selected {ms.length > 1 ? 'measures' : 'measure'} to move every note up or down.</p>
         <Row label="Measures">
           <button className="ps-btn ps-outline" onClick={() => actions.insertMeasure()}>Insert before</button>
           <button className="ps-btn ps-outline" onClick={() => actions.addMeasures(1)}>+1 at end</button>
