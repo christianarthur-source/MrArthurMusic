@@ -8,6 +8,7 @@ const TOTAL_BYTES = 39900972;
 
 type Synth = import('spessasynth_lib').WorkletSynthesizer;
 
+
 let bankPromise: Promise<ArrayBuffer> | null = null;
 
 /** Downloads the SoundFont once (the browser caches it afterwards). */
@@ -54,6 +55,7 @@ export class SoundFontEngine {
   private synth: Synth | null = null;
   private channelOf = new Map<string, number>();
   private volumes = new Map<number, number>();
+  private clickCh = 14; // a spare channel set to the drum kit: the metronome runs on the same clock as the music
   ready = false;
 
   constructor(private ctx: AudioContext, private output: AudioNode) {}
@@ -74,7 +76,28 @@ export class SoundFontEngine {
     await synth.soundBankManager.addSoundBank(bank.slice(0), 'main');
     await synth.isReady;
     this.synth = synth;
+    this.useClickChannel(14);
     this.ready = true;
+  }
+
+  private useClickChannel(ch: number) {
+    const s = this.synth!;
+    if (ch !== 9) s.midiChannels[ch]?.setDrums(true);
+    s.controllerChange(ch, 7 as never, ch === 9 ? (this.volumes.get(9) ?? 100) : 127);
+    if (ch !== 9) {
+      s.controllerChange(ch, 91 as never, 0);
+      s.controllerChange(ch, 93 as never, 0);
+    }
+    this.clickCh = ch;
+  }
+
+  /** A metronome tick (wood block; higher on the downbeat) at an exact audio-clock time. */
+  click(when: number, accent: boolean) {
+    const s = this.synth;
+    if (!s) return;
+    const key = accent ? 76 : 77;
+    s.noteOn(this.clickCh, key, accent ? 120 : 96, { time: when });
+    s.noteOff(this.clickCh, key, { time: when + 0.08 });
   }
 
   /** Gives each part a MIDI channel with its instrument (channel 10 is the drum kit). */
@@ -82,6 +105,8 @@ export class SoundFontEngine {
     const s = this.synth;
     if (!s) return;
     this.channelOf.clear();
+    // the previous click channel may now belong to a part
+    if (this.clickCh !== 9) s.midiChannels[this.clickCh]?.setDrums(false);
     const byPart = new Map<string, number>();
     const programOf = new Map<number, number>();
     let next = 0;
@@ -103,6 +128,10 @@ export class SoundFontEngine {
       }
       this.channelOf.set(st.staffN, ch);
     }
+    // the click gets the highest channel no part uses (15 is kept for note-entry auditions)
+    const used = new Set(this.channelOf.values());
+    let click = 9;
+    for (let ch = 14; ch >= 0; ch--) if (ch !== 9 && !used.has(ch)) { click = ch; break; }
     for (let ch = 0; ch < 16; ch++) {
       s.controllerChange(ch, 91 as never, Math.round(Math.min(1, 0.35 * this.reverbScale * 2) * 127)); // hall reverb send
       s.controllerChange(ch, 93 as never, 8); // a touch of chorus
@@ -111,6 +140,7 @@ export class SoundFontEngine {
       s.controllerChange(ch, 64 as never, 0);
       this.volumes.set(ch, 100);
     }
+    this.useClickChannel(click);
   }
 
   channel(staffN: string) {

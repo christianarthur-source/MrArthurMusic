@@ -4,7 +4,7 @@ import {
 } from 'lucide-react';
 import type { VerovioToolkit } from 'verovio/esm';
 import './prostaff.css';
-import { getToolkit, getConverter, renderOptions, printOptions, DEFAULT_VIEW, type ViewOptions, type EngravingFont } from '../engine/verovio';
+import { getToolkit, getConverter, renderOptions, printOptions, DEFAULT_VIEW, type ViewOptions } from '../engine/verovio';
 import { Score, isTabStaff } from '../model/score';
 import { ancestor, child, children, descendants, getId, keyAlter, midiOf, stepOf, fromStep } from '../model/mei';
 import * as E from '../model/edit';
@@ -19,7 +19,9 @@ import * as T from '../model/tools';
 import { rangeIssues, partWritingIssues, outOfRangeNoteIds, type Issue } from '../model/analysis';
 import * as Cloud from '../io/cloud';
 import { AccountDialog, ShareDialog, VersionsDialog, CommentsPanel } from './CloudUI';
-import { SettingsDialog, IssuesPanel, PrintPartsDialog, ProgressDialog, DEFAULT_LAYOUT, type LayoutOptions, type AppPrefs } from './Extras';
+import { SettingsDialog, IssuesPanel, PrintPartsDialog, ProgressDialog, DEFAULT_LAYOUT, DEFAULT_PREFS, type LayoutOptions, type AppPrefs, type SettingsTab } from './Extras';
+import { FONTS_HREF, applyTextFont } from './appearance';
+import { buildFollow, followAt, type FollowPoint } from './follow';
 import { DEFAULT_PLAYBACK, CHORD_STAFF, type PlaybackOptions } from '../audio/schedule';
 import { renderWav } from '../audio/export';
 import { buildSchedule, type Schedule } from '../audio/schedule';
@@ -145,6 +147,11 @@ export default function ProStaffApp() {
   const [showMixer, setShowMixer] = useState(false);
   const [soundLoading, setSoundLoading] = useState<number | null>(null);
   const [headerEdit, setHeaderEdit] = useState<{ left: number; top: number } | null>(null);
+  const [settingsTab, setSettingsTab] = useState<SettingsTab>('appearance');
+  const openSettings = (tab: SettingsTab) => {
+    setSettingsTab(tab);
+    setDialog('settings');
+  };
   // the scanner turns itself on once the server has its API key
   const [scanReady, setScanReady] = useState(false);
   useEffect(() => {
@@ -161,9 +168,9 @@ export default function ProStaffApp() {
   const [progress, setProgress] = useState<{ title: string; text: string; fraction: number | null; abort?: AbortController } | null>(null);
   const [prefs, setPrefs] = useState<AppPrefs>(() => {
     try {
-      return { midiInput: false, showRange: true, ...JSON.parse(localStorage.getItem('wolfi:prefs') || '{}') };
+      return { ...DEFAULT_PREFS, ...JSON.parse(localStorage.getItem('wolfi:prefs') || '{}') };
     } catch {
-      return { midiInput: false, showRange: true };
+      return DEFAULT_PREFS;
     }
   });
   const [midiDevices, setMidiDevices] = useState<string[]>([]);
@@ -218,7 +225,7 @@ export default function ProStaffApp() {
     document.head.appendChild(icon);
     const fonts = document.createElement('link');
     fonts.rel = 'stylesheet';
-    fonts.href = 'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600;700&family=Noto+Music&display=swap';
+    fonts.href = FONTS_HREF;
     document.head.appendChild(fonts);
     let cancelled = false;
     (async () => {
@@ -323,7 +330,7 @@ export default function ProStaffApp() {
       if (!tk.loadData(mei)) throw new Error('render failed');
       const n = tk.getPageCount();
       const out: string[] = [];
-      for (let i = 1; i <= n; i++) out.push(tk.renderToSVG(i));
+      for (let i = 1; i <= n; i++) out.push(applyTextFont(tk.renderToSVG(i), prefs.textFont));
       setPages(out);
     } catch (e) {
       console.error(e);
@@ -331,7 +338,7 @@ export default function ProStaffApp() {
     }
     scheduleRef.current = null;
     setRendering(false);
-  }, [ready, version, view, partView, showToast, stageW, layout.perLine]);
+  }, [ready, version, view, partView, showToast, stageW, layout.perLine, prefs.textFont]);
 
   useEffect(() => {
     try {
@@ -1075,8 +1082,23 @@ export default function ProStaffApp() {
 
   // ---------- playback ----------
 
+  // follow-along: a cursor line or a tinted measure, positioned every frame from the heard time
+  const followRef = useRef<{ points: FollowPoint[]; end: number } | null>(null);
+  const lineRef = useRef<HTMLDivElement>(null);
+  const measureHiRef = useRef<HTMLDivElement>(null);
+  const prefsRef = useRef(prefs);
+  prefsRef.current = prefs;
+  useEffect(() => {
+    followRef.current = null; // the page was redrawn: measure positions again
+  }, [pages]);
+  useEffect(() => {
+    player.clickOffsetMs = prefs.clickOffset;
+  }, [player, prefs.clickOffset]);
+
   const clearPlayHighlight = useCallback(() => {
     stageRef.current?.querySelectorAll('.ps-playing').forEach((n) => n.classList.remove('ps-playing'));
+    if (lineRef.current) lineRef.current.style.opacity = '0';
+    if (measureHiRef.current) measureHiRef.current.style.opacity = '0';
   }, []);
 
   const stop = useCallback(() => {
@@ -1153,12 +1175,15 @@ export default function ProStaffApp() {
     }
     player.metronome = metronome;
     player.mix = mix;
+    followRef.current = null;
     player.onCue = (on, off, measure) => {
       const root = stageRef.current;
       if (!root) return;
       if (off.includes('*')) clearPlayHighlight();
-      for (const id of off) root.querySelector(`[id="${CSS.escape(id)}"]`)?.classList.remove('ps-playing');
-      for (const id of on) root.querySelector(`[id="${CSS.escape(id)}"]`)?.classList.add('ps-playing');
+      if (prefsRef.current.cursor === 'notes') {
+        for (const id of off) root.querySelector(`[id="${CSS.escape(id)}"]`)?.classList.remove('ps-playing');
+        for (const id of on) root.querySelector(`[id="${CSS.escape(id)}"]`)?.classList.add('ps-playing');
+      }
       if (measure) {
         const el = root.querySelector(`[id="${CSS.escape(measure)}"]`);
         if (el) {
@@ -1180,17 +1205,37 @@ export default function ProStaffApp() {
     };
     player.onTime = (ms) => {
       if (timeRef.current) timeRef.current.textContent = fmtTime(ms) + ' / ' + fmtTime(sched!.duration);
+      const style = prefsRef.current.cursor;
+      const line = lineRef.current;
+      const box = measureHiRef.current;
+      if (style !== 'line' && style !== 'measure') return;
+      if (!followRef.current && pagesRef.current) followRef.current = { points: buildFollow(pagesRef.current, sched!.cues), end: sched!.duration };
+      const pos = followRef.current ? followAt(followRef.current.points, ms, followRef.current.end) : null;
+      if (!pos) return;
+      const pad = (pos.bottom - pos.top) * 0.12 + 6;
+      if (style === 'line' && line) {
+        line.style.opacity = '1';
+        line.style.height = `${pos.bottom - pos.top + pad * 2}px`;
+        line.style.transform = `translate3d(${pos.x.toFixed(1)}px, ${(pos.top - pad).toFixed(1)}px, 0)`;
+      }
+      if (style === 'measure' && box) {
+        box.style.opacity = '1';
+        box.style.width = `${pos.mRight - pos.mLeft}px`;
+        box.style.height = `${pos.bottom - pos.top + pad * 2}px`;
+        box.style.transform = `translate3d(${pos.mLeft.toFixed(1)}px, ${(pos.top - pad).toFixed(1)}px, 0)`;
+      }
     };
     setPlaying(true);
     try {
+      let startAt: number | undefined;
       if (countIn && sched.clicks.length > 1) {
         const beatMs = sched.clicks[1].time - sched.clicks[0].time;
         const firstM = s.measures()[0];
         const ctx = s.contextOf(firstM);
         const beats = ctx.unit === 8 && ctx.count % 3 === 0 && ctx.count > 3 ? ctx.count / 3 : ctx.count;
-        await player.countIn(beats, beatMs, tempoPct / 100);
+        startAt = await player.countIn(beats, beatMs, tempoPct / 100);
       }
-      await player.play(sched, from, tempoPct / 100, loopRange);
+      await player.play(sched, from, tempoPct / 100, loopRange, startAt);
     } catch (e) {
       console.error(e);
       setPlaying(false);
@@ -1404,10 +1449,10 @@ export default function ProStaffApp() {
       if (layout.perLine) T.breakEvery(copy, layout.perLine);
       conv.setOptions({ ...printOptions(view, true, layout), transpose: '' });
       conv.loadData(copy.toString());
-      for (let i = 1; i <= conv.getPageCount(); i++) pagesOut.push(conv.renderToSVG(i));
+      for (let i = 1; i <= conv.getPageCount(); i++) pagesOut.push(applyTextFont(conv.renderToSVG(i), prefs.textFont));
     }
     try {
-      printPages(pagesOut, `${sc.getMeta().title || 'Score'} — parts`, layout.pageSize);
+      printPages(pagesOut, `${sc.getMeta().title || 'Score'} — parts`, layout.pageSize, FONTS_HREF);
     } catch (e) {
       showToast(e instanceof Error ? e.message : 'Printing failed.', true);
     }
@@ -1438,8 +1483,8 @@ export default function ProStaffApp() {
         conv.setOptions({ ...printOptions(view, layout.perLine > 0 || descendants(s.doc, 'sb').length + descendants(s.doc, 'pb').length > 0, layout), transpose: '' });
         conv.loadData(renderCopy(s, partView === 'all' ? null : partView.split(','), layout.perLine));
         const out: string[] = [];
-        for (let i = 1; i <= conv.getPageCount(); i++) out.push(conv.renderToSVG(i));
-        if (kind === 'pdf') printPages(out, s.getMeta().title || 'Score', layout.pageSize);
+        for (let i = 1; i <= conv.getPageCount(); i++) out.push(applyTextFont(conv.renderToSVG(i), prefs.textFont));
+        if (kind === 'pdf') printPages(out, s.getMeta().title || 'Score', layout.pageSize, FONTS_HREF);
         else out.forEach((svg, i) => download(svg, `${name}${out.length > 1 ? `-p${i + 1}` : ''}.svg`, 'image/svg+xml'));
       }
     } catch (e) {
@@ -1601,7 +1646,7 @@ export default function ProStaffApp() {
   };
 
   return (
-    <div className="ps-root" onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) void importFile(f); }}>
+    <div className="ps-root" data-theme={prefs.theme} onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) void importFile(f); }}>
       <style>{highlightCss}</style>
       <header className="ps-top">
         <WolfiBrand />
@@ -1645,9 +1690,7 @@ export default function ProStaffApp() {
             <Item checked={view.concertPitch} onClick={() => setView({ ...view, concertPitch: !view.concertPitch })}>Concert pitch</Item>
             <Item checked={palette} onClick={() => setPalette(!palette)}>Palettes</Item>
             <hr />
-            {(['Leipzig', 'Bravura', 'Leland', 'Petaluma'] as EngravingFont[]).map((f) => (
-              <Item key={f} checked={view.font === f} onClick={() => setView({ ...view, font: f })}>{f === 'Petaluma' ? 'Petaluma (jazz handwritten)' : f === 'Leipzig' ? 'Leipzig (classic)' : f} engraving</Item>
-            ))}
+            <Item onClick={() => openSettings('appearance')}>Theme & fonts…</Item>
             <hr />
             <Item checked={partView === 'all'} onClick={() => setPartView('all')}>Full score</Item>
             {parts.map((p) => <Item key={p.ns.join(',')} checked={partView === p.ns.join(',')} onClick={() => setPartView(p.ns.join(','))}>Part: {p.name}</Item>)}
@@ -1670,7 +1713,7 @@ export default function ProStaffApp() {
             <Item onClick={() => run((sc) => T.reduce(sc, live.current.sel))}>Reduce staves into one</Item>
             <hr />
             <Item onClick={async () => { if (await cloudRecord()) setSide('comments'); }}>Comments</Item>
-            <Item onClick={() => setDialog('settings')}>Settings…</Item>
+            <Item onClick={() => openSettings('appearance')}>Settings…</Item>
           </Menu>
           <Menu id="help" label="Help">
             <Item onClick={() => setDialog('shortcuts')} kbd="?">Keyboard shortcuts</Item>
@@ -1693,11 +1736,61 @@ export default function ProStaffApp() {
           <button className="ps-btn ps-outline ps-hide-sm ps-soon" title="Scanning sheet music is coming soon" onClick={() => showToast('Scanning sheet music is coming soon.')}><Camera size={15} /> Scan <small>soon</small></button>
         )}
         {user && cloudRef.current.id && <button className={`ps-btn${side === 'comments' ? ' ps-on' : ''}`} title="Comments" onClick={async () => { if (side === 'comments') setSide(null); else if (await cloudRecord()) setSide('comments'); }}><MessageSquare size={16} /></button>}
+        <button className="ps-btn" onClick={() => openSettings('appearance')} title="Settings" aria-label="Settings"><Settings size={17} /></button>
         <button className="ps-btn ps-outline" onClick={() => setDialog('account')} title={user ? 'Your account and online scores' : 'Sign in to save online'}>
           <UserRound size={15} /> <span className="ps-hide-sm">{user ? user.displayName || user.username : 'Sign in'}</span>
         </button>
         <input ref={fileRef} type="file" hidden accept={IMPORT_ACCEPT} onChange={(e) => { const f = e.target.files?.[0]; if (f) void importFile(f); e.target.value = ''; }} />
       </header>
+
+      <div className="ps-bar" role="toolbar" aria-label="Playback">
+        <div className="ps-transport">
+          <button className="ps-play" onClick={() => void togglePlay()} title="Play / pause (Space)" aria-label={playing ? 'Pause' : 'Play'}>{playing ? <Pause size={18} /> : <Play size={18} style={{ marginLeft: 2 }} />}</button>
+          <button className="ps-btn" onClick={stop} title="Stop" aria-label="Stop"><Square size={15} /></button>
+          <button className="ps-btn" onClick={rewind} title="Return to start (Home)" aria-label="Return to start"><SkipBack size={15} /></button>
+          <span className="ps-time" ref={timeRef}>0:00</span>
+          <button className={`ps-btn${metronome ? ' ps-on' : ''}`} onClick={() => setMetronome(!metronome)} title="Metronome"><Timer size={15} /> <span className="ps-hide-sm">Click</span></button>
+          <button className={`ps-btn${countIn ? ' ps-on' : ''}`} onClick={() => setCountIn(!countIn)} title="One-bar count-in"><span className="ps-hide-sm">Count-in</span><span className="ps-hide-sm" /></button>
+          <button className={`ps-btn${loop ? ' ps-on' : ''}`} onClick={() => setLoop(!loop)} title="Loop the selected measures"><Repeat size={15} /></button>
+          <label className="ps-btn ps-hide-sm" title="Playback tempo">
+            <Music size={14} />
+            <input className="ps-range" type="range" min={40} max={160} step={5} value={tempoPct} onChange={(e) => setTempoPct(Number(e.target.value))} />
+            <span style={{ minWidth: 38 }}>{tempoPct}%</span>
+          </label>
+          <div style={{ position: 'relative' }}>
+            <button className={`ps-btn${showMixer ? ' ps-on' : ''}`} onClick={() => setShowMixer(!showMixer)} title="Mixer"><SlidersHorizontal size={15} /> <span className="ps-hide-sm">Mixer</span></button>
+            {soundLoading !== null && <span className="ps-loading-sound">Loading orchestra sounds… {Math.round(soundLoading * 100)}%</span>}
+          </div>
+        </div>
+        <div className="ps-status">
+          {status && <span>{status}</span>}
+          <span><b>{mode === 'input' ? 'Adding notes — click the staff or type A–G' : 'Select — press N or type A–G to add notes'}</b> · {DURATIONS.find((d) => d.dur === input.dur)?.name}{input.dots ? ' dotted' : ''} · voice {input.voice}</span>
+          {view.concertPitch && <span style={{ color: 'var(--ps-accent)' }}>Concert pitch</span>}
+          {partView !== 'all' && <span style={{ color: 'var(--ps-accent)' }}>Part view</span>}
+          <span>{pages.length} page{pages.length === 1 ? '' : 's'}</span>
+        </div>
+        {showMixer && (
+          <Mixer
+            parts={scoreRef.current && descendants(scoreRef.current.doc, 'harm').some((h) => !h.getAttribute('type') || h.getAttribute('type') === 'suggested') && playback.chords !== 'off' ? [...parts, { name: 'Chord symbols', ns: [CHORD_STAFF] }] : parts}
+            mix={mix}
+            master={masterMix}
+            engine={player.engineName === 'soundfont' ? 'MuseScore General SoundFont · hall reverb' : 'Sounds load when you press Play'}
+            onStrip={(ns, patch) => {
+              const n = { ...mix };
+              for (const sn of ns) n[sn] = { ...DEFAULT_STAFF_MIX, ...mix[sn], ...patch };
+              setMix(n);
+              saveMix(n, masterMix);
+            }}
+            onMaster={(patch) => {
+              const m = { ...masterMix, ...patch };
+              setMasterMix(m);
+              saveMix(mix, m);
+            }}
+            onReset={() => { setMix({}); setMasterMix(DEFAULT_MASTER_MIX); saveMix({}, DEFAULT_MASTER_MIX); }}
+            onClose={() => setShowMixer(false)}
+          />
+        )}
+      </div>
 
       <div className="ps-toolbar" role="toolbar" aria-label="Note input">
         <div className="ps-tool-group">
@@ -1744,7 +1837,6 @@ export default function ProStaffApp() {
           <small style={{ minWidth: 34, textAlign: 'center' }}>{Math.round((view.zoom / 55) * 100)}%</small>
           <button className="ps-tool" title="Zoom in" onClick={() => setView({ ...view, zoom: Math.min(120, view.zoom + 5) })}><ZoomIn size={17} /></button>
           <button className="ps-tool" title="Keyboard shortcuts (?)" onClick={() => setDialog('shortcuts')}><Keyboard size={17} /></button>
-          <button className="ps-tool" title="Settings" onClick={() => setDialog('settings')}><Settings size={17} /></button>
           <button className="ps-tool" title={fullscreen ? 'Exit full screen' : 'Full screen'} aria-label="Full screen" onClick={toggleFullscreen}>{fullscreen ? <Minimize size={17} /> : <Maximize size={17} />}</button>
         </div>
       </div>
@@ -1763,6 +1855,8 @@ export default function ProStaffApp() {
               onMouseLeave={() => { hoverRef.current = null; setGhost(null); }}
             >
               {pages.map((svg, i) => <div key={i} className="ps-page" dangerouslySetInnerHTML={{ __html: svg }} />)}
+              <div ref={measureHiRef} className="ps-follow-measure" aria-hidden="true" />
+              <div ref={lineRef} className="ps-follow-line" aria-hidden="true" />
               {ghost && mode === 'input' && (
                 <>
                   {ghost.ledgers.map((ly, i) => <div key={i} className="ps-ghost-ledger" style={{ left: ghost.x - ghost.space * 1.1, top: ly - 0.75, width: ghost.space * 2.2 }} />)}
@@ -1786,54 +1880,6 @@ export default function ProStaffApp() {
         {side === 'issues' && <IssuesPanel issues={issues} onSelect={selectIssue} onClose={() => setSide(null)} />}
       </main>
 
-      {showMixer && (
-        <Mixer
-          parts={scoreRef.current && descendants(scoreRef.current.doc, 'harm').some((h) => !h.getAttribute('type') || h.getAttribute('type') === 'suggested') && playback.chords !== 'off' ? [...parts, { name: 'Chord symbols', ns: [CHORD_STAFF] }] : parts}
-          mix={mix}
-          master={masterMix}
-          engine={player.engineName === 'soundfont' ? 'MuseScore General SoundFont · hall reverb' : 'Sounds load when you press Play'}
-          onStrip={(ns, patch) => {
-            const n = { ...mix };
-            for (const sn of ns) n[sn] = { ...DEFAULT_STAFF_MIX, ...mix[sn], ...patch };
-            setMix(n);
-            saveMix(n, masterMix);
-          }}
-          onMaster={(patch) => {
-            const m = { ...masterMix, ...patch };
-            setMasterMix(m);
-            saveMix(mix, m);
-          }}
-          onReset={() => { setMix({}); setMasterMix(DEFAULT_MASTER_MIX); saveMix({}, DEFAULT_MASTER_MIX); }}
-          onClose={() => setShowMixer(false)}
-        />
-      )}
-      <footer className="ps-bottom">
-        <div className="ps-transport">
-          <button className="ps-play" onClick={() => void togglePlay()} title="Play / pause (Space)" aria-label={playing ? 'Pause' : 'Play'}>{playing ? <Pause size={18} /> : <Play size={18} style={{ marginLeft: 2 }} />}</button>
-          <button className="ps-btn" onClick={stop} title="Stop" aria-label="Stop"><Square size={15} /></button>
-          <button className="ps-btn" onClick={rewind} title="Return to start (Home)" aria-label="Return to start"><SkipBack size={15} /></button>
-          <span className="ps-time" ref={timeRef}>0:00</span>
-          <button className={`ps-btn${metronome ? ' ps-on' : ''}`} onClick={() => setMetronome(!metronome)} title="Metronome"><Timer size={15} /> <span className="ps-hide-sm">Click</span></button>
-          <button className={`ps-btn${countIn ? ' ps-on' : ''}`} onClick={() => setCountIn(!countIn)} title="One-bar count-in"><span className="ps-hide-sm">Count-in</span><span className="ps-hide-sm" /></button>
-          <button className={`ps-btn${loop ? ' ps-on' : ''}`} onClick={() => setLoop(!loop)} title="Loop the selected measures"><Repeat size={15} /></button>
-          <label className="ps-btn ps-hide-sm" title="Playback tempo">
-            <Music size={14} />
-            <input className="ps-range" type="range" min={40} max={160} step={5} value={tempoPct} onChange={(e) => setTempoPct(Number(e.target.value))} />
-            <span style={{ minWidth: 38 }}>{tempoPct}%</span>
-          </label>
-          <div style={{ position: 'relative' }}>
-            <button className={`ps-btn${showMixer ? ' ps-on' : ''}`} onClick={() => setShowMixer(!showMixer)} title="Mixer"><SlidersHorizontal size={15} /> <span className="ps-hide-sm">Mixer</span></button>
-            {soundLoading !== null && <span className="ps-loading-sound">Loading orchestra sounds… {Math.round(soundLoading * 100)}%</span>}
-          </div>
-        </div>
-        <div className="ps-status">
-          {status && <span>{status}</span>}
-          <span><b>{mode === 'input' ? 'Adding notes — click the staff or type A–G' : 'Select — press N or type A–G to add notes'}</b> · {DURATIONS.find((d) => d.dur === input.dur)?.name}{input.dots ? ' dotted' : ''} · voice {input.voice}</span>
-          {view.concertPitch && <span style={{ color: 'var(--ps-accent)' }}>Concert pitch</span>}
-          {partView !== 'all' && <span style={{ color: 'var(--ps-accent)' }}>Part view</span>}
-          <span>{pages.length} page{pages.length === 1 ? '' : 's'}</span>
-        </div>
-      </footer>
 
       {prompt && promptPos && (
         <div className="ps-popover" style={{ left: promptPos.left, top: promptPos.top }}>
@@ -1907,6 +1953,9 @@ export default function ProStaffApp() {
       )}
       {dialog === 'settings' && (
         <SettingsDialog
+          tab={settingsTab}
+          font={view.font}
+          onFont={(f) => setView({ ...view, font: f })}
           playback={playback}
           layout={layout}
           prefs={prefs}
