@@ -485,3 +485,13 @@ textarea.ps-input { height: auto; padding: 8px 10px; resize: vertical; }
 
 .ps-play-dock { grid-row: 5; }
 .ps-play-dock .ps-mx { position: static; box-shadow: none; border-bottom: 0; border-top: 1px solid var(--ps-line-2); }
+
+/* phones: the header and toolbar scroll sideways instead of growing (menus open as fixed sheets there) */
+@media (max-width: 560px) {
+  .ps-top { overflow-x: auto; scrollbar-width: none; }
+  .ps-top::-webkit-scrollbar { display: none; }
+  .ps-top > * { flex-shrink: 0; }
+  .ps-ribbon-body { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; }
+  .ps-strip-items { flex-wrap: nowrap; }
+  .ps-props { width: min(300px, 88vw); }
+}
