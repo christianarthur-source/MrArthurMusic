@@ -3,6 +3,7 @@ import { useRememberedState, dateCodec } from '../../hooks/useRememberedState';
 import { useApp } from '../../context/AppContext';
 import { cloudSync } from '../../services/cloudSync';
 import { storage } from '../../services/storage';
+import { inferCategory, parseIcsText, syncSubscription } from '../../services/calendarFeeds';
 import { CalendarEvent, CalendarSubscription } from '../../types';
 import {
   Calendar as CalendarIcon,
@@ -29,6 +30,8 @@ import {
   Check,
   AlertCircle
 } from 'lucide-react';
+
+const CALENDAR_COLORS = ['#0c87eb', '#059669', '#d97706', '#be123c', '#7c3aed', '#db2777', '#0891b2', '#475569'];
 
 export const CalendarView: React.FC = () => {
   const { showToast } = useApp();
@@ -133,131 +136,21 @@ export const CalendarView: React.FC = () => {
   };
 
   const handleSyncSubscription = async (sub: CalendarSubscription) => {
-    if (!sub.url) return;
     showToast(`Syncing ${sub.name}...`, 'info');
-    let url = sub.url.trim();
-    if (url.startsWith('webcal://')) {
-      url = 'https://' + url.slice(9);
-    }
-    let icsData = '';
     try {
-      const proxyUrl = `/api/hub/calendar?url=${encodeURIComponent(url)}`;
-      const res = await cloudSync.hubFetch(proxyUrl);
-      if (res.ok) icsData = await res.text();
-    } catch {}
-    if (icsData && icsData.includes('BEGIN:VCALENDAR')) {
-      const parsedList = parseIcsText(icsData);
-      const allEvents = storage.getEvents();
-      const otherEvents = allEvents.filter((e) => e.sourceId !== sub.id);
-      const newEvents: CalendarEvent[] = [];
-      parsedList.forEach((item, idx) => {
-        if (item.title && item.startDate) {
-          const cat = inferCategory(item.title, item.description || '');
-          newEvents.push({
-            id: `ev-${sub.id}-${idx}`,
-            title: item.title,
-            startDate: item.startDate,
-            endDate: item.endDate || item.startDate,
-            category: cat,
-            location: item.location || 'School Auditorium',
-            color: sub.color,
-            source: 'subscription',
-            sourceId: sub.id,
-            calendarName: sub.name
-          });
-        }
-      });
-      storage.saveEvents([...otherEvents, ...newEvents]);
-      storage.updateSubscription(sub.id, { lastSynced: new Date().toISOString() });
+      const count = await syncSubscription(sub);
       reloadData();
-      showToast(`Synced ${sub.name} (${newEvents.length} events updated)`, 'success');
-    } else {
-      showToast(`Unable to auto-sync feed from provider.`, 'warning');
+      showToast(`Synced ${sub.name} (${count} events)`, 'success');
+    } catch (err: any) {
+      showToast(err?.message || 'Unable to sync that calendar.', 'warning');
     }
   };
 
-  // Helper to infer category based on event text
-  const inferCategory = (title: string, desc: string): CalendarEvent['category'] => {
-    const combined = (title + ' ' + desc).toLowerCase();
-    if (combined.includes('rehearsal') || combined.includes('chorus') || combined.includes('choir')) return 'rehearsal';
-    if (combined.includes('concert') || combined.includes('performance') || combined.includes('festival') || combined.includes('informance') || combined.includes('holiday')) return 'concert';
-    if (combined.includes('assembly')) return 'assembly';
-    if (combined.includes('pd') || combined.includes('in-service') || combined.includes('conference') || combined.includes('workshop')) return 'pd';
-    if (combined.includes('meeting') || combined.includes('duty') || combined.includes('committee')) return 'meeting';
-    if (combined.includes('grade') || combined.includes('class') || combined.includes('music')) return 'class';
-    return 'concert';
-  };
-
-  // Helper to format iCalendar timestamp (YYYYMMDDTHHMMSS or YYYYMMDD)
-  const formatIcsDate = (val?: string): string => {
-    if (!val) return new Date().toISOString().slice(0, 16);
-    const cleaned = val.replace(/[^0-9T]/g, '');
-    if (cleaned.length >= 13) {
-      // 20261103T143000
-      const y = cleaned.slice(0, 4);
-      const m = cleaned.slice(4, 6);
-      const d = cleaned.slice(6, 8);
-      const h = cleaned.slice(9, 11);
-      const min = cleaned.slice(11, 13);
-      return `${y}-${m}-${d}T${h}:${min}`;
-    } else if (cleaned.length >= 8) {
-      // 20261103
-      const y = cleaned.slice(0, 4);
-      const m = cleaned.slice(4, 6);
-      const d = cleaned.slice(6, 8);
-      return `${y}-${m}-${d}T09:00`;
-    }
-    return new Date().toISOString().slice(0, 16);
-  };
-
-  // Parse ICS content into CalendarEvent list
-  const parseIcsText = (icsText: string): Partial<CalendarEvent>[] => {
-    const parsed: Partial<CalendarEvent>[] = [];
-    const lines = icsText.split(/\r\n|\n|\r/);
-    let inEvent = false;
-    let current: any = {};
-
-    for (let i = 0; i < lines.length; i++) {
-      let line = lines[i];
-      // handle line unfolding
-      while (i + 1 < lines.length && (lines[i + 1].startsWith(' ') || lines[i + 1].startsWith('\t'))) {
-        line += lines[i + 1].slice(1);
-        i++;
-      }
-
-      if (line.startsWith('BEGIN:VEVENT')) {
-        inEvent = true;
-        current = {};
-      } else if (line.startsWith('END:VEVENT')) {
-        if (current.title && current.startDate) {
-          if (!current.endDate) {
-            current.endDate = current.startDate;
-          }
-          parsed.push(current);
-        }
-        inEvent = false;
-      } else if (inEvent) {
-        const colonIdx = line.indexOf(':');
-        if (colonIdx === -1) continue;
-        const tag = line.slice(0, colonIdx);
-        const val = line.slice(colonIdx + 1).replace(/\\,/g, ',').replace(/\\;/g, ';').replace(/\\n/g, ' ').trim();
-
-        if (tag === 'SUMMARY' || tag.startsWith('SUMMARY;')) {
-          current.title = val;
-        } else if (tag === 'DTSTART' || tag.startsWith('DTSTART;')) {
-          current.startDate = formatIcsDate(val);
-        } else if (tag === 'DTEND' || tag.startsWith('DTEND;')) {
-          current.endDate = formatIcsDate(val);
-        } else if (tag === 'LOCATION' || tag.startsWith('LOCATION;')) {
-          current.location = val;
-        } else if (tag === 'UID' || tag.startsWith('UID;')) {
-          current.uid = val;
-        } else if (tag === 'DESCRIPTION' || tag.startsWith('DESCRIPTION;')) {
-          current.description = val;
-        }
-      }
-    }
-    return parsed;
+  /** Recolors a calendar and every event that came from it. */
+  const handleRecolorSubscription = (sub: CalendarSubscription, color: string) => {
+    storage.updateSubscription(sub.id, { color });
+    storage.saveEvents(storage.getEvents().map((ev) => ((ev.sourceId || 'sub-primary') === sub.id ? { ...ev, color } : ev)));
+    reloadData();
   };
 
   // Import from ICS file
@@ -1462,8 +1355,36 @@ END:VCALENDAR`;
                         {sub.lastSynced && (
                           <p className="text-[10px] text-stone-400 dark:text-stone-500 mt-1">
                             Last synced: {new Date(sub.lastSynced).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} ({new Date(sub.lastSynced).toLocaleDateString()})
+                            {sub.url && ' · updates automatically twice a day'}
                           </p>
                         )}
+
+                        {/* Calendar color */}
+                        <div className="flex flex-wrap items-center gap-1.5 mt-2" role="group" aria-label={`Color for ${sub.name}`}>
+                          {CALENDAR_COLORS.map((c) => (
+                            <button
+                              key={c}
+                              type="button"
+                              onClick={() => handleRecolorSubscription(sub, c)}
+                              aria-label={`Use ${c}`}
+                              aria-pressed={sub.color.toLowerCase() === c}
+                              className={`w-5 h-5 rounded-full border-2 transition-transform hover:scale-110 ${
+                                sub.color.toLowerCase() === c ? 'border-stone-900 dark:border-white scale-110' : 'border-transparent'
+                              }`}
+                              style={{ backgroundColor: c }}
+                            />
+                          ))}
+                          <label className="relative w-5 h-5 rounded-full overflow-hidden border border-stone-300 dark:border-stone-600 cursor-pointer" title="Pick any color">
+                            <span className="absolute inset-0 bg-[conic-gradient(red,yellow,lime,cyan,blue,magenta,red)]" aria-hidden />
+                            <input
+                              type="color"
+                              value={sub.color}
+                              onChange={(e) => handleRecolorSubscription(sub, e.target.value)}
+                              aria-label={`Pick any color for ${sub.name}`}
+                              className="absolute inset-0 opacity-0 cursor-pointer"
+                            />
+                          </label>
+                        </div>
                       </div>
                     </div>
 

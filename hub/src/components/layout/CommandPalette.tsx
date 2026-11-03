@@ -15,6 +15,9 @@ import {
   Boxes,
   BookMarked,
   NotebookPen,
+  CalendarClock,
+  Dices,
+  Volume2,
   X,
   ArrowRight,
   Plus
@@ -178,6 +181,39 @@ export const CommandPalette: React.FC = () => {
         setIsCommandPaletteOpen(false);
       },
       detail: 'Calendar view, timeline & prompts'
+    },
+    {
+      id: 'nav-rotation',
+      title: 'Open Class Rotation',
+      category: 'Navigation',
+      icon: CalendarClock,
+      action: () => {
+        setActiveView('rotation');
+        setIsCommandPaletteOpen(false);
+      },
+      detail: 'Day 1–N cycle, today’s classes, snow days'
+    },
+    {
+      id: 'nav-name-picker',
+      title: 'Open Name Picker',
+      category: 'Navigation',
+      icon: Dices,
+      action: () => {
+        setActiveView('name-picker');
+        setIsCommandPaletteOpen(false);
+      },
+      detail: 'Random student picker for the projector'
+    },
+    {
+      id: 'nav-volume-meter',
+      title: 'Open Volume Meter',
+      category: 'Navigation',
+      icon: Volume2,
+      action: () => {
+        setActiveView('volume-meter');
+        setIsCommandPaletteOpen(false);
+      },
+      detail: 'Classroom noise meter using the microphone'
     },
     {
       id: 'nav-daily-planner',

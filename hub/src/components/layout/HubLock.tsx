@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Lock, KeyRound, Loader2, WifiOff } from 'lucide-react';
 import { cloudSync } from '../../services/cloudSync';
+import { startCalendarAutoRefresh } from '../../services/calendarFeeds';
 import logoTrimmed from '../../assets/logo-trimmed.png';
 
 type Gate = 'checking' | 'setup' | 'locked' | 'offline' | 'ready';
@@ -25,6 +26,7 @@ export const HubLock: React.FC<{ children: React.ReactNode }> = ({ children }) =
     }
     if (cloudSync.hasToken()) {
       cloudSync.start();
+      startCalendarAutoRefresh();
       setGate('ready');
     }
   };

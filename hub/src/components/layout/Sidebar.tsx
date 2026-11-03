@@ -16,6 +16,9 @@ import {
   FolderSync,
   BookMarked,
   NotebookPen,
+  CalendarClock,
+  Dices,
+  Volume2,
   Boxes,
   Video,
   ChevronLeft,
@@ -59,6 +62,7 @@ export const Sidebar: React.FC = () => {
         { id: 'home', label: 'Home Dashboard', icon: LayoutDashboard },
         { id: 'tasks', label: 'Tasks', icon: CheckSquare, badgeCount: todayTaskCount },
         { id: 'calendar', label: 'Calendar', icon: Calendar },
+        { id: 'rotation', label: 'Class Rotation', icon: CalendarClock },
         { id: 'planner', label: 'Lesson Planner', icon: BookOpen }
       ]
     },
@@ -74,6 +78,8 @@ export const Sidebar: React.FC = () => {
       items: [
         { id: 'visuals', label: 'Music Literacy Visuals', icon: Sparkles },
         { id: 'timer', label: 'Classroom Timer', icon: Timer },
+        { id: 'name-picker', label: 'Name Picker', icon: Dices },
+        { id: 'volume-meter', label: 'Volume Meter', icon: Volume2 },
         { id: 'seating', label: 'Seating Charts', icon: Grid },
       ]
     },

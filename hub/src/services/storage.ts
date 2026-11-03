@@ -17,7 +17,8 @@ import {
   TaskListType,
   PlannerPage,
   PlannerSettings,
-  PlannerPermanentNote
+  PlannerPermanentNote,
+  RotationSettings
 } from '../types';
 import {
   INITIAL_PREFERENCES,
@@ -55,7 +56,8 @@ const STORAGE_KEYS = {
   INVENTORY: 'mth_inventory',
   BEAT_PATTERNS: 'mth_beat_patterns',
   PLANNER_PERMANENT: 'mth_planner_permanent',
-  PLANNER_SETTINGS: 'mth_planner_settings'
+  PLANNER_SETTINGS: 'mth_planner_settings',
+  ROTATION: 'mth_rotation'
 };
 
 // Daily Planner pages are stored one month per key (mth_planner_2026_11), so a month full of
@@ -714,6 +716,15 @@ class StorageService {
     this.setItem(STORAGE_KEYS.PLANNER_SETTINGS, { ...this.getPlannerSettings(), ...updates });
   }
 
+  // Class rotation (see services/rotation.ts); null until it has been set up
+  public getRotation(): RotationSettings | null {
+    return this.getItem<RotationSettings | null>(STORAGE_KEYS.ROTATION, null);
+  }
+
+  public saveRotation(rotation: RotationSettings): void {
+    this.setItem(STORAGE_KEYS.ROTATION, rotation);
+  }
+
   private plannerMonthKeys(): string[] {
     const keys: string[] = [];
     for (let i = 0; i < localStorage.length; i++) {
@@ -745,7 +756,8 @@ class StorageService {
       beatPatterns: this.getBeatPatterns(),
       plannerPages: Object.fromEntries(this.plannerMonthKeys().map((k) => [k, this.getItem(k, {})])),
       plannerPermanent: this.getPlannerPermanent(),
-      plannerSettings: this.getPlannerSettings()
+      plannerSettings: this.getPlannerSettings(),
+      rotation: this.getRotation()
     };
     return JSON.stringify(backup, null, 2);
   }
@@ -775,6 +787,7 @@ class StorageService {
       }
       if (data.plannerPermanent) this.setItem(STORAGE_KEYS.PLANNER_PERMANENT, data.plannerPermanent);
       if (data.plannerSettings) this.setItem(STORAGE_KEYS.PLANNER_SETTINGS, data.plannerSettings);
+      if (data.rotation) this.setItem(STORAGE_KEYS.ROTATION, data.rotation);
       this.notify();
       return true;
     } catch (e) {
