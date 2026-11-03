@@ -1,5 +1,6 @@
 import { GradeLevel, LessonPlan, ActivityStep } from '../types';
 import { NYS_MUSIC_STANDARDS } from './nysStandards';
+import { cloudSync } from './cloudSync';
 
 export interface GenerateLessonOptions {
   prompt: string;
@@ -669,7 +670,7 @@ Generate the complete JSON elementary music lesson plan now. Return ONLY valid J
   // 2. Fall back to the site's Claude helper (/api/hub/claude)
   if (!responseText) {
     try {
-      const proxyRes = await fetch('/api/hub/claude', {
+      const proxyRes = await cloudSync.hubFetch('/api/hub/claude', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

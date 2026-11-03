@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
+import { cloudSync } from '../../services/cloudSync';
 import {
   Video,
   Plus,
@@ -134,6 +135,7 @@ export const YouTubeBrowserView: React.FC = () => {
   useEffect(() => {
     try {
       localStorage.setItem('mth_youtube_videos', JSON.stringify(videos));
+      cloudSync.markDirty('mth_youtube_videos');
     } catch (e) {
       console.error('Failed to save videos to localStorage', e);
     }
@@ -193,7 +195,7 @@ export const YouTubeBrowserView: React.FC = () => {
     setHasSearched(true);
 
     try {
-      const res = await fetch(`/api/hub/youtube-search?q=${encodeURIComponent(query.trim())}`);
+      const res = await cloudSync.hubFetch(`/api/hub/youtube-search?q=${encodeURIComponent(query.trim())}`);
       if (!res.ok) {
         throw new Error(`HTTP ${res.status}`);
       }

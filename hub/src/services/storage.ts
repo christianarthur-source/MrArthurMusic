@@ -33,6 +33,7 @@ import {
   INITIAL_INVENTORY,
   INITIAL_BEAT_PATTERNS
 } from './initialData';
+import { cloudSync } from './cloudSync';
 
 const STORAGE_KEYS = {
   PREFERENCES: 'mth_preferences',
@@ -56,6 +57,11 @@ type Listener = () => void;
 
 class StorageService {
   private listeners: Set<Listener> = new Set();
+
+  constructor() {
+    // Data pulled from the cloud (another device's changes) refreshes every screen.
+    cloudSync.onDataChange(() => this.notify());
+  }
 
   public subscribe(listener: Listener): () => void {
     this.listeners.add(listener);
@@ -88,6 +94,7 @@ class StorageService {
   private setItem<T>(key: string, value: T): void {
     try {
       localStorage.setItem(key, JSON.stringify(value));
+      cloudSync.markDirty(key);
       this.notify();
     } catch (e) {
       console.error(`Failed writing ${key} to localStorage`, e);
@@ -706,7 +713,10 @@ class StorageService {
   }
 
   public resetToDefaults(): void {
-    Object.values(STORAGE_KEYS).forEach((k) => localStorage.removeItem(k));
+    Object.values(STORAGE_KEYS).forEach((k) => {
+      localStorage.removeItem(k);
+      cloudSync.markDirty(k);
+    });
     this.notify();
   }
 }

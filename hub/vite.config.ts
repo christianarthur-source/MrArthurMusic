@@ -2,16 +2,18 @@ import { defineConfig, Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import type { IncomingMessage, ServerResponse } from 'http';
 import { HUB_API_ROUTES } from './server/routes.mjs';
+import { createDevEnv } from './server/devEnv.mjs';
 
 /**
  * Runs the Hub's /api/hub/* handlers (server/*.mjs) inside the Vite dev server, so `npm run dev`
- * behaves like the site's Cloudflare Worker. The handlers speak standard Request/Response;
- * this adapter converts Node's req/res to and from them.
+ * behaves like the site's Cloudflare Worker, with a local SQLite file (.dev-data/) as the database.
+ * The handlers speak standard Request/Response; this adapter converts Node's req/res to and from them.
  */
 function hubApiPlugin(): Plugin {
   return {
     name: 'hub-api',
     configureServer(server) {
+      const env = createDevEnv(new URL('./.dev-data', import.meta.url).pathname);
       server.middlewares.use(async (req: IncomingMessage, res: ServerResponse, next: () => void) => {
         const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
         const handler = HUB_API_ROUTES[url.pathname as keyof typeof HUB_API_ROUTES];
@@ -29,7 +31,8 @@ function hubApiPlugin(): Plugin {
           }
 
           const response: Response = await handler(
-            new Request(url, { method: req.method, headers, body: hasBody ? Buffer.concat(chunks) : undefined })
+            new Request(url, { method: req.method, headers, body: hasBody ? Buffer.concat(chunks) : undefined }),
+            env
           );
 
           res.statusCode = response.status;

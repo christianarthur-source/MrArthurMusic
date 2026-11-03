@@ -5,7 +5,11 @@
   // Branch builds run `wrangler preview`, which needs this block (it can stay empty).
   "previews": {},
   // Wolfi (the /wolfi notation app) accounts and saved scores. Separate from the K-6 classroom data.
-  "d1_databases": [{ "binding": "WOLFI_DB", "database_name": "wolfi", "database_id": "bb19b483-93b5-4132-ae02-a774d4332646" }],
+  // The Music Teacher Hub (/Hub/) keeps its PIN, sessions and synced data in hub_* tables of the same database.
+  "d1_databases": [
+    { "binding": "WOLFI_DB", "database_name": "wolfi", "database_id": "bb19b483-93b5-4132-ae02-a774d4332646" },
+    { "binding": "HUB_DB", "database_name": "wolfi", "database_id": "bb19b483-93b5-4132-ae02-a774d4332646" }
+  ],
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",
