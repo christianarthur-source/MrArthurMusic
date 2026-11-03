@@ -14,7 +14,10 @@ import {
   ResourceLink,
   InstrumentItem,
   BeatPattern,
-  TaskListType
+  TaskListType,
+  PlannerPage,
+  PlannerSettings,
+  PlannerPermanentNote
 } from '../types';
 import {
   INITIAL_PREFERENCES,
@@ -50,8 +53,18 @@ const STORAGE_KEYS = {
   JOURNAL: 'mth_journal',
   RESOURCES: 'mth_resources',
   INVENTORY: 'mth_inventory',
-  BEAT_PATTERNS: 'mth_beat_patterns'
+  BEAT_PATTERNS: 'mth_beat_patterns',
+  PLANNER_PERMANENT: 'mth_planner_permanent',
+  PLANNER_SETTINGS: 'mth_planner_settings'
 };
+
+// Daily Planner pages are stored one month per key (mth_planner_2026_11), so a month full of
+// photos doesn't make every other month slow to sync.
+const PLANNER_MONTH_PREFIX = 'mth_planner_';
+const plannerMonthKey = (date: string) => PLANNER_MONTH_PREFIX + date.slice(0, 7).replace('-', '_');
+const PLANNER_MONTH_KEY_RE = /^mth_planner_\d{4}_\d{2}$/;
+
+const DEFAULT_PLANNER_SETTINGS: PlannerSettings = { paper: 'lined', view: 'day', showPermanent: true };
 
 type Listener = () => void;
 
@@ -662,6 +675,54 @@ class StorageService {
     this.setItem(STORAGE_KEYS.BEAT_PATTERNS, patterns);
   }
 
+  // Daily Planner
+  public getPlannerMonth(yearMonth: string): Record<string, PlannerPage> {
+    return this.getItem(plannerMonthKey(yearMonth + '-01'), {} as Record<string, PlannerPage>);
+  }
+
+  public getPlannerPage(date: string): PlannerPage | null {
+    return this.getItem(plannerMonthKey(date), {} as Record<string, PlannerPage>)[date] || null;
+  }
+
+  /** Saves a day's page; a page with no text and no attachments is removed. */
+  public savePlannerPage(page: PlannerPage): void {
+    const key = plannerMonthKey(page.date);
+    const month = this.getItem(key, {} as Record<string, PlannerPage>);
+    const isEmpty = !page.html.replace(/<[^>]*>|&nbsp;|\s/g, '') && page.attachments.length === 0;
+    if (isEmpty) {
+      if (!month[page.date]) return;
+      delete month[page.date];
+    } else {
+      month[page.date] = { ...page, updatedAt: new Date().toISOString() };
+    }
+    this.setItem(key, month);
+  }
+
+  public getPlannerPermanent(): PlannerPermanentNote {
+    return this.getItem(STORAGE_KEYS.PLANNER_PERMANENT, { html: '', updatedAt: '' });
+  }
+
+  public savePlannerPermanent(html: string): void {
+    this.setItem(STORAGE_KEYS.PLANNER_PERMANENT, { html, updatedAt: new Date().toISOString() });
+  }
+
+  public getPlannerSettings(): PlannerSettings {
+    return { ...DEFAULT_PLANNER_SETTINGS, ...this.getItem(STORAGE_KEYS.PLANNER_SETTINGS, {}) };
+  }
+
+  public updatePlannerSettings(updates: Partial<PlannerSettings>): void {
+    this.setItem(STORAGE_KEYS.PLANNER_SETTINGS, { ...this.getPlannerSettings(), ...updates });
+  }
+
+  private plannerMonthKeys(): string[] {
+    const keys: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && PLANNER_MONTH_KEY_RE.test(key)) keys.push(key);
+    }
+    return keys;
+  }
+
   // Backup & Restore
   public exportAllData(): string {
     const backup = {
@@ -681,7 +742,10 @@ class StorageService {
       journal: this.getJournalEntries(),
       resources: this.getResources(),
       inventory: this.getInventory(),
-      beatPatterns: this.getBeatPatterns()
+      beatPatterns: this.getBeatPatterns(),
+      plannerPages: Object.fromEntries(this.plannerMonthKeys().map((k) => [k, this.getItem(k, {})])),
+      plannerPermanent: this.getPlannerPermanent(),
+      plannerSettings: this.getPlannerSettings()
     };
     return JSON.stringify(backup, null, 2);
   }
@@ -704,6 +768,13 @@ class StorageService {
       if (data.resources) this.setItem(STORAGE_KEYS.RESOURCES, data.resources);
       if (data.inventory) this.setItem(STORAGE_KEYS.INVENTORY, data.inventory);
       if (data.beatPatterns) this.setItem(STORAGE_KEYS.BEAT_PATTERNS, data.beatPatterns);
+      if (data.plannerPages) {
+        Object.entries(data.plannerPages).forEach(([k, v]) => {
+          if (PLANNER_MONTH_KEY_RE.test(k)) this.setItem(k, v);
+        });
+      }
+      if (data.plannerPermanent) this.setItem(STORAGE_KEYS.PLANNER_PERMANENT, data.plannerPermanent);
+      if (data.plannerSettings) this.setItem(STORAGE_KEYS.PLANNER_SETTINGS, data.plannerSettings);
       this.notify();
       return true;
     } catch (e) {
@@ -713,7 +784,7 @@ class StorageService {
   }
 
   public resetToDefaults(): void {
-    Object.values(STORAGE_KEYS).forEach((k) => {
+    [...Object.values(STORAGE_KEYS), ...this.plannerMonthKeys()].forEach((k) => {
       localStorage.removeItem(k);
       cloudSync.markDirty(k);
     });

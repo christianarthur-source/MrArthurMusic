@@ -21,6 +21,7 @@ import { ClassroomVisualsView } from './components/views/ClassroomVisualsView';
 import { ClassroomTimerView } from './components/views/ClassroomTimerView';
 import { ResourceLibraryView } from './components/views/ResourceLibraryView';
 import { JournalView } from './components/views/JournalView';
+import { DailyPlannerView } from './components/views/DailyPlannerView';
 import { YouTubeBrowserView } from './components/views/YouTubeBrowserView';
 import { SettingsView } from './components/views/SettingsView';
 
@@ -51,6 +52,8 @@ const MainContent: React.FC = () => {
         return <ResourceLibraryView />;
       case 'journal':
         return <JournalView />;
+      case 'daily-planner':
+        return <DailyPlannerView />;
       case 'youtube':
         return <YouTubeBrowserView />;
       case 'settings':

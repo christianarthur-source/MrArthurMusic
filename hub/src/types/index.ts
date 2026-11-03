@@ -296,3 +296,32 @@ export interface BeatPattern {
   }[];
   category: 'educational' | 'groove' | 'world' | 'custom';
 }
+
+// Daily Planner (one page per date; stored per month, see storage.ts)
+export interface PlannerAttachment {
+  id: string;
+  kind: 'image' | 'link';
+  url: string; // image: compressed data URL; link: http(s) address
+  title?: string;
+  addedAt: string;
+}
+
+export interface PlannerPage {
+  date: string; // YYYY-MM-DD
+  html: string; // the day's rich-text note
+  attachments: PlannerAttachment[];
+  updatedAt: string;
+}
+
+export type PlannerPaper = 'lined' | 'dotted' | 'grid' | 'plain';
+
+export interface PlannerSettings {
+  paper: PlannerPaper;
+  view: 'day' | 'week' | 'month';
+  showPermanent: boolean;
+}
+
+export interface PlannerPermanentNote {
+  html: string;
+  updatedAt: string;
+}

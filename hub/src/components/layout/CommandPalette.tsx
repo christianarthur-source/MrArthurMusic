@@ -14,6 +14,7 @@ import {
   FolderSync,
   Boxes,
   BookMarked,
+  NotebookPen,
   X,
   ArrowRight,
   Plus
@@ -177,6 +178,17 @@ export const CommandPalette: React.FC = () => {
         setIsCommandPaletteOpen(false);
       },
       detail: 'Calendar view, timeline & prompts'
+    },
+    {
+      id: 'nav-daily-planner',
+      title: 'Open Daily Planner',
+      category: 'Navigation',
+      icon: NotebookPen,
+      action: () => {
+        setActiveView('daily-planner');
+        setIsCommandPaletteOpen(false);
+      },
+      detail: 'Day, week & month pages with notes, images and links'
     },
 
     // Dynamic Lessons

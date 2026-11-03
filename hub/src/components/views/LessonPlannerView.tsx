@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { storage } from '../../services/storage';
+import { cloudSync } from '../../services/cloudSync';
 import { LessonPlan, GradeLevel, ActivityStep, ClassSection } from '../../types';
 import { NYS_MUSIC_STANDARDS } from '../../services/nysStandards';
 import {
@@ -51,6 +52,16 @@ export const LessonPlannerView: React.FC = () => {
   const [aiDuration, setAiDuration] = useState<number>(preferences.defaultClassDuration || 35);
   const [aiEngine, setAiEngine] = useState<'builtin' | 'claude' | 'gemini'>(preferences.aiProvider || 'builtin');
   const [claudeKey, setClaudeKey] = useState(preferences.claudeApiKey || '');
+  // Whether the site has its own Claude key, so lessons work without one in Settings
+  const [siteClaudeKey, setSiteClaudeKey] = useState(false);
+
+  useEffect(() => {
+    cloudSync
+      .hubFetch('/api/hub/claude')
+      .then((res) => res.json())
+      .then((data) => setSiteClaudeKey(!!data?.configured))
+      .catch(() => {});
+  }, []);
   const [geminiKey, setGeminiKey] = useState(preferences.geminiApiKey || preferences.aiApiKey || '');
   const [isGenerating, setIsGenerating] = useState(false);
   const [aiStatusMessage, setAiStatusMessage] = useState('');
@@ -234,13 +245,13 @@ export const LessonPlannerView: React.FC = () => {
       let result: GeneratedLessonResult;
 
       if (aiEngine === 'claude') {
-        if (!claudeKey.trim()) {
-          showToast('Please enter an Anthropic Claude API key or switch to Built-in Pedagogical AI.', 'error');
+        if (!claudeKey.trim() && !siteClaudeKey) {
+          showToast('Add ANTHROPIC_API_KEY to the site, or paste a Claude API key here.', 'error');
           setIsGenerating(false);
           setAiStatusMessage('');
           return;
         }
-        setAiStatusMessage('Connecting to Anthropic Claude AI (Claude Haiku 5.5)...');
+        setAiStatusMessage('Connecting to Anthropic Claude (Claude Sonnet 5.5)...');
         result = await generateClaudeLesson(aiPrompt, claudeKey.trim(), preferredGrade, preferredDuration);
         if (claudeKey.trim() !== preferences.claudeApiKey) {
           updatePreferences({ claudeApiKey: claudeKey.trim(), aiProvider: 'claude' });
@@ -797,7 +808,7 @@ export const LessonPlannerView: React.FC = () => {
                 }`}
               >
                 <Wand2 className="w-3.5 h-3.5 text-amber-500" />
-                <span>Anthropic Claude (Claude Haiku 5.5)</span>
+                <span>Anthropic Claude (Claude Sonnet 5.5)</span>
               </button>
               <button
                 type="button"
@@ -900,7 +911,7 @@ export const LessonPlannerView: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5 font-bold text-amber-900 dark:text-amber-200">
                     <Key className="w-3.5 h-3.5 text-amber-600" />
-                    <span>Anthropic Claude API Key (Claude Haiku 5.5)</span>
+                    <span>{siteClaudeKey ? 'Using the site’s Claude key' : 'Anthropic Claude API Key'}</span>
                   </div>
                   <a
                     href="https://console.anthropic.com/settings/keys"
@@ -916,11 +927,13 @@ export const LessonPlannerView: React.FC = () => {
                   type="password"
                   value={claudeKey}
                   onChange={(e) => setClaudeKey(e.target.value)}
-                  placeholder="sk-ant-api03-..."
+                  placeholder={siteClaudeKey ? 'Optional: your own key instead of the site’s' : 'sk-ant-api03-...'}
                   className="w-full text-xs font-mono px-3 py-2 bg-white dark:bg-stone-900 border border-amber-200 dark:border-amber-700 rounded-xl text-stone-900 dark:text-white focus:outline-none focus:border-amber-500"
                 />
                 <p className="text-[10px] text-amber-800 dark:text-amber-300">
-                  Stored securely only in your browser local storage. Powers Claude Haiku 5.5 with deep Kodály & Orff pedagogical sequencing.
+                  {siteClaudeKey
+                    ? 'The site has a Claude key, so lessons work on every device without entering one here.'
+                    : 'Saved with your Hub data and synced to your devices. Or add ANTHROPIC_API_KEY to the site in Cloudflare so no key is needed here.'}
                 </p>
               </div>
             )}
@@ -951,7 +964,7 @@ export const LessonPlannerView: React.FC = () => {
                   className="w-full text-xs font-mono px-3 py-2 bg-white dark:bg-stone-900 border border-blue-200 dark:border-blue-700 rounded-xl text-stone-900 dark:text-white focus:outline-none focus:border-blue-500"
                 />
                 <p className="text-[10px] text-blue-700 dark:text-blue-300">
-                  Stored securely only in your browser local storage. Never sent to any third party.
+                  Saved with your Hub data and synced to your unlocked devices. Only sent to Google when generating.
                 </p>
               </div>
             )}

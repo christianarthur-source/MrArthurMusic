@@ -15,6 +15,7 @@ import {
   Timer,
   FolderSync,
   BookMarked,
+  NotebookPen,
   Boxes,
   Video,
   ChevronLeft,
@@ -81,6 +82,7 @@ export const Sidebar: React.FC = () => {
       items: [
         { id: 'resources', label: 'Drive & Resource Library', icon: FolderSync },
         { id: 'journal', label: 'Daily Journal', icon: BookMarked },
+        { id: 'daily-planner', label: 'Daily Planner', icon: NotebookPen },
         { id: 'youtube', label: 'YouTube Browser', icon: Video }
       ]
     }
