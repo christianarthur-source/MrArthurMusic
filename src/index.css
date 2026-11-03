@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --brand-50: #f0f7ff;
+    --brand-100: #e0effe;
+    --brand-200: #bae0fd;
+    --brand-300: #7cc5fb;
+    --brand-400: #36a4f6;
+    --brand-500: #0c87eb;
+    --brand-600: #006bc9;
+    --brand-700: #0155a3;
+    --brand-800: #064986;
+    --brand-900: #0b3d6f;
+  }
+
+  body {
+    @apply antialiased text-stone-900 bg-stone-50 dark:bg-stone-950 dark:text-stone-100;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+}
+
+/* Custom modern scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.4);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.7);
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Safe area padding for mobile iPhones/iPads */
+.safe-bottom {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+}
+
+@media print {
+  aside, header, nav, .floating-timer, .no-print {
+    display: none !important;
+  }
+  body, main {
+    background: white !important;
+    color: black !important;
+    padding: 0 !important;
+  }
+}
