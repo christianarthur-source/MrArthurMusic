@@ -146,5 +146,32 @@ expect('master PIN resets a forgotten PIN', s === 200 && r.token, r);
 [s, r] = await call('/api/hub/login', { method: 'POST', body: { pin: '5555555' } });
 expect('new PIN works after reset', s === 200, r);
 
+// ---- free AI (Workers AI binding) ----
+[s, r] = await call('/api/hub/login', { method: 'POST', body: { pin: '5555555' } });
+const aiToken = r.token;
+const aiCalls = [];
+const fakeAi = (reply) => ({ run: async (model, input) => { aiCalls.push(model); return reply(model, input); } });
+[s, r] = await call('/api/hub/free-ai', { method: 'POST', body: { prompt: 'hi' } }, { ...env, AI: fakeAi(() => ({ response: 'x' })) });
+expect('free AI needs a token', s === 401, r);
+[s, r] = await call('/api/hub/free-ai', { token: aiToken });
+expect('free AI reports when it is not switched on', s === 200 && r.configured === false, r);
+[s, r] = await call('/api/hub/free-ai', { method: 'POST', token: aiToken, body: { prompt: 'hi' } });
+expect('free AI explains when it is off', s === 503, r);
+[s, r] = await call('/api/hub/free-ai', { method: 'POST', token: aiToken, body: { system: 'be brief', prompt: 'lesson' } }, { ...env, AI: fakeAi(() => ({ response: '{"title":"A"}' })) });
+expect('free AI returns the classic reply shape', s === 200 && r.text === '{"title":"A"}', r);
+[s, r] = await call('/api/hub/free-ai', { method: 'POST', token: aiToken, body: { prompt: 'lesson' } }, { ...env, AI: fakeAi(() => ({ choices: [{ message: { content: '{"title":"B"}' } }] })) });
+expect('free AI returns the OpenAI-style reply shape', s === 200 && r.text === '{"title":"B"}', r);
+aiCalls.length = 0;
+[s, r] = await call('/api/hub/free-ai', { method: 'POST', token: aiToken, body: { prompt: 'lesson' } }, {
+  ...env,
+  AI: fakeAi((model) => { if (model.includes('gemma')) throw new Error('model retired'); return { response: 'from backup' }; }),
+});
+expect('free AI falls back to the next model', s === 200 && r.text === 'from backup' && aiCalls.length === 2, { r, aiCalls });
+[s, r] = await call('/api/hub/free-ai', { method: 'POST', token: aiToken, body: { prompt: 'lesson' } }, {
+  ...env,
+  AI: fakeAi(() => { throw new Error('4006: you have used up your daily free allocation of 10,000 neurons'); }),
+});
+expect('free AI says when the daily allowance is used up', s === 429 && /allowance/.test(r.error), r);
+
 console.log(`\n${passes} passed, ${fails} failed`);
 if (fails) process.exit(1);

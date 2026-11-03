@@ -8,6 +8,7 @@ import {
   generatePedagogicalLesson,
   generateGeminiLesson,
   generateClaudeLesson,
+  generateFreeAiLesson,
   GeneratedLessonResult
 } from '../../services/aiLessonGenerator';
 import {
@@ -24,6 +25,7 @@ import {
   Filter,
   Save,
   Wand2,
+  Bot,
   History,
   Tag,
   ChevronDown,
@@ -50,16 +52,27 @@ export const LessonPlannerView: React.FC = () => {
   const [aiPrompt, setAiPrompt] = useState('Create a 30-minute second-grade lesson on steady beat vs rhythm of the words using rhythm sticks and Kodály Ta & Ti-Ti syllables.');
   const [aiGrade, setAiGrade] = useState<string>('auto');
   const [aiDuration, setAiDuration] = useState<number>(preferences.defaultClassDuration || 35);
-  const [aiEngine, setAiEngine] = useState<'builtin' | 'claude' | 'gemini'>(preferences.aiProvider || 'builtin');
+  const [aiEngine, setAiEngine] = useState<'builtin' | 'free' | 'claude' | 'gemini'>(preferences.aiProvider || 'builtin');
   const [claudeKey, setClaudeKey] = useState(preferences.claudeApiKey || '');
   // Whether the site has its own Claude key, so lessons work without one in Settings
   const [siteClaudeKey, setSiteClaudeKey] = useState(false);
+
+  // Whether the site's free Cloudflare AI is switched on; it becomes the default engine until one is picked
+  const [freeAiReady, setFreeAiReady] = useState(false);
 
   useEffect(() => {
     cloudSync
       .hubFetch('/api/hub/claude')
       .then((res) => res.json())
       .then((data) => setSiteClaudeKey(!!data?.configured))
+      .catch(() => {});
+    cloudSync
+      .hubFetch('/api/hub/free-ai')
+      .then((res) => res.json())
+      .then((data) => {
+        setFreeAiReady(!!data?.configured);
+        if (data?.configured && !preferences.aiProvider) setAiEngine('free');
+      })
       .catch(() => {});
   }, []);
   const [geminiKey, setGeminiKey] = useState(preferences.geminiApiKey || preferences.aiApiKey || '');
@@ -244,7 +257,11 @@ export const LessonPlannerView: React.FC = () => {
 
       let result: GeneratedLessonResult;
 
-      if (aiEngine === 'claude') {
+      if (aiEngine === 'free') {
+        setAiStatusMessage('Writing your lesson with the free AI (Gemma 4 on Cloudflare)...');
+        result = await generateFreeAiLesson(aiPrompt, preferredGrade, preferredDuration);
+        if (preferences.aiProvider !== 'free') updatePreferences({ aiProvider: 'free' });
+      } else if (aiEngine === 'claude') {
         if (!claudeKey.trim() && !siteClaudeKey) {
           showToast('Add ANTHROPIC_API_KEY to the site, or paste a Claude API key here.', 'error');
           setIsGenerating(false);
@@ -797,6 +814,19 @@ export const LessonPlannerView: React.FC = () => {
               >
                 <Sparkles className="w-3.5 h-3.5 text-purple-500" />
                 <span>Built-In AI (Instant & Offline)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setAiEngine('free')}
+                title={freeAiReady ? 'Free AI on Cloudflare (Gemma 4)' : 'Turns on once the site is deployed with Workers AI'}
+                className={`flex-1 py-1.5 px-2.5 rounded-lg flex items-center justify-center gap-1.5 transition-all ${
+                  aiEngine === 'free'
+                    ? 'bg-white dark:bg-stone-900 text-emerald-700 dark:text-emerald-300 shadow-sm font-bold'
+                    : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
+                }`}
+              >
+                <Bot className="w-3.5 h-3.5 text-emerald-500" />
+                <span>Free AI (Gemma 4)</span>
               </button>
               <button
                 type="button"
