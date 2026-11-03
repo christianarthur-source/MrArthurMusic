@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useRememberedState } from '../../hooks/useRememberedState';
 import { useApp } from '../../context/AppContext';
 import { tunerEngine, TUNER_PRESETS, PitchData } from '../../services/tunerAudio';
 import { audioEngine } from '../../services/audioEngine';
@@ -16,14 +17,14 @@ import {
 
 export const MusicToolsView: React.FC = () => {
   const { preferences, showToast } = useApp();
-  const [activeTab, setActiveTab] = useState<'song-maker' | 'tuner' | 'metronome'>('song-maker');
+  const [activeTab, setActiveTab] = useRememberedState<'song-maker' | 'tuner' | 'metronome'>('tools.tab', 'song-maker');
 
   // --- TUNER STATE ---
   const [isTunerListening, setIsTunerListening] = useState(false);
   const [pitchData, setPitchData] = useState<PitchData | null>(null);
-  const [selectedPresetIndex, setSelectedPresetIndex] = useState(0);
+  const [selectedPresetIndex, setSelectedPresetIndex] = useRememberedState('tools.tunerPreset', 0);
   const [refA4, setRefA4] = useState(preferences.tunerRefA4 || 440);
-  const [noiseGate, setNoiseGate] = useState(0.015);
+  const [noiseGate, setNoiseGate] = useRememberedState('tools.noiseGate', 0.015);
   const [micError, setMicError] = useState<string | null>(null);
 
   const toggleTuner = async () => {
@@ -54,10 +55,10 @@ export const MusicToolsView: React.FC = () => {
   }, []);
 
   // --- METRONOME STATE ---
-  const [bpm, setBpm] = useState(108);
-  const [beatsPerBar, setBeatsPerBar] = useState(4);
-  const [subdivision, setSubdivision] = useState<'quarter' | 'eighth' | 'triplet' | 'sixteenth'>('quarter');
-  const [soundScheme, setSoundScheme] = useState<'woodblock' | 'beep' | 'drum' | 'cowbell'>('woodblock');
+  const [bpm, setBpm] = useRememberedState('tools.bpm', 108);
+  const [beatsPerBar, setBeatsPerBar] = useRememberedState('tools.beatsPerBar', 4);
+  const [subdivision, setSubdivision] = useRememberedState<'quarter' | 'eighth' | 'triplet' | 'sixteenth'>('tools.subdivision', 'quarter');
+  const [soundScheme, setSoundScheme] = useRememberedState<'woodblock' | 'beep' | 'drum' | 'cowbell'>('tools.sound', 'woodblock');
   const [isMetronomePlaying, setIsMetronomePlaying] = useState(false);
   const [activeBeat, setActiveBeat] = useState<number>(1);
   const [tapTimes, setTapTimes] = useState<number[]>([]);

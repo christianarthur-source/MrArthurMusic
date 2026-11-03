@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useRememberedState } from '../../hooks/useRememberedState';
 import { useApp } from '../../context/AppContext';
 import { storage } from '../../services/storage';
 import { cloudSync } from '../../services/cloudSync';
@@ -42,16 +43,16 @@ export const LessonPlannerView: React.FC = () => {
 
   const [lessons, setLessons] = useState<LessonPlan[]>([]);
   const [classes, setClasses] = useState<ClassSection[]>([]);
-  const [selectedGrade, setSelectedGrade] = useState<GradeLevel>('All');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [activeLessonId, setActiveLessonId] = useState<string | null>(null);
+  const [selectedGrade, setSelectedGrade] = useRememberedState<GradeLevel>('lessons.grade', 'All');
+  const [searchQuery, setSearchQuery] = useRememberedState('lessons.search', '');
+  const [activeLessonId, setActiveLessonId] = useRememberedState<string | null>('lessons.active', null);
   const [isEditing, setIsEditing] = useState(false);
 
   // AI Lesson Assistant State
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
-  const [aiPrompt, setAiPrompt] = useState('Create a 30-minute second-grade lesson on steady beat vs rhythm of the words using rhythm sticks and Kodály Ta & Ti-Ti syllables.');
-  const [aiGrade, setAiGrade] = useState<string>('auto');
-  const [aiDuration, setAiDuration] = useState<number>(preferences.defaultClassDuration || 35);
+  const [aiPrompt, setAiPrompt] = useRememberedState('lessons.aiPrompt', 'Create a 30-minute second-grade lesson on steady beat vs rhythm of the words using rhythm sticks and Kodály Ta & Ti-Ti syllables.');
+  const [aiGrade, setAiGrade] = useRememberedState<string>('lessons.aiGrade', 'auto');
+  const [aiDuration, setAiDuration] = useRememberedState<number>('lessons.aiDuration', preferences.defaultClassDuration || 35);
   const [aiEngine, setAiEngine] = useState<'builtin' | 'free' | 'claude' | 'gemini'>(preferences.aiProvider || 'builtin');
   const [claudeKey, setClaudeKey] = useState(preferences.claudeApiKey || '');
   // Whether the site has its own Claude key, so lessons work without one in Settings

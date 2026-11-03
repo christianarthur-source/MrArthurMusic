@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useRememberedState, dateCodec } from '../../hooks/useRememberedState';
 import { useApp } from '../../context/AppContext';
 import { storage } from '../../services/storage';
 import { JournalEntry } from '../../types';
@@ -31,15 +32,15 @@ export const JournalView: React.FC = () => {
   const { showToast } = useApp();
 
   const [entries, setEntries] = useState<JournalEntry[]>([]);
-  const [selectedEntryId, setSelectedEntryId] = useState<string | null>(null);
+  const [selectedEntryId, setSelectedEntryId] = useRememberedState<string | null>('journal.entry', null);
   const [isEditing, setIsEditing] = useState(false);
-  const [viewMode, setViewMode] = useState<'entries' | 'calendar'>('entries');
+  const [viewMode, setViewMode] = useRememberedState<'entries' | 'calendar'>('journal.view', 'entries');
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTag, setSelectedTag] = useState<string | null>(null);
-  const [filterStarredOnly, setFilterStarredOnly] = useState(false);
+  const [selectedTag, setSelectedTag] = useRememberedState<string | null>('journal.tag', null);
+  const [filterStarredOnly, setFilterStarredOnly] = useRememberedState('journal.starred', false);
 
   // Calendar Heatmap Navigation
-  const [calDate, setCalDate] = useState<Date>(new Date(2026, 10, 3)); // Nov 2026 default
+  const [calDate, setCalDate] = useRememberedState<Date>('journal.calendarDate', () => new Date(), dateCodec);
 
   // Form State
   const [title, setTitle] = useState('');

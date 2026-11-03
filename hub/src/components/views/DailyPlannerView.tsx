@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useRememberedState } from '../../hooks/useRememberedState';
 import {
   ChevronLeft,
   ChevronRight,
@@ -124,7 +125,7 @@ const eventTime = (e: CalendarEvent) => {
 export const DailyPlannerView: React.FC = () => {
   const { showToast } = useApp();
   const today = toYMD(new Date());
-  const [date, setDate] = useState(today);
+  const [date, setDate] = useRememberedState('dailyPlanner.date', today);
   const [turn, setTurn] = useState<'next' | 'prev' | ''>('');
   const [settings, setSettings] = useState<PlannerSettings>(storage.getPlannerSettings());
   const [, setVersion] = useState(0);

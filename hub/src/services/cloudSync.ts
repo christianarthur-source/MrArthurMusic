@@ -159,7 +159,8 @@ class CloudSync {
     if (Object.keys(this.pending).length === 0) {
       for (let i = localStorage.length - 1; i >= 0; i--) {
         const key = localStorage.key(i);
-        if (key && isSyncedKey(key)) localStorage.removeItem(key);
+        // Synced data, plus where you left off on each screen (useRememberedState)
+        if (key && (isSyncedKey(key) || key.startsWith('hub_ui:'))) localStorage.removeItem(key);
       }
       localStorage.removeItem(LAST_SYNC_KEY);
       this.state = { ...this.state, lastSync: null };

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useRememberedState } from '../../hooks/useRememberedState';
 import { useApp } from '../../context/AppContext';
 import { storage } from '../../services/storage';
 import { TaskItem, TaskListType, Area, Project, Subtask } from '../../types';
@@ -52,7 +53,7 @@ export const TasksView: React.FC = () => {
   const [tasks, setTasks] = useState<TaskItem[]>([]);
   const [areas, setAreas] = useState<Area[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
-  const [activeList, setActiveList] = useState<TaskListType>('today');
+  const [activeList, setActiveList] = useRememberedState<TaskListType>('tasks.list', 'today');
   const [selectedAreaId, setSelectedAreaId] = useState<string | null>(() => {
     try {
       const hash = window.location.hash;
