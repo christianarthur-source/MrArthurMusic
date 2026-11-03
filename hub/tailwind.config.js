@@ -37,6 +37,14 @@ export default {
         ],
       },
       colors: {
+        // The dark end of stone comes from CSS variables so dark mode can use the logo's navy
+        // (see index.css). Light mode keeps Tailwind's stone values.
+        stone: {
+          700: 'rgb(var(--stone-700) / <alpha-value>)',
+          800: 'rgb(var(--stone-800) / <alpha-value>)',
+          900: 'rgb(var(--stone-900) / <alpha-value>)',
+          950: 'rgb(var(--stone-950) / <alpha-value>)',
+        },
         brand: {
           50: 'var(--brand-50, #f0f7ff)',
           100: 'var(--brand-100, #e0effe)',

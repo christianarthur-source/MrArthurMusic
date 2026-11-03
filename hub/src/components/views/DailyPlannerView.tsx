@@ -623,7 +623,7 @@ export const DailyPlannerView: React.FC = () => {
       </div>
 
       {/* Notebook: always light paper in a charcoal frame, whatever the app theme */}
-      <div className="rounded-[1.75rem] bg-stone-800 p-2 sm:p-3 shadow-xl shadow-stone-900/20">
+      <div className="planner-notebook rounded-[1.75rem] bg-stone-800 p-2 sm:p-3 shadow-xl shadow-stone-900/20">
         <div key={`${view}-${view === 'month' ? date.slice(0, 7) : view === 'week' ? weekFrom : date}`} className={`relative ${turnClass}`}>
           {view === 'day' && renderDay()}
           {view === 'week' && renderWeek()}
