@@ -94,6 +94,28 @@ expect('calendar needs a token', s === 401, r);
 expect('claude needs a token', s === 401, r);
 [s, r] = await call('/api/hub/claude', { method: 'POST', body: {}, token });
 expect('claude without any key explains itself', s === 400 && /API key/.test(r.error), r);
+[s, r] = await call('/api/hub/free-ai', { method: 'POST', body: { prompt: 'x' } });
+expect('free AI needs a token', s === 401, r);
+[s, r] = await call('/api/hub/free-ai', { method: 'POST', body: { prompt: 'x' }, token });
+expect('free AI without a Workers AI binding explains itself', s === 503 && /Workers AI/.test(r.error), r);
+{
+  const seen = [];
+  const shapes = {
+    '@cf/openai/gpt-oss-120b': { output: [{ type: 'reasoning', content: [{ text: 'thinking' }] }, { type: 'message', content: [{ type: 'output_text', text: '{"title":"Ta Ti"}' }] }] },
+  };
+  const AI = { run: async (model, input) => { seen.push({ model, input }); return shapes[model]; } };
+  [s, r] = await call('/api/hub/free-ai', { method: 'POST', body: { system: 'Be a music teacher.', prompt: 'Lesson on ta ti' }, token }, { ...env, AI });
+  expect('free AI returns the model answer, not its reasoning', s === 200 && r.text === '{"title":"Ta Ti"}' && r.model === '@cf/openai/gpt-oss-120b', r);
+  expect('free AI sends system + user messages', seen[0]?.input.messages[0].role === 'system' && /music teacher/.test(seen[0].input.messages[0].content) && seen[0].input.messages[1].content === 'Lesson on ta ti', seen[0]);
+  const flaky = { run: async (model) => { if (model.includes('gpt-oss')) throw new Error('daily free allocation used up'); return { choices: [{ message: { content: 'backup answer' } }] }; } };
+  [s, r] = await call('/api/hub/free-ai', { method: 'POST', body: { prompt: 'x' }, token }, { ...env, AI: flaky });
+  expect('free AI falls back to the second model', s === 200 && r.text === 'backup answer' && /nemotron/.test(r.model), r);
+  const down = { run: async () => { throw new Error('daily free allocation used up'); } };
+  [s, r] = await call('/api/hub/free-ai', { method: 'POST', body: { prompt: 'x' }, token }, { ...env, AI: down });
+  expect('free AI reports the error when every model fails', s === 502 && /allocation/.test(r.error), r);
+  [s, r] = await call('/api/hub/free-ai', { token }, { ...env, AI });
+  expect('free AI GET says configured', s === 200 && r.configured === true, r);
+}
 
 // ---- sync ----
 [s, r] = await call('/api/hub/sync', { token });
