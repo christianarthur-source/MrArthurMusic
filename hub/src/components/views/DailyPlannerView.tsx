@@ -14,13 +14,17 @@ import {
   ExternalLink,
   Trash2,
   NotebookPen,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Loader2,
+  Sparkles
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { storage } from '../../services/storage';
 import { classesOn, formatTime } from '../../services/rotation';
 import { compressImage, faviconFor, linkTitle, plainText, safeLinkUrl } from '../../services/plannerContent';
 import { RichEditor } from '../planner/RichEditor';
+import { CarryOverBanner, ClassesPanel, ReflectionCard, TasksPanel } from '../planner/DayPanels';
+import { planMyDay, summarizeWeek } from '../../services/plannerTools';
 import { CalendarEvent, PlannerAttachment, PlannerPage, PlannerPaper, PlannerSettings } from '../../types';
 
 // ---------------------------------------------------------------------------
@@ -246,6 +250,35 @@ export const DailyPlannerView: React.FC = () => {
     setLinkName('');
   };
 
+  // ---- AI ----
+
+  const [aiBusy, setAiBusy] = useState<'' | 'plan' | 'week'>('');
+  const [weekSummary, setWeekSummary] = useState<string | null>(null);
+
+  const planDay = async () => {
+    setAiBusy('plan');
+    try {
+      const plan = await planMyDay(date);
+      saveHtml(date, plan + pageFor(date).html);
+      showToast('Added a plan to the top of your page', 'success');
+    } catch (err: any) {
+      showToast(err?.message || 'Could not plan your day', 'error');
+    } finally {
+      setAiBusy('');
+    }
+  };
+
+  const summarizeThisWeek = async () => {
+    setAiBusy('week');
+    try {
+      setWeekSummary(await summarizeWeek(weekStart(date)));
+    } catch (err: any) {
+      showToast(err?.message || 'Could not summarize the week', 'error');
+    } finally {
+      setAiBusy('');
+    }
+  };
+
   // ---- header ----
 
   const weekFrom = weekStart(date);
@@ -263,6 +296,10 @@ export const DailyPlannerView: React.FC = () => {
   ];
 
   const turnClass = turn ? `planner-turn-${turn}` : '';
+  // Changes with every page turn, so the page (and the flipping sheet) re-animate
+  const pageKey = `${view}-${view === 'month' ? date.slice(0, 7) : view === 'week' ? weekFrom : date}`;
+  const sideZone =
+    'no-print hidden md:flex w-10 xl:w-16 shrink-0 items-center justify-center rounded-2xl text-stone-300 hover:text-stone-600 hover:bg-stone-200/50 dark:text-stone-600 dark:hover:text-stone-300 dark:hover:bg-white/5 transition-colors';
 
   // ---- pieces ----
 
@@ -399,8 +436,9 @@ export const DailyPlannerView: React.FC = () => {
   const renderDay = () => {
     const page = pageFor(date);
     return (
-      <div className={`grid gap-0 ${settings.showPermanent ? 'lg:grid-cols-2' : ''}`}>
-        <section className={`planner-page ${paperClass} rounded-xl lg:rounded-r-none p-5 sm:p-8 space-y-5 min-h-[36rem] ${settings.showPermanent ? 'lg:border-r lg:border-stone-300/70' : ''}`}>
+      <div className="grid gap-0 lg:grid-cols-2">
+        {/* Left page: the day */}
+        <section className={`planner-page ${paperClass} rounded-xl lg:rounded-r-none p-5 sm:p-8 space-y-5 min-h-[44rem] lg:border-r lg:border-stone-300/70`}>
           <header className="flex items-end justify-between gap-3">
             <div>
               <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-stone-500">{fmt(date, { weekday: 'long' })}</div>
@@ -421,15 +459,18 @@ export const DailyPlannerView: React.FC = () => {
 
           {renderEvents(date)}
 
-          {classesOn(date, rotation).classes.length > 0 && (
-            <ol className="grid sm:grid-cols-2 gap-x-4 gap-y-0.5 text-sm">
-              {classesOn(date, rotation).classes.map((c) => (
-                <li key={c.id} className="flex items-baseline gap-2 min-w-0">
-                  <span className="w-16 shrink-0 text-[11px] font-mono text-stone-500">{formatTime(c.start)}</span>
-                  <span className="truncate">{c.name || 'Class'}</span>
-                </li>
-              ))}
-            </ol>
+          {date === today && <CarryOverBanner date={date} onDone={(m) => m && showToast(m, 'success')} />}
+
+          {date >= today && (
+            <button
+              type="button"
+              onClick={planDay}
+              disabled={!!aiBusy}
+              className="no-print px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 bg-violet-100 hover:bg-violet-200 text-violet-800 disabled:opacity-60"
+            >
+              {aiBusy === 'plan' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+              {aiBusy === 'plan' ? 'Planning your day…' : 'Plan my day with AI'}
+            </button>
           )}
 
           <RichEditor
@@ -437,30 +478,38 @@ export const DailyPlannerView: React.FC = () => {
             value={page.html}
             onChange={(html) => saveHtml(date, html)}
             onImageFiles={(files) => addImages(date, files)}
+            onMakeTask={(text) => {
+              storage.addTask({ title: text.slice(0, 200), dueDate: date, listType: date === today ? 'today' : 'upcoming' });
+              showToast(`Added to Tasks: ${text.slice(0, 60)}`, 'success');
+            }}
             placeholder="What’s on today’s page?"
-            minHeightClass="min-h-[16.5rem]"
+            minHeightClass="min-h-[21rem]"
           />
 
           {renderAttachments(date, page)}
+
+          {date <= today && <ReflectionCard key={date} date={date} onSaved={(m) => showToast(m, 'success')} />}
         </section>
 
-        {settings.showPermanent && (
-          <section className={`planner-page ${paperClass} rounded-xl lg:rounded-l-none p-5 sm:p-8 space-y-5 min-h-[36rem] mt-4 lg:mt-0`}>
-            <header className="flex items-center gap-2">
-              <Pin className="w-4 h-4 text-rose-500" />
-              <div>
-                <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-stone-500">Always here</div>
-                <div className="font-serif text-2xl leading-tight">Permanent notes</div>
-              </div>
-            </header>
-            <RichEditor
-              value={storage.getPlannerPermanent().html}
-              onChange={(html) => storage.savePlannerPermanent(html)}
-              placeholder="Notes you want on every page: goals, routines, phone numbers…"
-              minHeightClass="min-h-[24rem]"
-            />
-          </section>
-        )}
+        {/* Right page: classes, tasks and permanent notes */}
+        <section className={`planner-page ${paperClass} rounded-xl lg:rounded-l-none p-5 sm:p-8 space-y-6 min-h-[44rem] mt-4 lg:mt-0`}>
+          <ClassesPanel date={date} />
+          <TasksPanel date={date} today={today} />
+          {settings.showPermanent && (
+            <section className="space-y-2">
+              <h3 className="text-[11px] font-bold uppercase tracking-[0.2em] text-stone-500 flex items-center gap-1.5">
+                <Pin className="w-3.5 h-3.5 text-rose-500" />
+                Permanent notes
+              </h3>
+              <RichEditor
+                value={storage.getPlannerPermanent().html}
+                onChange={(html) => storage.savePlannerPermanent(html)}
+                placeholder="Notes you want on every page: goals, routines, phone numbers…"
+                minHeightClass="min-h-[10rem]"
+              />
+            </section>
+          )}
+        </section>
       </div>
     );
   };
@@ -472,7 +521,7 @@ export const DailyPlannerView: React.FC = () => {
       const images = page.attachments.filter((a) => a.kind === 'image').length;
       const links = page.attachments.filter((a) => a.kind === 'link').length;
       return (
-        <div key={d} className={`flex flex-col border-b border-stone-300/70 last:border-b-0 py-3 ${tall ? 'min-h-[13rem]' : 'min-h-[9.5rem]'}`}>
+        <div key={d} className={`flex flex-col border-b border-stone-300/70 last:border-b-0 py-3 ${tall ? 'min-h-[15rem]' : 'min-h-[11rem]'}`}>
           <div className="flex items-baseline justify-between mb-1">
             <button type="button" onClick={() => { updateSettings({ view: 'day' }); go(d); }} className="flex items-baseline gap-2 hover:text-brand-600" title="Open this day">
               <span className={`font-serif text-2xl leading-none ${d === today ? 'text-brand-600' : ''}`}>{fromYMD(d).getDate()}</span>
@@ -608,6 +657,18 @@ export const DailyPlannerView: React.FC = () => {
           ))}
         </select>
 
+        {view === 'week' && (
+          <button
+            type="button"
+            onClick={summarizeThisWeek}
+            disabled={!!aiBusy}
+            className="text-xs font-semibold px-3 py-2 rounded-xl flex items-center gap-1.5 bg-violet-100 hover:bg-violet-200 text-violet-800 dark:bg-violet-950/50 dark:text-violet-200 disabled:opacity-60"
+          >
+            {aiBusy === 'week' ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+            {aiBusy === 'week' ? 'Summarizing…' : 'Summarize this week'}
+          </button>
+        )}
+
         {view === 'day' && (
           <button
             type="button"
@@ -646,21 +707,76 @@ export const DailyPlannerView: React.FC = () => {
         </div>
       </div>
 
-      {/* Notebook: always light paper in a charcoal frame, whatever the app theme */}
-      <div className="planner-notebook rounded-[1.75rem] bg-stone-800 p-2 sm:p-3 shadow-xl shadow-stone-900/20">
-        <div key={`${view}-${view === 'month' ? date.slice(0, 7) : view === 'week' ? weekFrom : date}`} className={`relative ${turnClass}`}>
-          {view === 'day' && renderDay()}
-          {view === 'week' && renderWeek()}
-          {view === 'month' && renderMonth()}
-          {view !== 'month' && (
-            <div className="hidden lg:block pointer-events-none absolute inset-y-0 left-1/2 w-8 -translate-x-1/2 bg-gradient-to-r from-transparent via-black/10 to-transparent" aria-hidden />
-          )}
+      <div className="flex items-stretch gap-1 sm:gap-2">
+        {/* Click the space beside the notebook to turn the page */}
+        <button type="button" onClick={() => step(-1)} aria-label={`Previous ${view}`} title={`Previous ${view}`} className={sideZone}>
+          <ChevronLeft className="w-6 h-6" />
+        </button>
+
+        {/* Notebook: always light paper in a charcoal frame, whatever the app theme */}
+        <div className="planner-notebook flex-1 min-w-0 rounded-[1.75rem] bg-stone-800 p-2 sm:p-3 shadow-xl shadow-stone-900/20" style={{ perspective: '2400px' }}>
+          <div className="relative">
+            <div key={pageKey} className={`relative ${turnClass}`}>
+              {view === 'day' && renderDay()}
+              {view === 'week' && renderWeek()}
+              {view === 'month' && renderMonth()}
+              {view !== 'month' && (
+                <div className="hidden lg:block pointer-events-none absolute inset-y-0 left-1/2 w-8 -translate-x-1/2 bg-gradient-to-r from-transparent via-black/10 to-transparent" aria-hidden />
+              )}
+            </div>
+            {/* The sheet that flips over (kept outside the fading page so it starts fully opaque) */}
+            {turn && (
+              <div key={`flip-${pageKey}`} aria-hidden className={`planner-flip planner-flip-${turn} ${view === 'month' ? 'planner-flip-single' : ''}`}>
+                <div className={`planner-page ${paperClass} absolute inset-0 rounded-xl`} />
+              </div>
+            )}
+          </div>
         </div>
+
+        <button type="button" onClick={() => step(1)} aria-label={`Next ${view}`} title={`Next ${view}`} className={sideZone}>
+          <ChevronRight className="w-6 h-6" />
+        </button>
       </div>
 
       <p className="no-print text-xs text-stone-400 text-center">
-        Use ← and → to turn pages. ⌘/Ctrl-click a link in your notes to open it.
+        Click beside the notebook or use ← and → to turn pages. ⌘/Ctrl-click a link in your notes to open it.
       </p>
+
+      {weekSummary !== null && (
+        <div role="dialog" aria-modal="true" aria-label="Week summary" className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4" onClick={() => setWeekSummary(null)}>
+          <div className="w-full max-w-xl bg-white dark:bg-stone-900 rounded-3xl p-6 shadow-2xl space-y-4" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-lg font-bold text-stone-900 dark:text-white flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-violet-600" />
+              Week of {fmt(weekFrom, { month: 'long', day: 'numeric' })}
+            </h2>
+            <textarea value={weekSummary} onChange={(e) => setWeekSummary(e.target.value)} rows={10} aria-label="Week summary" className="w-full text-sm px-3 py-2 rounded-xl bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-900 dark:text-white" />
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  storage.addJournalEntry({
+                    date: today,
+                    title: `Week of ${fmt(weekFrom, { month: 'short', day: 'numeric' })}`,
+                    content: weekSummary,
+                    tags: ['weekly-summary'],
+                    mood: 'good',
+                    energyLevel: 3,
+                    templateType: 'daily_reflection'
+                  });
+                  setWeekSummary(null);
+                  showToast('Week summary saved to your Daily Journal', 'success');
+                }}
+                className="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold"
+              >
+                Save to journal
+              </button>
+              <button type="button" onClick={() => setWeekSummary(null)} className="px-4 py-2 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-200 text-sm font-semibold">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {viewer && (
         <div
