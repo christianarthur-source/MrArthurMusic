@@ -3,7 +3,6 @@ import { useApp, NavView } from '../../context/AppContext';
 import { storage } from '../../services/storage';
 import { Logo } from './Logo';
 import {
-  LayoutDashboard,
   CheckSquare,
   Calendar,
   BookOpen,
@@ -60,7 +59,7 @@ export const Sidebar: React.FC = () => {
     {
       group: 'Workspace',
       items: [
-        { id: 'home', label: 'Home Dashboard', icon: LayoutDashboard },
+        { id: 'daily-planner', label: 'Daily Planner', icon: NotebookPen },
         { id: 'tasks', label: 'Tasks', icon: CheckSquare, badgeCount: todayTaskCount },
         { id: 'calendar', label: 'Calendar', icon: Calendar },
         { id: 'rotation', label: 'Class Rotation', icon: CalendarClock },
@@ -90,7 +89,6 @@ export const Sidebar: React.FC = () => {
       items: [
         { id: 'resources', label: 'Drive & Resource Library', icon: FolderSync },
         { id: 'journal', label: 'Daily Journal', icon: BookMarked },
-        { id: 'daily-planner', label: 'Daily Planner', icon: NotebookPen },
         { id: 'youtube', label: 'YouTube Browser', icon: Video }
       ]
     }
