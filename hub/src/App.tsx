@@ -10,7 +10,6 @@ import { ToastContainer } from './components/layout/ToastContainer';
 import { TeachModeModal } from './components/views/TeachModeModal';
 
 // Views
-import { HomeDashboardView } from './components/views/HomeDashboardView';
 import { LessonPlannerView } from './components/views/LessonPlannerView';
 import { TasksView } from './components/views/TasksView';
 import { CalendarView } from './components/views/CalendarView';
@@ -34,8 +33,6 @@ const MainContent: React.FC = () => {
 
   const renderView = () => {
     switch (activeView) {
-      case 'home':
-        return <HomeDashboardView />;
       case 'planner':
         return <LessonPlannerView />;
       case 'tasks':
@@ -71,7 +68,7 @@ const MainContent: React.FC = () => {
       case 'settings':
         return <SettingsView />;
       default:
-        return <HomeDashboardView />;
+        return <DailyPlannerView />;
     }
   };
 

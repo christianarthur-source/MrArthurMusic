@@ -34,7 +34,7 @@ export const INITIAL_PREFERENCES: UserPreferences = {
   aiProvider: 'builtin',
   claudeApiKey: '',
   geminiApiKey: '',
-  pinnedNavigation: ['home', 'planner', 'tasks', 'tools', 'visuals', 'audio-studio']
+  pinnedNavigation: ['daily-planner', 'planner', 'tasks', 'tools', 'visuals', 'audio-studio']
 };
 
 export const INITIAL_AREAS: Area[] = [];

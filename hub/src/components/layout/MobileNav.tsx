@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useApp, NavView } from '../../context/AppContext';
 import {
-  LayoutDashboard,
   BookOpen,
   CheckSquare,
   Music2,
@@ -29,7 +28,7 @@ export const MobileNav: React.FC = () => {
   const [isMoreOpen, setIsMoreOpen] = useState(false);
 
   const mainTabs = [
-    { id: 'home' as NavView, label: 'Home', icon: LayoutDashboard },
+    { id: 'daily-planner' as NavView, label: 'Today', icon: NotebookPen },
     { id: 'planner' as NavView, label: 'Planner', icon: BookOpen },
     { id: 'tasks' as NavView, label: 'Tasks', icon: CheckSquare },
     { id: 'tools' as NavView, label: 'Song Maker', icon: Music2 },
@@ -47,7 +46,6 @@ export const MobileNav: React.FC = () => {
     { id: 'seating' as NavView, label: 'Seating Charts', icon: Grid },
     { id: 'resources' as NavView, label: 'Drive Resources', icon: FolderSync },
     { id: 'journal' as NavView, label: 'Daily Journal', icon: BookMarked },
-    { id: 'daily-planner' as NavView, label: 'Daily Planner', icon: NotebookPen },
     { id: 'youtube' as NavView, label: 'YouTube Browser', icon: Video },
     { id: 'settings' as NavView, label: 'Settings', icon: Settings },
   ];

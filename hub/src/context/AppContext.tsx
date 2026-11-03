@@ -4,7 +4,6 @@ import { UserPreferences, LessonPlan } from '../types';
 import { storage } from '../services/storage';
 
 export type NavView =
-  | 'home'
   | 'planner'
   | 'slides'
   | 'tasks'
@@ -54,7 +53,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       const hash = window.location.hash.replace('#', '') as NavView;
       const validViews: NavView[] = [
-        'home', 'planner', 'tasks', 'calendar', 'tools', 'audio-studio',
+        'planner', 'tasks', 'calendar', 'tools', 'audio-studio',
         'seating', 'visuals', 'timer', 'slides', 'name-picker', 'volume-meter', 'rotation', 'resources', 'journal', 'daily-planner', 'youtube', 'settings'
       ];
       if (hash.startsWith('visuals')) return 'visuals';
@@ -68,7 +67,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const last = JSON.parse(localStorage.getItem(REMEMBERED_PREFIX + 'lastView') || 'null') as NavView;
       if (validViews.includes(last)) return last;
     } catch {}
-    return 'home';
+    return 'daily-planner';
   };
 
   const [preferences, setPreferencesState] = useState<UserPreferences>(storage.getPreferences());
@@ -91,7 +90,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const handleHashChange = () => {
       const hash = window.location.hash.replace('#', '') as NavView;
       const validViews: NavView[] = [
-        'home', 'planner', 'tasks', 'calendar', 'tools', 'audio-studio',
+        'planner', 'tasks', 'calendar', 'tools', 'audio-studio',
         'seating', 'visuals', 'timer', 'slides', 'name-picker', 'volume-meter', 'rotation', 'resources', 'journal', 'daily-planner', 'youtube', 'settings'
       ];
       if (hash.startsWith('visuals')) {

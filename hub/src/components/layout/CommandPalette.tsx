@@ -108,16 +108,6 @@ export const CommandPalette: React.FC = () => {
 
     // Navigation
     {
-      id: 'nav-home',
-      title: 'Go to Home Dashboard',
-      category: 'Navigation',
-      icon: BookOpen,
-      action: () => {
-        setActiveView('home');
-        setIsCommandPaletteOpen(false);
-      }
-    },
-    {
       id: 'nav-tuner',
       title: 'Open Chromatic Instrument Tuner',
       category: 'Navigation',
