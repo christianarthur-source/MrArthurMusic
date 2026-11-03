@@ -1,9 +1,9 @@
 /**
  * Claude helper: POST /api/hub/claude  (body = an Anthropic Messages API request)
  *
- * Forwards lesson-generation requests to Anthropic using the key the teacher entered in Settings
- * (sent as the x-api-key header). Runs unchanged on Cloudflare Workers (site) and in Node 18+
- * (Vite dev middleware): it only uses fetch/Response.
+ * Forwards lesson-generation requests to Anthropic. Uses the key entered in the Hub's Settings
+ * (sent as the x-api-key header) when there is one, otherwise the site's ANTHROPIC_API_KEY Worker
+ * secret. Runs unchanged on Cloudflare Workers (site) and in Node 18+ (Vite dev middleware).
  */
 const MAX_BODY = 200 * 1024;
 
@@ -13,11 +13,11 @@ const json = (status, error) =>
     headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
   });
 
-export async function handleClaudeProxy(request) {
+export async function handleClaudeProxy(request, env = {}) {
   if (request.method !== 'POST') return json(405, 'Only POST is allowed.');
 
-  const apiKey = (request.headers.get('x-api-key') || '').trim();
-  if (!apiKey) return json(400, 'Missing x-api-key header.');
+  const apiKey = (request.headers.get('x-api-key') || env.ANTHROPIC_API_KEY || '').trim();
+  if (!apiKey) return json(400, 'No Claude API key: add one in the Hub Settings.');
 
   const body = await request.text();
   if (body.length > MAX_BODY) return json(413, 'Request is too large.');

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
+import { cloudSync } from '../../services/cloudSync';
 import { storage } from '../../services/storage';
 import { CalendarEvent, CalendarSubscription } from '../../types';
 import {
@@ -140,7 +141,7 @@ export const CalendarView: React.FC = () => {
     let icsData = '';
     try {
       const proxyUrl = `/api/hub/calendar?url=${encodeURIComponent(url)}`;
-      const res = await fetch(proxyUrl);
+      const res = await cloudSync.hubFetch(proxyUrl);
       if (res.ok) icsData = await res.text();
     } catch {}
     if (icsData && icsData.includes('BEGIN:VCALENDAR')) {
@@ -397,7 +398,7 @@ export const CalendarView: React.FC = () => {
     // Step 1: Fetch through the site's calendar helper (/api/hub/calendar?url=...)
     try {
       const proxyUrl = `/api/hub/calendar?url=${encodeURIComponent(url)}`;
-      const res = await fetch(proxyUrl);
+      const res = await cloudSync.hubFetch(proxyUrl);
       if (res.ok) {
         icsData = await res.text();
       }

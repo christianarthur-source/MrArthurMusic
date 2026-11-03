@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { storage } from '../../services/storage';
+import { CloudSyncCard } from './CloudSyncCard';
 import {
   Settings,
   Download,
@@ -81,9 +82,9 @@ export const SettingsView: React.FC = () => {
   };
 
   const handleResetDefaults = () => {
-    if (confirm('Reset all data to default elementary music curriculum data? This will overwrite local changes.')) {
+    if (confirm('Erase ALL Hub data? This deletes your tasks, lessons, calendar, journal and everything else on every device, and cannot be undone. Export a backup first if you might need it.')) {
       storage.resetToDefaults();
-      showToast('Reset to default demo data', 'info');
+      showToast('All Hub data erased', 'info');
       window.location.reload();
     }
   };
@@ -336,14 +337,16 @@ export const SettingsView: React.FC = () => {
         </div>
       </div>
 
+      <CloudSyncCard />
+
       {/* 4. Persistence, Backup & Restore */}
       <div className="bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-8 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-4">
         <h2 className="text-base font-bold text-stone-900 dark:text-white flex items-center gap-2">
           <Download className="w-4 h-4 text-emerald-600" />
-          <span>Local Storage, Backup & JSON Export</span>
+          <span>Backup & JSON Export</span>
         </h2>
         <p className="text-xs text-stone-500 dark:text-stone-400 leading-relaxed">
-          All tasks, curriculum lesson plans, chorus repertoire, seating charts, and journal entries are securely persisted locally on your device and can work completely offline on school Chromebooks and iPads.
+          Everything is also kept on each unlocked device, so the Hub keeps working offline on school Chromebooks and iPads. Export a JSON backup any time.
         </p>
 
         <div className="flex flex-wrap items-center gap-3 pt-2">
@@ -371,7 +374,7 @@ export const SettingsView: React.FC = () => {
             className="px-4 py-2.5 rounded-xl bg-stone-100 hover:bg-rose-50 text-stone-600 hover:text-rose-600 dark:bg-stone-800 dark:text-stone-400 dark:hover:text-rose-400 text-xs font-semibold flex items-center gap-2 transition-all ml-auto"
           >
             <RefreshCw className="w-4 h-4" />
-            <span>Reset Demo Data</span>
+            <span>Erase All Data</span>
           </button>
         </div>
       </div>
