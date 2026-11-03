@@ -17,6 +17,7 @@ import {
   BookMarked,
   NotebookPen,
   CalendarClock,
+  MonitorPlay,
   Dices,
   Volume2,
   Boxes,
@@ -63,7 +64,8 @@ export const Sidebar: React.FC = () => {
         { id: 'tasks', label: 'Tasks', icon: CheckSquare, badgeCount: todayTaskCount },
         { id: 'calendar', label: 'Calendar', icon: Calendar },
         { id: 'rotation', label: 'Class Rotation', icon: CalendarClock },
-        { id: 'planner', label: 'Lesson Planner', icon: BookOpen }
+        { id: 'planner', label: 'Lesson Planner', icon: BookOpen },
+        { id: 'slides', label: 'Slides', icon: MonitorPlay }
       ]
     },
     {

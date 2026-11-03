@@ -213,3 +213,24 @@
     animation: none;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Slides: printing a deck (one slide per landscape page; see SlidesView PrintDeck)
+--------------------------------------------------------------------------- */
+.slides-print-root {
+  display: none;
+}
+@media print {
+  body.printing-slides #root {
+    display: none !important;
+  }
+  body.printing-slides .slides-print-root {
+    display: block;
+  }
+  .slides-print-root .print-slide {
+    break-after: page;
+    page-break-after: always;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

@@ -16,6 +16,7 @@ import {
   BookMarked,
   NotebookPen,
   CalendarClock,
+  MonitorPlay,
   Dices,
   Volume2,
   X,
@@ -181,6 +182,17 @@ export const CommandPalette: React.FC = () => {
         setIsCommandPaletteOpen(false);
       },
       detail: 'Calendar view, timeline & prompts'
+    },
+    {
+      id: 'nav-slides',
+      title: 'Open Slides',
+      category: 'Navigation',
+      icon: MonitorPlay,
+      action: () => {
+        setActiveView('slides');
+        setIsCommandPaletteOpen(false);
+      },
+      detail: 'AI slide decks with pictures, presenter and print'
     },
     {
       id: 'nav-rotation',

@@ -15,6 +15,7 @@ import {
   BookMarked,
   NotebookPen,
   CalendarClock,
+  MonitorPlay,
   Dices,
   Volume2,
   Boxes,
@@ -38,6 +39,7 @@ export const MobileNav: React.FC = () => {
   const secondaryTabs = [
     { id: 'calendar' as NavView, label: 'Calendar', icon: Calendar },
     { id: 'rotation' as NavView, label: 'Class Rotation', icon: CalendarClock },
+    { id: 'slides' as NavView, label: 'Slides', icon: MonitorPlay },
     { id: 'visuals' as NavView, label: 'Literacy Visuals', icon: Sparkles },
     { id: 'timer' as NavView, label: 'Classroom Timer', icon: Timer },
     { id: 'name-picker' as NavView, label: 'Name Picker', icon: Dices },

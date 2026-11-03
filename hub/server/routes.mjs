@@ -5,7 +5,9 @@
  */
 import { handleCalendarProxy } from './calendarProxy.mjs';
 import { handleClaudeProxy } from './claudeProxy.mjs';
+import { handleAiImage } from './aiImage.mjs';
 import { handleFreeAi } from './freeAi.mjs';
+import { handleImageSearch } from './imageSearch.mjs';
 import { handleHubCloud, isSignedIn } from './hubCloud.mjs';
 import { handleYouTubeSearch } from './youtubeSearch.mjs';
 
@@ -28,4 +30,6 @@ export const HUB_API_ROUTES = {
   '/api/hub/calendar': signedInOnly(handleCalendarProxy),
   '/api/hub/claude': signedInOnly(handleClaudeProxy),
   '/api/hub/free-ai': signedInOnly(handleFreeAi),
+  '/api/hub/ai-image': signedInOnly(handleAiImage),
+  '/api/hub/image-search': signedInOnly(handleImageSearch),
 };
