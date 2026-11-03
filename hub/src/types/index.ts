@@ -319,6 +319,15 @@ export interface PlannerPage {
   html: string; // the day's rich-text note
   attachments: PlannerAttachment[];
   updatedAt: string;
+  carryHandled?: boolean; // unfinished items from an earlier page were brought over or dismissed
+  reflectionId?: string; // Daily Journal entry holding this day's end-of-day reflection
+}
+
+/** Per rotation class, per date: the lesson taught and a "where we left off" note. */
+export interface ClassLogEntry {
+  date: string; // YYYY-MM-DD
+  lessonId?: string;
+  note?: string;
 }
 
 export type PlannerPaper = 'lined' | 'dotted' | 'grid' | 'plain';

@@ -11,7 +11,8 @@ import {
   Highlighter,
   Link2,
   RemoveFormatting,
-  Palette
+  Palette,
+  ListTodo
 } from 'lucide-react';
 import { CHECKLIST_CLASS, safeLinkUrl, sanitizeHtml } from '../../services/plannerContent';
 
@@ -33,6 +34,8 @@ interface RichEditorProps {
   compact?: boolean;
   /** Called with image files pasted or dropped into the editor. */
   onImageFiles?: (files: File[]) => void;
+  /** Adds an "Add to Tasks" button that sends the selected text (or the current line). */
+  onMakeTask?: (text: string) => void;
   className?: string;
   minHeightClass?: string;
 }
@@ -49,6 +52,7 @@ export const RichEditor: React.FC<RichEditorProps> = ({
   placeholder = 'Start writing…',
   compact = false,
   onImageFiles,
+  onMakeTask,
   className = '',
   minHeightClass = 'min-h-[12rem]'
 }) => {
@@ -145,6 +149,18 @@ export const RichEditor: React.FC<RichEditorProps> = ({
     scheduleSave();
   };
 
+  const makeTask = () => {
+    const sel = window.getSelection();
+    let text = sel && !sel.isCollapsed && ref.current?.contains(sel.anchorNode) ? sel.toString() : '';
+    if (!text) {
+      const node = sel?.anchorNode;
+      const block = (node instanceof Element ? node : node?.parentElement)?.closest('li, div, p, h2, h3');
+      if (block && ref.current?.contains(block) && block !== ref.current) text = block.textContent || '';
+    }
+    text = text.replace(/\s+/g, ' ').trim();
+    if (text) onMakeTask?.(text);
+  };
+
   const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement;
     const li = target.closest('li');
@@ -214,7 +230,8 @@ export const RichEditor: React.FC<RichEditorProps> = ({
     { icon: ListChecks, label: 'Checklist', action: toggleChecklist },
     { icon: Highlighter, label: 'Highlight', action: () => run('hiliteColor', '#fde68a') },
     { icon: Link2, label: 'Link (⌘K)', action: addLink },
-    { icon: RemoveFormatting, label: 'Clear formatting', action: () => run('removeFormat') }
+    { icon: RemoveFormatting, label: 'Clear formatting', action: () => run('removeFormat') },
+    ...(onMakeTask ? [{ icon: ListTodo, label: 'Add to Tasks (selected text or this line)', action: makeTask }] : [])
   ];
 
   const showToolbar = !compact || focused;

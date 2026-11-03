@@ -19,6 +19,7 @@ import {
   PlannerSettings,
   PlannerPermanentNote,
   RotationSettings,
+  ClassLogEntry,
   SlideDeck,
   SlideDeckSummary
 } from '../types';
@@ -60,6 +61,7 @@ const STORAGE_KEYS = {
   PLANNER_PERMANENT: 'mth_planner_permanent',
   PLANNER_SETTINGS: 'mth_planner_settings',
   ROTATION: 'mth_rotation',
+  CLASS_LOG: 'mth_class_log',
   SLIDE_DECKS: 'mth_slide_decks'
 };
 
@@ -695,7 +697,8 @@ class StorageService {
   public savePlannerPage(page: PlannerPage): void {
     const key = plannerMonthKey(page.date);
     const month = this.getItem(key, {} as Record<string, PlannerPage>);
-    const isEmpty = !page.html.replace(/<[^>]*>|&nbsp;|\s/g, '') && page.attachments.length === 0;
+    const isEmpty =
+      !page.html.replace(/<[^>]*>|&nbsp;|\s/g, '') && page.attachments.length === 0 && !page.carryHandled && !page.reflectionId;
     if (isEmpty) {
       if (!month[page.date]) return;
       delete month[page.date];
@@ -728,6 +731,21 @@ class StorageService {
 
   public saveRotation(rotation: RotationSettings): void {
     this.setItem(STORAGE_KEYS.ROTATION, rotation);
+  }
+
+  // Class log: per rotation class, the lesson pinned and the "where we left off" note for each day
+  public getClassLog(classId: string): ClassLogEntry[] {
+    return (this.getItem<Record<string, ClassLogEntry[]>>(STORAGE_KEYS.CLASS_LOG, {})[classId] || []).sort((a, b) => a.date.localeCompare(b.date));
+  }
+
+  public saveClassLogEntry(classId: string, date: string, updates: Partial<ClassLogEntry>): void {
+    const log = this.getItem<Record<string, ClassLogEntry[]>>(STORAGE_KEYS.CLASS_LOG, {});
+    const entries = log[classId] || [];
+    const existing = entries.find((e) => e.date === date);
+    const merged: ClassLogEntry = { ...(existing || { date }), ...updates, date };
+    const empty = !merged.lessonId && !merged.note?.trim();
+    log[classId] = [...entries.filter((e) => e.date !== date), ...(empty ? [] : [merged])];
+    this.setItem(STORAGE_KEYS.CLASS_LOG, log);
   }
 
   // Slide decks: a small index plus one key per deck, so decks full of pictures sync separately
@@ -794,6 +812,7 @@ class StorageService {
       plannerPermanent: this.getPlannerPermanent(),
       plannerSettings: this.getPlannerSettings(),
       rotation: this.getRotation(),
+      classLog: this.getItem(STORAGE_KEYS.CLASS_LOG, {}),
       slideDecks: this.listDecks().map((d) => this.getDeck(d.id)).filter(Boolean)
     };
     return JSON.stringify(backup, null, 2);
@@ -825,6 +844,7 @@ class StorageService {
       if (data.plannerPermanent) this.setItem(STORAGE_KEYS.PLANNER_PERMANENT, data.plannerPermanent);
       if (data.plannerSettings) this.setItem(STORAGE_KEYS.PLANNER_SETTINGS, data.plannerSettings);
       if (data.rotation) this.setItem(STORAGE_KEYS.ROTATION, data.rotation);
+      if (data.classLog) this.setItem(STORAGE_KEYS.CLASS_LOG, data.classLog);
       if (Array.isArray(data.slideDecks)) data.slideDecks.forEach((deck: SlideDeck) => deck?.id && this.saveDeck(deck));
       this.notify();
       return true;

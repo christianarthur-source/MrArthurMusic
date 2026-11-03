@@ -179,39 +179,115 @@
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 8.5l2.5 2.5L12 5.5'/%3E%3C/svg%3E");
 }
 
-@keyframes planner-turn-next {
+/* Page turns: the new page fades in underneath while a sheet of paper flips over the spine. */
+@keyframes planner-turn-in {
   from {
-    opacity: 0;
-    transform: perspective(1400px) rotateY(-10deg) translateX(28px);
+    opacity: 0.35;
   }
   to {
     opacity: 1;
-    transform: none;
   }
 }
-@keyframes planner-turn-prev {
-  from {
-    opacity: 0;
-    transform: perspective(1400px) rotateY(10deg) translateX(-28px);
+.planner-turn-next,
+.planner-turn-prev {
+  animation: planner-turn-in 0.45s ease-out;
+}
+
+.planner-flip {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 20;
+  pointer-events: none;
+  transform-style: preserve-3d;
+  animation-duration: 0.6s;
+  animation-timing-function: cubic-bezier(0.45, 0.05, 0.35, 1);
+  animation-fill-mode: forwards;
+}
+.planner-flip > .planner-page {
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.18);
+  background-image: linear-gradient(to right, rgba(0, 0, 0, 0.08), transparent 18%, transparent 82%, rgba(0, 0, 0, 0.06));
+}
+/* Turning forward: the right-hand page lifts from the spine and lands on the left. */
+.planner-flip-next {
+  left: 50%;
+  width: 50%;
+  transform-origin: left center;
+  animation-name: planner-flip-next;
+}
+/* Turning back: the left-hand page lifts and lands on the right. */
+.planner-flip-prev {
+  left: 0;
+  width: 50%;
+  transform-origin: right center;
+  animation-name: planner-flip-prev;
+}
+/* One page at a time (phones, and the month grid): the whole page turns from its left edge. */
+@media (max-width: 1023px) {
+  .planner-flip-next,
+  .planner-flip-prev {
+    left: 0;
+    width: 100%;
+    transform-origin: left center;
   }
-  to {
-    opacity: 1;
-    transform: none;
+  .planner-flip-prev {
+    animation-name: planner-flip-next;
+    animation-direction: reverse;
   }
 }
-.planner-turn-next {
-  animation: planner-turn-next 0.32s ease-out;
+.planner-flip-single.planner-flip-next,
+.planner-flip-single.planner-flip-prev {
+  left: 0;
+  width: 100%;
   transform-origin: left center;
 }
-.planner-turn-prev {
-  animation: planner-turn-prev 0.32s ease-out;
-  transform-origin: right center;
+@keyframes planner-flip-next {
+  0% {
+    transform: rotateY(0deg);
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    transform: rotateY(-180deg);
+    opacity: 0;
+  }
+}
+@keyframes planner-flip-prev {
+  0% {
+    transform: rotateY(0deg);
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    transform: rotateY(180deg);
+    opacity: 0;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
   .planner-turn-next,
   .planner-turn-prev {
     animation: none;
   }
+  .planner-flip {
+    display: none;
+  }
+}
+
+/* Checklist items moved to a later day (paper planner "migrate" arrow) */
+.planner-rich ul.planner-checklist > li[data-checked='moved'] {
+  color: #a8a29e;
+}
+.planner-rich ul.planner-checklist > li[data-checked='moved']::before {
+  content: '→';
+  border: none;
+  color: #d97706;
+  font-weight: 700;
+  top: 0;
+  line-height: 28px;
 }
 
 /* ---------------------------------------------------------------------------
