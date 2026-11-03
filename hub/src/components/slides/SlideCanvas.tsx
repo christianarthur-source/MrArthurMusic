@@ -1,5 +1,7 @@
 import React from 'react';
+import { Clock, Dices, Music, PlayCircle } from 'lucide-react';
 import { Slide, SlideTheme } from '../../types';
+import { AudioWidget, PickerWidget, TimerWidget, VideoWidget } from './LiveWidgets';
 
 /**
  * Draws one 16:9 slide. All sizes are in container-width units (cqw), so the same slide looks
@@ -63,9 +65,19 @@ interface Props {
   className?: string;
   /** Slide number to show in the corner (presenter and print). */
   number?: number;
+  /** Interactive slides work (play, count down, pick) only when live, i.e. in the presenter. */
+  live?: boolean;
 }
 
-export const SlideCanvas: React.FC<Props> = ({ slide, theme, className = '', number }) => {
+const INTERACTIVE = { video: PlayCircle, audio: Music, timer: Clock, picker: Dices } as const;
+
+/** 0.25 minutes -> "0:15", 3 -> "3:00". */
+export const clockTime = (minutes: number) => {
+  const total = Math.round(minutes * 60);
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+};
+
+export const SlideCanvas: React.FC<Props> = ({ slide, theme, className = '', number, live = false }) => {
   const t = THEME_STYLES[theme] || THEME_STYLES.navy;
   const img = slide.image;
   const credit = img?.credit && img.credit !== 'AI illustration' ? img.credit : '';
@@ -143,6 +155,38 @@ export const SlideCanvas: React.FC<Props> = ({ slide, theme, className = '', num
           <div style={{ color: t.accent, fontSize: '9cqw', lineHeight: 0.6, fontFamily: 'Georgia, serif' }} aria-hidden>“</div>
           <h2 style={{ ...titleStyle, fontSize: '5.2cqw', marginTop: '1cqw' }}>{slide.title}</h2>
           {slide.subtitle && <p style={{ color: t.text, fontSize: '2.4cqw', marginTop: '2cqw' }}>{slide.subtitle}</p>}
+        </div>
+      )}
+
+      {slide.layout in INTERACTIVE && (
+        <div className="absolute inset-0 flex flex-col" style={{ padding: '4.5cqw 6cqw' }}>
+          {slide.title && <h2 style={{ ...titleStyle, fontSize: '3.8cqw', marginBottom: '2.5cqw' }}>{slide.title}</h2>}
+          <div className="flex-1 min-h-0 flex items-center justify-center">
+            {live ? (
+              <>
+                {slide.layout === 'video' && <VideoWidget slide={slide} />}
+                {slide.layout === 'audio' && <AudioWidget slide={slide} color={t.accent} />}
+                {slide.layout === 'timer' && <TimerWidget slide={slide} color={t.title} accent={t.accent} />}
+                {slide.layout === 'picker' && <PickerWidget slide={slide} color={t.title} accent={t.accent} />}
+              </>
+            ) : slide.layout === 'video' && slide.video ? (
+              <div className="relative w-full h-full" style={{ borderRadius: '1.2cqw', overflow: 'hidden' }}>
+                <img src={`https://img.youtube.com/vi/${slide.video.youtubeId}/hqdefault.jpg`} alt="" className="absolute inset-0 w-full h-full object-cover" draggable={false} />
+                <PlayCircle className="absolute inset-0 m-auto text-white drop-shadow-lg" style={{ width: '10cqw', height: '10cqw' }} />
+              </div>
+            ) : (
+              <div className="flex flex-col items-center text-center" style={{ color: t.text, gap: '1.5cqw' }}>
+                {React.createElement(INTERACTIVE[slide.layout as keyof typeof INTERACTIVE], { style: { width: '10cqw', height: '10cqw', color: t.accent } })}
+                <span style={{ fontSize: '2.4cqw' }}>
+                  {slide.layout === 'timer' && `${clockTime(slide.timerMinutes || 1)} timer`}
+                  {slide.layout === 'audio' && (slide.audio?.title || 'Choose a track')}
+                  {slide.layout === 'picker' && 'Name picker'}
+                  {slide.layout === 'video' && 'Choose a video'}
+                </span>
+                <span style={{ fontSize: '1.4cqw', opacity: 0.6 }}>Works when presenting</span>
+              </div>
+            )}
+          </div>
         </div>
       )}
 

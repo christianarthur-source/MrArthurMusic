@@ -354,7 +354,32 @@ export interface RotationSettings {
 }
 
 // Slide decks (each stored under its own key, see storage.ts)
-export type SlideLayout = 'title' | 'bullets' | 'image-right' | 'image-full' | 'big-idea';
+export type SlideLayout =
+  | 'title'
+  | 'bullets'
+  | 'image-right'
+  | 'image-full'
+  | 'big-idea'
+  // interactive slides (live in the presenter)
+  | 'video'
+  | 'audio'
+  | 'timer'
+  | 'picker';
+export type PictureKind = 'photo' | 'illustration' | 'none';
+export type PictureStyle = 'storybook' | 'cartoon' | 'flat' | 'realistic';
+
+/** What a deck was asked to be (kept so slides can be rewritten in the same spirit). */
+export interface DeckBrief {
+  description: string;
+  grade?: string;
+  slideCount: number;
+  tone: string;
+  pictureStyle: PictureStyle;
+  pictureSource: 'auto' | 'ai' | 'photos' | 'none';
+  mustInclude?: string;
+  sourceText?: string;
+  lessonId?: string;
+}
 export type SlideTheme = 'navy' | 'chalkboard' | 'sunny' | 'paper' | 'concert';
 
 export interface Slide {
@@ -366,6 +391,12 @@ export interface Slide {
   notes?: string; // speaker notes, not shown to the class
   image?: LessonImage;
   imageIdea?: string; // what picture would suit this slide (used to fetch or draw one)
+  pictureKind?: PictureKind; // a real photo (real things) or an illustration (ideas, scenes)
+  subject?: string; // the named thing pictured, e.g. "Bassoon" (looked up on Wikipedia)
+  video?: { youtubeId: string; title: string };
+  audio?: { trackId: string; title: string }; // a track saved in this device's Audio Studio
+  timerMinutes?: number;
+  pickerListId?: string; // a Name Picker list on this device
 }
 
 export interface SlideDeck {
@@ -373,6 +404,8 @@ export interface SlideDeck {
   title: string;
   theme: SlideTheme;
   lessonId?: string;
+  brief?: DeckBrief;
+  sources?: { title: string; url: string }[]; // Wikipedia pages the AI wrote from
   slides: Slide[];
   createdAt: string;
   updatedAt: string;

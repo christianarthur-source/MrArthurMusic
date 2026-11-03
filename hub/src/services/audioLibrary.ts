@@ -70,3 +70,7 @@ export async function addFiles(files: File[], source: StoredTrack['source']): Pr
 export async function removeTrack(id: string): Promise<void> {
   await run('readwrite', (s) => s.delete(id));
 }
+
+export async function getTrack(id: string): Promise<StoredTrack | undefined> {
+  return run<StoredTrack | undefined>('readonly', (s) => s.get(id) as IDBRequest<StoredTrack | undefined>);
+}

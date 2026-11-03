@@ -19,7 +19,21 @@ const json = (body, status = 200, cacheSeconds = 0) =>
     },
   });
 
-const stripTags = (html) => String(html || '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+const ENTITIES = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' };
+
+/** Plain text from Wikimedia's HTML credit fields, without tags, entities, emails or key IDs. */
+const stripTags = (html) =>
+  String(html || '')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&(#\d+|#x[0-9a-f]+|\w+);/gi, (m, e) =>
+      e[0] === '#' ? String.fromCodePoint(e[1] === 'x' ? parseInt(e.slice(2), 16) : Number(e.slice(1))) : ENTITIES[e.toLowerCase()] ?? m
+    )
+    .replace(/<?[\w.+-]+@[\w-]+\.[\w.]+>?/g, '') // email addresses
+    .replace(/\bPGP:\s*\S+/gi, '')
+    .replace(/<[^>]+>/g, '')
+    .replace(/\s+/g, ' ')
+    .replace(/\s+([,.;])/g, '$1')
+    .trim();
 
 async function searchOpenverse(q) {
   const api = new URL('https://api.openverse.org/v1/images/');
