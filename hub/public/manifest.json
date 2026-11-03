@@ -1,0 +1,18 @@
+{
+  "short_name": "MusicHub",
+  "name": "Music Teacher Hub — Command Center",
+  "icons": [
+    {
+      "src": "logo-icon.png",
+      "type": "image/png",
+      "sizes": "192x192 512x512"
+    }
+  ],
+  "start_url": "./",
+  "scope": "./",
+  "id": "/Hub/",
+  "background_color": "#fafaf9",
+  "theme_color": "#0c87eb",
+  "display": "standalone",
+  "orientation": "any"
+}
