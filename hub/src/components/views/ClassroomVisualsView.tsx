@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useRememberedState, REMEMBERED_PREFIX } from '../../hooks/useRememberedState';
 import { audioEngine } from '../../services/audioEngine';
 import {
   Sparkles,
@@ -28,6 +29,9 @@ export const ClassroomVisualsView: React.FC = () => {
       if (hash.includes('visuals-solfege')) return 'solfege';
       if (hash.includes('visuals-dynamics')) return 'dynamics';
       if (hash.includes('visuals-instruments')) return 'instruments';
+      // No tab in the address: reopen the last one used on this device
+      const last = JSON.parse(localStorage.getItem(REMEMBERED_PREFIX + 'visuals.category') || 'null');
+      if (['staff', 'piano', 'rhythm', 'solfege', 'dynamics', 'instruments'].includes(last)) return last;
     } catch {}
     return 'staff';
   });
@@ -35,24 +39,25 @@ export const ClassroomVisualsView: React.FC = () => {
   const setActiveCategory = (cat: 'staff' | 'piano' | 'rhythm' | 'solfege' | 'dynamics' | 'instruments') => {
     setActiveCategoryState(cat);
     try {
+      localStorage.setItem(REMEMBERED_PREFIX + 'visuals.category', JSON.stringify(cat));
       window.location.hash = '#visuals-' + cat;
     } catch {}
   };
 
   // Staff State
-  const [clef, setClef] = useState<'treble' | 'bass' | 'grand'>('treble');
-  const [staffDisplayMode, setStaffDisplayMode] = useState<'interactive' | 'diagram'>('interactive');
-  const [showNoteNames, setShowNoteNames] = useState(true);
-  const [showSolfege, setShowSolfege] = useState(false);
-  const [showMnemonics, setShowMnemonics] = useState(true);
-  const [colorCodedNotes, setColorCodedNotes] = useState(true);
+  const [clef, setClef] = useRememberedState<'treble' | 'bass' | 'grand'>('visuals.clef', 'treble');
+  const [staffDisplayMode, setStaffDisplayMode] = useRememberedState<'interactive' | 'diagram'>('visuals.staffMode', 'interactive');
+  const [showNoteNames, setShowNoteNames] = useRememberedState('visuals.noteNames', true);
+  const [showSolfege, setShowSolfege] = useRememberedState('visuals.solfege', false);
+  const [showMnemonics, setShowMnemonics] = useRememberedState('visuals.mnemonics', true);
+  const [colorCodedNotes, setColorCodedNotes] = useRememberedState('visuals.colorNotes', true);
   const [isFullscreenStaff, setIsFullscreenStaff] = useState(false);
 
   // Piano State
-  const [pianoDisplayMode, setPianoDisplayMode] = useState<'interactive' | 'diagram'>('interactive');
+  const [pianoDisplayMode, setPianoDisplayMode] = useRememberedState<'interactive' | 'diagram'>('visuals.pianoMode', 'interactive');
 
   // Solfege State
-  const [solfegeDisplayMode, setSolfegeDisplayMode] = useState<'interactive' | 'historical_chart'>('interactive');
+  const [solfegeDisplayMode, setSolfegeDisplayMode] = useRememberedState<'interactive' | 'historical_chart'>('visuals.solfegeMode', 'interactive');
 
   // Play pitch helper
   const playPitch = (noteName: string) => {

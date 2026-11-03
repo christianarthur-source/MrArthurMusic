@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useRememberedState } from '../../hooks/useRememberedState';
 import { useApp } from '../../context/AppContext';
 import { cloudSync } from '../../services/cloudSync';
 import {
@@ -141,7 +142,7 @@ export const YouTubeBrowserView: React.FC = () => {
     }
   }, [videos]);
 
-  const [activeVideo, setActiveVideo] = useState<{
+  const [activeVideo, setActiveVideo] = useRememberedState<{
     id: string;
     youtubeId: string;
     title: string;
@@ -149,7 +150,7 @@ export const YouTubeBrowserView: React.FC = () => {
     category?: string;
     grade?: string;
     notes?: string;
-  }>({
+  }>('youtube.video', {
     id: 'yt-1',
     youtubeId: 'Wz_f9B4pPtg',
     title: 'In the Hall of the Mountain King — Line Rider Music Visualization',
@@ -159,20 +160,20 @@ export const YouTubeBrowserView: React.FC = () => {
     notes: 'Terrific visual demonstration of crescendo and accelerando for Edvard Grieg.'
   });
 
-  const [mainTab, setMainTab] = useState<'search' | 'library'>('search');
-  const [searchQuery, setSearchQuery] = useState('Boomwhackers elementary music');
+  const [mainTab, setMainTab] = useRememberedState<'search' | 'library'>('youtube.tab', 'search');
+  const [searchQuery, setSearchQuery] = useRememberedState('youtube.search', 'Boomwhackers elementary music');
   const [isSearching, setIsSearching] = useState(false);
-  const [searchResults, setSearchResults] = useState<YouTubeSearchResult[]>([]);
-  const [hasSearched, setHasSearched] = useState(false);
+  const [searchResults, setSearchResults] = useRememberedState<YouTubeSearchResult[]>('youtube.results', []);
+  const [hasSearched, setHasSearched] = useRememberedState('youtube.searched', false);
 
   // Ad Blocker & Classroom Protection Mode
-  const [adBlockEnabled, setAdBlockEnabled] = useState(true);
-  const [isTheaterMode, setIsTheaterMode] = useState(false);
-  const [isLooping, setIsLooping] = useState(false);
+  const [adBlockEnabled, setAdBlockEnabled] = useRememberedState('youtube.noCookie', true);
+  const [isTheaterMode, setIsTheaterMode] = useRememberedState('youtube.theater', false);
+  const [isLooping, setIsLooping] = useRememberedState('youtube.loop', false);
 
   // Library Filtering
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [libraryFilterQuery, setLibraryFilterQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useRememberedState<string>('youtube.category', 'all');
+  const [libraryFilterQuery, setLibraryFilterQuery] = useRememberedState('youtube.libraryFilter', '');
 
   // Add Video Modal
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -234,9 +235,9 @@ export const YouTubeBrowserView: React.FC = () => {
     }
   };
 
-  // Run initial search on mount
+  // Search on first visit; after that, the last search and its results are remembered
   useEffect(() => {
-    performLiveSearch('Boomwhackers elementary music');
+    if (searchResults.length === 0) performLiveSearch(searchQuery || 'Boomwhackers elementary music');
   }, []);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -327,13 +328,16 @@ export const YouTubeBrowserView: React.FC = () => {
     return matchesCat && matchesSearch;
   });
 
+  // The remembered video loads paused; a video picked during this visit plays right away.
+  const videoOnOpen = useRef(activeVideo);
+
   const getEmbedUrl = () => {
     const base = adBlockEnabled
       ? `https://www.youtube-nocookie.com/embed/${activeVideo.youtubeId}`
       : `https://www.youtube.com/embed/${activeVideo.youtubeId}`;
 
     const params = new URLSearchParams({
-      autoplay: '1',
+      autoplay: activeVideo === videoOnOpen.current ? '0' : '1',
       rel: '0',
       modestbranding: '1',
       iv_load_policy: '3',

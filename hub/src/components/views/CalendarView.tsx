@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useRememberedState, dateCodec } from '../../hooks/useRememberedState';
 import { useApp } from '../../context/AppContext';
 import { cloudSync } from '../../services/cloudSync';
 import { storage } from '../../services/storage';
@@ -34,9 +35,9 @@ export const CalendarView: React.FC = () => {
 
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [subscriptions, setSubscriptions] = useState<CalendarSubscription[]>([]);
-  const [viewMode, setViewMode] = useState<'month' | 'week' | 'agenda'>('month');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [activeCalendarFilter, setActiveCalendarFilter] = useState<string>('all');
+  const [viewMode, setViewMode] = useRememberedState<'month' | 'week' | 'agenda'>('calendar.view', 'month');
+  const [selectedCategory, setSelectedCategory] = useRememberedState<string>('calendar.category', 'all');
+  const [activeCalendarFilter, setActiveCalendarFilter] = useRememberedState<string>('calendar.filter', 'all');
   const [isAddEventOpen, setIsAddEventOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [isManageSubscriptionsOpen, setIsManageSubscriptionsOpen] = useState(false);
@@ -44,7 +45,7 @@ export const CalendarView: React.FC = () => {
   const [selectedDayEvents, setSelectedDayEvents] = useState<{ date: string; events: CalendarEvent[] } | null>(null);
 
   // Active Date for Month and Week Navigation
-  const [currentDate, setCurrentDate] = useState<Date>(new Date(2026, 10, 3)); // Nov 3, 2026 default
+  const [currentDate, setCurrentDate] = useRememberedState<Date>('calendar.date', () => new Date(), dateCodec);
 
   // Form State
   const [title, setTitle] = useState('');

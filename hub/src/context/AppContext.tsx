@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { REMEMBERED_PREFIX } from '../hooks/useRememberedState';
 import { UserPreferences, LessonPlan } from '../types';
 import { storage } from '../services/storage';
 
@@ -59,12 +60,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const params = new URLSearchParams(window.location.search);
       const viewParam = params.get('view') as NavView;
       if (validViews.includes(viewParam)) return viewParam;
+      // No address given (e.g. the app opened from the home screen): reopen the last section.
+      const last = JSON.parse(localStorage.getItem(REMEMBERED_PREFIX + 'lastView') || 'null') as NavView;
+      if (validViews.includes(last)) return last;
     } catch {}
     return 'home';
   };
 
   const [preferences, setPreferencesState] = useState<UserPreferences>(storage.getPreferences());
   const [activeView, setActiveViewState] = useState<NavView>(getInitialView);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(REMEMBERED_PREFIX + 'lastView', JSON.stringify(activeView));
+    } catch {}
+  }, [activeView]);
 
   const setActiveView = (view: NavView) => {
     setActiveViewState(view);

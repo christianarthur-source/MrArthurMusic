@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useRememberedState } from '../../hooks/useRememberedState';
 import { useApp } from '../../context/AppContext';
 import { storage } from '../../services/storage';
 import { SeatingChart, SeatStudent } from '../../types';
@@ -22,7 +23,7 @@ export const SeatingChartView: React.FC = () => {
   const { showToast } = useApp();
 
   const [charts, setCharts] = useState<SeatingChart[]>([]);
-  const [selectedChartId, setSelectedChartId] = useState<string | null>(null);
+  const [selectedChartId, setSelectedChartId] = useRememberedState<string | null>('seating.chart', null);
   const [selectedSeat, setSelectedSeat] = useState<{ row: number; col: number } | null>(null);
   const [editingStudent, setEditingStudent] = useState<Partial<SeatStudent>>({});
 

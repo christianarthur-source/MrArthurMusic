@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useRememberedState } from '../../hooks/useRememberedState';
 import { audioEngine } from '../../services/audioEngine';
 import {
   Play,
@@ -90,14 +91,14 @@ const PRESETS: { name: string; tempo: number; melody: [number, number][]; drums:
 ];
 
 export const SongMakerSequencer: React.FC = () => {
-  const [tempo, setTempo] = useState<number>(108);
+  const [tempo, setTempo] = useRememberedState<number>('songMaker.tempo', 108);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [currentStep, setCurrentStep] = useState<number>(0);
-  const [melodyInstrument, setMelodyInstrument] = useState<'xylophone' | 'piano' | 'synth' | 'marimba'>('xylophone');
-  const [drumInstrument, setDrumInstrument] = useState<'acoustic' | 'electronic' | 'orff'>('acoustic');
+  const [melodyInstrument, setMelodyInstrument] = useRememberedState<'xylophone' | 'piano' | 'synth' | 'marimba'>('songMaker.melodyInstrument', 'xylophone');
+  const [drumInstrument, setDrumInstrument] = useRememberedState<'acoustic' | 'electronic' | 'orff'>('songMaker.drumInstrument', 'acoustic');
 
   // Melody Grid: 8 rows (C5 to C4) x 16 steps
-  const [melodyGrid, setMelodyGrid] = useState<boolean[][]>(() => {
+  const [melodyGrid, setMelodyGrid] = useRememberedState<boolean[][]>('songMaker.melody', () => {
     // Default load Twinkle Twinkle
     const grid = Array.from({ length: 8 }, () => Array(16).fill(false));
     PRESETS[0].melody.forEach(([pitchIdx, stepIdx]) => {
@@ -107,7 +108,7 @@ export const SongMakerSequencer: React.FC = () => {
   });
 
   // Drum Grid: 3 rows (HiHat, Snare, Kick) x 16 steps
-  const [drumGrid, setDrumGrid] = useState<boolean[][]>(() => {
+  const [drumGrid, setDrumGrid] = useRememberedState<boolean[][]>('songMaker.drums', () => {
     const grid = Array.from({ length: 3 }, () => Array(16).fill(false));
     PRESETS[0].drums.forEach(([drumIdx, stepIdx]) => {
       grid[drumIdx][stepIdx] = true;

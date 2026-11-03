@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useRememberedState } from '../../hooks/useRememberedState';
 import { useApp } from '../../context/AppContext';
 import { storage } from '../../services/storage';
 import { ResourceLink, GradeLevel } from '../../types';
@@ -29,9 +30,9 @@ export const ResourceLibraryView: React.FC = () => {
   const { showToast } = useApp();
 
   const [resources, setResources] = useState<ResourceLink[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [searchQuery, setSearchQuery] = useRememberedState('resources.search', '');
+  const [selectedCategory, setSelectedCategory] = useRememberedState<string>('resources.category', 'all');
+  const [viewMode, setViewMode] = useRememberedState<'grid' | 'list'>('resources.view', 'grid');
   const [isAddOpen, setIsAddOpen] = useState(false);
 
   // Form State
@@ -93,7 +94,7 @@ export const ResourceLibraryView: React.FC = () => {
     driveType?: ResourceLink['driveType'];
   } => {
     const domain = extractDomain(res.url);
-    const fallbackFavicon = `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
+    const fallbackFavicon = `https://www.google.com/s2/favicons?domain=${domain}&sz=256`;
 
     // 1. Explicit user provided thumbnail
     if (res.thumbnailUrl && res.thumbnailUrl.trim()) {
@@ -136,13 +137,22 @@ export const ResourceLibraryView: React.FC = () => {
       };
     }
 
-    // 5. General Web Screenshot API via Thum.io with Google Favicon backup
+    // 5. General Web Screenshot API via Thum.io (a 16:9 crop, big enough to stay sharp) with Google Favicon backup
     return {
       kind: 'web',
-      src: `https://image.thum.io/get/width/500/crop/600/noanimate/${encodeURIComponent(res.url)}`,
+      src: `https://image.thum.io/get/width/1200/crop/675/noanimate/${encodeURIComponent(res.url)}`,
       fallbackFavicon,
       domain
     };
+  };
+
+  // The whole card (or row) opens the resource; its buttons stop the click from reaching it.
+  const openResource = (resUrl: string) => window.open(resUrl, '_blank', 'noopener,noreferrer');
+  const openOnKey = (resUrl: string) => (e: React.KeyboardEvent) => {
+    if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault();
+      openResource(resUrl);
+    }
   };
 
   const handleAddResource = (e: React.FormEvent) => {
@@ -324,13 +334,18 @@ export const ResourceLibraryView: React.FC = () => {
             return (
               <div
                 key={res.id}
-                className="group rounded-3xl overflow-hidden bg-white dark:bg-stone-900 shadow-card border border-stone-200/80 dark:border-stone-800 hover:border-brand-500 dark:hover:border-brand-500 transition-all duration-200 flex flex-col justify-between"
+                role="link"
+                tabIndex={0}
+                aria-label={`Open ${res.title}`}
+                onClick={() => openResource(res.url)}
+                onKeyDown={openOnKey(res.url)}
+                className="group cursor-pointer rounded-3xl overflow-hidden bg-white dark:bg-stone-900 shadow-card border border-stone-200/80 dark:border-stone-800 hover:border-brand-500 dark:hover:border-brand-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 transition-all duration-200 flex flex-col justify-between"
               >
                 {/* 16:9 Thumbnail Banner Preview */}
                 <div className="relative aspect-video bg-stone-100 dark:bg-stone-800 overflow-hidden border-b border-stone-100 dark:border-stone-800">
                   {/* Visual Drive Archetype Card fallback */}
                   {res.isGoogleDrive ? (
-                    <div className="w-full h-full p-5 flex flex-col justify-between bg-gradient-to-br from-stone-50 to-stone-100 dark:from-stone-800 dark:to-stone-900">
+                    <div className="relative w-full h-full p-5 flex flex-col justify-between bg-gradient-to-br from-stone-50 to-stone-100 dark:from-stone-800 dark:to-stone-900">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <div className={`p-2 rounded-xl shadow-xs ${driveBadge?.color || 'bg-blue-100 text-blue-800'}`}>
@@ -356,6 +371,17 @@ export const ResourceLibraryView: React.FC = () => {
                       <div className="text-[10px] text-stone-400 font-mono truncate">
                         drive.google.com • {res.driveType || 'file'}
                       </div>
+
+                      {/* Google's own preview of the file, filling the frame, when it can be loaded */}
+                      {thumb.src && (
+                        <img
+                          src={thumb.src}
+                          alt={res.title}
+                          onError={(e) => (e.currentTarget.style.display = 'none')}
+                          className="absolute inset-0 w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-300"
+                          loading="lazy"
+                        />
+                      )}
                     </div>
                   ) : (
                     /* Web / YouTube / Image Preview */
@@ -375,15 +401,19 @@ export const ResourceLibraryView: React.FC = () => {
                       />
 
                       {/* Fallback container if screenshot loading is blocked or delayed */}
-                      <div className="fallback-preview hidden absolute inset-0 bg-gradient-to-br from-indigo-900/10 via-amber-900/10 to-rose-900/10 dark:from-stone-800 dark:to-stone-900 p-5 flex flex-col justify-between items-center text-center">
+                      <div className="fallback-preview hidden absolute inset-0 overflow-hidden items-center justify-center">
+                        {/* The site's icon, enlarged and blurred to fill the frame, with a crisp copy on top */}
                         <img
                           src={thumb.fallbackFavicon}
-                          alt="favicon"
-                          className="w-12 h-12 rounded-2xl p-2 bg-white dark:bg-stone-800 shadow-md border border-stone-200 dark:border-stone-700 mt-2"
+                          alt=""
+                          aria-hidden
+                          className="absolute inset-0 w-full h-full object-cover scale-150 blur-2xl opacity-70"
                         />
-                        <span className="text-xs font-bold text-stone-700 dark:text-stone-300 font-mono">
-                          {thumb.domain}
-                        </span>
+                        <img
+                          src={thumb.fallbackFavicon}
+                          alt={thumb.domain}
+                          className="relative w-24 h-24 rounded-3xl p-3 bg-white/90 shadow-xl object-contain"
+                        />
                       </div>
 
                       {/* Domain badge overlay */}
@@ -467,6 +497,7 @@ export const ResourceLibraryView: React.FC = () => {
                       href={res.url}
                       target="_blank"
                       rel="noreferrer"
+                      onClick={(e) => e.stopPropagation()}
                       className="w-full py-2.5 px-3 rounded-2xl bg-stone-100 hover:bg-brand-600 hover:text-white dark:bg-stone-800 text-stone-800 dark:text-stone-200 text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-subtle group-hover:shadow-md"
                     >
                       <span>Open {res.isGoogleDrive ? 'in Google Drive' : 'Resource'}</span>
@@ -486,7 +517,12 @@ export const ResourceLibraryView: React.FC = () => {
             return (
               <div
                 key={res.id}
-                className="p-4 flex items-center justify-between gap-4 hover:bg-stone-50 dark:hover:bg-stone-800/50 transition-colors"
+                role="link"
+                tabIndex={0}
+                aria-label={`Open ${res.title}`}
+                onClick={() => openResource(res.url)}
+                onKeyDown={openOnKey(res.url)}
+                className="p-4 flex items-center justify-between gap-4 cursor-pointer hover:bg-stone-50 dark:hover:bg-stone-800/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-500 transition-colors"
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="w-12 h-12 rounded-xl overflow-hidden bg-stone-100 dark:bg-stone-800 shrink-0 border border-stone-200 dark:border-stone-700">
@@ -518,6 +554,7 @@ export const ResourceLibraryView: React.FC = () => {
                     href={res.url}
                     target="_blank"
                     rel="noreferrer"
+                    onClick={(e) => e.stopPropagation()}
                     className="px-3 py-1.5 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-700 dark:text-stone-300 text-xs font-bold flex items-center gap-1.5 hover:bg-brand-600 hover:text-white transition-colors"
                   >
                     <span>Launch</span>

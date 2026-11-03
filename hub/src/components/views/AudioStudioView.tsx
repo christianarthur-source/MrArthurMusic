@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useRememberedState } from '../../hooks/useRememberedState';
 import { useApp } from '../../context/AppContext';
 import { audioEngine } from '../../services/audioEngine';
 import { studioAudioEngine, TrackWaveformData } from '../../services/pitchShifterAudio';
@@ -54,19 +55,20 @@ export const AudioStudioView: React.FC = () => {
   // Playlist: the audio files saved on this device (see audioLibrary), loaded when the studio opens
   const [playlist, setPlaylist] = useState<StudioTrack[]>([]);
   const [libraryLoaded, setLibraryLoaded] = useState(false);
+  const [lastTrackId, setLastTrackId] = useRememberedState<string | null>('audio.track', null);
   const [currentTrackIndex, setCurrentTrackIndex] = useState<number>(0);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [duration, setDuration] = useState<number>(24);
-  const [playbackRate, setPlaybackRate] = useState<number>(1.0);
-  const [pitchShift, setPitchShift] = useState<number>(0);
+  const [playbackRate, setPlaybackRate] = useRememberedState<number>('audio.speed', 1.0);
+  const [pitchShift, setPitchShift] = useRememberedState<number>('audio.pitch', 0);
   const [loopA, setLoopA] = useState<number | null>(null);
   const [loopB, setLoopB] = useState<number | null>(null);
-  const [repeatMode, setRepeatMode] = useState<'off' | 'all' | 'one'>('off');
-  const [isShuffle, setIsShuffle] = useState<boolean>(false);
+  const [repeatMode, setRepeatMode] = useRememberedState<'off' | 'all' | 'one'>('audio.repeat', 'off');
+  const [isShuffle, setIsShuffle] = useRememberedState<boolean>('audio.shuffle', false);
 
   // Rehearsal Markers
-  const [markers, setMarkers] = useState<Marker[]>([]);
+  const [markers, setMarkers] = useRememberedState<Marker[]>('audio.markers', []);
   const [newMarkerLabel, setNewMarkerLabel] = useState('');
 
   // DAW Waveform Data & Audio Engine State
@@ -101,6 +103,8 @@ export const AudioStudioView: React.FC = () => {
         const tracks = stored.map(toStudioTrack);
         urlsRef.current.push(...tracks.map((t) => t.url));
         setPlaylist(tracks);
+        const last = tracks.findIndex((t) => t.id === lastTrackId);
+        if (last > 0) setCurrentTrackIndex(last);
       })
       .catch((err) => {
         console.error('Could not load the saved audio library', err);
@@ -112,6 +116,11 @@ export const AudioStudioView: React.FC = () => {
       urlsRef.current.forEach((u) => URL.revokeObjectURL(u));
     };
   }, []);
+
+  // Remember the open track for next time (once the saved library has loaded).
+  useEffect(() => {
+    if (libraryLoaded && currentTrack) setLastTrackId(currentTrack.id);
+  }, [libraryLoaded, currentTrack?.id]);
 
   /** Saves new files on this device and adds them to the end of the playlist. */
   const addToLibrary = async (files: File[], source: StudioTrack['source']) => {
