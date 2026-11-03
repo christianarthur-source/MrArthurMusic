@@ -433,7 +433,7 @@ export const YouTubeBrowserView: React.FC = () => {
         </div>
 
         {/* Video Control Bar & Meta */}
-        <div className="p-4 sm:p-5 rounded-3xl bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="p-4 sm:p-5 rounded-3xl bg-white dark:bg-navy-900 border border-stone-200/80 dark:border-stone-800 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex flex-wrap items-center gap-2">
               <span className="px-2.5 py-0.5 rounded-lg text-[10px] font-extrabold uppercase bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border border-rose-200/60 dark:border-rose-800">
@@ -591,7 +591,7 @@ export const YouTubeBrowserView: React.FC = () => {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search any YouTube video for classroom (e.g. Boomwhackers, Saint-Saëns, Body Percussion)..."
-                  className="w-full pl-11 pr-4 py-3 bg-white dark:bg-stone-900 border border-stone-300 dark:border-stone-700 rounded-2xl text-xs sm:text-sm shadow-xs focus:ring-2 focus:ring-rose-500 focus:outline-none"
+                  className="w-full pl-11 pr-4 py-3 bg-white dark:bg-navy-900 border border-stone-300 dark:border-stone-700 rounded-2xl text-xs sm:text-sm shadow-xs focus:ring-2 focus:ring-rose-500 focus:outline-none"
                 />
               </div>
 
@@ -643,7 +643,7 @@ export const YouTubeBrowserView: React.FC = () => {
                   {[1, 2, 3, 4, 5, 6].map((idx) => (
                     <div
                       key={idx}
-                      className="rounded-3xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 p-4 space-y-3 animate-pulse"
+                      className="rounded-3xl bg-white dark:bg-navy-900 border border-stone-200 dark:border-stone-800 p-4 space-y-3 animate-pulse"
                     >
                       <div className="aspect-video bg-stone-200 dark:bg-stone-800 rounded-2xl" />
                       <div className="h-4 bg-stone-200 dark:bg-stone-800 rounded w-3/4" />
@@ -660,7 +660,7 @@ export const YouTubeBrowserView: React.FC = () => {
                     return (
                       <div
                         key={result.id}
-                        className={`group relative rounded-3xl overflow-hidden bg-white dark:bg-stone-900 border transition-all duration-200 flex flex-col justify-between ${
+                        className={`group relative rounded-3xl overflow-hidden bg-white dark:bg-navy-900 border transition-all duration-200 flex flex-col justify-between ${
                           isCurrent
                             ? 'border-rose-500 shadow-md ring-2 ring-rose-500/20'
                             : 'border-stone-200/80 dark:border-stone-800 hover:border-stone-300 dark:hover:border-stone-700 hover:shadow-md'
@@ -737,7 +737,7 @@ export const YouTubeBrowserView: React.FC = () => {
                   })}
                 </div>
               ) : (
-                <div className="p-8 text-center bg-white dark:bg-stone-900 rounded-3xl border border-stone-200 dark:border-stone-800">
+                <div className="p-8 text-center bg-white dark:bg-navy-900 rounded-3xl border border-stone-200 dark:border-stone-800">
                   <p className="text-sm text-stone-500">No YouTube results found. Try another search query!</p>
                 </div>
               )}
@@ -782,7 +782,7 @@ export const YouTubeBrowserView: React.FC = () => {
                     className={`group rounded-3xl overflow-hidden border cursor-pointer transition-all duration-200 flex flex-col justify-between ${
                       isSelected
                         ? 'bg-rose-50/50 dark:bg-rose-950/40 border-rose-500 shadow-md ring-2 ring-rose-500/20'
-                        : 'bg-white dark:bg-stone-900 border-stone-200/80 dark:border-stone-800 hover:border-stone-300 hover:shadow-md'
+                        : 'bg-white dark:bg-navy-900 border-stone-200/80 dark:border-stone-800 hover:border-stone-300 hover:shadow-md'
                     }`}
                   >
                     <div className="relative aspect-video bg-black overflow-hidden">
@@ -851,7 +851,7 @@ export const YouTubeBrowserView: React.FC = () => {
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <form
             onSubmit={handleAddVideo}
-            className="bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-stone-200 dark:border-stone-800 space-y-4"
+            className="bg-white dark:bg-navy-900 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-stone-200 dark:border-stone-800 space-y-4"
           >
             <h3 className="text-lg font-bold text-stone-900 dark:text-white">Add Classroom Video</h3>
 

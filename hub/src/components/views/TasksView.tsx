@@ -430,7 +430,7 @@ export const TasksView: React.FC = () => {
         <div className="flex items-center gap-2">
           <button
             onClick={() => openCreateProject(selectedAreaId || undefined)}
-            className="px-3.5 py-2 rounded-2xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all"
+            className="px-3.5 py-2 rounded-2xl bg-white dark:bg-navy-900 border border-stone-200 dark:border-stone-700 text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all"
           >
             <FolderPlus className="w-4 h-4 text-amber-500" />
             <span>New Project</span>
@@ -451,7 +451,7 @@ export const TasksView: React.FC = () => {
         {/* Left Column: Lists, Projects & Areas */}
         <div className="lg:col-span-4 space-y-5">
           {/* Main Things Core Lists */}
-          <div className="bg-white dark:bg-stone-900 rounded-3xl p-3 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-0.5">
+          <div className="bg-white dark:bg-navy-900 rounded-3xl p-3 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-0.5">
             {listNavItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeList === item.type && !selectedAreaId && !selectedProjectId;
@@ -484,7 +484,7 @@ export const TasksView: React.FC = () => {
           </div>
 
           {/* Active Projects Section */}
-          <div className="bg-white dark:bg-stone-900 rounded-3xl p-4 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-2.5">
+          <div className="bg-white dark:bg-navy-900 rounded-3xl p-4 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-2.5">
             <div className="flex items-center justify-between pb-1 px-1">
               <h3 className="text-[11px] font-black uppercase tracking-wider text-stone-400 dark:text-stone-500">
                 Active Projects ({projects.length})
@@ -551,7 +551,7 @@ export const TasksView: React.FC = () => {
           </div>
 
           {/* Areas of Responsibility Section */}
-          <div className="bg-white dark:bg-stone-900 rounded-3xl p-4 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-2.5">
+          <div className="bg-white dark:bg-navy-900 rounded-3xl p-4 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-2.5">
             <div className="flex items-center justify-between pb-1 px-1">
               <h3 className="text-[11px] font-black uppercase tracking-wider text-stone-400 dark:text-stone-500">
                 Areas of Responsibility ({areas.length})
@@ -619,7 +619,7 @@ export const TasksView: React.FC = () => {
         <div className="lg:col-span-8 space-y-4">
           {/* Quick Capture Input */}
           <form onSubmit={handleQuickAdd}>
-            <div className="flex items-center gap-3 p-4 rounded-3xl bg-white dark:bg-stone-900 shadow-card border border-stone-200/80 dark:border-stone-800 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20 transition-all">
+            <div className="flex items-center gap-3 p-4 rounded-3xl bg-white dark:bg-navy-900 shadow-card border border-stone-200/80 dark:border-stone-800 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-500/20 transition-all">
               <Plus className="w-5 h-5 text-stone-400 shrink-0" />
               <input
                 type="text"
@@ -646,7 +646,7 @@ export const TasksView: React.FC = () => {
 
           {/* Context Banner: Selected Project Details */}
           {selectedProject && (
-            <div className="p-5 rounded-3xl bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 shadow-card space-y-3 animate-in fade-in duration-150">
+            <div className="p-5 rounded-3xl bg-white dark:bg-navy-900 border border-stone-200/80 dark:border-stone-800 shadow-card space-y-3 animate-in fade-in duration-150">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="space-y-1">
                   <div className="flex flex-wrap items-center gap-2">
@@ -729,7 +729,7 @@ export const TasksView: React.FC = () => {
 
           {/* Context Banner: Selected Area Details */}
           {selectedArea && (
-            <div className="p-5 rounded-3xl bg-white dark:bg-stone-900 border border-stone-200/80 dark:border-stone-800 shadow-card flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in duration-150">
+            <div className="p-5 rounded-3xl bg-white dark:bg-navy-900 border border-stone-200/80 dark:border-stone-800 shadow-card flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in duration-150">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <Folder className="w-4 h-4 shrink-0" style={{ color: selectedArea.color }} />
@@ -796,7 +796,7 @@ export const TasksView: React.FC = () => {
           {/* Tasks List */}
           <div className="space-y-2.5">
             {filteredTasks.length === 0 ? (
-              <div className="bg-white dark:bg-stone-900 rounded-3xl p-12 text-center border border-stone-200/80 dark:border-stone-800 shadow-card">
+              <div className="bg-white dark:bg-navy-900 rounded-3xl p-12 text-center border border-stone-200/80 dark:border-stone-800 shadow-card">
                 <CheckCircle2 className="w-12 h-12 text-stone-300 dark:text-stone-700 mx-auto mb-3" />
                 <h3 className="text-base font-bold text-stone-800 dark:text-stone-200">
                   No tasks in this list
@@ -816,7 +816,7 @@ export const TasksView: React.FC = () => {
                 return (
                   <div
                     key={task.id}
-                    className={`p-4 rounded-3xl bg-white dark:bg-stone-900 border transition-all ${
+                    className={`p-4 rounded-3xl bg-white dark:bg-navy-900 border transition-all ${
                       isExpanded
                         ? 'border-brand-500 shadow-elevated'
                         : 'border-stone-200/80 dark:border-stone-800 hover:border-stone-300 dark:hover:border-stone-700 shadow-card'
@@ -980,7 +980,7 @@ export const TasksView: React.FC = () => {
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150">
           <form
             onSubmit={handleSaveProject}
-            className="bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl border border-stone-200 dark:border-stone-800 space-y-4"
+            className="bg-white dark:bg-navy-900 rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl border border-stone-200 dark:border-stone-800 space-y-4"
           >
             <div className="flex items-center justify-between pb-3 border-b border-stone-100 dark:border-stone-800">
               <h3 className="text-base font-black text-stone-900 dark:text-white flex items-center gap-2">
@@ -1135,7 +1135,7 @@ export const TasksView: React.FC = () => {
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150">
           <form
             onSubmit={handleSaveArea}
-            className="bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-stone-200 dark:border-stone-800 space-y-4"
+            className="bg-white dark:bg-navy-900 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-stone-200 dark:border-stone-800 space-y-4"
           >
             <div className="flex items-center justify-between pb-3 border-b border-stone-100 dark:border-stone-800">
               <h3 className="text-base font-black text-stone-900 dark:text-white flex items-center gap-2">
@@ -1264,7 +1264,7 @@ export const TasksView: React.FC = () => {
       {/* --- CONFIRM DELETE DIALOG --- */}
       {deleteConfirm && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150">
-          <div className="bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-8 max-w-sm w-full shadow-2xl border border-stone-200 dark:border-stone-800 space-y-4">
+          <div className="bg-white dark:bg-navy-900 rounded-3xl p-6 sm:p-8 max-w-sm w-full shadow-2xl border border-stone-200 dark:border-stone-800 space-y-4">
             <div className="w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto shadow-xs">
               <AlertCircle className="w-6 h-6" />
             </div>

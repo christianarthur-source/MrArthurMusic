@@ -37,6 +37,11 @@ export default {
         ],
       },
       colors: {
+        // Dark-theme surfaces, matched to the logo's navy tile (#13171d).
+        navy: {
+          900: '#13171d',
+          950: '#0d1015',
+        },
         brand: {
           50: 'var(--brand-50, #f0f7ff)',
           100: 'var(--brand-100, #e0effe)',

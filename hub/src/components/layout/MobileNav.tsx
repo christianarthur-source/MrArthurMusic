@@ -49,7 +49,7 @@ export const MobileNav: React.FC = () => {
       {/* More Menu Drawer */}
       {isMoreOpen && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm lg:hidden flex flex-col justify-end">
-          <div className="bg-white dark:bg-stone-900 rounded-t-3xl p-5 border-t border-stone-200 dark:border-stone-800 shadow-2xl max-h-[75vh] overflow-y-auto">
+          <div className="bg-white dark:bg-navy-900 rounded-t-3xl p-5 border-t border-stone-200 dark:border-stone-800 shadow-2xl max-h-[75vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-stone-100 dark:border-stone-800">
               <h3 className="font-bold text-sm text-stone-900 dark:text-white">All Workspaces</h3>
               <button
@@ -88,7 +88,7 @@ export const MobileNav: React.FC = () => {
       )}
 
       {/* Persistent Bottom Bar */}
-      <nav className="fixed bottom-0 inset-x-0 z-30 lg:hidden bg-white/95 dark:bg-stone-900/95 backdrop-blur-lg border-t border-stone-200/80 dark:border-stone-800 px-2 py-1 flex items-center justify-around safe-bottom">
+      <nav className="fixed bottom-0 inset-x-0 z-30 lg:hidden bg-white/95 dark:bg-navy-900/95 backdrop-blur-lg border-t border-stone-200/80 dark:border-stone-800 px-2 py-1 flex items-center justify-around safe-bottom">
         {mainTabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeView === tab.id;

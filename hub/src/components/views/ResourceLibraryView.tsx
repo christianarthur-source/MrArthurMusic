@@ -247,7 +247,7 @@ export const ResourceLibraryView: React.FC = () => {
               onClick={() => setViewMode('grid')}
               className={`p-1.5 rounded-xl transition-all ${
                 viewMode === 'grid'
-                  ? 'bg-white dark:bg-stone-900 text-brand-600 shadow-xs'
+                  ? 'bg-white dark:bg-navy-900 text-brand-600 shadow-xs'
                   : 'text-stone-400 hover:text-stone-700'
               }`}
               title="Visual Thumbnail Cards"
@@ -258,7 +258,7 @@ export const ResourceLibraryView: React.FC = () => {
               onClick={() => setViewMode('list')}
               className={`p-1.5 rounded-xl transition-all ${
                 viewMode === 'list'
-                  ? 'bg-white dark:bg-stone-900 text-brand-600 shadow-xs'
+                  ? 'bg-white dark:bg-navy-900 text-brand-600 shadow-xs'
                   : 'text-stone-400 hover:text-stone-700'
               }`}
               title="Compact List View"
@@ -324,13 +324,13 @@ export const ResourceLibraryView: React.FC = () => {
             return (
               <div
                 key={res.id}
-                className="group rounded-3xl overflow-hidden bg-white dark:bg-stone-900 shadow-card border border-stone-200/80 dark:border-stone-800 hover:border-brand-500 dark:hover:border-brand-500 transition-all duration-200 flex flex-col justify-between"
+                className="group rounded-3xl overflow-hidden bg-white dark:bg-navy-900 shadow-card border border-stone-200/80 dark:border-stone-800 hover:border-brand-500 dark:hover:border-brand-500 transition-all duration-200 flex flex-col justify-between"
               >
                 {/* 16:9 Thumbnail Banner Preview */}
                 <div className="relative aspect-video bg-stone-100 dark:bg-stone-800 overflow-hidden border-b border-stone-100 dark:border-stone-800">
                   {/* Visual Drive Archetype Card fallback */}
                   {res.isGoogleDrive ? (
-                    <div className="w-full h-full p-5 flex flex-col justify-between bg-gradient-to-br from-stone-50 to-stone-100 dark:from-stone-800 dark:to-stone-900">
+                    <div className="w-full h-full p-5 flex flex-col justify-between bg-gradient-to-br from-stone-50 to-stone-100 dark:from-stone-800 dark:to-navy-900">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <div className={`p-2 rounded-xl shadow-xs ${driveBadge?.color || 'bg-blue-100 text-blue-800'}`}>
@@ -375,7 +375,7 @@ export const ResourceLibraryView: React.FC = () => {
                       />
 
                       {/* Fallback container if screenshot loading is blocked or delayed */}
-                      <div className="fallback-preview hidden absolute inset-0 bg-gradient-to-br from-indigo-900/10 via-amber-900/10 to-rose-900/10 dark:from-stone-800 dark:to-stone-900 p-5 flex flex-col justify-between items-center text-center">
+                      <div className="fallback-preview hidden absolute inset-0 bg-gradient-to-br from-indigo-900/10 via-amber-900/10 to-rose-900/10 dark:from-stone-800 dark:to-navy-900 p-5 flex flex-col justify-between items-center text-center">
                         <img
                           src={thumb.fallbackFavicon}
                           alt="favicon"
@@ -480,7 +480,7 @@ export const ResourceLibraryView: React.FC = () => {
         </div>
       ) : (
         /* List / Table View */
-        <div className="bg-white dark:bg-stone-900 rounded-3xl border border-stone-200/80 dark:border-stone-800 overflow-hidden shadow-xs divide-y divide-stone-100 dark:divide-stone-800">
+        <div className="bg-white dark:bg-navy-900 rounded-3xl border border-stone-200/80 dark:border-stone-800 overflow-hidden shadow-xs divide-y divide-stone-100 dark:divide-stone-800">
           {filtered.map((res) => {
             const thumb = getResourceThumbnail(res);
             return (
@@ -543,7 +543,7 @@ export const ResourceLibraryView: React.FC = () => {
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <form
             onSubmit={handleAddResource}
-            className="bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl border border-stone-200 dark:border-stone-800 space-y-4"
+            className="bg-white dark:bg-navy-900 rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl border border-stone-200 dark:border-stone-800 space-y-4"
           >
             <div className="flex items-center justify-between pb-2 border-b border-stone-100 dark:border-stone-800">
               <h3 className="text-base font-bold text-stone-900 dark:text-white flex items-center gap-2">

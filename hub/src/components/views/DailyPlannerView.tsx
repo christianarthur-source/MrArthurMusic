@@ -565,7 +565,7 @@ export const DailyPlannerView: React.FC = () => {
               role="tab"
               aria-selected={view === id}
               onClick={() => updateSettings({ view: id })}
-              className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 ${view === id ? 'bg-white dark:bg-stone-900 shadow-sm text-stone-900 dark:text-white' : 'text-stone-500 hover:text-stone-800 dark:hover:text-stone-200'}`}
+              className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 ${view === id ? 'bg-white dark:bg-navy-900 shadow-sm text-stone-900 dark:text-white' : 'text-stone-500 hover:text-stone-800 dark:hover:text-stone-200'}`}
             >
               <Icon className="w-3.5 h-3.5" />
               {label}
@@ -623,7 +623,7 @@ export const DailyPlannerView: React.FC = () => {
       </div>
 
       {/* Notebook */}
-      <div className="rounded-[1.75rem] bg-stone-800 dark:bg-stone-950 p-2 sm:p-3 shadow-xl shadow-stone-900/20">
+      <div className="rounded-[1.75rem] bg-stone-800 dark:bg-navy-950 p-2 sm:p-3 shadow-xl shadow-stone-900/20">
         <div key={`${view}-${view === 'month' ? date.slice(0, 7) : view === 'week' ? weekFrom : date}`} className={`relative ${turnClass}`}>
           {view === 'day' && renderDay()}
           {view === 'week' && renderWeek()}

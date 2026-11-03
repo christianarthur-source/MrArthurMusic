@@ -398,7 +398,7 @@ export const LessonPlannerView: React.FC = () => {
                   className={`p-3.5 rounded-2xl cursor-pointer transition-all border text-left ${
                     isSelected
                       ? 'bg-white dark:bg-stone-800 border-brand-500 dark:border-brand-500 shadow-card'
-                      : 'bg-stone-50/70 dark:bg-stone-900/60 border-stone-200/60 dark:border-stone-800/80 hover:bg-stone-100 dark:hover:bg-stone-800/50'
+                      : 'bg-stone-50/70 dark:bg-navy-900/60 border-stone-200/60 dark:border-stone-800/80 hover:bg-stone-100 dark:hover:bg-stone-800/50'
                   }`}
                 >
                   <div className="flex items-center justify-between gap-2 mb-1">
@@ -434,7 +434,7 @@ export const LessonPlannerView: React.FC = () => {
         {/* Right Column: Detailed Lesson Plan View & Editor */}
         <div className="lg:col-span-8">
           {activeLesson ? (
-            <div className="bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-8 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-6">
+            <div className="bg-white dark:bg-navy-900 rounded-3xl p-6 sm:p-8 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-6">
               {/* Action Toolbar */}
               <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-stone-200/60 dark:border-stone-800">
                 <div className="flex items-center gap-2">
@@ -746,7 +746,7 @@ export const LessonPlannerView: React.FC = () => {
               </div>
             </div>
           ) : (
-            <div className="bg-white dark:bg-stone-900 rounded-3xl p-12 text-center text-stone-400">
+            <div className="bg-white dark:bg-navy-900 rounded-3xl p-12 text-center text-stone-400">
               Select or create a lesson plan to begin.
             </div>
           )}
@@ -756,7 +756,7 @@ export const LessonPlannerView: React.FC = () => {
       {/* AI Assistant Modal */}
       {isAiModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-          <div className="bg-white dark:bg-stone-900 rounded-3xl p-5 sm:p-7 max-w-2xl w-full shadow-2xl border border-stone-200 dark:border-stone-800 space-y-4 my-8 animate-in fade-in zoom-in-95 duration-200">
+          <div className="bg-white dark:bg-navy-900 rounded-3xl p-5 sm:p-7 max-w-2xl w-full shadow-2xl border border-stone-200 dark:border-stone-800 space-y-4 my-8 animate-in fade-in zoom-in-95 duration-200">
             {/* Modal Header */}
             <div className="flex items-start justify-between gap-3 pb-3 border-b border-stone-200/80 dark:border-stone-800">
               <div className="flex items-center gap-3">
@@ -791,7 +791,7 @@ export const LessonPlannerView: React.FC = () => {
                 onClick={() => setAiEngine('builtin')}
                 className={`flex-1 py-1.5 px-2.5 rounded-lg flex items-center justify-center gap-1.5 transition-all ${
                   aiEngine === 'builtin'
-                    ? 'bg-white dark:bg-stone-900 text-purple-700 dark:text-purple-300 shadow-sm font-bold'
+                    ? 'bg-white dark:bg-navy-900 text-purple-700 dark:text-purple-300 shadow-sm font-bold'
                     : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
                 }`}
               >
@@ -803,7 +803,7 @@ export const LessonPlannerView: React.FC = () => {
                 onClick={() => setAiEngine('claude')}
                 className={`flex-1 py-1.5 px-2.5 rounded-lg flex items-center justify-center gap-1.5 transition-all ${
                   aiEngine === 'claude'
-                    ? 'bg-white dark:bg-stone-900 text-amber-700 dark:text-amber-300 shadow-sm font-bold'
+                    ? 'bg-white dark:bg-navy-900 text-amber-700 dark:text-amber-300 shadow-sm font-bold'
                     : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
                 }`}
               >
@@ -815,7 +815,7 @@ export const LessonPlannerView: React.FC = () => {
                 onClick={() => setAiEngine('gemini')}
                 className={`flex-1 py-1.5 px-2.5 rounded-lg flex items-center justify-center gap-1.5 transition-all ${
                   aiEngine === 'gemini'
-                    ? 'bg-white dark:bg-stone-900 text-blue-600 dark:text-blue-400 shadow-sm font-bold'
+                    ? 'bg-white dark:bg-navy-900 text-blue-600 dark:text-blue-400 shadow-sm font-bold'
                     : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
                 }`}
               >
@@ -928,7 +928,7 @@ export const LessonPlannerView: React.FC = () => {
                   value={claudeKey}
                   onChange={(e) => setClaudeKey(e.target.value)}
                   placeholder={siteClaudeKey ? 'Optional: your own key instead of the site’s' : 'sk-ant-api03-...'}
-                  className="w-full text-xs font-mono px-3 py-2 bg-white dark:bg-stone-900 border border-amber-200 dark:border-amber-700 rounded-xl text-stone-900 dark:text-white focus:outline-none focus:border-amber-500"
+                  className="w-full text-xs font-mono px-3 py-2 bg-white dark:bg-navy-900 border border-amber-200 dark:border-amber-700 rounded-xl text-stone-900 dark:text-white focus:outline-none focus:border-amber-500"
                 />
                 <p className="text-[10px] text-amber-800 dark:text-amber-300">
                   {siteClaudeKey
@@ -961,7 +961,7 @@ export const LessonPlannerView: React.FC = () => {
                   value={geminiKey}
                   onChange={(e) => setGeminiKey(e.target.value)}
                   placeholder="AIzaSy..."
-                  className="w-full text-xs font-mono px-3 py-2 bg-white dark:bg-stone-900 border border-blue-200 dark:border-blue-700 rounded-xl text-stone-900 dark:text-white focus:outline-none focus:border-blue-500"
+                  className="w-full text-xs font-mono px-3 py-2 bg-white dark:bg-navy-900 border border-blue-200 dark:border-blue-700 rounded-xl text-stone-900 dark:text-white focus:outline-none focus:border-blue-500"
                 />
                 <p className="text-[10px] text-blue-700 dark:text-blue-300">
                   Saved with your Hub data and synced to your unlocked devices. Only sent to Google when generating.

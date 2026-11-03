@@ -60,7 +60,7 @@ export const CloudSyncCard: React.FC = () => {
   const StatusIcon = state.status === 'syncing' ? Loader2 : state.status === 'synced' ? Cloud : CloudOff;
 
   return (
-    <div className="bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-8 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-4">
+    <div className="bg-white dark:bg-navy-900 rounded-3xl p-6 sm:p-8 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-4">
       <h2 className="text-base font-bold text-stone-900 dark:text-white flex items-center gap-2">
         <Cloud className="w-4 h-4 text-brand-600" />
         <span>Cloud Sync & PIN Lock</span>

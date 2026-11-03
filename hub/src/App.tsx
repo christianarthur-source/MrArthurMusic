@@ -64,7 +64,7 @@ const MainContent: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-stone-50 dark:bg-stone-950 font-sans">
+    <div className="flex h-screen w-screen overflow-hidden bg-stone-50 dark:bg-navy-950 font-sans">
       {/* Desktop Sidebar */}
       <Sidebar />
 

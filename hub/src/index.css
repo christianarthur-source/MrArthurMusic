@@ -17,7 +17,7 @@
   }
 
   body {
-    @apply antialiased text-stone-900 bg-stone-50 dark:bg-stone-950 dark:text-stone-100;
+    @apply antialiased text-stone-900 bg-stone-50 dark:bg-navy-950 dark:text-stone-100;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 }

@@ -129,7 +129,7 @@ export const ChorusManagerView: React.FC = () => {
             onClick={() => setActiveTab('repertoire')}
             className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
               activeTab === 'repertoire'
-                ? 'bg-white dark:bg-stone-900 text-rose-600 dark:text-rose-400 shadow-sm'
+                ? 'bg-white dark:bg-navy-900 text-rose-600 dark:text-rose-400 shadow-sm'
                 : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white'
             }`}
           >
@@ -139,7 +139,7 @@ export const ChorusManagerView: React.FC = () => {
             onClick={() => setActiveTab('warmups')}
             className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
               activeTab === 'warmups'
-                ? 'bg-white dark:bg-stone-900 text-rose-600 dark:text-rose-400 shadow-sm'
+                ? 'bg-white dark:bg-navy-900 text-rose-600 dark:text-rose-400 shadow-sm'
                 : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white'
             }`}
           >
@@ -149,7 +149,7 @@ export const ChorusManagerView: React.FC = () => {
             onClick={() => setActiveTab('concert-builder')}
             className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
               activeTab === 'concert-builder'
-                ? 'bg-white dark:bg-stone-900 text-rose-600 dark:text-rose-400 shadow-sm'
+                ? 'bg-white dark:bg-navy-900 text-rose-600 dark:text-rose-400 shadow-sm'
                 : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white'
             }`}
           >
@@ -194,7 +194,7 @@ export const ChorusManagerView: React.FC = () => {
                     className={`p-4 rounded-2xl cursor-pointer transition-all border text-left ${
                       isSelected
                         ? 'bg-white dark:bg-stone-800 border-rose-500 shadow-card'
-                        : 'bg-stone-50/70 dark:bg-stone-900/60 border-stone-200/60 dark:border-stone-800 hover:bg-stone-100 dark:hover:bg-stone-800/50'
+                        : 'bg-stone-50/70 dark:bg-navy-900/60 border-stone-200/60 dark:border-stone-800 hover:bg-stone-100 dark:hover:bg-stone-800/50'
                     }`}
                   >
                     <div className="flex items-center justify-between gap-2 mb-1">
@@ -229,7 +229,7 @@ export const ChorusManagerView: React.FC = () => {
           {/* Right Column: Song Details, Rehearsal Logs & Section Notes */}
           <div className="lg:col-span-7">
             {selectedSong ? (
-              <div className="bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-8 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-6">
+              <div className="bg-white dark:bg-navy-900 rounded-3xl p-6 sm:p-8 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-6">
                 <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-stone-100 dark:border-stone-800">
                   <div>
                     <h2 className="text-2xl font-extrabold text-stone-900 dark:text-white">
@@ -332,7 +332,7 @@ export const ChorusManagerView: React.FC = () => {
       {/* 2. VOCAL WARMUPS TAB */}
       {activeTab === 'warmups' && (
         <div className="space-y-6">
-          <div className="bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-8 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-6">
+          <div className="bg-white dark:bg-navy-900 rounded-3xl p-6 sm:p-8 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-6">
             <div>
               <h2 className="text-xl font-bold text-stone-900 dark:text-white">
                 Choral Vocal Warmup Sequence
@@ -374,7 +374,7 @@ export const ChorusManagerView: React.FC = () => {
       {/* 3. CONCERT PROGRAM BUILDER TAB */}
       {activeTab === 'concert-builder' && (
         <div className="space-y-6">
-          <div className="bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-8 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-6">
+          <div className="bg-white dark:bg-navy-900 rounded-3xl p-6 sm:p-8 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-stone-100 dark:border-stone-800">
               <div>
                 <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
@@ -453,7 +453,7 @@ export const ChorusManagerView: React.FC = () => {
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <form
             onSubmit={handleCreateSong}
-            className="bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-stone-200 dark:border-stone-800 space-y-4"
+            className="bg-white dark:bg-navy-900 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-stone-200 dark:border-stone-800 space-y-4"
           >
             <h3 className="text-lg font-bold text-stone-900 dark:text-white">
               Add Chorus Repertoire Piece
