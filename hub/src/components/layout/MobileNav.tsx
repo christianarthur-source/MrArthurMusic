@@ -14,6 +14,9 @@ import {
   FolderSync,
   BookMarked,
   NotebookPen,
+  CalendarClock,
+  Dices,
+  Volume2,
   Boxes,
   Video,
   Settings,
@@ -34,8 +37,11 @@ export const MobileNav: React.FC = () => {
 
   const secondaryTabs = [
     { id: 'calendar' as NavView, label: 'Calendar', icon: Calendar },
+    { id: 'rotation' as NavView, label: 'Class Rotation', icon: CalendarClock },
     { id: 'visuals' as NavView, label: 'Literacy Visuals', icon: Sparkles },
     { id: 'timer' as NavView, label: 'Classroom Timer', icon: Timer },
+    { id: 'name-picker' as NavView, label: 'Name Picker', icon: Dices },
+    { id: 'volume-meter' as NavView, label: 'Volume Meter', icon: Volume2 },
     { id: 'seating' as NavView, label: 'Seating Charts', icon: Grid },
     { id: 'resources' as NavView, label: 'Drive Resources', icon: FolderSync },
     { id: 'journal' as NavView, label: 'Daily Journal', icon: BookMarked },

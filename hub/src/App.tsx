@@ -22,6 +22,9 @@ import { ClassroomTimerView } from './components/views/ClassroomTimerView';
 import { ResourceLibraryView } from './components/views/ResourceLibraryView';
 import { JournalView } from './components/views/JournalView';
 import { DailyPlannerView } from './components/views/DailyPlannerView';
+import { RotationView } from './components/views/RotationView';
+import { NamePickerView } from './components/views/NamePickerView';
+import { VolumeMeterView } from './components/views/VolumeMeterView';
 import { YouTubeBrowserView } from './components/views/YouTubeBrowserView';
 import { SettingsView } from './components/views/SettingsView';
 
@@ -54,6 +57,12 @@ const MainContent: React.FC = () => {
         return <JournalView />;
       case 'daily-planner':
         return <DailyPlannerView />;
+      case 'rotation':
+        return <RotationView />;
+      case 'name-picker':
+        return <NamePickerView />;
+      case 'volume-meter':
+        return <VolumeMeterView />;
       case 'youtube':
         return <YouTubeBrowserView />;
       case 'settings':

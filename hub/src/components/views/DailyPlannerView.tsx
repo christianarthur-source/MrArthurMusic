@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { storage } from '../../services/storage';
+import { classesOn, formatTime } from '../../services/rotation';
 import { compressImage, faviconFor, linkTitle, plainText, safeLinkUrl } from '../../services/plannerContent';
 import { RichEditor } from '../planner/RichEditor';
 import { CalendarEvent, PlannerAttachment, PlannerPage, PlannerPaper, PlannerSettings } from '../../types';
@@ -149,6 +150,7 @@ export const DailyPlannerView: React.FC = () => {
   const view = settings.view;
   const paperClass = settings.paper === 'plain' ? '' : `planner-paper-${settings.paper}`;
   const events = storage.getEvents();
+  const rotation = storage.getRotation();
 
   const updateSettings = (updates: Partial<PlannerSettings>) => {
     storage.updatePlannerSettings(updates);
@@ -365,9 +367,19 @@ export const DailyPlannerView: React.FC = () => {
 
   const renderEvents = (d: string) => {
     const list = eventsOn(events, d);
-    if (!list.length) return null;
+    const { day: cycleDay, classes } = classesOn(d, rotation);
+    if (!list.length && !cycleDay) return null;
     return (
       <div className="flex flex-wrap gap-1.5">
+        {cycleDay && (
+          <span
+            className="inline-flex items-center gap-1.5 text-[11px] font-bold px-2 py-0.5 rounded-full bg-brand-600 text-white"
+            title={classes.map((c) => `${formatTime(c.start)} ${c.name}`).join('\n') || undefined}
+          >
+            Day {cycleDay}
+            {classes.length > 0 && <span className="font-medium opacity-80">· {classes.length} class{classes.length === 1 ? '' : 'es'}</span>}
+          </span>
+        )}
         {list.map((e) => (
           <span
             key={e.id}
@@ -408,6 +420,17 @@ export const DailyPlannerView: React.FC = () => {
           </div>
 
           {renderEvents(date)}
+
+          {classesOn(date, rotation).classes.length > 0 && (
+            <ol className="grid sm:grid-cols-2 gap-x-4 gap-y-0.5 text-sm">
+              {classesOn(date, rotation).classes.map((c) => (
+                <li key={c.id} className="flex items-baseline gap-2 min-w-0">
+                  <span className="w-16 shrink-0 text-[11px] font-mono text-stone-500">{formatTime(c.start)}</span>
+                  <span className="truncate">{c.name || 'Class'}</span>
+                </li>
+              ))}
+            </ol>
+          )}
 
           <RichEditor
             key={date}

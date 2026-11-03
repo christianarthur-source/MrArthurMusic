@@ -325,3 +325,22 @@ export interface PlannerPermanentNote {
   html: string;
   updatedAt: string;
 }
+
+// Class rotation (a cycle of school days, e.g. Day 1–6, each with its own class list)
+export interface RotationClass {
+  id: string;
+  start: string; // HH:mm
+  end?: string; // HH:mm
+  name: string; // e.g. "Kent – Grade 2"
+  grade?: GradeLevel;
+  room?: string;
+}
+
+export interface RotationSettings {
+  cycleLength: number; // number of days in the cycle
+  anchorDate: string; // YYYY-MM-DD, a school day whose cycle day is known…
+  anchorDay: number; // …and which day it is (1-based)
+  schoolDays: number[]; // JS weekday numbers that are school days (1 = Monday … 5 = Friday)
+  noSchoolDates: string[]; // YYYY-MM-DD days off (snow days, holidays); the cycle doesn't advance
+  days: RotationClass[][]; // classes for Day 1, Day 2, …
+}

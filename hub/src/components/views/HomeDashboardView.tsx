@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useClassroomTimer } from '../../context/TimerContext';
 import { storage } from '../../services/storage';
+import { classesOn, formatTime, toYMD } from '../../services/rotation';
 import { TaskItem, CalendarEvent, LessonPlan } from '../../types';
 import {
   Sparkles,
@@ -45,6 +46,13 @@ export const HomeDashboardView: React.FC = () => {
   }, []);
 
   const todayTasks = tasks.filter((t) => t.listType === 'today' || t.listType === 'inbox');
+
+  const todayYmd = toYMD(new Date());
+  const rotation = storage.getRotation();
+  const todayRotation = classesOn(todayYmd, rotation);
+  const todayEvents = events
+    .filter((e) => e.startDate.slice(0, 10) === todayYmd)
+    .sort((a, b) => a.startDate.localeCompare(b.startDate));
 
   const handleToggleTask = (task: TaskItem) => {
     const isNowCompleted = !task.completed;
@@ -201,46 +209,72 @@ export const HomeDashboardView: React.FC = () => {
               </button>
             </div>
 
-            <div className="space-y-3">
-              {events.slice(0, 3).map((event) => {
-                const startTime = event.startDate.split('T')[1]?.slice(0, 5) || '09:00';
-                const endTime = event.endDate.split('T')[1]?.slice(0, 5) || '09:40';
-                return (
-                  <div
-                    key={event.id}
-                    className="flex items-center justify-between p-3.5 rounded-2xl bg-stone-50 dark:bg-stone-800/60 border border-stone-100 dark:border-stone-800 hover:border-stone-200 dark:hover:border-stone-700 transition-all"
-                  >
-                    <div className="flex items-center gap-3 min-w-0 pr-3">
-                      <div
-                        className="w-2.5 h-10 rounded-full shrink-0"
-                        style={{ backgroundColor: event.color || '#0c87eb' }}
-                      />
-                      <div className="min-w-0">
-                        <h3 className="text-sm font-semibold text-stone-900 dark:text-white truncate">
-                          {event.title}
-                        </h3>
-                        <p className="text-xs text-stone-500 dark:text-stone-400 truncate">
-                          {event.location} • {startTime} - {endTime}
-                        </p>
-                      </div>
-                    </div>
+            {todayRotation.day && (
+              <div className="mb-3 flex items-center gap-2">
+                <span className="px-2.5 py-1 rounded-lg bg-brand-600 text-white text-xs font-bold">Day {todayRotation.day}</span>
+                <span className="text-xs text-stone-500 dark:text-stone-400">
+                  {todayRotation.classes.length} class{todayRotation.classes.length === 1 ? '' : 'es'} today
+                </span>
+              </div>
+            )}
 
-                    <button
-                      onClick={() => {
-                        const matchingLesson = lessons.find((l) => l.grade === event.grade);
-                        if (matchingLesson) {
-                          openTeachMode(matchingLesson);
-                        } else {
-                          setActiveView('planner');
-                        }
-                      }}
-                      className="px-3 py-1.5 rounded-xl bg-brand-50 hover:bg-brand-100 dark:bg-brand-950 dark:hover:bg-brand-900 text-brand-700 dark:text-brand-300 text-xs font-semibold shrink-0 transition-all"
-                    >
-                      Teach Lesson
-                    </button>
+            <div className="space-y-3">
+              {todayRotation.classes.map((c) => (
+                <div
+                  key={c.id}
+                  className="flex items-center justify-between p-3.5 rounded-2xl bg-stone-50 dark:bg-stone-800/60 border border-stone-100 dark:border-stone-800 hover:border-stone-200 dark:hover:border-stone-700 transition-all"
+                >
+                  <div className="flex items-center gap-3 min-w-0 pr-3">
+                    <div className="w-2.5 h-10 rounded-full shrink-0 bg-brand-500" />
+                    <div className="min-w-0">
+                      <h3 className="text-sm font-semibold text-stone-900 dark:text-white truncate">{c.name || 'Class'}</h3>
+                      <p className="text-xs text-stone-500 dark:text-stone-400 truncate">
+                        {formatTime(c.start)}{c.end ? ` – ${formatTime(c.end)}` : ''}
+                        {c.room ? ` • ${c.room}` : ''}
+                        {c.grade ? ` • ${c.grade === 'K' || c.grade === 'Chorus' ? c.grade : `Grade ${c.grade}`}` : ''}
+                      </p>
+                    </div>
                   </div>
-                );
-              })}
+                  <button
+                    onClick={() => {
+                      const matchingLesson = lessons.find((l) => l.grade === c.grade);
+                      if (matchingLesson) openTeachMode(matchingLesson);
+                      else setActiveView('planner');
+                    }}
+                    className="px-3 py-1.5 rounded-xl bg-brand-50 hover:bg-brand-100 dark:bg-brand-950 dark:hover:bg-brand-900 text-brand-700 dark:text-brand-300 text-xs font-semibold shrink-0 transition-all"
+                  >
+                    Teach Lesson
+                  </button>
+                </div>
+              ))}
+
+              {todayEvents.map((event) => (
+                <div
+                  key={event.id}
+                  className="flex items-center gap-3 p-3.5 rounded-2xl bg-stone-50 dark:bg-stone-800/60 border border-stone-100 dark:border-stone-800"
+                >
+                  <div className="w-2.5 h-10 rounded-full shrink-0" style={{ backgroundColor: event.color || '#0c87eb' }} />
+                  <div className="min-w-0">
+                    <h3 className="text-sm font-semibold text-stone-900 dark:text-white truncate">{event.title}</h3>
+                    <p className="text-xs text-stone-500 dark:text-stone-400 truncate">
+                      {event.allDay || event.startDate.length <= 10 ? 'All day' : formatTime(event.startDate.slice(11, 16))}
+                      {event.location ? ` • ${event.location}` : ''}
+                    </p>
+                  </div>
+                </div>
+              ))}
+
+              {todayRotation.classes.length === 0 && todayEvents.length === 0 && (
+                <p className="text-sm text-stone-500 dark:text-stone-400 py-2">
+                  {rotation ? (
+                    todayRotation.day ? `Nothing scheduled for Day ${todayRotation.day} yet.` : 'No school today. Enjoy!'
+                  ) : (
+                    <button onClick={() => setActiveView('rotation')} className="text-brand-600 dark:text-brand-400 font-semibold hover:underline">
+                      Set up your class rotation to see today's classes here →
+                    </button>
+                  )}
+                </p>
+              )}
             </div>
           </div>
 
