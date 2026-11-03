@@ -60,6 +60,7 @@ export const Sidebar: React.FC = () => {
       group: 'Workspace',
       items: [
         { id: 'daily-planner', label: 'Daily Planner', icon: NotebookPen },
+        { id: 'journal', label: 'Daily Journal', icon: BookMarked },
         { id: 'tasks', label: 'Tasks', icon: CheckSquare, badgeCount: todayTaskCount },
         { id: 'calendar', label: 'Calendar', icon: Calendar },
         { id: 'rotation', label: 'Class Rotation', icon: CalendarClock },
@@ -88,7 +89,6 @@ export const Sidebar: React.FC = () => {
       group: 'Resources',
       items: [
         { id: 'resources', label: 'Drive & Resource Library', icon: FolderSync },
-        { id: 'journal', label: 'Daily Journal', icon: BookMarked },
         { id: 'youtube', label: 'YouTube Browser', icon: Video }
       ]
     }
