@@ -28,7 +28,7 @@ export const FloatingTimer: React.FC = () => {
   const progress = totalDuration > 0 ? ((totalDuration - timeLeft) / totalDuration) * 100 : 0;
 
   return (
-    <div className="fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-40 bg-white/95 dark:bg-stone-900/95 backdrop-blur-md rounded-2xl shadow-elevated border border-stone-200/80 dark:border-stone-800 p-3.5 w-72 transition-all">
+    <div className="fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-40 bg-white/95 dark:bg-navy-900/95 backdrop-blur-md rounded-2xl shadow-elevated border border-stone-200/80 dark:border-stone-800 p-3.5 w-72 transition-all">
       <div className="flex items-center justify-between pb-2 mb-2 border-b border-stone-100 dark:border-stone-800/60">
         <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-stone-500 dark:text-stone-400">
           <Bell className="w-3.5 h-3.5 text-amber-500 animate-pulse" />

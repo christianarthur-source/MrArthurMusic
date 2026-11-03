@@ -84,8 +84,8 @@ export const HubLock: React.FC<{ children: React.ReactNode }> = ({ children }) =
     'w-full text-center text-lg tracking-[0.3em] font-mono px-4 py-3 rounded-xl bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 text-stone-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-500';
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-stone-100 dark:bg-stone-950 px-4">
-      <div className="w-full max-w-sm bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-8 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-6">
+    <div className="min-h-screen flex items-center justify-center bg-stone-100 dark:bg-navy-950 px-4">
+      <div className="w-full max-w-sm bg-white dark:bg-navy-900 rounded-3xl p-6 sm:p-8 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-6">
         <div className="bg-[#13171d] rounded-2xl p-3 flex justify-center">
           <img src={logoTrimmed} alt="Music Teacher Hub" className="h-10 w-auto object-contain" />
         </div>

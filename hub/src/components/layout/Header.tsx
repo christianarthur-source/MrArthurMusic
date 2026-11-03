@@ -34,7 +34,7 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6 py-2.5 bg-white/90 dark:bg-stone-900/90 backdrop-blur-md border-b border-stone-200/80 dark:border-stone-800 transition-colors">
+    <header className="sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6 py-2.5 bg-white/90 dark:bg-navy-900/90 backdrop-blur-md border-b border-stone-200/80 dark:border-stone-800 transition-colors">
       <div className="flex items-center gap-4">
         <div className="lg:hidden">
           <Logo
@@ -72,7 +72,7 @@ export const Header: React.FC = () => {
           <Search className="w-3.5 h-3.5 text-stone-400" />
           <span className="text-stone-500 dark:text-stone-400">Search lessons, tasks, chorus...</span>
         </span>
-        <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-mono bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded text-stone-500 shadow-subtle">
+        <kbd className="hidden sm:inline-block px-1.5 py-0.5 text-[10px] font-mono bg-white dark:bg-navy-900 border border-stone-200 dark:border-stone-700 rounded text-stone-500 shadow-subtle">
           ⌘K
         </kbd>
       </button>

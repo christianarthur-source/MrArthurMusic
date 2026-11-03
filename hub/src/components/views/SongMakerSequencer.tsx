@@ -258,7 +258,7 @@ export const SongMakerSequencer: React.FC = () => {
   };
 
   return (
-    <div className="bg-white dark:bg-stone-900 rounded-3xl p-5 sm:p-8 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-6 select-none">
+    <div className="bg-white dark:bg-navy-900 rounded-3xl p-5 sm:p-8 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-6 select-none">
       {/* Top Controls Bar */}
       <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-stone-100 dark:border-stone-800">
         <div className="flex items-center gap-3">
@@ -387,7 +387,7 @@ export const SongMakerSequencer: React.FC = () => {
           </div>
 
           {/* MELODY SECTION (8 PITCH ROWS) */}
-          <div className="space-y-1 p-2 rounded-2xl bg-stone-50/80 dark:bg-stone-950/40 border border-stone-200/60 dark:border-stone-800">
+          <div className="space-y-1 p-2 rounded-2xl bg-stone-50/80 dark:bg-navy-950/40 border border-stone-200/60 dark:border-stone-800">
             {MELODY_PITCHES.map((pitch, pitchIdx) => (
               <div key={pitch.note} className="flex items-center gap-2">
                 {/* Note Label */}
@@ -446,7 +446,7 @@ export const SongMakerSequencer: React.FC = () => {
           </div>
 
           {/* DRUM SECTION (3 DRUM ROWS) */}
-          <div className="space-y-1 p-2 rounded-2xl bg-amber-50/40 dark:bg-stone-950/40 border border-amber-200/50 dark:border-stone-800">
+          <div className="space-y-1 p-2 rounded-2xl bg-amber-50/40 dark:bg-navy-950/40 border border-amber-200/50 dark:border-stone-800">
             {DRUM_ROWS.map((drum, drumIdx) => (
               <div key={drum.id} className="flex items-center gap-2">
                 {/* Drum Label */}

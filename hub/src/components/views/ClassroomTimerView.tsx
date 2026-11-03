@@ -54,7 +54,7 @@ export const ClassroomTimerView: React.FC = () => {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6 animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-12 shadow-card border border-stone-200/80 dark:border-stone-800 flex flex-col items-center text-center space-y-8">
+      <div className="bg-white dark:bg-navy-900 rounded-3xl p-6 sm:p-12 shadow-card border border-stone-200/80 dark:border-stone-800 flex flex-col items-center text-center space-y-8">
         {/* Top Controls Bar */}
         <div className="w-full flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-stone-100 dark:border-stone-800">
           <div className="flex items-center gap-2">

@@ -633,7 +633,7 @@ export const AudioStudioView: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* LEFT COLUMN: Main Studio Player & Controls (8 cols) */}
         <div className="lg:col-span-8 space-y-6">
-          <div className="bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-8 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-6">
+          <div className="bg-white dark:bg-navy-900 rounded-3xl p-6 sm:p-8 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-6">
             {/* Active Track Title & Badges */}
             <div className="space-y-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1061,7 +1061,7 @@ export const AudioStudioView: React.FC = () => {
 
         {/* RIGHT COLUMN: Studio Playlist (4 cols) */}
         <div className="lg:col-span-4 space-y-4">
-          <div className="bg-white dark:bg-stone-900 rounded-3xl p-5 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-4">
+          <div className="bg-white dark:bg-navy-900 rounded-3xl p-5 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-stone-100 dark:border-stone-800">
               <div className="flex items-center gap-2">
                 <ListMusic className="w-4 h-4 text-rose-500" />

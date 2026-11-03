@@ -143,7 +143,7 @@ export const SeatingChartView: React.FC = () => {
       {currentChart ? (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* Main Visual Seating Canvas */}
-          <div className="lg:col-span-8 bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-8 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-6">
+          <div className="lg:col-span-8 bg-white dark:bg-navy-900 rounded-3xl p-6 sm:p-8 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-6">
             <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-stone-100 dark:border-stone-800">
               <div>
                 <select
@@ -270,7 +270,7 @@ export const SeatingChartView: React.FC = () => {
           </div>
 
           {/* Right Column: Seat Inspector & Student Editor */}
-          <div className="lg:col-span-4 bg-white dark:bg-stone-900 rounded-3xl p-6 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-4">
+          <div className="lg:col-span-4 bg-white dark:bg-navy-900 rounded-3xl p-6 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-4">
             <h3 className="text-sm font-bold text-stone-900 dark:text-white flex items-center gap-2">
               <Users className="w-4 h-4 text-brand-600" />
               Seat Assignment Inspector

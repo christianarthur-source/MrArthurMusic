@@ -247,7 +247,7 @@ export const CommandPalette: React.FC = () => {
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-start justify-center pt-16 sm:pt-24 px-4 animate-in fade-in duration-150">
       <div
-        className="bg-white dark:bg-stone-900 rounded-2xl shadow-elevated border border-stone-200 dark:border-stone-800 w-full max-w-xl overflow-hidden flex flex-col"
+        className="bg-white dark:bg-navy-900 rounded-2xl shadow-elevated border border-stone-200 dark:border-stone-800 w-full max-w-xl overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Search Input Bar */}
@@ -336,7 +336,7 @@ export const CommandPalette: React.FC = () => {
         </div>
 
         {/* Footer info */}
-        <div className="px-4 py-2.5 bg-stone-50 dark:bg-stone-900/90 border-t border-stone-200 dark:border-stone-800 text-[11px] text-stone-500 flex items-center justify-between">
+        <div className="px-4 py-2.5 bg-stone-50 dark:bg-navy-900/90 border-t border-stone-200 dark:border-stone-800 text-[11px] text-stone-500 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span>↑↓ to navigate</span>
             <span>•</span>

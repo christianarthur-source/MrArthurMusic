@@ -161,7 +161,7 @@ export const MusicToolsView: React.FC = () => {
             }}
             className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${
               activeTab === 'tuner'
-                ? 'bg-white dark:bg-stone-900 text-brand-600 dark:text-brand-400 shadow-sm'
+                ? 'bg-white dark:bg-navy-900 text-brand-600 dark:text-brand-400 shadow-sm'
                 : 'text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white'
             }`}
           >
@@ -177,7 +177,7 @@ export const MusicToolsView: React.FC = () => {
             }}
             className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${
               activeTab === 'metronome'
-                ? 'bg-white dark:bg-stone-900 text-brand-600 dark:text-brand-400 shadow-sm'
+                ? 'bg-white dark:bg-navy-900 text-brand-600 dark:text-brand-400 shadow-sm'
                 : 'text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white'
             }`}
           >
@@ -193,7 +193,7 @@ export const MusicToolsView: React.FC = () => {
       {/* 2. CHROMATIC TUNER TAB */}
       {activeTab === 'tuner' && (
         <div className="space-y-6">
-          <div className="bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-10 shadow-card border border-stone-200/80 dark:border-stone-800 flex flex-col items-center text-center space-y-6">
+          <div className="bg-white dark:bg-navy-900 rounded-3xl p-6 sm:p-10 shadow-card border border-stone-200/80 dark:border-stone-800 flex flex-col items-center text-center space-y-6">
             {/* Presets and Ref A4 Bar */}
             <div className="w-full flex flex-wrap items-center justify-between gap-4 max-w-xl pb-4 border-b border-stone-100 dark:border-stone-800">
               <div className="flex items-center gap-2">
@@ -337,7 +337,7 @@ export const MusicToolsView: React.FC = () => {
       {/* 3. PRECISION METRONOME TAB */}
       {activeTab === 'metronome' && (
         <div className="space-y-6">
-          <div className="bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-10 shadow-card border border-stone-200/80 dark:border-stone-800 flex flex-col items-center text-center space-y-8">
+          <div className="bg-white dark:bg-navy-900 rounded-3xl p-6 sm:p-10 shadow-card border border-stone-200/80 dark:border-stone-800 flex flex-col items-center text-center space-y-8">
             {/* Visual Beat Indicator Dots */}
             <div className="flex items-center justify-center gap-3">
               {Array.from({ length: beatsPerBar }).map((_, idx) => {

@@ -658,7 +658,7 @@ END:VCALENDAR`;
             onClick={() => setViewMode('month')}
             className={`px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
               viewMode === 'month'
-                ? 'bg-white dark:bg-stone-900 text-brand-600 dark:text-brand-400 shadow-sm'
+                ? 'bg-white dark:bg-navy-900 text-brand-600 dark:text-brand-400 shadow-sm'
                 : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
             }`}
           >
@@ -669,7 +669,7 @@ END:VCALENDAR`;
             onClick={() => setViewMode('week')}
             className={`px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
               viewMode === 'week'
-                ? 'bg-white dark:bg-stone-900 text-brand-600 dark:text-brand-400 shadow-sm'
+                ? 'bg-white dark:bg-navy-900 text-brand-600 dark:text-brand-400 shadow-sm'
                 : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
             }`}
           >
@@ -680,7 +680,7 @@ END:VCALENDAR`;
             onClick={() => setViewMode('agenda')}
             className={`px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
               viewMode === 'agenda'
-                ? 'bg-white dark:bg-stone-900 text-brand-600 dark:text-brand-400 shadow-sm'
+                ? 'bg-white dark:bg-navy-900 text-brand-600 dark:text-brand-400 shadow-sm'
                 : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
             }`}
           >
@@ -738,7 +738,7 @@ END:VCALENDAR`;
               key={sub.id}
               className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium shrink-0 transition-all border ${
                 !sub.enabled
-                  ? 'opacity-40 bg-stone-50 dark:bg-stone-900 border-stone-200 dark:border-stone-800 line-through'
+                  ? 'opacity-40 bg-stone-50 dark:bg-navy-900 border-stone-200 dark:border-stone-800 line-through'
                   : isSelected
                   ? 'bg-white dark:bg-stone-800 text-stone-900 dark:text-white border-stone-400 dark:border-stone-600 shadow-xs'
                   : 'bg-stone-50 dark:bg-stone-800/60 text-stone-700 dark:text-stone-300 border-stone-200 dark:border-stone-700 hover:bg-stone-100'
@@ -780,7 +780,7 @@ END:VCALENDAR`;
 
       {/* 1. MONTH VIEW */}
       {viewMode === 'month' && (
-        <div className="bg-white dark:bg-stone-900 rounded-3xl p-4 sm:p-6 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-3">
+        <div className="bg-white dark:bg-navy-900 rounded-3xl p-4 sm:p-6 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-3">
           {/* Day of Week Header */}
           <div className="grid grid-cols-7 gap-1 sm:gap-2 text-center text-xs font-black uppercase tracking-wider text-stone-400 pb-2 border-b border-stone-100 dark:border-stone-800">
             <span>Sun</span>
@@ -879,7 +879,7 @@ END:VCALENDAR`;
 
       {/* 2. WEEK VIEW */}
       {viewMode === 'week' && (
-        <div className="bg-white dark:bg-stone-900 rounded-3xl p-4 sm:p-6 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-4">
+        <div className="bg-white dark:bg-navy-900 rounded-3xl p-4 sm:p-6 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-7 gap-3">
             {weekDays.map((dayDate, i) => {
               const dayStr = dayDate.toISOString().split('T')[0];
@@ -967,7 +967,7 @@ END:VCALENDAR`;
 
       {/* 3. AGENDA VIEW */}
       {viewMode === 'agenda' && (
-        <div className="bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-8 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-4">
+        <div className="bg-white dark:bg-navy-900 rounded-3xl p-6 sm:p-8 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-4">
           <h3 className="text-sm font-bold text-stone-900 dark:text-white flex items-center justify-between">
             <span>Upcoming Classes & Schedule ({filteredEvents.length})</span>
           </h3>
@@ -1037,7 +1037,7 @@ END:VCALENDAR`;
       {/* Selected Day Events Popup Modal (from Month View click) */}
       {selectedDayEvents && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl border border-stone-200 dark:border-stone-800 space-y-4">
+          <div className="bg-white dark:bg-navy-900 rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl border border-stone-200 dark:border-stone-800 space-y-4">
             <div className="flex items-center justify-between pb-2 border-b border-stone-100 dark:border-stone-800">
               <div>
                 <span className="text-xs font-bold text-stone-400 uppercase tracking-wider">
@@ -1111,7 +1111,7 @@ END:VCALENDAR`;
       {/* Shared Calendar Link / ICS Import Modal */}
       {isImportModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl border border-stone-200 dark:border-stone-800 space-y-5">
+          <div className="bg-white dark:bg-navy-900 rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl border border-stone-200 dark:border-stone-800 space-y-5">
             <div className="flex items-center justify-between pb-2 border-b border-stone-100 dark:border-stone-800">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-xl bg-sky-50 dark:bg-sky-950/60 flex items-center justify-center text-sky-600">
@@ -1145,7 +1145,7 @@ END:VCALENDAR`;
                   value={newSubName}
                   onChange={(e) => setNewSubName(e.target.value)}
                   placeholder="e.g. District Fine Arts, Grade 5 Band..."
-                  className="w-full text-xs px-3 py-2 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-xl"
+                  className="w-full text-xs px-3 py-2 bg-white dark:bg-navy-900 border border-stone-200 dark:border-stone-700 rounded-xl"
                 />
               </div>
               <div>
@@ -1264,7 +1264,7 @@ END:VCALENDAR`;
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <form
             onSubmit={handleCreateEvent}
-            className="bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-stone-200 dark:border-stone-800 space-y-4"
+            className="bg-white dark:bg-navy-900 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-stone-200 dark:border-stone-800 space-y-4"
           >
             <h3 className="text-lg font-bold text-stone-900 dark:text-white">
               Add Calendar Event
@@ -1379,7 +1379,7 @@ END:VCALENDAR`;
       {/* Manage Calendars & Subscriptions Modal */}
       {isManageSubscriptionsOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-8 max-w-xl w-full shadow-2xl border border-stone-200 dark:border-stone-800 space-y-5 animate-in fade-in max-h-[90vh] overflow-y-auto">
+          <div className="bg-white dark:bg-navy-900 rounded-3xl p-6 sm:p-8 max-w-xl w-full shadow-2xl border border-stone-200 dark:border-stone-800 space-y-5 animate-in fade-in max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between pb-3 border-b border-stone-200 dark:border-stone-800">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center">
@@ -1527,7 +1527,7 @@ END:VCALENDAR`;
       {/* Unsubscribe Confirmation Modal */}
       {subscriptionToUnsubscribe && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
-          <div className="bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-7 max-w-md w-full shadow-2xl border border-rose-200 dark:border-rose-900/60 space-y-4">
+          <div className="bg-white dark:bg-navy-900 rounded-3xl p-6 sm:p-7 max-w-md w-full shadow-2xl border border-rose-200 dark:border-rose-900/60 space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-2xl bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
                 <CalendarX className="w-6 h-6" />

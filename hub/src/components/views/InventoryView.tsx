@@ -138,7 +138,7 @@ export const InventoryView: React.FC = () => {
         {filtered.map((item) => (
           <div
             key={item.id}
-            className="p-5 rounded-3xl bg-white dark:bg-stone-900 shadow-card border border-stone-200/80 dark:border-stone-800 flex flex-col justify-between space-y-4"
+            className="p-5 rounded-3xl bg-white dark:bg-navy-900 shadow-card border border-stone-200/80 dark:border-stone-800 flex flex-col justify-between space-y-4"
           >
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -185,7 +185,7 @@ export const InventoryView: React.FC = () => {
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <form
             onSubmit={handleAddItem}
-            className="bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-stone-200 dark:border-stone-800 space-y-4"
+            className="bg-white dark:bg-navy-900 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-stone-200 dark:border-stone-800 space-y-4"
           >
             <h3 className="text-lg font-bold text-stone-900 dark:text-white">
               Add Instrument to Inventory

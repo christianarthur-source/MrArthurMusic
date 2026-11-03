@@ -253,7 +253,7 @@ Activities for sub (e.g. Chrome Music Lab or video listening lesson in Link Libr
               onClick={() => setViewMode('entries')}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
                 viewMode === 'entries'
-                  ? 'bg-white dark:bg-stone-900 text-brand-600 dark:text-brand-400 shadow-sm'
+                  ? 'bg-white dark:bg-navy-900 text-brand-600 dark:text-brand-400 shadow-sm'
                   : 'text-stone-500 hover:text-stone-900'
               }`}
             >
@@ -264,7 +264,7 @@ Activities for sub (e.g. Chrome Music Lab or video listening lesson in Link Libr
               onClick={() => setViewMode('calendar')}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
                 viewMode === 'calendar'
-                  ? 'bg-white dark:bg-stone-900 text-brand-600 dark:text-brand-400 shadow-sm'
+                  ? 'bg-white dark:bg-navy-900 text-brand-600 dark:text-brand-400 shadow-sm'
                   : 'text-stone-500 hover:text-stone-900'
               }`}
             >
@@ -318,7 +318,7 @@ Activities for sub (e.g. Chrome Music Lab or video listening lesson in Link Libr
               setViewMode('entries');
               setIsEditing(false);
             }}
-            className="px-4 py-2 rounded-xl bg-white dark:bg-stone-900 text-amber-700 dark:text-amber-300 text-xs font-bold border border-amber-200 dark:border-amber-800 hover:bg-amber-50 shadow-xs self-start sm:self-auto shrink-0"
+            className="px-4 py-2 rounded-xl bg-white dark:bg-navy-900 text-amber-700 dark:text-amber-300 text-xs font-bold border border-amber-200 dark:border-amber-800 hover:bg-amber-50 shadow-xs self-start sm:self-auto shrink-0"
           >
             Read Flashback
           </button>
@@ -379,7 +379,7 @@ Activities for sub (e.g. Chrome Music Lab or video listening lesson in Link Libr
 
       {/* CALENDAR HEATMAP VIEW */}
       {viewMode === 'calendar' && (
-        <div className="bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-8 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-4">
+        <div className="bg-white dark:bg-navy-900 rounded-3xl p-6 sm:p-8 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-stone-100 dark:border-stone-800">
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4 text-brand-600" />
@@ -474,7 +474,7 @@ Activities for sub (e.g. Chrome Music Lab or video listening lesson in Link Libr
           {/* Left Column: Entries List */}
           <div className="lg:col-span-5 space-y-2 max-h-[75vh] overflow-y-auto pr-1">
             {filteredEntries.length === 0 ? (
-              <div className="p-8 text-center text-xs text-stone-400 bg-stone-50 dark:bg-stone-900 rounded-3xl border border-stone-200 dark:border-stone-800">
+              <div className="p-8 text-center text-xs text-stone-400 bg-stone-50 dark:bg-navy-900 rounded-3xl border border-stone-200 dark:border-stone-800">
                 No journal reflections found matching your criteria.
               </div>
             ) : (
@@ -490,7 +490,7 @@ Activities for sub (e.g. Chrome Music Lab or video listening lesson in Link Libr
                     className={`p-4 rounded-3xl cursor-pointer transition-all border text-left ${
                       isSelected
                         ? 'bg-white dark:bg-stone-800 border-brand-500 shadow-card'
-                        : 'bg-stone-50/70 dark:bg-stone-900/60 border-stone-200/60 dark:border-stone-800 hover:bg-stone-100 dark:hover:bg-stone-800/50'
+                        : 'bg-stone-50/70 dark:bg-navy-900/60 border-stone-200/60 dark:border-stone-800 hover:bg-stone-100 dark:hover:bg-stone-800/50'
                     }`}
                   >
                     <div className="flex items-center justify-between text-xs mb-1">
@@ -556,7 +556,7 @@ Activities for sub (e.g. Chrome Music Lab or video listening lesson in Link Libr
             {isEditing ? (
               <form
                 onSubmit={handleSaveEntry}
-                className="bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-8 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-4"
+                className="bg-white dark:bg-navy-900 rounded-3xl p-6 sm:p-8 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-4"
               >
                 <div className="flex items-center justify-between pb-2 border-b border-stone-100 dark:border-stone-800">
                   <h3 className="text-base font-bold text-stone-900 dark:text-white">
@@ -708,7 +708,7 @@ Activities for sub (e.g. Chrome Music Lab or video listening lesson in Link Libr
                 </div>
               </form>
             ) : selectedEntry ? (
-              <div className="bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-8 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-6">
+              <div className="bg-white dark:bg-navy-900 rounded-3xl p-6 sm:p-8 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-6">
                 {/* Header & Day One Meta Chips */}
                 <div className="flex items-start justify-between pb-4 border-b border-stone-100 dark:border-stone-800 gap-4">
                   <div>
@@ -795,7 +795,7 @@ Activities for sub (e.g. Chrome Music Lab or video listening lesson in Link Libr
                 </div>
               </div>
             ) : (
-              <div className="p-12 text-center text-stone-400 bg-white dark:bg-stone-900 rounded-3xl border border-stone-200 dark:border-stone-800">
+              <div className="p-12 text-center text-stone-400 bg-white dark:bg-navy-900 rounded-3xl border border-stone-200 dark:border-stone-800">
                 Select or create a reflection entry.
               </div>
             )}

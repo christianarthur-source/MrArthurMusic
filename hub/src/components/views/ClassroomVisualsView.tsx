@@ -338,7 +338,7 @@ export const ClassroomVisualsView: React.FC = () => {
               onClick={() => setActiveCategory(cat.id as any)}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
                 activeCategory === cat.id
-                  ? 'bg-white dark:bg-stone-900 text-indigo-600 dark:text-indigo-400 shadow-xs'
+                  ? 'bg-white dark:bg-navy-900 text-indigo-600 dark:text-indigo-400 shadow-xs'
                   : 'text-stone-600 dark:text-stone-400 hover:text-stone-900 dark:hover:text-white'
               }`}
             >
@@ -350,9 +350,9 @@ export const ClassroomVisualsView: React.FC = () => {
 
       {/* 1. EXTRA-LARGE FIVE-LINE MUSIC STAFF */}
       {activeCategory === 'staff' && (
-        <div className={`space-y-6 ${isFullscreenStaff ? 'fixed inset-0 z-50 bg-white dark:bg-stone-950 p-6 overflow-y-auto' : ''}`}>
+        <div className={`space-y-6 ${isFullscreenStaff ? 'fixed inset-0 z-50 bg-white dark:bg-navy-950 p-6 overflow-y-auto' : ''}`}>
           {/* Controls Bar */}
-          <div className="bg-white dark:bg-stone-900 rounded-3xl p-4 sm:p-5 shadow-card border border-stone-200/80 dark:border-stone-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="bg-white dark:bg-navy-900 rounded-3xl p-4 sm:p-5 shadow-card border border-stone-200/80 dark:border-stone-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
             {/* Clef Switcher */}
             <div className="flex items-center gap-2">
               <span className="text-xs font-black uppercase text-stone-400 mr-1">Clef:</span>
@@ -387,7 +387,7 @@ export const ClassroomVisualsView: React.FC = () => {
                   onClick={() => setStaffDisplayMode('interactive')}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
                     staffDisplayMode === 'interactive'
-                      ? 'bg-white dark:bg-stone-900 text-indigo-600 shadow-xs'
+                      ? 'bg-white dark:bg-navy-900 text-indigo-600 shadow-xs'
                       : 'text-stone-500 hover:text-stone-800'
                   }`}
                 >
@@ -398,7 +398,7 @@ export const ClassroomVisualsView: React.FC = () => {
                   onClick={() => setStaffDisplayMode('diagram')}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
                     staffDisplayMode === 'diagram'
-                      ? 'bg-white dark:bg-stone-900 text-indigo-600 shadow-xs'
+                      ? 'bg-white dark:bg-navy-900 text-indigo-600 shadow-xs'
                       : 'text-stone-500 hover:text-stone-800'
                   }`}
                 >
@@ -459,7 +459,7 @@ export const ClassroomVisualsView: React.FC = () => {
 
           {/* Interactive Scalable Large SVG Staff */}
           {staffDisplayMode === 'interactive' ? (
-            <div className="bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-10 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-6">
+            <div className="bg-white dark:bg-navy-900 rounded-3xl p-6 sm:p-10 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-6">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-black text-stone-900 dark:text-white">
@@ -680,7 +680,7 @@ export const ClassroomVisualsView: React.FC = () => {
             </div>
           ) : (
             /* High-Res Labeled Diagram Poster View */
-            <div className="bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-10 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-6">
+            <div className="bg-white dark:bg-navy-900 rounded-3xl p-6 sm:p-10 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-6">
               <div className="flex items-center justify-between pb-3 border-b border-stone-100 dark:border-stone-800">
                 <div>
                   <h3 className="text-lg font-black text-stone-900 dark:text-white">
@@ -718,7 +718,7 @@ export const ClassroomVisualsView: React.FC = () => {
 
       {/* 2. EXTRA-LARGE PIANO KEYBOARD WITH LABELED KEYS */}
       {activeCategory === 'piano' && (
-        <div className="bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-10 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-6">
+        <div className="bg-white dark:bg-navy-900 rounded-3xl p-6 sm:p-10 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-stone-100 dark:border-stone-800">
             <div>
               <h3 className="text-lg font-black text-stone-900 dark:text-white">
@@ -735,7 +735,7 @@ export const ClassroomVisualsView: React.FC = () => {
                   onClick={() => setPianoDisplayMode('interactive')}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                     pianoDisplayMode === 'interactive'
-                      ? 'bg-white dark:bg-stone-900 text-indigo-600 shadow-xs'
+                      ? 'bg-white dark:bg-navy-900 text-indigo-600 shadow-xs'
                       : 'text-stone-500'
                   }`}
                 >
@@ -745,7 +745,7 @@ export const ClassroomVisualsView: React.FC = () => {
                   onClick={() => setPianoDisplayMode('diagram')}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                     pianoDisplayMode === 'diagram'
-                      ? 'bg-white dark:bg-stone-900 text-indigo-600 shadow-xs'
+                      ? 'bg-white dark:bg-navy-900 text-indigo-600 shadow-xs'
                       : 'text-stone-500'
                   }`}
                 >
@@ -846,7 +846,7 @@ export const ClassroomVisualsView: React.FC = () => {
 
       {/* 3. CURWEN SOLFEGE TONE LADDER & HAND SIGNS */}
       {activeCategory === 'solfege' && (
-        <div className="bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-10 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-6">
+        <div className="bg-white dark:bg-navy-900 rounded-3xl p-6 sm:p-10 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-stone-100 dark:border-stone-800">
             <div>
               <h3 className="text-lg font-black text-stone-900 dark:text-white">
@@ -933,7 +933,7 @@ export const ClassroomVisualsView: React.FC = () => {
 
       {/* 4. OVERSIZED KODÁLY RHYTHM FLASHCARDS */}
       {activeCategory === 'rhythm' && (
-        <div className="bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-10 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-6">
+        <div className="bg-white dark:bg-navy-900 rounded-3xl p-6 sm:p-10 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-6">
           <div className="flex items-center justify-between pb-4 border-b border-stone-100 dark:border-stone-800">
             <div>
               <h3 className="text-lg font-black text-stone-900 dark:text-white">
@@ -988,7 +988,7 @@ export const ClassroomVisualsView: React.FC = () => {
 
       {/* 5. DYNAMICS & TEMPO LADDER */}
       {activeCategory === 'dynamics' && (
-        <div className="bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-10 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-6">
+        <div className="bg-white dark:bg-navy-900 rounded-3xl p-6 sm:p-10 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-6">
           <div>
             <h3 className="text-lg font-black text-stone-900 dark:text-white">
               Dynamics & Expressive Tempo Reference Posters
@@ -1044,7 +1044,7 @@ export const ClassroomVisualsView: React.FC = () => {
 
       {/* 6. ORCHESTRA INSTRUMENT FAMILIES */}
       {activeCategory === 'instruments' && (
-        <div className="bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-10 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-6">
+        <div className="bg-white dark:bg-navy-900 rounded-3xl p-6 sm:p-10 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-6">
           <div>
             <h3 className="text-lg font-black text-stone-900 dark:text-white">
               The 4 Instrument Families of the Symphony Orchestra
@@ -1108,7 +1108,7 @@ export const ClassroomVisualsView: React.FC = () => {
                   </p>
                 </div>
 
-                <div className="p-3 rounded-2xl bg-stone-50 dark:bg-stone-900/60 text-stone-500 text-[11px] font-medium italic">
+                <div className="p-3 rounded-2xl bg-stone-50 dark:bg-navy-900/60 text-stone-500 text-[11px] font-medium italic">
                   💡 Classroom tip: {fam.tip}
                 </div>
               </div>

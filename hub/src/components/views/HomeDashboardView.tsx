@@ -127,7 +127,7 @@ export const HomeDashboardView: React.FC = () => {
       </div>
 
       {/* Quick Launch Colorful Music Classroom Tools Bar */}
-      <div className="bg-white dark:bg-stone-900 rounded-2xl p-4 shadow-card border border-stone-200/80 dark:border-stone-800 flex flex-wrap items-center justify-between gap-3">
+      <div className="bg-white dark:bg-navy-900 rounded-2xl p-4 shadow-card border border-stone-200/80 dark:border-stone-800 flex flex-wrap items-center justify-between gap-3">
         <span className="text-xs font-bold uppercase tracking-wider text-stone-500 dark:text-stone-400 flex items-center gap-2">
           <Clock className="w-4 h-4 text-rose-500" />
           Quick Classroom Tools
@@ -184,7 +184,7 @@ export const HomeDashboardView: React.FC = () => {
         {/* Left 2 Columns: Schedule & Today's Tasks */}
         <div className="lg:col-span-2 space-y-6">
           {/* Today's Classes */}
-          <div className="bg-white dark:bg-stone-900 rounded-3xl p-6 shadow-card border border-stone-200/80 dark:border-stone-800">
+          <div className="bg-white dark:bg-navy-900 rounded-3xl p-6 shadow-card border border-stone-200/80 dark:border-stone-800">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <CalendarIcon className="w-5 h-5 text-brand-600" />
@@ -245,7 +245,7 @@ export const HomeDashboardView: React.FC = () => {
           </div>
 
           {/* Things 3 Inspired Today Tasks */}
-          <div className="bg-white dark:bg-stone-900 rounded-3xl p-6 shadow-card border border-stone-200/80 dark:border-stone-800">
+          <div className="bg-white dark:bg-navy-900 rounded-3xl p-6 shadow-card border border-stone-200/80 dark:border-stone-800">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="w-5 h-5 text-emerald-600" />
@@ -386,7 +386,7 @@ export const HomeDashboardView: React.FC = () => {
           </div>
 
           {/* Audio Practice Lab & Playlist Launcher */}
-          <div className="bg-white dark:bg-stone-900 rounded-3xl p-6 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-4">
+          <div className="bg-white dark:bg-navy-900 rounded-3xl p-6 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold text-stone-900 dark:text-white flex items-center gap-2">
                 <Sliders className="w-4 h-4 text-purple-600" />
@@ -411,7 +411,7 @@ export const HomeDashboardView: React.FC = () => {
           </div>
 
           {/* Quick Curriculum Grade Navigator */}
-          <div className="bg-white dark:bg-stone-900 rounded-3xl p-6 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-3">
+          <div className="bg-white dark:bg-navy-900 rounded-3xl p-6 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-3">
             <h3 className="text-sm font-bold text-stone-900 dark:text-white flex items-center gap-2">
               <BookOpen className="w-4 h-4 text-brand-600" />
               Elementary Curriculum (K–6)
