@@ -2,11 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { audioEngine } from '../../services/audioEngine';
 import { studioAudioEngine, TrackWaveformData } from '../../services/pitchShifterAudio';
-import {
-  generateRecorderAccompaniment,
-  generateOrffGroove,
-  generateSteadyBeatMarch
-} from '../../services/soundGenerator';
+import { addFiles, listTracks, removeTrack, StoredTrack } from '../../services/audioLibrary';
 import {
   Play,
   Pause,
@@ -41,7 +37,7 @@ export interface StudioTrack {
   url: string;
   artist?: string;
   duration?: number;
-  source: 'local' | 'uploaded' | 'bundled';
+  source: 'local' | 'uploaded';
   fileType?: string;
 }
 
@@ -55,39 +51,9 @@ interface Marker {
 export const AudioStudioView: React.FC = () => {
   const { showToast } = useApp();
 
-  // Playlist State initialized with bundled classroom accompaniment tracks
-  const [playlist, setPlaylist] = useState<StudioTrack[]>(() => {
-    try {
-      return [
-        {
-          id: 'bundle-1',
-          title: 'Recorder Karate Backing Track (76 BPM)',
-          url: generateRecorderAccompaniment(),
-          artist: 'Classroom Accompaniment',
-          source: 'bundled',
-          fileType: 'WAV'
-        },
-        {
-          id: 'bundle-2',
-          title: 'Orff Pentatonic Jam (C Major, 104 BPM)',
-          url: generateOrffGroove(),
-          artist: 'Mallet Ensemble Ostinato',
-          source: 'bundled',
-          fileType: 'WAV'
-        },
-        {
-          id: 'bundle-3',
-          title: 'Steady Beat Drum Cadence & March (116 BPM)',
-          url: generateSteadyBeatMarch(),
-          artist: 'Elementary Movement Track',
-          source: 'bundled',
-          fileType: 'WAV'
-        }
-      ];
-    } catch {
-      return [];
-    }
-  });
+  // Playlist: the audio files saved on this device (see audioLibrary), loaded when the studio opens
+  const [playlist, setPlaylist] = useState<StudioTrack[]>([]);
+  const [libraryLoaded, setLibraryLoaded] = useState(false);
   const [currentTrackIndex, setCurrentTrackIndex] = useState<number>(0);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [currentTime, setCurrentTime] = useState<number>(0);
@@ -100,10 +66,7 @@ export const AudioStudioView: React.FC = () => {
   const [isShuffle, setIsShuffle] = useState<boolean>(false);
 
   // Rehearsal Markers
-  const [markers, setMarkers] = useState<Marker[]>([
-    { id: 'm-1', time: 4.0, label: 'Recorder Ready Position', notes: 'Check breath support and left thumb hole coverage' },
-    { id: 'm-2', time: 12.0, label: 'Section B Transition', notes: 'Transition from B-A to low G finger position' }
-  ]);
+  const [markers, setMarkers] = useState<Marker[]>([]);
   const [newMarkerLabel, setNewMarkerLabel] = useState('');
 
   // DAW Waveform Data & Audio Engine State
@@ -115,6 +78,56 @@ export const AudioStudioView: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const currentTrack = playlist[currentTrackIndex] || null;
+  // The latest playlist, for async handlers that finish after a re-render
+  const playlistRef = useRef(playlist);
+  playlistRef.current = playlist;
+
+  const toStudioTrack = (t: StoredTrack): StudioTrack => ({
+    id: t.id,
+    title: t.title,
+    url: URL.createObjectURL(t.blob),
+    artist: t.source === 'local' ? 'Local Device File' : 'Uploaded File',
+    source: t.source,
+    fileType: t.fileType
+  });
+
+  // Load the saved library once; release the temporary file URLs when leaving the studio.
+  const urlsRef = useRef<string[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    listTracks()
+      .then((stored) => {
+        if (cancelled) return;
+        const tracks = stored.map(toStudioTrack);
+        urlsRef.current.push(...tracks.map((t) => t.url));
+        setPlaylist(tracks);
+      })
+      .catch((err) => {
+        console.error('Could not load the saved audio library', err);
+        showToast('Could not load your saved audio files on this device', 'error');
+      })
+      .finally(() => !cancelled && setLibraryLoaded(true));
+    return () => {
+      cancelled = true;
+      urlsRef.current.forEach((u) => URL.revokeObjectURL(u));
+    };
+  }, []);
+
+  /** Saves new files on this device and adds them to the end of the playlist. */
+  const addToLibrary = async (files: File[], source: StudioTrack['source']) => {
+    const audio = files.filter((f) => f.type.startsWith('audio/') || /\.(mp3|wav|ogg|m4a|aac|flac)$/i.test(f.name));
+    if (audio.length === 0) return;
+    try {
+      const tracks = (await addFiles(audio, source)).map(toStudioTrack);
+      urlsRef.current.push(...tracks.map((t) => t.url));
+      setCurrentTrackIndex(playlistRef.current.length); // jump to the first new track
+      setPlaylist((prev) => [...prev, ...tracks]);
+      showToast(`Saved ${tracks.length} track${tracks.length > 1 ? 's' : ''} to this device's playlist`, 'success');
+    } catch (err) {
+      console.error('Could not save audio files', err);
+      showToast('Could not save those files. The device may be out of storage space.', 'error');
+    }
+  };
 
   // Whenever the active track changes, decode its PCM data and extract real waveform peaks
   useEffect(() => {
@@ -277,26 +290,8 @@ export const AudioStudioView: React.FC = () => {
           ]
         });
 
-        const newTracks: StudioTrack[] = [];
-        for (const handle of fileHandles) {
-          const file = await handle.getFile();
-          const url = URL.createObjectURL(file);
-          const ext = file.name.split('.').pop()?.toUpperCase() || 'AUDIO';
-          newTracks.push({
-            id: 'local-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-            title: file.name.replace(/\.[^/.]+$/, ''),
-            url,
-            artist: 'Local Device File',
-            source: 'local',
-            fileType: ext
-          });
-        }
-
-        if (newTracks.length > 0) {
-          setPlaylist((prev) => [...prev, ...newTracks]);
-          setCurrentTrackIndex(playlist.length); // jump to first newly added
-          showToast(`Added ${newTracks.length} local file(s) to playlist`, 'success');
-        }
+        const files: File[] = await Promise.all(fileHandles.map((h: any) => h.getFile()));
+        await addToLibrary(files, 'local');
       } catch (err: any) {
         if (err.name !== 'AbortError') {
           // If cancelled, do nothing. If error, fallback to standard input.
@@ -314,28 +309,7 @@ export const AudioStudioView: React.FC = () => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
 
-    const newTracks: StudioTrack[] = [];
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const url = URL.createObjectURL(file);
-      const ext = file.name.split('.').pop()?.toUpperCase() || 'AUDIO';
-      newTracks.push({
-        id: 'upload-' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-        title: file.name.replace(/\.[^/.]+$/, ''),
-        url,
-        artist: 'Uploaded File',
-        source: 'uploaded',
-        fileType: ext
-      });
-    }
-
-    if (newTracks.length > 0) {
-      const newPlaylist = [...playlist, ...newTracks];
-      const startIndex = playlist.length;
-      setPlaylist(newPlaylist);
-      setCurrentTrackIndex(startIndex);
-      showToast(`Added ${newTracks.length} track(s) to playlist`, 'success');
-    }
+    addToLibrary(Array.from(files), 'uploaded');
 
     // Reset input value so same file can be re-uploaded if desired
     e.target.value = '';
@@ -343,20 +317,20 @@ export const AudioStudioView: React.FC = () => {
 
   const removeTrackFromPlaylist = (indexToRemove: number, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (playlist.length <= 1) {
-      showToast('Playlist must have at least one track', 'warning');
-      return;
-    }
+    const track = playlist[indexToRemove];
+    if (!track || !confirm(`Remove "${track.title}" from this device's playlist?`)) return;
 
     const updated = playlist.filter((_, idx) => idx !== indexToRemove);
+    if (indexToRemove === currentTrackIndex) studioAudioEngine.stop();
     setPlaylist(updated);
 
     if (indexToRemove === currentTrackIndex) {
-      setCurrentTrackIndex(Math.min(currentTrackIndex, updated.length - 1));
+      setCurrentTrackIndex(Math.max(0, Math.min(currentTrackIndex, updated.length - 1)));
     } else if (indexToRemove < currentTrackIndex) {
       setCurrentTrackIndex(currentTrackIndex - 1);
     }
-    showToast('Track removed from playlist', 'info');
+    removeTrack(track.id).catch((err) => console.error('Could not delete saved track', err));
+    showToast('Track removed', 'info');
   };
 
   // True DAW Waveform Visualization Canvas
@@ -660,15 +634,11 @@ export const AudioStudioView: React.FC = () => {
                       className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                         currentTrack.source === 'local'
                           ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-300'
-                          : currentTrack.source === 'bundled'
-                          ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300'
                           : 'bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-300'
                       }`}
                     >
                       {currentTrack.source === 'local'
                         ? 'Local File'
-                        : currentTrack.source === 'bundled'
-                        ? 'Classroom Backing'
                         : 'Imported'}
                     </span>
                   </div>
@@ -1094,6 +1064,13 @@ export const AudioStudioView: React.FC = () => {
 
             {/* Playlist Track List */}
             <div className="space-y-2 max-h-[500px] overflow-y-auto pr-1">
+              {libraryLoaded && playlist.length === 0 && (
+                <div className="p-6 rounded-2xl border border-dashed border-stone-300 dark:border-stone-700 text-center text-xs text-stone-500 space-y-1">
+                  <FileAudio className="w-6 h-6 mx-auto text-stone-400" />
+                  <p className="font-semibold text-stone-700 dark:text-stone-300">No tracks yet</p>
+                  <p>Add MP3s or WAVs and they'll be here every time you open the studio on this device.</p>
+                </div>
+              )}
               {playlist.map((track, idx) => {
                 const isSelected = idx === currentTrackIndex;
 
@@ -1161,10 +1138,10 @@ export const AudioStudioView: React.FC = () => {
 
             <div className="p-3 bg-stone-50 dark:bg-stone-800/40 rounded-2xl text-[11px] text-stone-500 space-y-1">
               <p className="font-semibold text-stone-700 dark:text-stone-300">
-                💡 Local Files on School Laptop
+                💡 Saved on this device
               </p>
               <p>
-                Click <strong>"Open Local Machine Files"</strong> to select backing MP3s/WAVs directly from your documents or downloads folder.
+                Tracks you add are kept in this browser, so they're here next time. They don't sync to your other devices yet; add them on each device you teach from.
               </p>
             </div>
           </div>
