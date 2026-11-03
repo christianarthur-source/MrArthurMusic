@@ -225,8 +225,8 @@ export const RichEditor: React.FC<RichEditorProps> = ({
         <div
           className={`no-print flex flex-wrap items-center gap-0.5 ${
             compact
-              ? 'absolute -top-9 left-0 z-20 rounded-lg bg-white dark:bg-stone-800 shadow-md border border-stone-200 dark:border-stone-700 px-1 py-0.5'
-              : 'mb-2 pb-2 border-b border-stone-300/60 dark:border-stone-600/60'
+              ? 'absolute -top-9 left-0 z-20 rounded-lg bg-white shadow-md border border-stone-200 px-1 py-0.5'
+              : 'mb-2 pb-2 border-b border-stone-300/60'
           }`}
           onMouseDown={(e) => e.preventDefault()}
         >
@@ -237,7 +237,7 @@ export const RichEditor: React.FC<RichEditorProps> = ({
               title={label}
               aria-label={label}
               onClick={action}
-              className="p-1.5 rounded-md text-stone-600 hover:text-stone-900 hover:bg-stone-900/5 dark:text-stone-300 dark:hover:text-white dark:hover:bg-white/10"
+              className="p-1.5 rounded-md text-stone-600 hover:text-stone-900 hover:bg-stone-900/5"
             >
               <Icon className={compact ? 'w-3.5 h-3.5' : 'w-4 h-4'} />
             </button>
@@ -248,12 +248,12 @@ export const RichEditor: React.FC<RichEditorProps> = ({
               title="Ink color"
               aria-label="Ink color"
               onClick={() => setShowColors((v) => !v)}
-              className="p-1.5 rounded-md text-stone-600 hover:text-stone-900 hover:bg-stone-900/5 dark:text-stone-300 dark:hover:text-white dark:hover:bg-white/10"
+              className="p-1.5 rounded-md text-stone-600 hover:text-stone-900 hover:bg-stone-900/5"
             >
               <Palette className={compact ? 'w-3.5 h-3.5' : 'w-4 h-4'} />
             </button>
             {showColors && (
-              <div className="absolute top-full left-0 mt-1 z-30 flex gap-1 p-1.5 rounded-lg bg-white dark:bg-stone-800 shadow-lg border border-stone-200 dark:border-stone-700">
+              <div className="absolute top-full left-0 mt-1 z-30 flex gap-1 p-1.5 rounded-lg bg-white shadow-lg border border-stone-200">
                 {INK_COLORS.map((c) => (
                   <button
                     key={c.value}
@@ -276,7 +276,7 @@ export const RichEditor: React.FC<RichEditorProps> = ({
 
       <div className="relative">
         {isEmpty && (
-          <div className="pointer-events-none absolute inset-0 text-stone-400 dark:text-stone-500 italic">{placeholder}</div>
+          <div className="pointer-events-none absolute inset-0 text-stone-400 italic">{placeholder}</div>
         )}
         <div
           ref={ref}

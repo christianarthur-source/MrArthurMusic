@@ -64,7 +64,7 @@
 
 /* ---------------------------------------------------------------------------
    Daily Planner: notebook paper, rich text and page turns
-   Text sits on a 28px rhythm so it lines up with the ruled paper.
+   Pages stay light paper in dark mode too. Text sits on a 28px rhythm to match the ruled paper.
 --------------------------------------------------------------------------- */
 .planner-page {
   --planner-paper: #fbf7ee;
@@ -72,11 +72,6 @@
   --planner-ink: #292524;
   background-color: var(--planner-paper);
   color: var(--planner-ink);
-}
-.dark .planner-page {
-  --planner-paper: #23201c;
-  --planner-line: rgba(231, 229, 228, 0.09);
-  --planner-ink: #e7e5e4;
 }
 .planner-paper-lined {
   background-image: linear-gradient(to bottom, transparent 27px, var(--planner-line) 27px);
@@ -126,9 +121,6 @@
   color: #1d4ed8;
   text-decoration: underline;
   text-underline-offset: 2px;
-}
-.dark .planner-rich a {
-  color: #93c5fd;
 }
 .planner-rich blockquote {
   border-left: 3px solid var(--planner-line);

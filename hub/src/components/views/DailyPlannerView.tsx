@@ -273,7 +273,7 @@ export const DailyPlannerView: React.FC = () => {
           <button
             type="button"
             onClick={() => pickImages(d)}
-            className="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 bg-stone-900/5 hover:bg-stone-900/10 dark:bg-white/10 dark:hover:bg-white/15"
+            className="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 bg-stone-900/5 hover:bg-stone-900/10"
           >
             <ImagePlus className="w-3.5 h-3.5" />
             Add image
@@ -281,7 +281,7 @@ export const DailyPlannerView: React.FC = () => {
           <button
             type="button"
             onClick={() => setLinkFormFor(linkFormFor === d ? null : d)}
-            className="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 bg-stone-900/5 hover:bg-stone-900/10 dark:bg-white/10 dark:hover:bg-white/15"
+            className="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 bg-stone-900/5 hover:bg-stone-900/10"
           >
             <Link2 className="w-3.5 h-3.5" />
             Add link
@@ -297,14 +297,14 @@ export const DailyPlannerView: React.FC = () => {
               onChange={(e) => setLinkUrl(e.target.value)}
               placeholder="https://…"
               aria-label="Link address"
-              className="flex-1 min-w-[12rem] text-xs px-3 py-2 rounded-lg bg-white/80 dark:bg-stone-800 border border-stone-300 dark:border-stone-600"
+              className="flex-1 min-w-[12rem] text-xs px-3 py-2 rounded-lg bg-white/80 border border-stone-300"
             />
             <input
               value={linkName}
               onChange={(e) => setLinkName(e.target.value)}
               placeholder="Name (optional)"
               aria-label="Link name"
-              className="w-40 text-xs px-3 py-2 rounded-lg bg-white/80 dark:bg-stone-800 border border-stone-300 dark:border-stone-600"
+              className="w-40 text-xs px-3 py-2 rounded-lg bg-white/80 border border-stone-300"
             />
             <button type="submit" className="px-3 py-2 rounded-lg bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold">
               Add
@@ -315,7 +315,7 @@ export const DailyPlannerView: React.FC = () => {
         {links.length > 0 && (
           <div className="space-y-1.5">
             {links.map((l) => (
-              <div key={l.id} className="group flex items-center gap-2 rounded-lg bg-white/70 dark:bg-stone-800/70 border border-stone-200 dark:border-stone-700 px-2.5 py-1.5">
+              <div key={l.id} className="group flex items-center gap-2 rounded-lg bg-white/70 border border-stone-200 px-2.5 py-1.5">
                 <img src={faviconFor(l.url)} alt="" className="w-4 h-4 rounded-sm" loading="lazy" />
                 <a href={l.url} target="_blank" rel="noopener noreferrer" className="flex-1 min-w-0 text-sm truncate hover:underline">
                   {l.title || linkTitle(l.url)}
@@ -339,7 +339,7 @@ export const DailyPlannerView: React.FC = () => {
             {images.map((img, i) => (
               <figure
                 key={img.id}
-                className="group relative bg-white dark:bg-stone-100 p-1.5 pb-5 shadow-md"
+                className="group relative bg-white p-1.5 pb-5 shadow-md"
                 style={{ transform: `rotate(${[-2, 1.5, -1, 2, -1.5, 1][i % 6]}deg)` }}
               >
                 <span className="absolute -top-2 left-1/2 -translate-x-1/2 w-12 h-4 bg-amber-200/70 rotate-[-3deg]" aria-hidden />
@@ -370,7 +370,7 @@ export const DailyPlannerView: React.FC = () => {
         {list.map((e) => (
           <span
             key={e.id}
-            className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full bg-white/80 dark:bg-stone-800 border border-stone-200 dark:border-stone-700"
+            className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full bg-white/80 border border-stone-200"
           >
             <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: e.color || '#0c87eb' }} />
             <span className="text-stone-500">{eventTime(e)}</span>
@@ -387,21 +387,21 @@ export const DailyPlannerView: React.FC = () => {
     const page = pageFor(date);
     return (
       <div className={`grid gap-0 ${settings.showPermanent ? 'lg:grid-cols-2' : ''}`}>
-        <section className={`planner-page ${paperClass} rounded-xl lg:rounded-r-none p-5 sm:p-8 space-y-5 min-h-[36rem] ${settings.showPermanent ? 'lg:border-r lg:border-stone-300/70 dark:lg:border-stone-700' : ''}`}>
+        <section className={`planner-page ${paperClass} rounded-xl lg:rounded-r-none p-5 sm:p-8 space-y-5 min-h-[36rem] ${settings.showPermanent ? 'lg:border-r lg:border-stone-300/70' : ''}`}>
           <header className="flex items-end justify-between gap-3">
             <div>
               <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-stone-500">{fmt(date, { weekday: 'long' })}</div>
               <div className="font-serif text-[2rem] sm:text-5xl leading-none whitespace-nowrap">{fmt(date, { month: 'long', day: 'numeric' })}</div>
             </div>
             <div className="text-right text-[11px] text-stone-500 leading-tight">
-              <div className="font-serif text-lg text-stone-700 dark:text-stone-300">{fromYMD(date).getFullYear()}</div>
+              <div className="font-serif text-lg text-stone-700">{fromYMD(date).getFullYear()}</div>
               <div className="whitespace-nowrap">Day {dayOfYear(date)}</div>
               <div className="whitespace-nowrap">Week {isoWeek(date)}</div>
               {date === today && <div className="font-semibold text-brand-600">Today</div>}
             </div>
           </header>
 
-          <div className="flex gap-2.5 rounded-lg bg-amber-100/60 dark:bg-amber-900/20 px-3 py-2 text-sm italic font-serif text-stone-700 dark:text-stone-300">
+          <div className="flex gap-2.5 rounded-lg bg-amber-100/60 px-3 py-2 text-sm italic font-serif text-stone-700">
             <Lightbulb className="w-4 h-4 shrink-0 mt-1 text-amber-600 not-italic" />
             <span>{tipFor(date)}</span>
           </div>
@@ -448,7 +448,7 @@ export const DailyPlannerView: React.FC = () => {
       const images = page.attachments.filter((a) => a.kind === 'image').length;
       const links = page.attachments.filter((a) => a.kind === 'link').length;
       return (
-        <div key={d} className={`flex flex-col border-b border-stone-300/70 dark:border-stone-700 last:border-b-0 py-3 ${tall ? 'min-h-[13rem]' : 'min-h-[9.5rem]'}`}>
+        <div key={d} className={`flex flex-col border-b border-stone-300/70 last:border-b-0 py-3 ${tall ? 'min-h-[13rem]' : 'min-h-[9.5rem]'}`}>
           <div className="flex items-baseline justify-between mb-1">
             <button type="button" onClick={() => { updateSettings({ view: 'day' }); go(d); }} className="flex items-baseline gap-2 hover:text-brand-600" title="Open this day">
               <span className={`font-serif text-2xl leading-none ${d === today ? 'text-brand-600' : ''}`}>{fromYMD(d).getDate()}</span>
@@ -476,7 +476,7 @@ export const DailyPlannerView: React.FC = () => {
     };
     return (
       <div className="grid lg:grid-cols-2">
-        <section className={`planner-page ${paperClass} rounded-xl lg:rounded-r-none px-5 sm:px-8 py-3 lg:border-r lg:border-stone-300/70 dark:lg:border-stone-700`}>
+        <section className={`planner-page ${paperClass} rounded-xl lg:rounded-r-none px-5 sm:px-8 py-3 lg:border-r lg:border-stone-300/70`}>
           {days.slice(0, 3).map((d) => renderDayBlock(d, true))}
         </section>
         <section className={`planner-page ${paperClass} rounded-xl lg:rounded-l-none px-5 sm:px-8 py-3 mt-4 lg:mt-0`}>
@@ -498,7 +498,7 @@ export const DailyPlannerView: React.FC = () => {
         <div className="grid grid-cols-7 text-center text-[11px] font-bold uppercase tracking-[0.15em] text-stone-500 pb-2">
           {weekdays.map((w) => <div key={w}>{w}</div>)}
         </div>
-        <div className="grid grid-cols-7 border-t border-l border-stone-300/70 dark:border-stone-700">
+        <div className="grid grid-cols-7 border-t border-l border-stone-300/70">
           {visible.map((d) => {
             const inMonth = d.slice(0, 7) === date.slice(0, 7);
             const page = inMonth ? pages[d] : storage.getPlannerPage(d);
@@ -510,7 +510,7 @@ export const DailyPlannerView: React.FC = () => {
                 key={d}
                 type="button"
                 onClick={() => { updateSettings({ view: 'day' }); go(d); }}
-                className={`relative text-left border-r border-b border-stone-300/70 dark:border-stone-700 p-1.5 sm:p-2 min-h-[5rem] sm:min-h-[7rem] hover:bg-amber-100/40 dark:hover:bg-white/5 transition-colors ${inMonth ? '' : 'opacity-40'}`}
+                className={`relative text-left border-r border-b border-stone-300/70 p-1.5 sm:p-2 min-h-[5rem] sm:min-h-[7rem] hover:bg-amber-100/40 transition-colors ${inMonth ? '' : 'opacity-40'}`}
               >
                 <div className="flex items-center justify-between">
                   <span className={`font-serif text-base sm:text-lg leading-none ${d === today ? 'w-7 h-7 -m-1 rounded-full bg-brand-600 text-white flex items-center justify-center' : ''}`}>
@@ -524,7 +524,7 @@ export const DailyPlannerView: React.FC = () => {
                     </span>
                   )}
                 </div>
-                {preview && <p className="mt-1 text-[11px] leading-snug text-stone-600 dark:text-stone-400 line-clamp-3 hidden sm:block">{preview}</p>}
+                {preview && <p className="mt-1 text-[11px] leading-snug text-stone-600 line-clamp-3 hidden sm:block">{preview}</p>}
                 {preview && <span className="sm:hidden block mt-1 w-1.5 h-1.5 rounded-full bg-stone-500" />}
                 {thumb && <img src={thumb.url} alt="" className="hidden sm:block absolute bottom-1.5 right-1.5 w-8 h-8 object-cover rounded shadow" loading="lazy" />}
               </button>
@@ -622,8 +622,8 @@ export const DailyPlannerView: React.FC = () => {
         </div>
       </div>
 
-      {/* Notebook */}
-      <div className="rounded-[1.75rem] bg-stone-800 dark:bg-stone-950 p-2 sm:p-3 shadow-xl shadow-stone-900/20">
+      {/* Notebook: always light paper in a charcoal frame, whatever the app theme */}
+      <div className="rounded-[1.75rem] bg-stone-800 p-2 sm:p-3 shadow-xl shadow-stone-900/20">
         <div key={`${view}-${view === 'month' ? date.slice(0, 7) : view === 'week' ? weekFrom : date}`} className={`relative ${turnClass}`}>
           {view === 'day' && renderDay()}
           {view === 'week' && renderWeek()}

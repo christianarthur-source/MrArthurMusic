@@ -10,7 +10,7 @@
  *   POST /api/classroom                               student / teacher logins and saved songs (PINs checked here)
  *   POST /api/omr                                     Pro Staff: read a photo/PDF of sheet music into MusicXML (teacher PIN)
  *   POST /api/wolfi                                   Wolfi: accounts, classes and cloud-saved scores (D1 database WOLFI_DB)
- *   /api/hub/*                                        Music Teacher Hub (/Hub/): PIN lock, cloud sync (D1 HUB_DB), YouTube, calendar, Claude (hub/server)
+ *   /api/hub/*                                        Music Teacher Hub (/Hub/): PIN lock, cloud sync (D1 HUB_DB), YouTube, calendar, Claude, free AI (AI binding) (hub/server)
  */
 import { handleDriveVideo } from './driveVideo.mjs';
 import { handleClassroom } from '../src/server/classroomCloud.ts';

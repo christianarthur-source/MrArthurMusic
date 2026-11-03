@@ -7,7 +7,7 @@ export interface GenerateLessonOptions {
   grade?: GradeLevel;
   durationMinutes?: number;
   apiKey?: string;
-  provider?: 'builtin' | 'claude' | 'gemini';
+  provider?: 'builtin' | 'free' | 'claude' | 'gemini';
   claudeApiKey?: string;
   geminiApiKey?: string;
 }
@@ -594,14 +594,13 @@ Generate the complete JSON elementary music lesson plan now.`;
 }
 
 // -------------------------------------------------------------
-// 3. Live Anthropic Claude API Integration
+// 3. Live AI models (Claude, and the free Cloudflare model) share one prompt and one reader
 // -------------------------------------------------------------
-export async function generateClaudeLesson(
+function lessonPrompts(
   prompt: string,
-  apiKey: string,
   preferredGrade?: GradeLevel,
   preferredDuration?: number
-): Promise<GeneratedLessonResult> {
+): { systemInstruction: string; userQuery: string } {
   const systemInstruction = `You are an expert Master Elementary General Music Educator (K-6) and Choral Director with deep pedagogical expertise in Kodály, Orff-Schulwerk, Dalcroze, and Feierabend First Steps in Music.
 Create an authentic, practical, standards-aligned music lesson plan based on the user's prompt.
 The lesson plan must be detailed, age-appropriate, musically sound, and ready to teach from a rolling music cart or classroom.
@@ -634,6 +633,70 @@ ${preferredGrade && preferredGrade !== 'All' ? `Target Grade: Grade ${preferredG
 ${preferredDuration ? `Target Duration: ${preferredDuration} minutes` : ''}
 
 Generate the complete JSON elementary music lesson plan now. Return ONLY valid JSON.`;
+
+  return { systemInstruction, userQuery };
+}
+
+/** Turns a model's reply into a lesson, filling sensible defaults for anything missing. */
+function parseLessonJson(
+  responseText: string,
+  prompt: string,
+  preferredGrade?: GradeLevel,
+  preferredDuration?: number
+): GeneratedLessonResult {
+  // Models sometimes wrap the JSON in code fences or a sentence; keep just the object.
+  const start = responseText.indexOf('{');
+  const end = responseText.lastIndexOf('}');
+  if (start === -1 || end <= start) throw new Error('The AI reply did not contain a lesson plan. Please try again.');
+  let parsed: any;
+  try {
+    parsed = JSON.parse(responseText.slice(start, end + 1));
+  } catch {
+    throw new Error('The AI reply was not a complete lesson plan. Please try again.');
+  }
+
+  // Validate critical fields
+  const validGrades: GradeLevel[] = ['K', '1', '2', '3', '4', '5', '6', 'Chorus'];
+  const grade: GradeLevel = validGrades.includes(parsed.grade) ? parsed.grade : preferredGrade || '3';
+  const durationMinutes: number = typeof parsed.durationMinutes === 'number' && parsed.durationMinutes > 0 ? parsed.durationMinutes : preferredDuration || 35;
+
+  return {
+    title: parsed.title || 'Elementary Music Lesson',
+    grade,
+    unit: parsed.unit || 'General Music Curriculum',
+    durationMinutes,
+    overview: parsed.overview || prompt,
+    objectives: Array.isArray(parsed.objectives) ? parsed.objectives : ['Perform rhythms with accurate steady pulse.'],
+    musicalConcepts: Array.isArray(parsed.musicalConcepts) ? parsed.musicalConcepts : ['Beat', 'Rhythm'],
+    standards: Array.isArray(parsed.standards) ? parsed.standards : [`MU:Pr4.2.${grade === 'Chorus' ? '6' : grade}`],
+    materialsNeeded: Array.isArray(parsed.materialsNeeded) ? parsed.materialsNeeded : ['Smart Board', 'Percussion Instruments'],
+    activities: Array.isArray(parsed.activities)
+      ? parsed.activities.map((a: any) => ({
+          title: a.title || 'Musical Activity',
+          durationMinutes: typeof a.durationMinutes === 'number' ? a.durationMinutes : 5,
+          musicalConcept: a.musicalConcept || 'Music Making',
+          description: a.description || ''
+        }))
+      : [
+          {
+            title: 'Warmup',
+            durationMinutes: 5,
+            musicalConcept: 'Preparation',
+            description: 'Vocal and physical warmup.'
+          }
+        ],
+    assessmentStrategy: parsed.assessmentStrategy || 'Formative observation during ensemble play.',
+    differentiationNotes: parsed.differentiationNotes || 'Provide visual cues and peer support.'
+  };
+}
+
+export async function generateClaudeLesson(
+  prompt: string,
+  apiKey: string,
+  preferredGrade?: GradeLevel,
+  preferredDuration?: number
+): Promise<GeneratedLessonResult> {
+  const { systemInstruction, userQuery } = lessonPrompts(prompt, preferredGrade, preferredDuration);
 
   let responseText = '';
   let lastError = '';
@@ -699,46 +762,24 @@ Generate the complete JSON elementary music lesson plan now. Return ONLY valid J
     throw new Error(lastError || 'Failed to connect to Claude API. Please check your Anthropic API key.');
   }
 
-  // Parse JSON
-  let cleaned = responseText.trim();
-  if (cleaned.startsWith('```json')) cleaned = cleaned.replace(/^```json/, '').replace(/```$/, '').trim();
-  else if (cleaned.startsWith('```')) cleaned = cleaned.replace(/^```/, '').replace(/```$/, '').trim();
+  return parseLessonJson(responseText, prompt, preferredGrade, preferredDuration);
+}
 
-  const parsed = JSON.parse(cleaned);
-
-  // Validate critical fields
-  const validGrades: GradeLevel[] = ['K', '1', '2', '3', '4', '5', '6', 'Chorus'];
-  const grade: GradeLevel = validGrades.includes(parsed.grade) ? parsed.grade : preferredGrade || '3';
-  const durationMinutes: number = typeof parsed.durationMinutes === 'number' && parsed.durationMinutes > 0 ? parsed.durationMinutes : preferredDuration || 35;
-
-  return {
-    title: parsed.title || 'Elementary Music Lesson',
-    grade,
-    unit: parsed.unit || 'General Music Curriculum',
-    durationMinutes,
-    overview: parsed.overview || prompt,
-    objectives: Array.isArray(parsed.objectives) ? parsed.objectives : ['Perform rhythms with accurate steady pulse.'],
-    musicalConcepts: Array.isArray(parsed.musicalConcepts) ? parsed.musicalConcepts : ['Beat', 'Rhythm'],
-    standards: Array.isArray(parsed.standards) ? parsed.standards : [`MU:Pr4.2.${grade === 'Chorus' ? '6' : grade}`],
-    materialsNeeded: Array.isArray(parsed.materialsNeeded) ? parsed.materialsNeeded : ['Smart Board', 'Percussion Instruments'],
-    activities: Array.isArray(parsed.activities)
-      ? parsed.activities.map((a: any) => ({
-          title: a.title || 'Musical Activity',
-          durationMinutes: typeof a.durationMinutes === 'number' ? a.durationMinutes : 5,
-          musicalConcept: a.musicalConcept || 'Music Making',
-          description: a.description || ''
-        }))
-      : [
-          {
-            title: 'Warmup',
-            durationMinutes: 5,
-            musicalConcept: 'Preparation',
-            description: 'Vocal and physical warmup.'
-          }
-        ],
-    assessmentStrategy: parsed.assessmentStrategy || 'Formative observation during ensemble play.',
-    differentiationNotes: parsed.differentiationNotes || 'Provide visual cues and peer support.'
-  };
+/** Free lessons from Cloudflare Workers AI on the site's own account (no API key needed). */
+export async function generateFreeAiLesson(
+  prompt: string,
+  preferredGrade?: GradeLevel,
+  preferredDuration?: number
+): Promise<GeneratedLessonResult> {
+  const { systemInstruction, userQuery } = lessonPrompts(prompt, preferredGrade, preferredDuration);
+  const res = await cloudSync.hubFetch('/api/hub/free-ai', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ system: systemInstruction, prompt: userQuery })
+  });
+  const json = await res.json().catch(() => null);
+  if (!res.ok || !json?.text) throw new Error(json?.error || `Free AI request failed (${res.status})`);
+  return parseLessonJson(json.text, prompt, preferredGrade, preferredDuration);
 }
 
 // -------------------------------------------------------------
@@ -746,6 +787,10 @@ Generate the complete JSON elementary music lesson plan now. Return ONLY valid J
 // -------------------------------------------------------------
 export async function generateLessonPlan(options: GenerateLessonOptions): Promise<GeneratedLessonResult> {
   const provider = options.provider || (options.claudeApiKey ? 'claude' : options.geminiApiKey || options.apiKey ? 'gemini' : 'builtin');
+
+  if (provider === 'free') {
+    return generateFreeAiLesson(options.prompt, options.grade, options.durationMinutes);
+  }
 
   if (provider === 'claude') {
     return generateClaudeLesson(
