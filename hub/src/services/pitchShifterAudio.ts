@@ -1,5 +1,10 @@
 // Studio DAW Audio Engine with Real Decoded Waveform & Hardware-Accelerated Pitch Shifting
 // Supports: MP3, WAV, OGG, M4A, AAC, FLAC, local files, and bundled accompaniment blobs.
+// Tempo and pitch are independent: playback runs through a time-stretch AudioWorklet
+// (timeStretchWorklet.js). Browsers without AudioWorklet fall back to playbackRate/detune,
+// where speed and pitch move together.
+
+import timeStretchWorkletUrl from './timeStretchWorklet.js?url';
 
 export interface WaveformPoint {
   min: number;
@@ -23,6 +28,9 @@ class AudioPlayerEngine {
   private sourceNode: AudioBufferSourceNode | null = null;
   private gainNode: GainNode | null = null;
   private analyserNode: AnalyserNode | null = null;
+  private stretchNode: AudioWorkletNode | null = null;
+  private stretchReady: Promise<boolean> | null = null;
+  private stretchBufferKey: string | null = null;
 
   private startTime: number = 0;
   private wallStartTime: number = 0;
@@ -57,6 +65,85 @@ class AudioPlayerEngine {
     return this.audioCtx;
   }
 
+  private connectOutput(node: AudioNode): void {
+    const ctx = this.getContext();
+    if (!this.gainNode) {
+      this.gainNode = ctx.createGain();
+      this.gainNode.gain.value = this.volume;
+    }
+    if (!this.analyserNode) {
+      this.analyserNode = ctx.createAnalyser();
+      this.analyserNode.fftSize = 256;
+      this.analyserNode.connect(this.gainNode);
+      this.gainNode.connect(ctx.destination);
+    }
+    node.connect(this.analyserNode);
+  }
+
+  // Loads the time-stretch worklet once; resolves false if the browser can't run it.
+  private ensureStretchNode(): Promise<boolean> {
+    if (!this.stretchReady) {
+      const ctx = this.getContext();
+      this.stretchReady = (async () => {
+        try {
+          if (!ctx.audioWorklet) return false;
+          await ctx.audioWorklet.addModule(timeStretchWorkletUrl);
+          const node = new AudioWorkletNode(ctx, 'time-stretch-player', {
+            numberOfInputs: 0,
+            outputChannelCount: [2]
+          });
+          node.port.onmessage = (e) => {
+            if (e.data?.type === 'ended') this.handleSourceEnded();
+          };
+          this.connectOutput(node);
+          this.stretchNode = node;
+          return true;
+        } catch (err) {
+          console.warn('Time-stretch worklet unavailable, speed will change pitch:', err);
+          return false;
+        }
+      })();
+    }
+    return this.stretchReady;
+  }
+
+  private sendStretchParams(): void {
+    this.stretchNode?.port.postMessage({
+      type: 'params',
+      tempo: this.playbackRate,
+      pitch: Math.pow(2, this.semitones / 12)
+    });
+  }
+
+  // How fast the playhead moves through the track.
+  private effectiveSpeed(): number {
+    return this.stretchNode ? this.playbackRate : this.playbackRate * Math.pow(2, this.semitones / 12);
+  }
+
+  private handleSourceEnded(): void {
+    if (this.state !== 'playing') return;
+    if (this.loopA !== null && this.loopB !== null && this.loopB > this.loopA) {
+      this.play(this.loopA);
+      return;
+    }
+    this.setState('stopped');
+    this.pausedAt = 0;
+    this.stopProgressTimer();
+    this.onEndedCallbacks.forEach((cb) => cb());
+  }
+
+  private stopSource(): void {
+    this.stretchNode?.port.postMessage({ type: 'stop' });
+    if (this.sourceNode) {
+      try {
+        this.sourceNode.onended = null;
+        this.sourceNode.stop();
+        this.sourceNode.disconnect();
+      } catch {}
+      this.sourceNode = null;
+    }
+  }
+
   public async unlock(): Promise<void> {
     const ctx = this.getContext();
     if (ctx.state === 'suspended') {
@@ -88,8 +175,16 @@ class AudioPlayerEngine {
       // Decode audio data into native PCM AudioBuffer
       const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
 
+      this.stopSource();
       this.currentBuffer = audioBuffer;
       this.currentBufferKey = trackId;
+
+      if ((await this.ensureStretchNode()) && this.stretchNode && this.stretchBufferKey !== trackId) {
+        const channels: Float32Array[] = [];
+        for (let c = 0; c < audioBuffer.numberOfChannels; c++) channels.push(audioBuffer.getChannelData(c).slice());
+        this.stretchNode.port.postMessage({ type: 'load', channels }, channels.map((ch) => ch.buffer));
+        this.stretchBufferKey = trackId;
+      }
 
       // Extract high-resolution waveform data (800 display bins)
       const waveformData = this.extractWaveformData(audioBuffer, 800);
@@ -160,14 +255,7 @@ class AudioPlayerEngine {
     const ctx = this.getContext();
     this.unlock();
 
-    if (this.sourceNode) {
-      try {
-        this.sourceNode.onended = null;
-        this.sourceNode.stop();
-        this.sourceNode.disconnect();
-      } catch {}
-      this.sourceNode = null;
-    }
+    this.stopSource();
 
     const duration = this.currentBuffer.duration;
     let startOffset = typeof offsetSeconds === 'number' ? offsetSeconds : this.pausedAt;
@@ -180,50 +268,28 @@ class AudioPlayerEngine {
       }
     }
 
-    // Create new AudioBufferSourceNode
-    const source = ctx.createBufferSource();
-    source.buffer = this.currentBuffer;
-
-    // Pitch Shifter: detune in cents (1 semitone = 100 cents, ±12 semitones = ±1200 cents)
-    source.detune.value = this.semitones * 100;
-
-    // Playback Speed
-    source.playbackRate.value = this.playbackRate;
-
-    // Master Gain & Analyser
-    if (!this.gainNode) {
-      this.gainNode = ctx.createGain();
-      this.gainNode.gain.value = this.volume;
-    }
-    if (!this.analyserNode) {
-      this.analyserNode = ctx.createAnalyser();
-      this.analyserNode.fftSize = 256;
-    }
-
-    source.connect(this.analyserNode);
-    this.analyserNode.connect(this.gainNode);
-    this.gainNode.connect(ctx.destination);
-
     // Track playback start
-    const effectiveSpeed = this.playbackRate * Math.pow(2, this.semitones / 12);
+    const effectiveSpeed = this.effectiveSpeed();
     this.startTime = ctx.currentTime - startOffset / effectiveSpeed;
     this.wallStartTime = performance.now() - (startOffset / effectiveSpeed) * 1000;
     this.pausedAt = startOffset;
-    this.sourceNode = source;
 
-    source.onended = () => {
-      if (this.state === 'playing') {
-        // Check if A-B looping
-        if (this.loopA !== null && this.loopB !== null && this.loopB > this.loopA) {
-          this.play(this.loopA);
-          return;
-        }
-        this.setState('stopped');
-        this.pausedAt = 0;
-        this.stopProgressTimer();
-        this.onEndedCallbacks.forEach((cb) => cb());
-      }
-    };
+    if (this.stretchNode && this.stretchBufferKey === this.currentBufferKey) {
+      this.sendStretchParams();
+      this.stretchNode.port.postMessage({ type: 'play', offset: startOffset });
+      this.setState('playing');
+      this.startProgressTimer();
+      return;
+    }
+
+    // Fallback: AudioBufferSourceNode, where speed and pitch move together.
+    const source = ctx.createBufferSource();
+    source.buffer = this.currentBuffer;
+    source.detune.value = this.semitones * 100;
+    source.playbackRate.value = this.playbackRate;
+    this.connectOutput(source);
+    this.sourceNode = source;
+    source.onended = () => this.handleSourceEnded();
 
     source.start(0, startOffset);
     this.setState('playing');
@@ -231,29 +297,16 @@ class AudioPlayerEngine {
   }
 
   public pause(): void {
-    if (this.state !== 'playing' || !this.sourceNode) return;
+    if (this.state !== 'playing') return;
     this.pausedAt = this.getCurrentTime();
-
-    try {
-      this.sourceNode.onended = null;
-      this.sourceNode.stop();
-      this.sourceNode.disconnect();
-    } catch {}
-    this.sourceNode = null;
+    this.stopSource();
 
     this.setState('paused');
     this.stopProgressTimer();
   }
 
   public stop(): void {
-    if (this.sourceNode) {
-      try {
-        this.sourceNode.onended = null;
-        this.sourceNode.stop();
-        this.sourceNode.disconnect();
-      } catch {}
-      this.sourceNode = null;
-    }
+    this.stopSource();
     this.pausedAt = 0;
     this.setState('stopped');
     this.stopProgressTimer();
@@ -277,6 +330,7 @@ class AudioPlayerEngine {
   public setPitch(semitones: number): void {
     const prevTime = this.state === 'playing' ? this.getCurrentTime() : this.pausedAt;
     this.semitones = Math.max(-12, Math.min(12, semitones));
+    this.sendStretchParams();
     if (this.sourceNode && this.sourceNode.detune) {
       // AudioParam detune in cents (1 semitone = 100 cents)
       this.sourceNode.detune.value = this.semitones * 100;
@@ -285,7 +339,7 @@ class AudioPlayerEngine {
       } catch {}
     }
     if (this.state === 'playing' && this.audioCtx) {
-      const effectiveSpeed = this.playbackRate * Math.pow(2, this.semitones / 12);
+      const effectiveSpeed = this.effectiveSpeed();
       this.startTime = this.audioCtx.currentTime - prevTime / effectiveSpeed;
       this.wallStartTime = performance.now() - (prevTime / effectiveSpeed) * 1000;
     }
@@ -298,6 +352,7 @@ class AudioPlayerEngine {
   public setSpeed(rate: number): void {
     const prevTime = this.state === 'playing' ? this.getCurrentTime() : this.pausedAt;
     this.playbackRate = Math.max(0.25, Math.min(2.0, rate));
+    this.sendStretchParams();
     if (this.sourceNode && this.sourceNode.playbackRate) {
       this.sourceNode.playbackRate.value = this.playbackRate;
       try {
@@ -305,7 +360,7 @@ class AudioPlayerEngine {
       } catch {}
     }
     if (this.state === 'playing' && this.audioCtx) {
-      const effectiveSpeed = this.playbackRate * Math.pow(2, this.semitones / 12);
+      const effectiveSpeed = this.effectiveSpeed();
       this.startTime = this.audioCtx.currentTime - prevTime / effectiveSpeed;
       this.wallStartTime = performance.now() - (prevTime / effectiveSpeed) * 1000;
     }
@@ -348,8 +403,7 @@ class AudioPlayerEngine {
     if (this.state !== 'playing' || !this.currentBuffer || !this.audioCtx) {
       return this.pausedAt;
     }
-    // Effective playback speed = playbackRate * 2^(semitones / 12)
-    const effectiveSpeed = this.playbackRate * Math.pow(2, this.semitones / 12);
+    const effectiveSpeed = this.effectiveSpeed();
     const audioElapsed = (this.audioCtx.currentTime - this.startTime) * effectiveSpeed;
     const wallElapsed = ((performance.now() - this.wallStartTime) / 1000) * effectiveSpeed;
 
