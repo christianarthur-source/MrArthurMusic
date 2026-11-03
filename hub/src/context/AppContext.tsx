@@ -6,6 +6,7 @@ import { storage } from '../services/storage';
 export type NavView =
   | 'home'
   | 'planner'
+  | 'slides'
   | 'tasks'
   | 'calendar'
   | 'rotation'
@@ -54,7 +55,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const hash = window.location.hash.replace('#', '') as NavView;
       const validViews: NavView[] = [
         'home', 'planner', 'tasks', 'calendar', 'tools', 'audio-studio',
-        'seating', 'visuals', 'timer', 'name-picker', 'volume-meter', 'rotation', 'resources', 'journal', 'daily-planner', 'youtube', 'settings'
+        'seating', 'visuals', 'timer', 'slides', 'name-picker', 'volume-meter', 'rotation', 'resources', 'journal', 'daily-planner', 'youtube', 'settings'
       ];
       if (hash.startsWith('visuals')) return 'visuals';
       if (hash.startsWith('tasks')) return 'tasks';
@@ -91,7 +92,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const hash = window.location.hash.replace('#', '') as NavView;
       const validViews: NavView[] = [
         'home', 'planner', 'tasks', 'calendar', 'tools', 'audio-studio',
-        'seating', 'visuals', 'timer', 'name-picker', 'volume-meter', 'rotation', 'resources', 'journal', 'daily-planner', 'youtube', 'settings'
+        'seating', 'visuals', 'timer', 'slides', 'name-picker', 'volume-meter', 'rotation', 'resources', 'journal', 'daily-planner', 'youtube', 'settings'
       ];
       if (hash.startsWith('visuals')) {
         setActiveViewState('visuals');

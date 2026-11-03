@@ -18,7 +18,9 @@ import {
   PlannerPage,
   PlannerSettings,
   PlannerPermanentNote,
-  RotationSettings
+  RotationSettings,
+  SlideDeck,
+  SlideDeckSummary
 } from '../types';
 import {
   INITIAL_PREFERENCES,
@@ -57,8 +59,11 @@ const STORAGE_KEYS = {
   BEAT_PATTERNS: 'mth_beat_patterns',
   PLANNER_PERMANENT: 'mth_planner_permanent',
   PLANNER_SETTINGS: 'mth_planner_settings',
-  ROTATION: 'mth_rotation'
+  ROTATION: 'mth_rotation',
+  SLIDE_DECKS: 'mth_slide_decks'
 };
+
+const deckKey = (id: string) => `mth_deck_${id}`;
 
 // Daily Planner pages are stored one month per key (mth_planner_2026_11), so a month full of
 // photos doesn't make every other month slow to sync.
@@ -725,6 +730,37 @@ class StorageService {
     this.setItem(STORAGE_KEYS.ROTATION, rotation);
   }
 
+  // Slide decks: a small index plus one key per deck, so decks full of pictures sync separately
+  public listDecks(): SlideDeckSummary[] {
+    return this.getItem<SlideDeckSummary[]>(STORAGE_KEYS.SLIDE_DECKS, []);
+  }
+
+  public getDeck(id: string): SlideDeck | null {
+    return this.getItem<SlideDeck | null>(deckKey(id), null);
+  }
+
+  public saveDeck(deck: SlideDeck): SlideDeck {
+    const saved = { ...deck, updatedAt: new Date().toISOString() };
+    const summary: SlideDeckSummary = {
+      id: saved.id,
+      title: saved.title,
+      theme: saved.theme,
+      lessonId: saved.lessonId,
+      slideCount: saved.slides.length,
+      cover: saved.slides.find((s) => s.image)?.image?.src.startsWith('http') ? saved.slides.find((s) => s.image)?.image?.src : undefined,
+      updatedAt: saved.updatedAt
+    };
+    this.setItem(deckKey(saved.id), saved);
+    this.setItem(STORAGE_KEYS.SLIDE_DECKS, [summary, ...this.listDecks().filter((d) => d.id !== saved.id)]);
+    return saved;
+  }
+
+  public deleteDeck(id: string): void {
+    localStorage.removeItem(deckKey(id));
+    cloudSync.markDirty(deckKey(id));
+    this.setItem(STORAGE_KEYS.SLIDE_DECKS, this.listDecks().filter((d) => d.id !== id));
+  }
+
   private plannerMonthKeys(): string[] {
     const keys: string[] = [];
     for (let i = 0; i < localStorage.length; i++) {
@@ -757,7 +793,8 @@ class StorageService {
       plannerPages: Object.fromEntries(this.plannerMonthKeys().map((k) => [k, this.getItem(k, {})])),
       plannerPermanent: this.getPlannerPermanent(),
       plannerSettings: this.getPlannerSettings(),
-      rotation: this.getRotation()
+      rotation: this.getRotation(),
+      slideDecks: this.listDecks().map((d) => this.getDeck(d.id)).filter(Boolean)
     };
     return JSON.stringify(backup, null, 2);
   }
@@ -788,6 +825,7 @@ class StorageService {
       if (data.plannerPermanent) this.setItem(STORAGE_KEYS.PLANNER_PERMANENT, data.plannerPermanent);
       if (data.plannerSettings) this.setItem(STORAGE_KEYS.PLANNER_SETTINGS, data.plannerSettings);
       if (data.rotation) this.setItem(STORAGE_KEYS.ROTATION, data.rotation);
+      if (Array.isArray(data.slideDecks)) data.slideDecks.forEach((deck: SlideDeck) => deck?.id && this.saveDeck(deck));
       this.notify();
       return true;
     } catch (e) {

@@ -94,6 +94,14 @@ export interface LessonPlan {
   createdAt: string;
   updatedAt: string;
   favorite?: boolean;
+  displayImage?: LessonImage; // a picture to project with the lesson (AI, photo library or upload)
+}
+
+export interface LessonImage {
+  src: string;
+  alt?: string;
+  credit?: string;
+  creditUrl?: string;
 }
 
 export interface ClassSection {
@@ -343,4 +351,39 @@ export interface RotationSettings {
   schoolDays: number[]; // JS weekday numbers that are school days (1 = Monday … 5 = Friday)
   noSchoolDates: string[]; // YYYY-MM-DD days off (snow days, holidays); the cycle doesn't advance
   days: RotationClass[][]; // classes for Day 1, Day 2, …
+}
+
+// Slide decks (each stored under its own key, see storage.ts)
+export type SlideLayout = 'title' | 'bullets' | 'image-right' | 'image-full' | 'big-idea';
+export type SlideTheme = 'navy' | 'chalkboard' | 'sunny' | 'paper' | 'concert';
+
+export interface Slide {
+  id: string;
+  layout: SlideLayout;
+  title: string;
+  subtitle?: string;
+  bullets: string[];
+  notes?: string; // speaker notes, not shown to the class
+  image?: LessonImage;
+  imageIdea?: string; // what picture would suit this slide (used to fetch or draw one)
+}
+
+export interface SlideDeck {
+  id: string; // lowercase letters and digits (part of its storage key)
+  title: string;
+  theme: SlideTheme;
+  lessonId?: string;
+  slides: Slide[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SlideDeckSummary {
+  id: string;
+  title: string;
+  theme: SlideTheme;
+  lessonId?: string;
+  slideCount: number;
+  cover?: string; // first picture in the deck, for the deck list
+  updatedAt: string;
 }

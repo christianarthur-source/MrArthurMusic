@@ -173,5 +173,34 @@ expect('free AI falls back to the next model', s === 200 && r.text === 'from bac
 });
 expect('free AI says when the daily allowance is used up', s === 429 && /allowance/.test(r.error), r);
 
+// ---- AI images and photo search ----
+[s, r] = await call('/api/hub/ai-image', { method: 'POST', body: { prompt: 'drum' } }, { ...env, AI: fakeAi(() => ({ image: 'x' })) });
+expect('AI image needs a token', s === 401, r);
+[s, r] = await call('/api/hub/image-search');
+expect('photo search needs a token', s === 401, r);
+[s, r] = await call('/api/hub/ai-image', { method: 'POST', token: aiToken, body: { prompt: 'drum' } });
+expect('AI image explains when it is off', s === 503, r);
+[s, r] = await call('/api/hub/ai-image', { method: 'POST', token: aiToken, body: { prompt: '  ' } }, { ...env, AI: fakeAi(() => ({ image: 'x' })) });
+expect('AI image needs a description', s === 400, r);
+aiCalls.length = 0;
+let kleinInput;
+[s, r] = await call('/api/hub/ai-image', { method: 'POST', token: aiToken, body: { prompt: 'a xylophone' } }, {
+  ...env,
+  AI: fakeAi((model, input) => { kleinInput = input; return { image: 'iVBORw0KGgoAAAA' }; }),
+});
+expect('AI image uses FLUX.2 klein with a multipart request', s === 200 && aiCalls[0].includes('flux-2-klein') && !!kleinInput?.multipart?.contentType?.startsWith('multipart/form-data'), { r, aiCalls });
+expect('AI image returns a PNG data URL', r.image === 'data:image/png;base64,iVBORw0KGgoAAAA', r);
+aiCalls.length = 0;
+[s, r] = await call('/api/hub/ai-image', { method: 'POST', token: aiToken, body: { prompt: 'a xylophone' } }, {
+  ...env,
+  AI: fakeAi((model) => { if (model.includes('klein')) throw new Error('bad multipart'); return { image: '/9j/4AAQ' }; }),
+});
+expect('AI image falls back to FLUX.1 schnell', s === 200 && r.model === 'flux-1-schnell' && r.image.startsWith('data:image/jpeg'), { r, aiCalls });
+[s, r] = await call('/api/hub/ai-image', { method: 'POST', token: aiToken, body: { prompt: 'x' } }, {
+  ...env,
+  AI: fakeAi(() => { throw new Error('you have used up your daily free allocation of 10,000 neurons'); }),
+});
+expect('AI image says when the allowance is used up', s === 429, r);
+
 console.log(`\n${passes} passed, ${fails} failed`);
 if (fails) process.exit(1);

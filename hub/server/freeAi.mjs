@@ -8,7 +8,7 @@
  */
 const MODELS = ['@cf/google/gemma-4-26b-a4b-it', '@cf/meta/llama-4-scout-17b-16e-instruct'];
 const MAX_TOKENS = 3000;
-const MAX_INPUT_CHARS = 20_000;
+const MAX_INPUT_CHARS = 30_000;
 
 const json = (body, status = 200) =>
   new Response(JSON.stringify(body), {

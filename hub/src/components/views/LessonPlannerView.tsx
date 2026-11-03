@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useRememberedState } from '../../hooks/useRememberedState';
+import { useRememberedState, REMEMBERED_PREFIX } from '../../hooks/useRememberedState';
 import { useApp } from '../../context/AppContext';
 import { storage } from '../../services/storage';
 import { cloudSync } from '../../services/cloudSync';
+import { ImagePickerModal } from '../shared/ImagePickerModal';
 import { LessonPlan, GradeLevel, ActivityStep, ClassSection } from '../../types';
 import { NYS_MUSIC_STANDARDS } from '../../services/nysStandards';
 import {
@@ -35,11 +36,13 @@ import {
   Zap,
   Key,
   ExternalLink,
-  Check
+  Check,
+  MonitorPlay,
+  ImagePlus
 } from 'lucide-react';
 
 export const LessonPlannerView: React.FC = () => {
-  const { preferences, updatePreferences, openTeachMode, showToast } = useApp();
+  const { preferences, updatePreferences, openTeachMode, showToast, setActiveView } = useApp();
 
   const [lessons, setLessons] = useState<LessonPlan[]>([]);
   const [classes, setClasses] = useState<ClassSection[]>([]);
@@ -47,6 +50,7 @@ export const LessonPlannerView: React.FC = () => {
   const [searchQuery, setSearchQuery] = useRememberedState('lessons.search', '');
   const [activeLessonId, setActiveLessonId] = useRememberedState<string | null>('lessons.active', null);
   const [isEditing, setIsEditing] = useState(false);
+  const [imagePickerOpen, setImagePickerOpen] = useState(false);
 
   // AI Lesson Assistant State
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
@@ -492,6 +496,19 @@ export const LessonPlannerView: React.FC = () => {
                         <span>Teach This Lesson</span>
                       </button>
                       <button
+                        onClick={() => {
+                          try {
+                            localStorage.setItem(REMEMBERED_PREFIX + 'slides.fromLesson', JSON.stringify(activeLesson.id));
+                          } catch {}
+                          setActiveView('slides');
+                        }}
+                        className="px-3 py-2 rounded-xl bg-amber-100 hover:bg-amber-200 dark:bg-amber-950/60 dark:hover:bg-amber-900/60 text-amber-900 dark:text-amber-200 text-xs font-semibold flex items-center gap-1.5"
+                        title="Make a slide deck from this lesson"
+                      >
+                        <MonitorPlay className="w-4 h-4" />
+                        <span>Make Slides</span>
+                      </button>
+                      <button
                         onClick={() => startEdit(activeLesson)}
                         className="px-3 py-2 rounded-xl bg-stone-100 dark:bg-stone-800 hover:bg-stone-200 dark:hover:bg-stone-700 text-stone-800 dark:text-stone-200 text-xs font-semibold"
                       >
@@ -557,6 +574,45 @@ export const LessonPlannerView: React.FC = () => {
                 </div>
               ) : (
                 <div>
+                  {/* Display image to project with the lesson */}
+                  {activeLesson.displayImage ? (
+                    <figure className="group relative mb-4 aspect-video rounded-2xl overflow-hidden bg-stone-100 dark:bg-stone-800">
+                      <img src={activeLesson.displayImage.src} alt={activeLesson.displayImage.alt || activeLesson.title} className="w-full h-full object-cover" />
+                      {activeLesson.displayImage.credit && (
+                        <figcaption className="absolute bottom-2 left-2 text-[10px] px-2 py-0.5 rounded bg-black/55 text-white">
+                          {activeLesson.displayImage.creditUrl ? (
+                            <a href={activeLesson.displayImage.creditUrl} target="_blank" rel="noopener noreferrer" className="hover:underline">{activeLesson.displayImage.credit}</a>
+                          ) : (
+                            activeLesson.displayImage.credit
+                          )}
+                        </figcaption>
+                      )}
+                      <div className="absolute top-2 right-2 flex gap-1.5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
+                        <button onClick={() => setImagePickerOpen(true)} className="px-2.5 py-1 rounded-lg bg-black/60 text-white text-xs font-semibold">Change</button>
+                        <button onClick={() => storage.updateLessonPlan(activeLesson.id, { displayImage: undefined })} className="px-2.5 py-1 rounded-lg bg-black/60 text-white text-xs font-semibold">Remove</button>
+                      </div>
+                    </figure>
+                  ) : (
+                    <button
+                      onClick={() => setImagePickerOpen(true)}
+                      className="mb-3 px-3 py-1.5 rounded-xl border border-dashed border-stone-300 dark:border-stone-700 text-stone-500 hover:text-brand-600 hover:border-brand-400 text-xs font-semibold flex items-center gap-1.5"
+                    >
+                      <ImagePlus className="w-3.5 h-3.5" />
+                      Add display image
+                    </button>
+                  )}
+                  {imagePickerOpen && (
+                    <ImagePickerModal
+                      title="Display image for this lesson"
+                      initialPrompt={`${activeLesson.title}${activeLesson.musicalConcepts?.length ? ', showing ' + activeLesson.musicalConcepts.slice(0, 2).join(' and ') : ''}`}
+                      onClose={() => setImagePickerOpen(false)}
+                      onPick={(image) => {
+                        storage.updateLessonPlan(activeLesson.id, { displayImage: image });
+                        setImagePickerOpen(false);
+                        showToast('Display image added', 'success');
+                      }}
+                    />
+                  )}
                   <h2 className="text-2xl font-extrabold text-stone-900 dark:text-white">
                     {activeLesson.title}
                   </h2>

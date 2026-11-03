@@ -23,6 +23,7 @@ import { ResourceLibraryView } from './components/views/ResourceLibraryView';
 import { JournalView } from './components/views/JournalView';
 import { DailyPlannerView } from './components/views/DailyPlannerView';
 import { RotationView } from './components/views/RotationView';
+import { SlidesView } from './components/views/SlidesView';
 import { NamePickerView } from './components/views/NamePickerView';
 import { VolumeMeterView } from './components/views/VolumeMeterView';
 import { YouTubeBrowserView } from './components/views/YouTubeBrowserView';
@@ -59,6 +60,8 @@ const MainContent: React.FC = () => {
         return <DailyPlannerView />;
       case 'rotation':
         return <RotationView />;
+      case 'slides':
+        return <SlidesView />;
       case 'name-picker':
         return <NamePickerView />;
       case 'volume-meter':
