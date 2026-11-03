@@ -638,8 +638,8 @@ Generate the complete JSON elementary music lesson plan now. Return ONLY valid J
   let responseText = '';
   let lastError = '';
 
-  // 1. Try Direct Anthropic Messages API (with direct browser access header)
-  try {
+  // 1. With a key entered in Settings, call Anthropic directly from the browser
+  if (apiKey.trim()) try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -649,7 +649,7 @@ Generate the complete JSON elementary music lesson plan now. Return ONLY valid J
         'anthropic-dangerous-direct-browser-access': 'true'
       },
       body: JSON.stringify({
-        model: 'claude-haiku-5-5',
+        model: 'claude-sonnet-5-5',
         max_tokens: 2500,
         system: systemInstruction,
         messages: [{ role: 'user', content: userQuery }]
@@ -667,27 +667,32 @@ Generate the complete JSON elementary music lesson plan now. Return ONLY valid J
     lastError = err?.message || String(err);
   }
 
-  // 2. Fall back to the site's Claude helper (/api/hub/claude)
+  // 2. Otherwise (or if that failed) go through the site's Claude helper, which uses the key from
+  //    Settings when there is one and the site's own ANTHROPIC_API_KEY when there isn't
   if (!responseText) {
     try {
       const proxyRes = await cloudSync.hubFetch('/api/hub/claude', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': apiKey.trim()
+          ...(apiKey.trim() ? { 'x-api-key': apiKey.trim() } : {})
         },
         body: JSON.stringify({
-          model: 'claude-haiku-5-5',
+          model: 'claude-sonnet-5-5',
           max_tokens: 2500,
           system: systemInstruction,
           messages: [{ role: 'user', content: userQuery }]
         })
       });
+      const json = await proxyRes.json().catch(() => null);
       if (proxyRes.ok) {
-        const json = await proxyRes.json();
         responseText = json?.content?.[0]?.text || '';
+      } else if (!lastError) {
+        lastError = json?.error?.message || json?.error || `Claude request failed (${proxyRes.status})`;
       }
-    } catch {}
+    } catch (err: any) {
+      if (!lastError) lastError = err?.message || String(err);
+    }
   }
 
   if (!responseText) {
@@ -742,10 +747,10 @@ Generate the complete JSON elementary music lesson plan now. Return ONLY valid J
 export async function generateLessonPlan(options: GenerateLessonOptions): Promise<GeneratedLessonResult> {
   const provider = options.provider || (options.claudeApiKey ? 'claude' : options.geminiApiKey || options.apiKey ? 'gemini' : 'builtin');
 
-  if (provider === 'claude' && (options.claudeApiKey || options.apiKey)) {
+  if (provider === 'claude') {
     return generateClaudeLesson(
       options.prompt,
-      options.claudeApiKey || options.apiKey!,
+      options.claudeApiKey || options.apiKey || '',
       options.grade,
       options.durationMinutes
     );

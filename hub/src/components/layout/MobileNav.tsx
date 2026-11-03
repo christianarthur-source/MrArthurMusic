@@ -13,6 +13,7 @@ import {
   Timer,
   FolderSync,
   BookMarked,
+  NotebookPen,
   Boxes,
   Video,
   Settings,
@@ -38,6 +39,7 @@ export const MobileNav: React.FC = () => {
     { id: 'seating' as NavView, label: 'Seating Charts', icon: Grid },
     { id: 'resources' as NavView, label: 'Drive Resources', icon: FolderSync },
     { id: 'journal' as NavView, label: 'Daily Journal', icon: BookMarked },
+    { id: 'daily-planner' as NavView, label: 'Daily Planner', icon: NotebookPen },
     { id: 'youtube' as NavView, label: 'YouTube Browser', icon: Video },
     { id: 'settings' as NavView, label: 'Settings', icon: Settings },
   ];

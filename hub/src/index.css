@@ -61,3 +61,141 @@
     padding: 0 !important;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Daily Planner: notebook paper, rich text and page turns
+   Text sits on a 28px rhythm so it lines up with the ruled paper.
+--------------------------------------------------------------------------- */
+.planner-page {
+  --planner-paper: #fbf7ee;
+  --planner-line: rgba(120, 104, 80, 0.16);
+  --planner-ink: #292524;
+  background-color: var(--planner-paper);
+  color: var(--planner-ink);
+}
+.dark .planner-page {
+  --planner-paper: #23201c;
+  --planner-line: rgba(231, 229, 228, 0.09);
+  --planner-ink: #e7e5e4;
+}
+.planner-paper-lined {
+  background-image: linear-gradient(to bottom, transparent 27px, var(--planner-line) 27px);
+  background-size: 100% 28px;
+}
+.planner-paper-dotted {
+  background-image: radial-gradient(circle, var(--planner-line) 1.2px, transparent 1.4px);
+  background-size: 28px 28px;
+  background-position: -14px -14px;
+}
+.planner-paper-grid {
+  background-image:
+    linear-gradient(to bottom, transparent 27px, var(--planner-line) 27px),
+    linear-gradient(to right, transparent 27px, var(--planner-line) 27px);
+  background-size: 28px 28px;
+}
+
+.planner-rich {
+  line-height: 28px;
+  font-size: 15px;
+  word-break: break-word;
+}
+.planner-rich p,
+.planner-rich div {
+  margin: 0;
+}
+.planner-rich h2,
+.planner-rich h3 {
+  font-family: 'Newsreader', Georgia, serif;
+  font-weight: 600;
+  font-size: 1.2rem;
+  line-height: 28px;
+  margin: 0;
+}
+.planner-rich ul,
+.planner-rich ol {
+  margin: 0;
+  padding-left: 1.5rem;
+}
+.planner-rich ul {
+  list-style: disc;
+}
+.planner-rich ol {
+  list-style: decimal;
+}
+.planner-rich a {
+  color: #1d4ed8;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.dark .planner-rich a {
+  color: #93c5fd;
+}
+.planner-rich blockquote {
+  border-left: 3px solid var(--planner-line);
+  padding-left: 0.75rem;
+  margin: 0;
+}
+.planner-rich ul.planner-checklist {
+  list-style: none;
+  padding-left: 0;
+}
+.planner-rich ul.planner-checklist > li {
+  position: relative;
+  padding-left: 1.75rem;
+}
+.planner-rich ul.planner-checklist > li::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 6px;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid #a8a29e;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+}
+.planner-rich ul.planner-checklist > li[data-checked='true'] {
+  color: #a8a29e;
+  text-decoration: line-through;
+}
+.planner-rich ul.planner-checklist > li[data-checked='true']::before {
+  background: #0c87eb;
+  border-color: #0c87eb;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 8.5l2.5 2.5L12 5.5'/%3E%3C/svg%3E");
+}
+
+@keyframes planner-turn-next {
+  from {
+    opacity: 0;
+    transform: perspective(1400px) rotateY(-10deg) translateX(28px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes planner-turn-prev {
+  from {
+    opacity: 0;
+    transform: perspective(1400px) rotateY(10deg) translateX(-28px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.planner-turn-next {
+  animation: planner-turn-next 0.32s ease-out;
+  transform-origin: left center;
+}
+.planner-turn-prev {
+  animation: planner-turn-prev 0.32s ease-out;
+  transform-origin: right center;
+}
+@media (prefers-reduced-motion: reduce) {
+  .planner-turn-next,
+  .planner-turn-prev {
+    animation: none;
+  }
+}
