@@ -174,6 +174,8 @@ export default function ProStaffApp() {
   const [toolTab, setToolTab] = useState<ToolTab>('notes');
   const [showProps, setShowPropsRaw] = useState<boolean>(() => {
     try {
+      // on small screens the panel covers the score, so it starts closed there
+      if (window.innerWidth <= 820) return false;
       const v = localStorage.getItem('wolfi:props');
       return v === null ? window.innerWidth > 1100 : v === '1';
     } catch {
@@ -189,6 +191,16 @@ export default function ProStaffApp() {
     }
   };
   const [cmdk, setCmdk] = useState(false);
+  // starting note input (N, or typing A–G) from Play or Print brings back Write mode and its toolbar
+  useEffect(() => {
+    if (mode !== 'input' || appMode === 'write') return;
+    setAppModeRaw('write');
+    try {
+      localStorage.setItem('wolfi:mode', 'write');
+    } catch {
+      /* ignore */
+    }
+  }, [mode, appMode]);
   const [playing, setPlaying] = useState(false);
   const [tempoPct, setTempoPct] = useState(100);
   const [loop, setLoop] = useState(false);
@@ -920,7 +932,8 @@ export default function ProStaffApp() {
       }
       d.moved = true;
       if (d.kind === 'move') {
-        const steps = -Math.round(dy / d.half);
+        // one step per staff step of movement, but never twitchier than 6px a step on small staves
+        const steps = -Math.round(dy / Math.max(d.half, 6));
         if (steps !== d.steps && sc) {
           d.steps = steps;
           // the page is drawn in its own units: convert screen pixels before moving the notes
@@ -1864,7 +1877,8 @@ export default function ProStaffApp() {
 
   const setDur = (dur: string) => {
     updInput((x) => ({ ...x, dur, dots: 0 }));
-    if (mode === 'normal' && sel.kind === 'events') run((sc) => E.setDuration(sc, sel, dur, 0));
+    const { mode: m, sel: cur } = live.current; // current values (command search runs this after it closes)
+    if (m === 'normal' && cur.kind === 'events') run((sc) => E.setDuration(sc, cur, dur, 0));
   };
 
   const startInput = () => {
@@ -1935,6 +1949,7 @@ export default function ProStaffApp() {
   };
 
   const scoreIsEmpty = !!s && !descendants(s.doc, 'note').length;
+  if (import.meta.env.DEV) Object.assign((window as any).__prostaff, { commands: buildCommands, updSel, run, actions, setAppMode });
   const mixerEl = (
     <Mixer
       parts={scoreRef.current && descendants(scoreRef.current.doc, 'harm').some((h) => !h.getAttribute('type') || h.getAttribute('type') === 'suggested') && playback.chords !== 'off' ? [...parts, { name: 'Chord symbols', ns: [CHORD_STAFF] }] : parts}

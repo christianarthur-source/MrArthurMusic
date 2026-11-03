@@ -252,7 +252,7 @@ export function explode(score: Score, sel: Selection): CommandResult {
     const l = score.layerEl(score.byId(mid)!, sn, '1');
     if (l) score.tidyLayer(l);
   }
-  return { selection: sel, message: `Exploded into ${targets.length} staves.` };
+  return { selection: sel, message: `Exploded into ${targets.length} ${targets.length === 1 ? "staff" : "staves"}.` };
 }
 
 /** Combines the selected staves into the first one: chords where rhythms match, otherwise as voices. */
