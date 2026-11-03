@@ -14,6 +14,28 @@
     --brand-700: #0155a3;
     --brand-800: #064986;
     --brand-900: #0b3d6f;
+
+    /* Tailwind stone 700–950, as "r g b" so opacity modifiers keep working */
+    --stone-700: 68 64 60;
+    --stone-800: 41 37 36;
+    --stone-900: 28 25 23;
+    --stone-950: 12 10 9;
+  }
+
+  /* Dark mode is built on the navy of the logo tile (#13171d) instead of warm black. */
+  .dark {
+    --stone-700: 51 60 74;
+    --stone-800: 36 43 54;
+    --stone-900: 27 33 42;
+    --stone-950: 19 23 29;
+  }
+
+  /* The Daily Planner notebook keeps its original charcoal frame and ink in dark mode. */
+  .dark .planner-notebook {
+    --stone-700: 68 64 60;
+    --stone-800: 41 37 36;
+    --stone-900: 28 25 23;
+    --stone-950: 12 10 9;
   }
 
   body {
