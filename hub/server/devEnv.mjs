@@ -43,5 +43,7 @@ export function createDevEnv(dataDir) {
     HUB_DB: d1(new DatabaseSync(`${dataDir}/hub.sqlite`)),
     MASTER_TEACHER_PIN: process.env.MASTER_TEACHER_PIN || 'dev-master-pin',
     ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
+    CLOUDFLARE_ACCOUNT_ID: process.env.CLOUDFLARE_ACCOUNT_ID,
+    CLOUDFLARE_API_TOKEN: process.env.CLOUDFLARE_API_TOKEN,
   };
 }

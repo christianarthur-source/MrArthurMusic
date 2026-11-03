@@ -30,7 +30,7 @@ export const SettingsView: React.FC = () => {
   const [roomNumber, setRoomNumber] = useState(preferences.roomNumber);
   const [defaultDuration, setDefaultDuration] = useState(preferences.defaultClassDuration || 40);
   const [driveClientId, setDriveClientId] = useState(preferences.googleDriveClientId || '');
-  const [aiProvider, setAiProvider] = useState<'builtin' | 'claude' | 'gemini'>(preferences.aiProvider || 'builtin');
+  const [aiProvider, setAiProvider] = useState<'builtin' | 'free' | 'claude' | 'gemini'>(preferences.aiProvider || 'free');
   const [claudeApiKey, setClaudeApiKey] = useState(preferences.claudeApiKey || '');
   const [geminiApiKey, setGeminiApiKey] = useState(preferences.geminiApiKey || preferences.aiApiKey || '');
 
@@ -250,8 +250,9 @@ export const SettingsView: React.FC = () => {
           <label className="text-xs font-bold uppercase text-stone-400 block">
             Default AI Model Provider
           </label>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {[
+              { id: 'free', name: 'Free AI', desc: 'GPT-OSS 120B reasoning model (no key needed)', badge: 'Free' },
               { id: 'builtin', name: 'Built-in Pedagogical AI', desc: 'Instant & Offline (No key needed)', badge: 'Free & Local' },
               { id: 'claude', name: 'Anthropic Claude', desc: 'Claude Sonnet 5.5', badge: 'API Key' },
               { id: 'gemini', name: 'Google Gemini', desc: 'Gemini 2.0 / 1.5 Flash', badge: 'API Key' }

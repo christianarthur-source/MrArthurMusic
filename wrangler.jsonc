@@ -10,6 +10,8 @@
     { "binding": "WOLFI_DB", "database_name": "wolfi", "database_id": "bb19b483-93b5-4132-ae02-a774d4332646" },
     { "binding": "HUB_DB", "database_name": "wolfi", "database_id": "bb19b483-93b5-4132-ae02-a774d4332646" }
   ],
+  // Workers AI: the Hub's free lesson-planner model (hub/server/freeAi.mjs). No key; free daily allowance.
+  "ai": { "binding": "AI" },
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",

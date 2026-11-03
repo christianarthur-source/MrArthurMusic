@@ -8,6 +8,7 @@ import {
   generatePedagogicalLesson,
   generateGeminiLesson,
   generateClaudeLesson,
+  generateFreeLesson,
   GeneratedLessonResult
 } from '../../services/aiLessonGenerator';
 import {
@@ -50,7 +51,7 @@ export const LessonPlannerView: React.FC = () => {
   const [aiPrompt, setAiPrompt] = useState('Create a 30-minute second-grade lesson on steady beat vs rhythm of the words using rhythm sticks and Kodály Ta & Ti-Ti syllables.');
   const [aiGrade, setAiGrade] = useState<string>('auto');
   const [aiDuration, setAiDuration] = useState<number>(preferences.defaultClassDuration || 35);
-  const [aiEngine, setAiEngine] = useState<'builtin' | 'claude' | 'gemini'>(preferences.aiProvider || 'builtin');
+  const [aiEngine, setAiEngine] = useState<'builtin' | 'free' | 'claude' | 'gemini'>(preferences.aiProvider || 'free');
   const [claudeKey, setClaudeKey] = useState(preferences.claudeApiKey || '');
   // Whether the site has its own Claude key, so lessons work without one in Settings
   const [siteClaudeKey, setSiteClaudeKey] = useState(false);
@@ -244,7 +245,18 @@ export const LessonPlannerView: React.FC = () => {
 
       let result: GeneratedLessonResult;
 
-      if (aiEngine === 'claude') {
+      if (aiEngine === 'free') {
+        setAiStatusMessage('Free AI (GPT-OSS 120B) is reasoning through your lesson. This can take up to a minute...');
+        try {
+          result = await generateFreeLesson(aiPrompt, preferredGrade, preferredDuration);
+        } catch (err: any) {
+          // Out of free allowance or not set up: still give the teacher a lesson
+          console.warn('Free AI failed, using the built-in engine:', err);
+          showToast(`Free AI unavailable: ${err?.message || 'request failed.'} The built-in engine wrote this one instead.`, 'warning');
+          result = generatePedagogicalLesson(aiPrompt, preferredGrade, preferredDuration);
+        }
+        if (preferences.aiProvider !== 'free') updatePreferences({ aiProvider: 'free' });
+      } else if (aiEngine === 'claude') {
         if (!claudeKey.trim() && !siteClaudeKey) {
           showToast('Add ANTHROPIC_API_KEY to the site, or paste a Claude API key here.', 'error');
           setIsGenerating(false);
@@ -786,6 +798,18 @@ export const LessonPlannerView: React.FC = () => {
 
             {/* AI Engine Switch */}
             <div className="flex flex-col sm:flex-row rounded-xl bg-stone-100 dark:bg-stone-800/80 p-1 text-xs font-semibold gap-1">
+              <button
+                type="button"
+                onClick={() => setAiEngine('free')}
+                className={`flex-1 py-1.5 px-2.5 rounded-lg flex items-center justify-center gap-1.5 transition-all ${
+                  aiEngine === 'free'
+                    ? 'bg-white dark:bg-navy-900 text-emerald-700 dark:text-emerald-300 shadow-sm font-bold'
+                    : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
+                <span>Free AI (GPT-OSS 120B)</span>
+              </button>
               <button
                 type="button"
                 onClick={() => setAiEngine('builtin')}

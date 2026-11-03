@@ -31,7 +31,7 @@ export const INITIAL_PREFERENCES: UserPreferences = {
   metronomeSound: 'woodblock',
   tunerRefA4: 440,
   googleCalendarConnected: false,
-  aiProvider: 'builtin',
+  aiProvider: 'free',
   claudeApiKey: '',
   geminiApiKey: '',
   pinnedNavigation: ['home', 'planner', 'tasks', 'tools', 'visuals', 'audio-studio']

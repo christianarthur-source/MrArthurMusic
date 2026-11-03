@@ -15,7 +15,7 @@ export interface UserPreferences {
   googleDriveClientId?: string;
   googleCalendarConnected: boolean;
   aiApiKey?: string;
-  aiProvider?: 'builtin' | 'claude' | 'gemini';
+  aiProvider?: 'builtin' | 'free' | 'claude' | 'gemini';
   claudeApiKey?: string;
   geminiApiKey?: string;
   pinnedNavigation: string[];
