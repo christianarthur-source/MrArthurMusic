@@ -672,6 +672,67 @@ export function transposeNotes(score: Score, sel: Selection, amount: number, uni
   return { selection: sel };
 }
 
+/** Swaps each selected note to its other spelling (C♯ ↔ D♭, E ↔ F♭…), keeping the pitch. */
+export function respellEnharmonic(score: Score, sel: Selection): CommandResult {
+  const notes = selectedNotes(score, sel);
+  if (!notes.length) throw new EditError('Select one or more notes.');
+  const layers = new Set<Element>();
+  for (const n of notes) {
+    const fifths = keyAt(score, n);
+    const p = notePitch(n, fifths);
+    // every spelling of this pitch with at most a double accidental, simplest first
+    const opts: { pname: string; oct: number; alter: number }[] = [];
+    for (const pname of PNAMES) {
+      for (let alter = -2; alter <= 2; alter++) {
+        const nat = p.midi - alter;
+        if ((((nat % 12) + 12) % 12) !== [0, 2, 4, 5, 7, 9, 11][PNAMES.indexOf(pname)]) continue;
+        opts.push({ pname, oct: Math.floor(nat / 12) - 1, alter });
+      }
+    }
+    opts.sort((a, b) => Math.abs(a.alter) - Math.abs(b.alter) || a.alter - b.alter);
+    const single = opts.filter((o) => Math.abs(o.alter) <= 1);
+    const pool = single.length > 1 ? single : opts;
+    const at = pool.findIndex((o) => o.pname === p.pname && o.alter === p.alter);
+    setPitch(n, pool[(at + 1) % pool.length]);
+    layers.add(locate(n).layer);
+  }
+  for (const l of layers) afterEdit(score, l);
+  return { selection: sel };
+}
+
+/** Adds a note `steps` scale steps above (positive) or below (negative) each selected note or chord. */
+export function addInterval(score: Score, sel: Selection, steps: number): CommandResult {
+  const events = selectedEvents(score, sel).filter((e) => e.localName === 'note' || e.localName === 'chord');
+  if (!events.length) throw new EditError('Select a note to add an interval to.');
+  const added: string[] = [];
+  for (const ev0 of events) {
+    const ev = eventOf(ev0);
+    const notes = ev.localName === 'chord' ? children(ev, 'note') : [ev];
+    const ref = notes.reduce((a, b) => {
+      const sa = stepOf(a.getAttribute('pname') || 'c', Number(a.getAttribute('oct') || 4));
+      const sb = stepOf(b.getAttribute('pname') || 'c', Number(b.getAttribute('oct') || 4));
+      return steps > 0 ? (sb > sa ? b : a) : sb < sa ? b : a;
+    });
+    const target = fromStep(stepOf(ref.getAttribute('pname') || 'c', Number(ref.getAttribute('oct') || 4)) + steps);
+    const r = addChordPitch(score, getId(ref), target);
+    if (r.selection?.kind === 'events') added.push(...r.selection.ids);
+  }
+  return { selection: { kind: 'events', ids: added.length ? added : (sel.kind === 'events' ? sel.ids : []) } };
+}
+
+/** Makes each selected note or rest one value longer (+1) or shorter (-1): half ↔ quarter ↔ eighth… */
+export function nudgeDuration(score: Score, sel: Selection, dir: 1 | -1): CommandResult {
+  const ev = selectedEvent(score, sel);
+  if (!ev) throw new EditError('Select a note or rest.');
+  const order = ['1', '2', '4', '8', '16', '32', '64'];
+  const e = eventOf(ev);
+  const cur = e.getAttribute('dur') || (e.localName === 'chord' ? children(e, 'note')[0]?.getAttribute('dur') : '') || '4';
+  const i = order.indexOf(cur);
+  const next = order[Math.max(0, Math.min(order.length - 1, (i < 0 ? 2 : i) - dir))];
+  if (next === cur) throw new EditError(dir > 0 ? 'That is already the longest value.' : 'That is already the shortest value.');
+  return setDuration(score, sel, next, 0);
+}
+
 export function setAccidental(score: Score, sel: Selection, alter: number): CommandResult {
   const notes = selectedNotes(score, sel);
   if (!notes.length) throw new EditError('Select a note.');

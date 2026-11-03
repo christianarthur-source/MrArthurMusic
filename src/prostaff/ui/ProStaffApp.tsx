@@ -39,7 +39,7 @@ type DialogKind = null | 'new' | 'library' | 'props' | 'parts' | 'transpose' | '
 type AppMode = 'write' | 'play' | 'print';
 type ToolTab = 'notes' | 'marks' | 'text' | 'measures' | 'layout';
 const TOOL_TABS: [ToolTab, string][] = [['notes', 'Notes'], ['marks', 'Marks'], ['text', 'Text'], ['measures', 'Measures'], ['layout', 'Layout']];
-type PromptKind = 'staff-text' | 'expression' | 'tempo' | 'rehearsal' | 'chord' | 'lyrics' | 'fingering' | 'meter' | 'roman' | 'figbass';
+type PromptKind = 'staff-text' | 'expression' | 'tempo' | 'rehearsal' | 'chord' | 'lyrics' | 'fingering' | 'meter' | 'roman' | 'figbass' | 'goto';
 
 const DURATIONS: { dur: string; glyph: string; key: string; name: string }[] = [
   { dur: '1', glyph: '𝅝', key: '7', name: 'Whole' },
@@ -51,6 +51,8 @@ const DURATIONS: { dur: string; glyph: string; key: string; name: string }[] = [
   { dur: '64', glyph: '𝅘𝅥𝅱', key: '1', name: '64th' },
 ];
 const KEY_TO_DUR: Record<string, string> = { '1': '64', '2': '32', '3': '16', '4': '8', '5': '4', '6': '2', '7': '1' };
+/** Flat's number keys run the other way: 1 = whole … 7 = 64th. */
+const FLAT_KEY_TO_DUR: Record<string, string> = { '1': '1', '2': '2', '3': '4', '4': '8', '5': '16', '6': '32', '7': '64' };
 const VOICE_COLORS = ['#5b8def', '#4fb37f', '#e08a3c', '#b07cd8'];
 const CLICKABLE = [
   'note', 'rest', 'mRest', 'multiRest', 'chord', 'space', 'dynam', 'dir', 'tempo', 'harm', 'slur', 'hairpin', 'syl', 'fermata', 'trill', 'mordent', 'turn',
@@ -1006,6 +1008,10 @@ export default function ProStaffApp() {
       setPrompt({ kind, anchor: '', value: '5/8' });
       return;
     }
+    if (kind === 'goto') {
+      setPrompt({ kind, anchor: '', value: '' });
+      return;
+    }
     let anchor = '';
     if (cur.kind === 'events') anchor = cur.ids[0];
     else if (cur.kind === 'measures') {
@@ -1037,6 +1043,17 @@ export default function ProStaffApp() {
     if (!p || !s) return;
     const text = (raw ?? p.value).trim();
     const sel1: Selection = { kind: 'events', ids: [p.anchor] };
+    if (p.kind === 'goto') {
+      const m = s.measures().find((x) => x.getAttribute('n') === String(parseInt(text, 10)));
+      if (!m) {
+        showToast(`There's no measure ${text || '?'} in this score.`, true);
+        return;
+      }
+      updSel({ kind: 'measures', measureIds: [getId(m)], staves: [] });
+      stageRef.current?.querySelector(`[id="${CSS.escape(getId(m))}"]`)?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      setPrompt(null);
+      return;
+    }
     if (p.kind === 'meter') {
       const m = /^(\d+(?:\+\d+)*)\s*\/\s*(\d+)$/.exec(text);
       if (!m) {
@@ -1201,8 +1218,56 @@ export default function ProStaffApp() {
         updSel({ kind: 'measures', measureIds: s.measures().map(getId), staves: s.staffDefs().map((d) => d.getAttribute('n') || '1') });
         return;
       }
+      if (mod && k.toLowerCase() === 'g') { handled(); openPrompt('goto'); return; }
+      if (mod && e.shiftKey && k.toLowerCase() === 'i') { handled(); openPrompt('lyrics'); return; }
       if (mod && !k.startsWith('Arrow')) return;
-      if (k === ' ') { handled(); void togglePlayRef.current(); return; }
+
+      // Shortcut style: where Wolfi, Flat and Noteflight disagree, follow the app the user picked
+      const style = prefsRef.current.keyStyle || 'wolfi';
+      const code = e.code;
+      const lower = k.toLowerCase();
+      const hasNotes = () => cur.kind !== 'none' && E.selectedNotes(scoreRef.current!, cur).length > 0;
+      const restHere = () => {
+        if (m === 'normal' && cur.kind === 'events' && hasNotes()) run((s) => E.deleteSelection(s, cur));
+        else {
+          const startCursor = m === 'input' ? cc : startInputCursor();
+          run((s) => E.enterRest(s, startCursor, live.current.sel, inp, 'input'));
+        }
+      };
+      const setLength = (dur: string) => {
+        updInput((x) => ({ ...x, dur, dots: 0 }));
+        if (m === 'normal' && cur.kind === 'events') run((s) => E.setDuration(s, cur, dur, 0));
+      };
+
+      // ---- shared by every style ----
+      if (e.altKey && /^Digit[2-8]$/.test(code)) {
+        // Alt+2…8: add a 2nd … octave above (Shift: below)
+        handled();
+        const n = Number(code.slice(5)) - 1;
+        const r = run((s) => E.addInterval(s, live.current.sel, e.shiftKey ? -n : n));
+        if (r?.selection?.kind === 'events') audition(r.selection.ids);
+        return;
+      }
+      if (e.shiftKey && !e.altKey && (code === 'Digit3' || code === 'Digit5' || (code === 'Digit6' && style !== 'noteflight'))) {
+        handled();
+        actions.tuplet(Number(code.slice(5)));
+        return;
+      }
+      if (k === ' ') {
+        handled();
+        if (style === 'noteflight') restHere(); // Noteflight: Space turns the note into a rest; P plays
+        else void togglePlayRef.current();
+        return;
+      }
+      if (lower === 'p' && !e.altKey) {
+        handled();
+        if (player.playing) stop();
+        else {
+          if (!e.shiftKey) rewind(); // P: from the start; Shift+P: from the selection
+          void togglePlayRef.current();
+        }
+        return;
+      }
       if (k === 'Home') { handled(); rewind(); return; }
       if (k === 'Escape') {
         handled();
@@ -1211,7 +1276,7 @@ export default function ProStaffApp() {
         return;
       }
       if (k === '?') { handled(); setDialog('shortcuts'); return; }
-      if (k.toLowerCase() === 'n' && !e.altKey) {
+      if (lower === 'n' && !e.altKey) {
         handled();
         if (m === 'input') updMode('normal');
         else {
@@ -1231,20 +1296,41 @@ export default function ProStaffApp() {
         if (r?.selection?.kind === 'events') audition(r.selection.ids);
         return;
       }
-      if (k === '0' || k.toLowerCase() === 'r') {
+      if (k === ',') { handled(); run((s) => E.toggleTie(s, cur, cc, inp, m)); return; }
+      if (k === '[' || k === ']') {
+        // shorter / longer by one value
         handled();
-        if (m === 'normal' && cur.kind === 'events' && E.selectedNotes(scoreRef.current, cur).length) run((s) => E.deleteSelection(s, cur));
-        else {
-          const startCursor = m === 'input' ? cc : startInputCursor();
-          run((s) => E.enterRest(s, startCursor, live.current.sel, inp, 'input'));
-        }
+        const dir = k === ']' ? 1 : -1;
+        if (m === 'input') {
+          const order = ['1', '2', '4', '8', '16', '32', '64'];
+          updInput((x) => ({ ...x, dur: order[Math.max(0, Math.min(order.length - 1, order.indexOf(x.dur) - dir))], dots: 0 }));
+        } else run((s) => E.nudgeDuration(s, cur, dir));
         return;
       }
+      if ((lower === 'z' || lower === 'j') && !e.altKey) { handled(); run((s) => E.respellEnharmonic(s, cur)); return; }
+      if (k === ';') { handled(); actions.artic('stacc'); return; }
+      if (k === ':') { handled(); actions.artic('ten'); return; }
+      if (k === '"') { handled(); actions.artic('marc'); return; }
+      if (k === '<') { handled(); actions.spanner('hairpin', { form: 'cres' }); return; }
+      if (k === '>') { handled(); actions.spanner('hairpin', { form: 'dim' }); return; }
+      if (k === 'Enter') { handled(); actions.pageBreak(e.shiftKey ? 'pb' : 'sb'); return; }
+
+      // ---- rests and note lengths ----
+      if ((k === '0' && style !== 'flat') || (lower === 'r' && style === 'wolfi') || (k === '8' && style === 'flat')) {
+        handled();
+        restHere();
+        return;
+      }
+      if (lower === 'r') {
+        // Flat and Noteflight: R repeats the selection right after itself
+        handled();
+        repeatSelection();
+        return;
+      }
+      if (style === 'flat' && k === '9') { handled(); actions.grace('unacc'); return; }
       if (/^[1-7]$/.test(k)) {
         handled();
-        const dur = KEY_TO_DUR[k];
-        updInput((x) => ({ ...x, dur, dots: 0 }));
-        if (m === 'normal' && cur.kind === 'events') run((s) => E.setDuration(s, cur, dur, 0));
+        setLength(style === 'flat' ? FLAT_KEY_TO_DUR[k] : KEY_TO_DUR[k]);
         return;
       }
       if (k === '.') {
@@ -1253,15 +1339,27 @@ export default function ProStaffApp() {
         else run((s) => E.toggleDot(s, cur));
         return;
       }
-      if (k === '+' ) { handled(); actions.accidental(1); return; }
+
+      // ---- accidentals ----
+      if (k === '+') { handled(); actions.accidental(1); return; }
+      if (k === '*' && style === 'noteflight') { handled(); actions.accidental(2); return; }
+      if (k === '_' && style === 'noteflight') { handled(); actions.accidental(-2); return; }
       if (k === '-' || k === '_') { handled(); actions.accidental(-1); return; }
-      if (k === '=') { handled(); actions.accidental(0); return; }
+      if (k === '=') { handled(); actions.accidental(style === 'flat' ? 1 : 0); return; }
+      if (k === '0' && style === 'flat') { handled(); actions.accidental(0); return; }
+      if (k === '^' && style === 'noteflight') { handled(); actions.control('fermata', { place: 'above' }); return; }
+
+      // ---- pitch: Wolfi moves by half steps; Flat and Noteflight by scale steps ----
       if (k === 'ArrowUp' || k === 'ArrowDown') {
         handled();
         const dir = k === 'ArrowUp' ? 1 : -1;
-        if (cur.kind === 'events' && E.selectedNotes(scoreRef.current, cur).length) {
-          const r = run((s) => E.transposeNotes(s, cur, dir, e.altKey && e.shiftKey ? 'step' : mod || (e.shiftKey && !e.altKey) ? 'octave' : 'semitone'));
-          if (r && cur.ids.length === 1) audition(cur.ids);
+        if (cur.kind !== 'none' && hasNotes()) {
+          const unit: 'semitone' | 'step' | 'octave' =
+            style === 'wolfi'
+              ? e.altKey && e.shiftKey ? 'step' : mod || (e.shiftKey && !e.altKey) ? 'octave' : 'semitone'
+              : mod ? 'octave' : e.shiftKey ? 'semitone' : 'step';
+          const r = run((s) => E.transposeNotes(s, cur, dir, unit));
+          if (r && cur.kind === 'events' && cur.ids.length === 1) audition(cur.ids);
         }
         return;
       }
@@ -1300,11 +1398,29 @@ export default function ProStaffApp() {
         return;
       }
       if (k === 'Delete' || k === 'Backspace') { handled(); run((s) => E.deleteSelection(s, cur)); return; }
-      if (k.toLowerCase() === 't') { handled(); run((s) => E.toggleTie(s, cur, cc, inp, m)); return; }
-      if (k.toLowerCase() === 's') { handled(); actions.spanner('slur'); return; }
-      if (k.toLowerCase() === 'k') { handled(); openPrompt('chord'); return; }
-      if (k.toLowerCase() === 'l') { handled(); openPrompt('lyrics'); return; }
-      if (k.toLowerCase() === 'x') { handled(); openPrompt('staff-text'); return; }
+
+      // ---- letters that mean different things ----
+      if (lower === 't') {
+        handled();
+        if (style === 'noteflight') openPrompt('staff-text');
+        else run((s) => E.toggleTie(s, cur, cc, inp, m));
+        return;
+      }
+      if (lower === 'l') {
+        handled();
+        if (style === 'noteflight') updInput((x) => ({ ...x, voice: '2' })); // Noteflight: L = lower voice
+        else openPrompt('lyrics');
+        return;
+      }
+      if (lower === 'u' && style === 'noteflight') { handled(); updInput((x) => ({ ...x, voice: '1' })); return; }
+      if (lower === 'v' && style === 'flat') {
+        handled();
+        updInput((x) => ({ ...x, voice: e.shiftKey ? '2' : x.voice === '1' ? '2' : '1' }));
+        return;
+      }
+      if (lower === 's') { handled(); actions.spanner('slur'); return; }
+      if (lower === 'k') { handled(); openPrompt('chord'); return; }
+      if (lower === 'x') { handled(); openPrompt('staff-text'); return; }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -1337,6 +1453,37 @@ export default function ProStaffApp() {
     setPlaying(false);
     clearPlayHighlight();
   }, [player, clearPlayHighlight]);
+
+  /** Flat / Noteflight "R": writes a copy of the selection right after it (over what follows). */
+  function repeatSelection() {
+    const s = scoreRef.current;
+    const cur = live.current.sel;
+    if (!s || cur.kind === 'none') {
+      showToast('Select notes or measures to repeat.', true);
+      return;
+    }
+    const clip = E.copySelection(s, cur);
+    if (!clip) return;
+    if (cur.kind === 'measures') {
+      const ms = s.measures();
+      const last = ms.findIndex((x) => getId(x) === cur.measureIds[cur.measureIds.length - 1]);
+      const needed = last + cur.measureIds.length - (ms.length - 1);
+      if (needed > 0) actions.addMeasures(needed);
+      const ms2 = scoreRef.current!.measures();
+      const start = ms2[last + 1];
+      if (!start) return;
+      const target: Selection = { kind: 'measures', measureIds: ms2.slice(last + 1, last + 1 + cur.measureIds.length).map(getId), staves: cur.staves };
+      run((sc) => E.paste(sc, target, clip, null, live.current.input));
+      return;
+    }
+    const lastEv = s.byId(cur.ids[cur.ids.length - 1]);
+    const next = lastEv ? E.neighbor(s, E.eventOf(lastEv), 1, false) : null;
+    if (!next) {
+      showToast('There is nothing after the selection to write over. Add a measure first.', true);
+      return;
+    }
+    run((sc) => E.paste(sc, { kind: 'events', ids: [getId(next)] }, clip, getId(next), live.current.input));
+  }
 
   /** Stops and goes back to the beginning: the next Play starts at measure 1. */
   function rewind() {
@@ -2263,12 +2410,12 @@ export default function ProStaffApp() {
 
       {prompt && promptPos && (
         <div className="ps-popover" style={{ left: promptPos.left, top: promptPos.top }}>
-          <small>{({ 'staff-text': 'Text', expression: 'Expression', tempo: 'Tempo', rehearsal: 'Rehearsal', chord: 'Chord', lyrics: 'Lyric', fingering: 'Finger', meter: 'Time', roman: 'Roman', figbass: 'Figures' } as Record<string, string>)[prompt.kind]}</small>
+          <small>{({ 'staff-text': 'Text', expression: 'Expression', tempo: 'Tempo', rehearsal: 'Rehearsal', chord: 'Chord', lyrics: 'Lyric', fingering: 'Finger', meter: 'Time', roman: 'Roman', figbass: 'Figures', goto: 'Go to measure' } as Record<string, string>)[prompt.kind]}</small>
           <input
             className="ps-input"
             autoFocus
             value={prompt.value}
-            placeholder={prompt.kind === 'roman' ? 'e.g. I, IV6, V7, viio' : prompt.kind === 'figbass' ? 'e.g. 6 4, 7, 6/5' : prompt.kind === 'chord' ? 'e.g. Cmaj7, F#m7b5, Bb/D' : prompt.kind === 'lyrics' ? 'syllable (end with - to hyphenate)' : prompt.kind === 'tempo' ? 'e.g. Allegro 132' : ''}
+            placeholder={prompt.kind === 'roman' ? 'e.g. I, IV6, V7, viio' : prompt.kind === 'figbass' ? 'e.g. 6 4, 7, 6/5' : prompt.kind === 'chord' ? 'e.g. Cmaj7, F#m7b5, Bb/D' : prompt.kind === 'lyrics' ? 'syllable (end with - to hyphenate)' : prompt.kind === 'tempo' ? 'e.g. Allegro 132' : prompt.kind === 'goto' ? 'measure number' : ''}
             onChange={(e) => setPrompt({ ...prompt, value: e.target.value })}
             onKeyDown={(e) => {
               if (e.key === 'Escape') { e.preventDefault(); setPrompt(null); return; }
@@ -2328,7 +2475,7 @@ export default function ProStaffApp() {
         />
       )}
       {dialog === 'scan' && <ScanDialog onClose={() => setDialog(null)} onRecognize={(p, pin, hint) => void recognize(p, pin, hint)} busy={scanBusy} progress={scanProgress} error={scanError} />}
-      {dialog === 'shortcuts' && <ShortcutsDialog onClose={() => setDialog(null)} />}
+      {dialog === 'shortcuts' && <ShortcutsDialog style={prefs.keyStyle} onClose={() => setDialog(null)} />}
       {dialog === 'account' && (
         <AccountDialog
           user={user}
