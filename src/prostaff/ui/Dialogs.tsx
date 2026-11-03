@@ -477,19 +477,61 @@ export function ScanDialog({ onClose, onRecognize, busy, progress, error }: {
 
 // ---------- shortcuts ----------
 
-const SHORTCUTS: [string, [string, string][]][] = [
-  ['Note input', [['N', 'Start / stop note input'], ['A – G', 'Enter a note'], ['Shift + A – G', 'Add a note to the chord'], ['0 or R', 'Rest'], ['1 – 7', 'Duration: 64th … whole'], ['.', 'Dot'], ['Ctrl + Alt + 1 – 4', 'Voice 1 – 4'], ['Ctrl + 3 / 5 / 6', 'Tuplet']]],
-  ['Pitch', [['↑ / ↓', 'Up / down a semitone'], ['Ctrl + ↑ / ↓  or  Shift + ↑ / ↓', 'Up / down an octave'], ['Alt + Shift + ↑ / ↓', 'Up / down a step in the key'], ['+  -  =', 'Sharp, flat, natural']]],
-  ['Selection', [['← / →', 'Previous / next note'], ['Shift + ← / →', 'Extend selection'], ['Ctrl + ← / →', 'Previous / next measure'], ['Click empty staff', 'Select measure'], ['Shift + click', 'Select a range'], ['Drag across the staff', 'Select several notes'], ['Drag a note up / down', 'Change its pitch'], ['Esc', 'Select tool / clear selection']]],
-  ['Markings', [['T', 'Tie'], ['S', 'Slur'], ['K', 'Chord symbol'], ['L', 'Lyrics'], ['X', 'Staff text'], ['Delete', 'Delete selection']]],
-  ['Score', [['Ctrl + K', 'Find any command'], ['Ctrl + Z / Ctrl + Shift + Z', 'Undo / redo'], ['Ctrl + C / X / V', 'Copy, cut, paste'], ['Ctrl + B', 'Add a measure'], ['Space', 'Play / pause'], ['Home', 'Return to start'], ['Ctrl + S', 'Save'], ['?', 'This list']]],
-];
+type KeyStyleName = 'wolfi' | 'flat' | 'noteflight';
 
-export function ShortcutsDialog({ onClose }: { onClose: () => void }) {
+/** The shortcut list for a style (Wolfi, Flat or Noteflight); shared keys are the same in all three. */
+function shortcutsFor(style: KeyStyleName): [string, [string, string][]][] {
+  const flat = style === 'flat';
+  const nf = style === 'noteflight';
+  return [
+    ['Note input', [
+      ['N', 'Start / stop note input'], ['A – G', 'Enter a note'], ['Shift + A – G', 'Add a note to the chord'],
+      flat ? ['1 – 7', 'Length: whole … 64th (3 = quarter)'] : ['1 – 7', 'Length: 64th … whole (5 = quarter)'],
+      ['[  /  ]', 'Shorter / longer by one value'], ['.', 'Dot'],
+      flat ? ['8', 'Rest'] : nf ? ['Space or 0', 'Rest'] : ['0 or R', 'Rest'],
+      ...(flat ? [['9', 'Grace note'] as [string, string]] : []),
+      ['Alt + 2 – 8', 'Add a 2nd … octave above (Shift: below)'],
+      ['Shift + 3 / 5' + (nf ? '' : ' / 6'), 'Triplet / quintuplet' + (nf ? '' : ' / sextuplet')],
+      flat ? ['V  /  Shift + V', 'Toggle voice / voice 2'] : nf ? ['U  /  L', 'Upper / lower voice'] : ['Ctrl + Alt + 1 – 4', 'Voice 1 – 4'],
+    ]],
+    ['Pitch', [
+      flat || nf ? ['↑ / ↓', 'Up / down a scale step'] : ['↑ / ↓', 'Up / down a half step'],
+      flat || nf ? ['Shift + ↑ / ↓', 'Up / down a half step'] : ['Alt + Shift + ↑ / ↓', 'Up / down a scale step'],
+      ['Ctrl + ↑ / ↓', 'Up / down an octave'],
+      flat ? ['-  =  0', 'Flat, sharp, natural'] : ['-  +  =', 'Flat, sharp, natural'],
+      ...(nf ? [['_  /  *', 'Double flat / double sharp'] as [string, string]] : []),
+      ['Z or J', 'Swap the spelling (C♯ ↔ D♭)'],
+    ]],
+    ['Markings', [
+      [flat || nf ? ',' : ', or T', 'Tie'], ['S', 'Slur'], ['K', 'Chord symbol'],
+      nf ? ['Ctrl + Shift + I', 'Lyrics'] : ['L', 'Lyrics'],
+      [nf ? 'T or X' : 'X', 'Staff text'],
+      [';  :  "', 'Staccato, tenuto, marcato'], ...(nf ? [['^', 'Fermata'] as [string, string]] : []),
+      ['<  /  >', 'Crescendo / diminuendo hairpin'],
+    ]],
+    ['Selection', [
+      ['← / →', 'Previous / next note'], ['Shift + ← / →', 'Extend selection'], ['Ctrl + ← / →', 'Previous / next measure'],
+      ['Click inside a staff', 'Select the measure'], ['Shift + click', 'Select a range'], ['Drag across the staff', 'Select several notes'],
+      ['Drag a note up / down', 'Change its pitch'], ['Ctrl + G', 'Go to a measure'], ['Esc', 'Select tool / clear selection'],
+      ...(flat || nf ? [['R', 'Repeat the selection after itself'] as [string, string]] : []),
+      ['Delete', 'Delete selection'],
+    ]],
+    ['Score', [
+      ['Ctrl + K', 'Find any command'], ['Ctrl + Z / Ctrl + Shift + Z', 'Undo / redo'], ['Ctrl + C / X / V', 'Copy, cut, paste'],
+      ['Ctrl + B', 'Add a measure'], ['Enter / Shift + Enter', 'Line break / page break'],
+      nf ? ['P  /  Shift + P', 'Play from the start / from the selection'] : ['Space', 'Play / pause'],
+      ...(nf ? [] : [['P  /  Shift + P', 'Play from the start / from the selection'] as [string, string]]),
+      ['Home', 'Return to start'], ['Ctrl + S', 'Save'], ['?', 'This list'],
+    ]],
+  ];
+}
+
+export function ShortcutsDialog({ onClose, style = 'wolfi' }: { onClose: () => void; style?: KeyStyleName }) {
+  const name = style === 'flat' ? 'Flat' : style === 'noteflight' ? 'Noteflight' : 'Wolfi';
   return (
-    <Dialog title="Keyboard shortcuts" subtitle="On a Mac, use ⌘ for Ctrl." onClose={onClose}>
+    <Dialog title="Keyboard shortcuts" subtitle={`${name} style (change it in Settings → Input). On a Mac, use ⌘ for Ctrl.`} onClose={onClose}>
       <div className="ps-shortcuts">
-        {SHORTCUTS.map(([group, list]) => (
+        {shortcutsFor(style).map(([group, list]) => (
           <React.Fragment key={group}>
             <h4>{group}</h4>
             {list.map(([k, v]) => <div key={k}><span>{v}</span><span className="ps-kbd">{k}</span></div>)}

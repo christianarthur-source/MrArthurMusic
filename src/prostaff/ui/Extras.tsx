@@ -23,8 +23,16 @@ export interface AppPrefs {
   textFont: string;
   metronome: boolean;
   countIn: boolean;
+  keyStyle: KeyStyle;
 }
-export const DEFAULT_PREFS: AppPrefs = { midiInput: false, showRange: true, theme: 'dark', cursor: 'line', clickOffset: 0, cursorOffset: 0, textFont: 'classic', metronome: false, countIn: false };
+/** Which app's keyboard shortcuts to follow where they differ (number keys, arrows, R, T, Space…). */
+export type KeyStyle = 'wolfi' | 'flat' | 'noteflight';
+export const DEFAULT_PREFS: AppPrefs = { midiInput: false, showRange: true, theme: 'dark', cursor: 'line', clickOffset: 0, cursorOffset: 0, textFont: 'classic', metronome: false, countIn: false, keyStyle: 'wolfi' };
+const KEY_STYLES: [KeyStyle, string, string][] = [
+  ['wolfi', 'Wolfi', 'Like MuseScore and Sibelius: 5 = quarter note, ↑ ↓ = half step'],
+  ['flat', 'Flat', '1 = whole … 3 = quarter, 8 = rest, ↑ ↓ = scale step, = sharp, 0 natural'],
+  ['noteflight', 'Noteflight', '↑ ↓ = scale step, Shift+↑ ↓ = half step, Space = rest, P = play, T = text'],
+];
 
 const SWINGS: [number, string][] = [[0, 'Straight'], [0.08, 'Light swing'], [0.167, 'Swing (triplet feel)'], [0.25, 'Hard swing']];
 const MUSIC_FONTS: [EngravingFont, string][] = [
@@ -143,6 +151,13 @@ export function SettingsDialog({ tab: initialTab = 'appearance', playback, layou
       )}
       {tab === 'input' && (
         <>
+          <h4 className="ps-set-head">Keyboard shortcuts</h4>
+          <div className="ps-cards">
+            {KEY_STYLES.map(([k, l, d]) => (
+              <button key={k} className={`ps-card${prefs.keyStyle === k ? ' ps-on' : ''}`} onClick={() => onPrefs({ ...prefs, keyStyle: k })}><b>{l}</b><small>{d}</small></button>
+            ))}
+          </div>
+          <p className="ps-hint">Pick the app your students already know. Shared keys (letters A–G, <kbd>,</kbd> tie, <kbd>[</kbd> <kbd>]</kbd> length, <kbd>Z</kbd> spelling, <kbd>Alt</kbd>+<kbd>2</kbd>–<kbd>8</kbd> intervals) work in every style. Press <kbd>?</kbd> for the full list.</p>
           <h4 className="ps-set-head">Input & display</h4>
           <label className="ps-toggle"><input type="checkbox" checked={prefs.midiInput} onChange={(e) => onPrefs({ ...prefs, midiInput: e.target.checked })} /> MIDI keyboard input {prefs.midiInput && <small style={{ color: 'var(--ps-muted)' }}>— {midiDevices.length ? midiDevices.join(', ') : 'no keyboard found yet; plug one in'}</small>}</label>
           <label className="ps-toggle"><input type="checkbox" checked={prefs.showRange} onChange={(e) => onPrefs({ ...prefs, showRange: e.target.checked })} /> Show notes outside an instrument's range in red</label>
