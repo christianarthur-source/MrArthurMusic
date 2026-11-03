@@ -7,7 +7,9 @@ import { handleCalendarProxy } from './calendarProxy.mjs';
 import { handleClaudeProxy } from './claudeProxy.mjs';
 import { handleAiImage } from './aiImage.mjs';
 import { handleFreeAi } from './freeAi.mjs';
+import { handleImageProxy } from './imageProxy.mjs';
 import { handleImageSearch } from './imageSearch.mjs';
+import { handleWikipedia } from './wikipedia.mjs';
 import { handleHubCloud, isSignedIn } from './hubCloud.mjs';
 import { handleYouTubeSearch } from './youtubeSearch.mjs';
 
@@ -32,4 +34,6 @@ export const HUB_API_ROUTES = {
   '/api/hub/free-ai': signedInOnly(handleFreeAi),
   '/api/hub/ai-image': signedInOnly(handleAiImage),
   '/api/hub/image-search': signedInOnly(handleImageSearch),
+  '/api/hub/image-proxy': signedInOnly(handleImageProxy),
+  '/api/hub/wiki': signedInOnly(handleWikipedia),
 };

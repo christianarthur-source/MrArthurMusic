@@ -52,7 +52,7 @@ const env = { HUB_DB: d1(sqlite), MASTER_TEACHER_PIN: 'T3acher!' };
 const call = async (path, { method = 'GET', body, token } = {}, e = env) => {
   const headers = { 'content-type': 'application/json' };
   if (token) headers.authorization = 'Bearer ' + token;
-  const res = await HUB_API_ROUTES[path](
+  const res = await HUB_API_ROUTES[path.split('?')[0]](
     new Request('https://x' + path, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) }),
     e
   );
@@ -201,6 +201,18 @@ expect('AI image falls back to FLUX.1 schnell', s === 200 && r.model === 'flux-1
   AI: fakeAi(() => { throw new Error('you have used up your daily free allocation of 10,000 neurons'); }),
 });
 expect('AI image says when the allowance is used up', s === 429, r);
+
+// ---- Wikipedia lookup and image fetcher ----
+[s, r] = await call('/api/hub/wiki');
+expect('Wikipedia lookup needs a token', s === 401, r);
+[s, r] = await call('/api/hub/image-proxy');
+expect('image fetcher needs a token', s === 401, r);
+[s, r] = await call('/api/hub/image-proxy?url=' + encodeURIComponent('https://evil.example/cat.jpg'), { token: aiToken });
+expect('image fetcher refuses sites outside the photo libraries', s === 400, r);
+[s, r] = await call('/api/hub/image-proxy?url=' + encodeURIComponent('http://upload.wikimedia.org/x.jpg'), { token: aiToken });
+expect('image fetcher refuses plain http', s === 400, r);
+[s, r] = await call('/api/hub/image-proxy?url=' + encodeURIComponent('https://upload.wikimedia.org.evil.example/x.jpg'), { token: aiToken });
+expect('image fetcher is not fooled by look-alike hosts', s === 400, r);
 
 console.log(`\n${passes} passed, ${fails} failed`);
 if (fails) process.exit(1);
