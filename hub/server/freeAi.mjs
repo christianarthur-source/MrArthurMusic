@@ -2,11 +2,13 @@
  * Free AI helper: POST /api/hub/free-ai  { system, prompt, max_tokens? } -> { text, model }
  *                 GET  /api/hub/free-ai  -> { configured }
  *
- * Runs lesson generation on Cloudflare Workers AI through the Worker's `AI` binding (wrangler.jsonc),
- * so there is no API key and it is covered by Workers AI's free daily allowance (10,000 neurons,
+ * Runs lesson generation on Cloudflare Workers AI, covered by its free daily allowance (10,000 neurons,
  * roughly 20-30 lessons a day with gpt-oss-120b). Requests stay inside Cloudflare.
- * In `npm run dev` there is no binding; set CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN to use
- * the Workers AI REST API instead.
+ * Set up either way:
+ *  - Worker secrets CLOUDFLARE_ACCOUNT_ID + CLOUDFLARE_API_TOKEN (a token with "Workers AI: Read"),
+ *    which works on preview builds too, and in `npm run dev` from the shell; or
+ *  - an `"ai": { "binding": "AI" }` block in wrangler.jsonc. Branch preview builds (`wrangler preview`)
+ *    fail with that block (2026-11-03), so it can only live on main.
  */
 const MODELS = ['@cf/openai/gpt-oss-120b', '@cf/nvidia/nemotron-3-120b-a12b'];
 const MAX_BODY = 100 * 1024;
