@@ -152,7 +152,7 @@ export interface ChorusSong {
   title: string;
   composer: string;
   arranger?: string;
-  voicing: 'Unison' | '2-Part' | '3-Part' | 'SSA' | 'SAB';
+  voicing: ChorusVoicing;
   key: string;
   tempoBpm: number;
   durationString: string; // e.g. '3:20'
@@ -168,6 +168,21 @@ export interface ChorusSong {
     focusMeasures: string;
     notes: string;
   }[];
+  copies?: number; // octavos on the shelf
+  difficulty?: number; // 1 (easy) to 5 (hard)
+  referenceUrl?: string; // a performance recording / video
+  parts?: PartTrack[]; // practice tracks for each voice part
+  updatedAt?: string;
+}
+
+export type ChorusVoicing = 'Unison' | '2-Part' | '3-Part' | 'SA' | 'SSA' | 'SAB' | 'SATB' | 'TB';
+
+/** A practice track for one voice part: a web link (audio file, Drive, YouTube) or a file kept on one device. */
+export interface PartTrack {
+  id: string;
+  name: string; // e.g. 'Part 1', 'Alto', 'Full mix', 'Accompaniment'
+  url?: string;
+  localId?: string; // Audio Studio library id (this device only)
 }
 
 export interface ConcertProgram {
@@ -250,11 +265,39 @@ export interface ResourceLink {
 export interface InstrumentItem {
   id: string;
   name: string; // e.g. 'Soprano Xylophone (Studio 49)', 'Baritone Ukulele #3'
-  category: 'orff_barred' | 'ukulele' | 'recorder' | 'unpitched_percussion' | 'boomwhackers' | 'electronic';
-  location: 'Music Cart' | 'Room 104 Shelf A' | 'Closet B' | 'Stage';
+  category: InstrumentCategory;
+  location: string; // e.g. 'Music cart', 'Closet B'
   quantity: number;
   condition: 'excellent' | 'good' | 'needs_tuning' | 'repair_needed';
   notes?: string;
+  assetTag?: string; // serial number or school asset tag
+  image?: string; // photo (data URL or library address)
+  checkouts?: InstrumentCheckout[];
+  updatedAt?: string;
+}
+
+export type InstrumentCategory =
+  | 'orff_barred'
+  | 'ukulele'
+  | 'recorder'
+  | 'unpitched_percussion'
+  | 'boomwhackers'
+  | 'electronic'
+  | 'guitar'
+  | 'keyboard'
+  | 'drums'
+  | 'strings'
+  | 'winds'
+  | 'accessory'
+  | 'other';
+
+export interface InstrumentCheckout {
+  id: string;
+  who: string; // student or class
+  out: string; // YYYY-MM-DD
+  due?: string; // YYYY-MM-DD
+  returned?: string; // YYYY-MM-DD
+  quantity?: number;
 }
 
 export interface AudioPracticeTrack {

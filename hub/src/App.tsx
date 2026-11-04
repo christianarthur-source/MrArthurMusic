@@ -18,7 +18,7 @@ import { AudioStudioView } from './components/views/AudioStudioView';
 import { SeatingChartView } from './components/views/SeatingChartView';
 import { ClassroomVisualsView } from './components/views/ClassroomVisualsView';
 import { ClassroomTimerView } from './components/views/ClassroomTimerView';
-import { ResourceLibraryView } from './components/views/ResourceLibraryView';
+import { ResourcesView } from './components/views/ResourcesView';
 import { JournalView } from './components/views/JournalView';
 import { DailyPlannerView } from './components/views/DailyPlannerView';
 import { RotationView } from './components/views/RotationView';
@@ -50,7 +50,7 @@ const MainContent: React.FC = () => {
       case 'timer':
         return <ClassroomTimerView />;
       case 'resources':
-        return <ResourceLibraryView />;
+        return <ResourcesView />;
       case 'journal':
         return <JournalView />;
       case 'daily-planner':
