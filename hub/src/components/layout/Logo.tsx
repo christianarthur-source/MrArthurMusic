@@ -55,26 +55,21 @@ export const Logo: React.FC<LogoProps> = ({
   return (
     <div className={`w-full select-none ${className}`}>
       <div className="w-full bg-[#13171d] hover:bg-[#171c24] rounded-xl p-2.5 shadow-md shadow-stone-950/20 border border-stone-800/80 transition-all duration-200 group">
-        {/* Main Logo Image & Badge */}
-        <div className="flex items-center justify-between gap-2">
-          <img
-            src={logoTrimmed}
-            alt={appName}
-            className="h-10 w-auto max-w-[175px] object-contain group-hover:scale-[1.02] transition-transform duration-200"
-          />
-          <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded font-mono font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">
-            ♫ K-6
-          </span>
-        </div>
+        {/* Main logo, filling the width of the tile */}
+        <img
+          src={logoTrimmed}
+          alt={appName}
+          className="block w-full h-auto object-contain group-hover:scale-[1.02] transition-transform duration-200"
+        />
 
-        {/* Teacher Subtitle & Subheading */}
-        <div className="mt-2 pt-1.5 border-t border-stone-800/80 flex items-center justify-between text-[11px] leading-tight">
+        {/* Teacher name and grade badge */}
+        <div className="mt-2 pt-1.5 border-t border-stone-800/80 flex items-center justify-between gap-2 text-[11px] leading-tight">
           <span className="font-semibold text-stone-200 truncate tracking-tight flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
             {teacherName}
           </span>
-          <span className="text-[10px] text-stone-400 font-medium">
-            Command Center
+          <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded font-mono font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">
+            ♫ K-6
           </span>
         </div>
       </div>
