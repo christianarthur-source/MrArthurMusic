@@ -214,5 +214,57 @@ expect('image fetcher refuses plain http', s === 400, r);
 [s, r] = await call('/api/hub/image-proxy?url=' + encodeURIComponent('https://upload.wikimedia.org.evil.example/x.jpg'), { token: aiToken });
 expect('image fetcher is not fooled by look-alike hosts', s === 400, r);
 
+// ---- stock image libraries (Pixabay, Pexels, Unsplash), with their APIs stood in ----
+const realFetch = globalThis.fetch;
+const seen = [];
+globalThis.fetch = async (input, init = {}) => {
+  const u = new URL(String(input));
+  seen.push({ host: u.hostname, params: Object.fromEntries(u.searchParams), auth: init.headers?.Authorization });
+  const reply = (body) => new Response(JSON.stringify(body), { headers: { 'content-type': 'application/json' } });
+  if (u.hostname === 'pixabay.com')
+    return reply({ hits: [
+      { id: 1, type: 'illustration', tags: 'drum, music, kids', webformatURL: 'https://cdn.pixabay.com/w.jpg', largeImageURL: 'https://cdn.pixabay.com/l.jpg', imageWidth: 1280, imageHeight: 720, user: 'ana', user_id: 9, pageURL: 'https://pixabay.com/p/1' },
+      { id: 2, type: 'vector/svg', tags: 'note', webformatURL: 'https://cdn.pixabay.com/w2.jpg', largeImageURL: 'https://cdn.pixabay.com/l2.jpg', imageWidth: 1000, imageHeight: 1000, user: 'bo', user_id: 3, pageURL: 'https://pixabay.com/p/2' },
+    ] });
+  if (u.hostname === 'api.pexels.com')
+    return reply({ photos: [{ id: 5, width: 4000, height: 2600, url: 'https://www.pexels.com/photo/5', photographer: 'Cy', photographer_url: 'https://www.pexels.com/@cy', alt: 'a drum kit', src: { large2x: 'https://images.pexels.com/5-l.jpg', medium: 'https://images.pexels.com/5-m.jpg' } }] });
+  if (u.hostname === 'api.unsplash.com' && u.pathname.startsWith('/search'))
+    return reply({ results: [{ id: 'u1', width: 3000, height: 2000, alt_description: 'violin', urls: { regular: 'https://images.unsplash.com/u1', small: 'https://images.unsplash.com/u1s' }, links: { html: 'https://unsplash.com/photos/u1', download_location: 'https://api.unsplash.com/photos/u1/download' }, user: { name: 'Dee', links: { html: 'https://unsplash.com/@dee' } } }] });
+  if (u.hostname === 'api.unsplash.com') return reply({ url: 'ok' });
+  return realFetch(input, init);
+};
+const keys = { ...env, PIXABAY_API_KEY: 'pix-key', PEXELS_API_KEY: 'pex-key', UNSPLASH_ACCESS_KEY: 'uns-key' };
+
+[s, r] = await call('/api/hub/stock-images?status=1');
+expect('stock images need a token', s === 401, r);
+[s, r] = await call('/api/hub/stock-images?status=1', { token: aiToken });
+expect('status shows no libraries without keys', s === 200 && r.sources.pixabay === false && r.sources.pexels === false && r.sources.unsplash === false, r);
+[s, r] = await call('/api/hub/stock-images?status=1', { token: aiToken }, keys);
+expect('status shows libraries with keys', r.sources.pixabay && r.sources.pexels && r.sources.unsplash, r);
+[s, r] = await call('/api/hub/stock-images?source=pexels&q=drum', { token: aiToken });
+expect('a library without a key returns nothing (not an error)', s === 200 && r.configured === false && r.results.length === 0, r);
+
+seen.length = 0;
+[s, r] = await call('/api/hub/stock-images?source=pixabay&q=drum&type=illustration&orientation=landscape&color=purple', { token: aiToken }, keys);
+expect('Pixabay results are normalized', s === 200 && r.results[0].kind === 'illustration' && r.results[1].kind === 'vector' && r.results[0].url === 'https://cdn.pixabay.com/l.jpg' && r.results[0].creator === 'ana', r);
+expect('Pixabay is asked kid-safe, with the right filters', seen[0]?.params.safesearch === 'true' && seen[0].params.image_type === 'illustration' && seen[0].params.orientation === 'horizontal' && seen[0].params.colors === 'lilac' && seen[0].params.key === 'pix-key', seen[0]);
+[s, r] = await call('/api/hub/stock-images?source=pixabay&q=drum&orientation=square', { token: aiToken }, keys);
+expect('square shape keeps only squarish pictures', r.results.length === 1 && r.results[0].id === 'pixabay-2', r);
+
+seen.length = 0;
+[s, r] = await call('/api/hub/stock-images?source=pexels&q=drum&orientation=square&color=pink', { token: aiToken }, keys);
+expect('Pexels results are normalized', r.results[0]?.url === 'https://images.pexels.com/5-l.jpg' && r.results[0].creator === 'Cy' && r.results[0].kind === 'photo', r);
+expect('Pexels key goes in the Authorization header', seen[0]?.auth === 'pex-key' && seen[0].params.orientation === 'square' && seen[0].params.color === 'pink', seen[0]);
+
+seen.length = 0;
+[s, r] = await call('/api/hub/stock-images?source=unsplash&q=violin&orientation=square', { token: aiToken }, keys);
+expect('Unsplash results are hotlinked with a tracking address', r.results[0]?.hotlink === true && r.results[0].trackUrl.includes('/download') && r.results[0].sourceUrl.includes('utm_source'), r);
+expect('Unsplash is asked with Client-ID and a strict content filter', seen[0]?.auth === 'Client-ID uns-key' && seen[0].params.content_filter === 'high' && seen[0].params.orientation === 'squarish', seen[0]);
+[s, r] = await call('/api/hub/stock-images?track=' + encodeURIComponent('https://api.unsplash.com/photos/u1/download'), { token: aiToken }, keys);
+expect('Unsplash use is reported', s === 200 && seen.some((x) => x.host === 'api.unsplash.com' && x.auth === 'Client-ID uns-key'), seen);
+[s, r] = await call('/api/hub/stock-images?track=' + encodeURIComponent('https://evil.example/x'), { token: aiToken }, keys);
+expect('tracking only goes to Unsplash', s === 400, r);
+globalThis.fetch = realFetch;
+
 console.log(`\n${passes} passed, ${fails} failed`);
 if (fails) process.exit(1);

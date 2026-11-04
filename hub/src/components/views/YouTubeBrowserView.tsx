@@ -150,17 +150,17 @@ export const YouTubeBrowserView: React.FC = () => {
     category?: string;
     grade?: string;
     notes?: string;
-  }>('youtube.video', {
-    id: 'yt-1',
-    youtubeId: 'Wz_f9B4pPtg',
-    title: 'In the Hall of the Mountain King — Line Rider Music Visualization',
-    channel: 'DoodleChaos',
+  }>('youtube.defaultVideo', {
+    id: 'yt-default',
+    youtubeId: 'caAVbyTCptw',
+    title: 'Calm | Serene Meditative Music for Late Nights - Relaxing Ambient Music',
+    channel: 'Astral Ambience',
     category: 'listening',
     grade: 'All Grades',
-    notes: 'Terrific visual demonstration of crescendo and accelerando for Edvard Grieg.'
+    notes: 'Calm background music for arrival, work time and clean-up.'
   });
 
-  const [mainTab, setMainTab] = useRememberedState<'search' | 'library'>('youtube.tab', 'search');
+  const [mainTab, setMainTab] = useRememberedState<'search' | 'library'>('youtube.mainTab', 'library');
   const [searchQuery, setSearchQuery] = useRememberedState('youtube.search', 'Boomwhackers elementary music');
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useRememberedState<YouTubeSearchResult[]>('youtube.results', []);

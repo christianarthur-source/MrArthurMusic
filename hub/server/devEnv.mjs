@@ -43,5 +43,8 @@ export function createDevEnv(dataDir) {
     HUB_DB: d1(new DatabaseSync(`${dataDir}/hub.sqlite`)),
     MASTER_TEACHER_PIN: process.env.MASTER_TEACHER_PIN || 'dev-master-pin',
     ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
+    PIXABAY_API_KEY: process.env.PIXABAY_API_KEY,
+    PEXELS_API_KEY: process.env.PEXELS_API_KEY,
+    UNSPLASH_ACCESS_KEY: process.env.UNSPLASH_ACCESS_KEY,
   };
 }

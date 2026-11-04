@@ -102,6 +102,7 @@ export interface LessonImage {
   alt?: string;
   credit?: string;
   creditUrl?: string;
+  remote?: boolean; // shown from the library's own address (Unsplash requires this) instead of a saved copy
 }
 
 export interface ClassSection {
