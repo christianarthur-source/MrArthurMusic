@@ -20,6 +20,9 @@ import {
   Info
 } from 'lucide-react';
 
+// Loaded only when the staff tab opens (it brings the main site's notation and sound engine)
+const StaffComposerLite = React.lazy(() => import('../visuals/StaffComposerLite').then((m) => ({ default: m.StaffComposerLite })));
+
 export const ClassroomVisualsView: React.FC = () => {
   const [activeCategory, setActiveCategoryState] = useState<'staff' | 'piano' | 'rhythm' | 'solfege' | 'dynamics' | 'instruments'>(() => {
     try {
@@ -44,13 +47,7 @@ export const ClassroomVisualsView: React.FC = () => {
     } catch {}
   };
 
-  // Staff State
-  const [clef, setClef] = useRememberedState<'treble' | 'bass' | 'grand'>('visuals.clef', 'treble');
-  const [staffDisplayMode, setStaffDisplayMode] = useRememberedState<'interactive' | 'diagram'>('visuals.staffMode', 'interactive');
-  const [showNoteNames, setShowNoteNames] = useRememberedState('visuals.noteNames', true);
-  const [showSolfege, setShowSolfege] = useRememberedState('visuals.solfege', false);
-  const [showMnemonics, setShowMnemonics] = useRememberedState('visuals.mnemonics', true);
-  const [colorCodedNotes, setColorCodedNotes] = useRememberedState('visuals.colorNotes', true);
+  // Staff (Staff Composer Lite) full-screen toggle
   const [isFullscreenStaff, setIsFullscreenStaff] = useState(false);
 
   // Piano State
@@ -64,54 +61,6 @@ export const ClassroomVisualsView: React.FC = () => {
     audioEngine.unlockAudio();
     audioEngine.playMusicalNote(noteName, 1.0);
   };
-
-  // Color mapping based on Boomwhackers standard
-  const getNoteColor = (pitch: string): string => {
-    if (!colorCodedNotes) return '#4f46e5';
-    const noteLetter = pitch.charAt(0);
-    switch (noteLetter) {
-      case 'C': return '#ef4444'; // Red
-      case 'D': return '#f97316'; // Orange
-      case 'E': return '#eab308'; // Yellow
-      case 'F': return '#84cc16'; // Light Green
-      case 'G': return '#10b981'; // Teal / Green
-      case 'A': return '#3b82f6'; // Blue
-      case 'B': return '#a855f7'; // Purple
-      default: return '#6366f1';
-    }
-  };
-
-  // Treble Clef notes (Lines: E4, G4, B4, D5, F5 | Spaces: F4, A4, C5, E5 | Middle C4 ledger)
-  const trebleNotes = [
-    { pitch: 'C4', label: 'C', solfege: 'Do', type: 'ledger', line: 'Middle C', y: 155, mnemonic: 'Middle C Ledger Line' },
-    { pitch: 'D4', label: 'D', solfege: 'Re', type: 'space', line: 'Below Staff', y: 142, mnemonic: 'Space below bottom line' },
-    { pitch: 'E4', label: 'E', solfege: 'Mi', type: 'line', line: 'Line 1', y: 130, mnemonic: 'Every (Line 1)' },
-    { pitch: 'F4', label: 'F', solfege: 'Fa', type: 'space', line: 'Space 1', y: 118, mnemonic: 'F in FACE (Space 1)' },
-    { pitch: 'G4', label: 'G', solfege: 'Sol', type: 'line', line: 'Line 2', y: 106, mnemonic: 'Good (Line 2)' },
-    { pitch: 'A4', label: 'A', solfege: 'La', type: 'space', line: 'Space 2', y: 94, mnemonic: 'A in FACE (Space 2)' },
-    { pitch: 'B4', label: 'B', solfege: 'Ti', type: 'line', line: 'Line 3', y: 82, mnemonic: 'Boy (Line 3)' },
-    { pitch: 'C5', label: 'C', solfege: 'Do', type: 'space', line: 'Space 3', y: 70, mnemonic: 'C in FACE (Space 3)' },
-    { pitch: 'D5', label: 'D', solfege: 'Re', type: 'line', line: 'Line 4', y: 58, mnemonic: 'Does (Line 4)' },
-    { pitch: 'E5', label: 'E', solfege: 'Mi', type: 'space', line: 'Space 4', y: 46, mnemonic: 'E in FACE (Space 4)' },
-    { pitch: 'F5', label: 'F', solfege: 'Fa', type: 'line', line: 'Line 5', y: 34, mnemonic: 'Fine (Line 5)' },
-    { pitch: 'G5', label: 'G', solfege: 'Sol', type: 'space', line: 'Above Staff', y: 22, mnemonic: 'Space above top line' }
-  ];
-
-  // Bass Clef notes (Lines: G2, B2, D3, F3, A3 | Spaces: A2, C3, E3, G3)
-  const bassNotes = [
-    { pitch: 'F2', label: 'F', solfege: 'Fa', type: 'space', line: 'Below Staff', y: 142, mnemonic: 'Space below bottom line' },
-    { pitch: 'G2', label: 'G', solfege: 'Sol', type: 'line', line: 'Line 1', y: 130, mnemonic: 'Good (Line 1)' },
-    { pitch: 'A2', label: 'A', solfege: 'La', type: 'space', line: 'Space 1', y: 118, mnemonic: 'All (Space 1)' },
-    { pitch: 'B2', label: 'B', solfege: 'Ti', type: 'line', line: 'Line 2', y: 106, mnemonic: 'Boys (Line 2)' },
-    { pitch: 'C3', label: 'C', solfege: 'Do', type: 'space', line: 'Space 2', y: 94, mnemonic: 'Cows (Space 2)' },
-    { pitch: 'D3', label: 'D', solfege: 'Re', type: 'line', line: 'Line 3', y: 82, mnemonic: 'Do (Line 3)' },
-    { pitch: 'E3', label: 'E', solfege: 'Mi', type: 'space', line: 'Space 3', y: 70, mnemonic: 'Eat (Space 3)' },
-    { pitch: 'F3', label: 'F', solfege: 'Fa', type: 'line', line: 'Line 4', y: 58, mnemonic: 'Fine (Line 4)' },
-    { pitch: 'G3', label: 'G', solfege: 'Sol', type: 'space', line: 'Space 4', y: 46, mnemonic: 'Grass (Space 4)' },
-    { pitch: 'A3', label: 'A', solfege: 'La', type: 'line', line: 'Line 5', y: 34, mnemonic: 'Always (Line 5)' },
-    { pitch: 'B3', label: 'B', solfege: 'Ti', type: 'space', line: 'Above Staff', y: 22, mnemonic: 'Space above staff' },
-    { pitch: 'C4', label: 'C', solfege: 'Do', type: 'ledger', line: 'Middle C', y: 10, mnemonic: 'Middle C Ledger Line' }
-  ];
 
   // Wide 2-Octave Classroom Piano (C4 – C6)
   const pianoKeys = [
@@ -310,8 +259,6 @@ export const ClassroomVisualsView: React.FC = () => {
     }
   };
 
-  const currentNotes = clef === 'bass' ? bassNotes : trebleNotes;
-
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6 animate-in fade-in duration-200">
       {/* Top Header */}
@@ -353,371 +300,31 @@ export const ClassroomVisualsView: React.FC = () => {
         </div>
       </div>
 
-      {/* 1. EXTRA-LARGE FIVE-LINE MUSIC STAFF */}
+      {/* 1. FIVE-LINE STAFF: Staff Composer Lite (the mrarthurmusic.com Staff Composer, for quick examples) */}
       {activeCategory === 'staff' && (
-        <div className={`space-y-6 ${isFullscreenStaff ? 'fixed inset-0 z-50 bg-white dark:bg-stone-950 p-6 overflow-y-auto' : ''}`}>
-          {/* Controls Bar */}
-          <div className="bg-white dark:bg-stone-900 rounded-3xl p-4 sm:p-5 shadow-card border border-stone-200/80 dark:border-stone-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
-            {/* Clef Switcher */}
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-black uppercase text-stone-400 mr-1">Clef:</span>
-              <div className="flex p-1 rounded-2xl bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700">
-                <button
-                  onClick={() => setClef('treble')}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all ${
-                    clef === 'treble'
-                      ? 'bg-indigo-600 text-white shadow-xs'
-                      : 'text-stone-600 dark:text-stone-300 hover:bg-stone-200'
-                  }`}
-                >
-                  𝄞 Treble Clef
-                </button>
-                <button
-                  onClick={() => setClef('bass')}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all ${
-                    clef === 'bass'
-                      ? 'bg-indigo-600 text-white shadow-xs'
-                      : 'text-stone-600 dark:text-stone-300 hover:bg-stone-200'
-                  }`}
-                >
-                  𝄢 Bass Clef
-                </button>
-              </div>
-            </div>
-
-            {/* View Mode: Interactive vs Official Diagram */}
-            <div className="flex items-center gap-2">
-              <div className="flex p-1 rounded-2xl bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700">
-                <button
-                  onClick={() => setStaffDisplayMode('interactive')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                    staffDisplayMode === 'interactive'
-                      ? 'bg-white dark:bg-stone-900 text-indigo-600 shadow-xs'
-                      : 'text-stone-500 hover:text-stone-800'
-                  }`}
-                >
-                  <Music className="w-3.5 h-3.5" />
-                  <span>Interactive Smartboard</span>
-                </button>
-                <button
-                  onClick={() => setStaffDisplayMode('diagram')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-                    staffDisplayMode === 'diagram'
-                      ? 'bg-white dark:bg-stone-900 text-indigo-600 shadow-xs'
-                      : 'text-stone-500 hover:text-stone-800'
-                  }`}
-                >
-                  <ImageIcon className="w-3.5 h-3.5" />
-                  <span>Diagram Poster</span>
-                </button>
-              </div>
-
-              {/* Toggles */}
-              {staffDisplayMode === 'interactive' && (
-                <div className="flex items-center gap-1.5">
-                  <button
-                    onClick={() => setShowNoteNames(!showNoteNames)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
-                      showNoteNames
-                        ? 'bg-indigo-50 border-indigo-200 text-indigo-700 dark:bg-indigo-950 dark:border-indigo-800 dark:text-indigo-300'
-                        : 'bg-stone-100 dark:bg-stone-800 text-stone-500 border-stone-200'
-                    }`}
-                  >
-                    {showNoteNames ? 'Note Letters ON' : 'Note Letters OFF'}
-                  </button>
-
-                  <button
-                    onClick={() => setShowSolfege(!showSolfege)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
-                      showSolfege
-                        ? 'bg-purple-50 border-purple-200 text-purple-700 dark:bg-purple-950 dark:border-purple-800 dark:text-purple-300'
-                        : 'bg-stone-100 dark:bg-stone-800 text-stone-500 border-stone-200'
-                    }`}
-                  >
-                    {showSolfege ? 'Solfege ON' : 'Solfege OFF'}
-                  </button>
-
-                  <button
-                    onClick={() => setColorCodedNotes(!colorCodedNotes)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
-                      colorCodedNotes
-                        ? 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-950 dark:border-emerald-800 dark:text-emerald-300'
-                        : 'bg-stone-100 dark:bg-stone-800 text-stone-500 border-stone-200'
-                    }`}
-                    title="Color notes with Boomwhacker / rainbow pitch colors"
-                  >
-                    Boomwhacker Colors
-                  </button>
-                </div>
-              )}
-
-              {/* Fullscreen Smartboard Toggle */}
-              <button
-                onClick={() => setIsFullscreenStaff(!isFullscreenStaff)}
-                className="p-2 rounded-xl bg-stone-100 dark:bg-stone-800 text-stone-600 hover:text-stone-900 dark:hover:text-white"
-                title={isFullscreenStaff ? 'Exit Fullscreen' : 'Smartboard Fullscreen Projection'}
-              >
-                {isFullscreenStaff ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-              </button>
-            </div>
-          </div>
-
-          {/* Interactive Scalable Large SVG Staff */}
-          {staffDisplayMode === 'interactive' ? (
-            <div className="bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-10 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-black text-stone-900 dark:text-white">
-                    {clef === 'treble' ? '𝄞 Treble Clef Note Explorer' : '𝄢 Bass Clef Note Explorer'}
-                  </h3>
-                  <p className="text-xs text-stone-500 dark:text-stone-400">
-                    Click or tap any note on the staff to hear its pitch and view mnemonic hints.
-                  </p>
-                </div>
-
-                <div className="hidden sm:flex items-center gap-2 text-xs font-bold text-indigo-600 bg-indigo-50 dark:bg-indigo-950/60 px-3 py-1 rounded-xl">
-                  <Volume2 className="w-4 h-4" />
-                  <span>Click note for sound</span>
-                </div>
-              </div>
-
-              {/* GIGANTIC HIGH-CONTRAST SVG STAFF */}
-              <div className="p-4 sm:p-8 bg-stone-50 dark:bg-stone-800/40 rounded-3xl overflow-x-auto flex justify-center border border-stone-200/70 dark:border-stone-800">
-                <svg
-                  viewBox="0 0 1000 240"
-                  className="w-full min-w-[700px] max-w-5xl select-none"
-                  style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.05))' }}
-                >
-                  {/* 5 Prominent Staff Lines (Thicker, dark lines) */}
-                  <line x1="50" y1="34" x2="950" y2="34" stroke="#475569" strokeWidth="3" />
-                  <line x1="50" y1="58" x2="950" y2="58" stroke="#475569" strokeWidth="3" />
-                  <line x1="50" y1="82" x2="950" y2="82" stroke="#475569" strokeWidth="3" />
-                  <line x1="50" y1="106" x2="950" y2="106" stroke="#475569" strokeWidth="3" />
-                  <line x1="50" y1="130" x2="950" y2="130" stroke="#475569" strokeWidth="3" />
-
-                  {/* Sturdy Barlines */}
-                  <line x1="50" y1="34" x2="50" y2="130" stroke="#1e293b" strokeWidth="4" />
-                  <line x1="950" y1="34" x2="950" y2="130" stroke="#1e293b" strokeWidth="5" />
-                  <line x1="940" y1="34" x2="940" y2="130" stroke="#1e293b" strokeWidth="2" />
-
-                  {/* Clef Symbol */}
-                  {clef === 'treble' ? (
-                    <text x="60" y="122" fontSize="125" fontFamily="serif" fill="#1e293b" className="dark:fill-stone-100 font-bold">
-                      𝄞
-                    </text>
-                  ) : (
-                    <text x="60" y="105" fontSize="110" fontFamily="serif" fill="#1e293b" className="dark:fill-stone-100 font-bold">
-                      𝄢
-                    </text>
-                  )}
-
-                  {/* Notes Rendered Across Staff */}
-                  {currentNotes.map((note, idx) => {
-                    const xPos = 175 + idx * 62;
-                    const noteColor = getNoteColor(note.pitch);
-
-                    return (
-                      <g
-                        key={note.pitch}
-                        onClick={() => playPitch(note.pitch)}
-                        className="cursor-pointer group"
-                      >
-                        {/* Middle C Ledger line */}
-                        {note.type === 'ledger' && (
-                          <line
-                            x1={xPos - 22}
-                            y1={note.y}
-                            x2={xPos + 22}
-                            y2={note.y}
-                            stroke="#475569"
-                            strokeWidth="3.5"
-                          />
-                        )}
-
-                        {/* Extra-Large Note Head */}
-                        <ellipse
-                          cx={xPos}
-                          cy={note.y}
-                          rx="15"
-                          ry="10.5"
-                          transform={`rotate(-20 ${xPos} ${note.y})`}
-                          fill={noteColor}
-                          stroke="#0f172a"
-                          strokeWidth="2.5"
-                        />
-
-                        {/* Bold Note Stem */}
-                        <line
-                          x1={xPos + 13}
-                          y1={note.y}
-                          x2={xPos + 13}
-                          y2={note.y - 45}
-                          stroke="#1e293b"
-                          strokeWidth="3.5"
-                          className="dark:stroke-stone-100"
-                        />
-
-                        {/* Big Note Letter Name Label */}
-                        {showNoteNames && (
-                          <text
-                            x={xPos}
-                            y={195}
-                            fontSize="22"
-                            fontFamily="system-ui, -apple-system, sans-serif"
-                            fontWeight="900"
-                            textAnchor="middle"
-                            fill={noteColor}
-                            className="group-hover:scale-125 transition-transform"
-                          >
-                            {note.label}
-                          </text>
-                        )}
-
-                        {/* Solfege Syllable Label */}
-                        {showSolfege && (
-                          <text
-                            x={xPos}
-                            y={220}
-                            fontSize="14"
-                            fontFamily="system-ui, sans-serif"
-                            fontWeight="bold"
-                            textAnchor="middle"
-                            fill="#64748b"
-                            className="dark:fill-stone-400"
-                          >
-                            {note.solfege}
-                          </text>
-                        )}
-                      </g>
-                    );
-                  })}
-                </svg>
-              </div>
-
-              {/* Visual Mnemonic Flash Cards Below Staff */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {clef === 'treble' ? (
-                  <>
-                    <div className="p-5 rounded-3xl bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-300 dark:border-amber-800 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-black uppercase text-amber-700 dark:text-amber-300 tracking-wider">
-                          Treble Lines Mnemonic (Bottom to Top)
-                        </span>
-                        <span className="text-xs font-bold bg-amber-200 dark:bg-amber-900 text-amber-900 dark:text-amber-200 px-2 py-0.5 rounded-lg">
-                          Lines 1–5
-                        </span>
-                      </div>
-                      <div className="flex items-baseline gap-2 text-2xl font-black text-amber-900 dark:text-amber-100 font-mono">
-                        <span>E</span>-<span>G</span>-<span>B</span>-<span>D</span>-<span>F</span>
-                      </div>
-                      <p className="text-sm font-bold text-amber-800 dark:text-amber-200">
-                        &quot;Every Good Boy Does Fine&quot;
-                      </p>
-                      <p className="text-xs text-amber-700/80 dark:text-amber-300/80">
-                        Alternative: <em>&quot;Every Good Burger Deserves Fries&quot;</em>
-                      </p>
-                    </div>
-
-                    <div className="p-5 rounded-3xl bg-blue-50 dark:bg-blue-950/40 border-2 border-blue-300 dark:border-blue-800 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-black uppercase text-blue-700 dark:text-blue-300 tracking-wider">
-                          Treble Spaces Mnemonic (Bottom to Top)
-                        </span>
-                        <span className="text-xs font-bold bg-blue-200 dark:bg-blue-900 text-blue-900 dark:text-blue-200 px-2 py-0.5 rounded-lg">
-                          Spaces 1–4
-                        </span>
-                      </div>
-                      <div className="flex items-baseline gap-2 text-2xl font-black text-blue-900 dark:text-blue-100 font-mono">
-                        <span>F</span>-<span>A</span>-<span>C</span>-<span>E</span>
-                      </div>
-                      <p className="text-sm font-bold text-blue-800 dark:text-blue-200">
-                        &quot;FACE in the Space&quot; (Spells the word FACE!)
-                      </p>
-                      <p className="text-xs text-blue-700/80 dark:text-blue-300/80">
-                        Middle C sits on the ledger line right below the treble staff.
-                      </p>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="p-5 rounded-3xl bg-emerald-50 dark:bg-emerald-950/40 border-2 border-emerald-300 dark:border-emerald-800 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-black uppercase text-emerald-700 dark:text-emerald-300 tracking-wider">
-                          Bass Lines Mnemonic (Bottom to Top)
-                        </span>
-                        <span className="text-xs font-bold bg-emerald-200 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-200 px-2 py-0.5 rounded-lg">
-                          Lines 1–5
-                        </span>
-                      </div>
-                      <div className="flex items-baseline gap-2 text-2xl font-black text-emerald-900 dark:text-emerald-100 font-mono">
-                        <span>G</span>-<span>B</span>-<span>D</span>-<span>F</span>-<span>A</span>
-                      </div>
-                      <p className="text-sm font-bold text-emerald-800 dark:text-emerald-200">
-                        &quot;Good Boys Do Fine Always&quot;
-                      </p>
-                      <p className="text-xs text-emerald-700/80 dark:text-emerald-300/80">
-                        Alternative: <em>&quot;Great Big Dogs Fight Animals&quot;</em>
-                      </p>
-                    </div>
-
-                    <div className="p-5 rounded-3xl bg-purple-50 dark:bg-purple-950/40 border-2 border-purple-300 dark:border-purple-800 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-black uppercase text-purple-700 dark:text-purple-300 tracking-wider">
-                          Bass Spaces Mnemonic (Bottom to Top)
-                        </span>
-                        <span className="text-xs font-bold bg-purple-200 dark:bg-purple-900 text-purple-900 dark:text-purple-200 px-2 py-0.5 rounded-lg">
-                          Spaces 1–4
-                        </span>
-                      </div>
-                      <div className="flex items-baseline gap-2 text-2xl font-black text-purple-900 dark:text-purple-100 font-mono">
-                        <span>A</span>-<span>C</span>-<span>E</span>-<span>G</span>
-                      </div>
-                      <p className="text-sm font-bold text-purple-800 dark:text-purple-200">
-                        &quot;All Cows Eat Grass&quot;
-                      </p>
-                      <p className="text-xs text-purple-700/80 dark:text-purple-300/80">
-                        Middle C sits on the ledger line above the bass staff.
-                      </p>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          ) : (
-            /* High-Res Labeled Diagram Poster View */
-            <div className="bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-10 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-6">
-              <div className="flex items-center justify-between pb-3 border-b border-stone-100 dark:border-stone-800">
-                <div>
-                  <h3 className="text-lg font-black text-stone-900 dark:text-white">
-                    Grand Staff Labeled Notes & Pitch Chart
-                  </h3>
-                  <p className="text-xs text-stone-500">
-                    High-resolution educational vector diagram showing Treble Clef, Bass Clef, and Middle C connection.
-                  </p>
-                </div>
-                <span className="text-xs font-bold text-indigo-600 bg-indigo-50 dark:bg-indigo-950 px-3 py-1 rounded-xl">
-                  Wikimedia Educational Vector
-                </span>
-              </div>
-
-              {/* Diagram Container */}
-              <div className="p-4 sm:p-8 bg-white dark:bg-stone-800 rounded-3xl border border-stone-200 dark:border-stone-700 flex flex-col items-center justify-center">
-                <img
-                  src="https://upload.wikimedia.org/wikipedia/commons/1/11/Grand_staff_labeled_notes.svg"
-                  alt="Grand Staff labeled notes with treble and bass clefs"
-                  className="w-full max-w-4xl h-auto object-contain py-4"
-                  loading="lazy"
-                />
-              </div>
-
-              <div className="p-4 rounded-2xl bg-stone-50 dark:bg-stone-800/60 border border-stone-200/60 dark:border-stone-700 flex items-center gap-3">
-                <Info className="w-5 h-5 text-indigo-600 shrink-0" />
-                <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed">
-                  Notice how <strong>Middle C (C4)</strong> acts as the central pivot between the Treble Clef and the Bass Clef. In elementary chorus, female voices and unchanged boy trebles read the Treble Clef, while developing baritone voices read the Bass Clef.
+        <div className={isFullscreenStaff ? 'fixed inset-0 z-50 bg-white dark:bg-stone-950 p-4 sm:p-6 overflow-y-auto' : ''}>
+          <div className="bg-white dark:bg-stone-900 rounded-3xl p-4 sm:p-6 shadow-card border border-stone-200/80 dark:border-stone-800 space-y-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="mr-auto">
+                <h2 className="text-lg font-bold text-stone-900 dark:text-white">Staff Composer Lite</h2>
+                <p className="text-xs text-stone-500 dark:text-stone-400">
+                  Click the staff to add notes. For full songs and more instruments, open the{' '}
+                  <a href="/" target="_blank" rel="noopener noreferrer" className="text-brand-600 hover:underline">Staff Composer on mrarthurmusic.com</a>.
                 </p>
               </div>
+              <button
+                type="button"
+                onClick={() => setIsFullscreenStaff((v) => !v)}
+                className="px-3 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 dark:bg-stone-800 dark:hover:bg-stone-700 text-stone-700 dark:text-stone-200 text-xs font-semibold flex items-center gap-1.5"
+              >
+                {isFullscreenStaff ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                {isFullscreenStaff ? 'Exit full screen' : 'Full screen'}
+              </button>
             </div>
-          )}
+            <React.Suspense fallback={<p className="text-sm text-stone-500 py-10 text-center">Loading the staff…</p>}>
+              <StaffComposerLite />
+            </React.Suspense>
+          </div>
         </div>
       )}
 

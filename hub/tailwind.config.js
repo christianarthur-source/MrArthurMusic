@@ -3,6 +3,10 @@ export default {
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
+    // Main-site notation components reused by the Staff Composer Lite
+    "../src/components/ScoreRenderer.tsx",
+    "../src/components/RhythmicPalette.tsx",
+    "../src/components/NotationSymbols.tsx",
   ],
   darkMode: 'class',
   theme: {
