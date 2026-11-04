@@ -44,7 +44,7 @@ export const MobileNav: React.FC = () => {
     { id: 'name-picker' as NavView, label: 'Name Picker', icon: Dices },
     { id: 'volume-meter' as NavView, label: 'Volume Meter', icon: Volume2 },
     { id: 'seating' as NavView, label: 'Seating Charts', icon: Grid },
-    { id: 'resources' as NavView, label: 'Drive Resources', icon: FolderSync },
+    { id: 'resources' as NavView, label: 'Resources', icon: FolderSync },
     { id: 'journal' as NavView, label: 'Daily Journal', icon: BookMarked },
     { id: 'youtube' as NavView, label: 'YouTube Browser', icon: Video },
     { id: 'settings' as NavView, label: 'Settings', icon: Settings },

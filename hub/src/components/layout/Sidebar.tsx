@@ -88,7 +88,7 @@ export const Sidebar: React.FC = () => {
     {
       group: 'Resources',
       items: [
-        { id: 'resources', label: 'Drive & Resource Library', icon: FolderSync },
+        { id: 'resources', label: 'Resources', icon: FolderSync },
         { id: 'youtube', label: 'YouTube Browser', icon: Video }
       ]
     }
