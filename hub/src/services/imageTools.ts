@@ -12,7 +12,32 @@ export interface PickedImage {
   alt?: string;
   credit?: string; // e.g. "Photo: Jane Doe · CC BY 2.0"
   creditUrl?: string;
+  remote?: boolean; // keep showing it from the library's address (Unsplash requires this)
+  trackUrl?: string; // Unsplash: reported once when the picture is used
 }
+
+export type StockSource = 'pixabay' | 'pexels' | 'unsplash';
+export type StockType = 'all' | 'photo' | 'illustration' | 'vector';
+export type StockOrientation = 'any' | 'landscape' | 'square' | 'portrait';
+
+export interface StockResult {
+  id: string;
+  source: StockSource;
+  kind: 'photo' | 'illustration' | 'vector';
+  url: string;
+  thumbnail: string;
+  width: number;
+  height: number;
+  title: string;
+  creator: string;
+  creatorUrl: string;
+  sourceUrl: string;
+  license: string;
+  hotlink?: boolean;
+  trackUrl?: string;
+}
+
+export const STOCK_NAMES: Record<StockSource, string> = { pixabay: 'Pixabay', pexels: 'Pexels', unsplash: 'Unsplash' };
 
 export interface PhotoResult {
   url: string;
@@ -86,7 +111,73 @@ export async function downloadImage(url: string): Promise<string> {
 
 /** Makes a picture to keep: downloads library photos, leaves AI/uploaded ones as they are. */
 export async function keepImage(image: PickedImage): Promise<PickedImage> {
+  if (image.remote) {
+    // Unsplash pictures stay at Unsplash's address; their API asks apps to report each use.
+    if (image.trackUrl) cloudSync.hubFetch(`/api/hub/stock-images?track=${encodeURIComponent(image.trackUrl)}`).catch(() => {});
+    const { trackUrl, ...kept } = image;
+    return kept;
+  }
   return image.src.startsWith('data:') ? image : { ...image, src: await downloadImage(image.src) };
+}
+
+// ---------------------------------------------------------------------------
+// Stock libraries (Pixabay, Pexels, Unsplash); each works once its key is added to the site
+
+let stockStatusPromise: Promise<Record<StockSource, boolean>> | null = null;
+
+/** Which stock libraries have keys set up on the site. */
+export function stockStatus(): Promise<Record<StockSource, boolean>> {
+  stockStatusPromise ??= cloudSync
+    .hubFetch('/api/hub/stock-images?status=1')
+    .then((r) => r.json())
+    .then((d) => d?.sources || { pixabay: false, pexels: false, unsplash: false })
+    .catch(() => {
+      stockStatusPromise = null;
+      return { pixabay: false, pexels: false, unsplash: false };
+    });
+  return stockStatusPromise;
+}
+
+export async function searchStock(
+  source: StockSource,
+  query: string,
+  options: { type?: StockType; orientation?: StockOrientation; color?: string; page?: number } = {}
+): Promise<StockResult[]> {
+  const params = new URLSearchParams({
+    source,
+    q: query.trim(),
+    type: options.type || 'all',
+    orientation: options.orientation || 'any',
+    page: String(options.page || 1)
+  });
+  if (options.color) params.set('color', options.color);
+  const res = await cloudSync.hubFetch(`/api/hub/stock-images?${params}`);
+  const data = await res.json().catch(() => null);
+  if (!res.ok) throw new Error(data?.error || `${STOCK_NAMES[source]} search failed (${res.status})`);
+  return data?.results || [];
+}
+
+export const stockToImage = (r: StockResult): PickedImage => ({
+  src: r.url,
+  alt: r.title,
+  credit: `${r.kind === 'photo' ? 'Photo' : r.kind === 'vector' ? 'Clip art' : 'Illustration'}: ${r.creator} · ${STOCK_NAMES[r.source]}`,
+  creditUrl: r.sourceUrl,
+  remote: r.hotlink,
+  trackUrl: r.trackUrl
+});
+
+/**
+ * The first matching stock picture across the libraries that are set up, ready to keep.
+ * Photos try Pexels, then Unsplash, then Pixabay; illustrations and clip art come from Pixabay.
+ */
+export async function firstStock(query: string, type: 'photo' | 'illustration' | 'vector', orientation: StockOrientation = 'landscape'): Promise<PickedImage | null> {
+  const status = await stockStatus();
+  const order: StockSource[] = type === 'photo' ? ['pexels', 'unsplash', 'pixabay'] : ['pixabay'];
+  for (const source of order.filter((s) => status[s])) {
+    const results = await searchStock(source, query, { type, orientation }).catch(() => []);
+    if (results.length) return keepImage(stockToImage(results[0]));
+  }
+  return null;
 }
 
 /** Draws a picture from a description. `wide` asks for a 16:9 image (slides); otherwise square. */

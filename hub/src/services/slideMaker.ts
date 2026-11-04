@@ -12,7 +12,7 @@
  */
 import { DeckBrief, LessonPlan, PictureKind, Slide, SlideDeck, SlideLayout, SlideTheme } from '../types';
 import { extractJson, writeWithAI } from './aiWriter';
-import { firstPhoto, generateImage, keepImage, lookupWikipedia, WikiFact, wikiToImage } from './imageTools';
+import { firstPhoto, firstStock, generateImage, keepImage, lookupWikipedia, WikiFact, wikiToImage } from './imageTools';
 
 export const THEMES: { id: SlideTheme; name: string }[] = [
   { id: 'navy', name: 'Navy & Gold' },
@@ -184,15 +184,19 @@ async function pictureFor(slide: Slide, brief: DeckBrief, allowAi: boolean) {
       const img = wiki && wikiToImage(wiki);
       if (img) return keepImage(img);
     }
-    return (await firstPhoto(slide.subject || idea)) || undefined;
+    // Then Pexels / Unsplash / Pixabay photos (when set up), then the free photo libraries
+    return (await firstStock(slide.subject || idea, 'photo').catch(() => null)) || (await firstPhoto(slide.subject || idea)) || undefined;
   };
   const drawn = async () => (allowAi ? generateImage(idea, true, brief.pictureStyle) : undefined);
+  // Pixabay illustrations / clip art, when its key is set up and the deck isn't drawn realistically
+  const libraryArt = async () =>
+    brief.pictureStyle === 'realistic' ? null : (await firstStock(idea, 'illustration').catch(() => null)) || (await firstStock(idea, 'vector').catch(() => null));
 
   if (brief.pictureSource === 'photos') return realPhoto();
   if (brief.pictureSource === 'ai') return drawn();
-  // auto: real things get photos, ideas and scenes get illustrations (photos if drawing fails)
+  // auto: real things get photos; ideas and scenes get library illustrations, then an AI drawing, then a photo
   if (slide.pictureKind === 'photo') return (await realPhoto().catch(() => undefined)) || drawn();
-  return (await drawn().catch(() => undefined)) || realPhoto();
+  return (await libraryArt()) || (await drawn().catch(() => undefined)) || realPhoto();
 }
 
 export async function fillPictures(slides: Slide[], brief: DeckBrief, onProgress?: (message: string) => void): Promise<Slide[]> {

@@ -9,6 +9,7 @@ import { handleAiImage } from './aiImage.mjs';
 import { handleFreeAi } from './freeAi.mjs';
 import { handleImageProxy } from './imageProxy.mjs';
 import { handleImageSearch } from './imageSearch.mjs';
+import { handleStockImages } from './stockImages.mjs';
 import { handleWikipedia } from './wikipedia.mjs';
 import { handleHubCloud, isSignedIn } from './hubCloud.mjs';
 import { handleYouTubeSearch } from './youtubeSearch.mjs';
@@ -36,4 +37,5 @@ export const HUB_API_ROUTES = {
   '/api/hub/image-search': signedInOnly(handleImageSearch),
   '/api/hub/image-proxy': signedInOnly(handleImageProxy),
   '/api/hub/wiki': signedInOnly(handleWikipedia),
+  '/api/hub/stock-images': signedInOnly(handleStockImages),
 };

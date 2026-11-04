@@ -16,13 +16,15 @@ import {
   NotebookPen,
   Image as ImageIcon,
   Loader2,
-  Sparkles
+  Sparkles,
+  Search
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { storage } from '../../services/storage';
 import { classesOn, formatTime } from '../../services/rotation';
 import { compressImage, faviconFor, linkTitle, plainText, safeLinkUrl } from '../../services/plannerContent';
 import { RichEditor } from '../planner/RichEditor';
+import { ImagePickerModal } from '../shared/ImagePickerModal';
 import { CarryOverBanner, ClassesPanel, ReflectionCard, TasksPanel } from '../planner/DayPanels';
 import { planMyDay, summarizeWeek } from '../../services/plannerTools';
 import { CalendarEvent, PlannerAttachment, PlannerPage, PlannerPaper, PlannerSettings } from '../../types';
@@ -136,6 +138,7 @@ export const DailyPlannerView: React.FC = () => {
   const [, setVersion] = useState(0);
   const [viewer, setViewer] = useState<PlannerAttachment | null>(null);
   const [linkFormFor, setLinkFormFor] = useState<string | null>(null);
+  const [findImageFor, setFindImageFor] = useState<string | null>(null);
   const [linkUrl, setLinkUrl] = useState('');
   const [linkName, setLinkName] = useState('');
   const fileInput = useRef<HTMLInputElement>(null);
@@ -317,6 +320,14 @@ export const DailyPlannerView: React.FC = () => {
           >
             <ImagePlus className="w-3.5 h-3.5" />
             Add image
+          </button>
+          <button
+            type="button"
+            onClick={() => setFindImageFor(d)}
+            className="px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 bg-stone-900/5 hover:bg-stone-900/10"
+          >
+            <Search className="w-3.5 h-3.5" />
+            Find image
           </button>
           <button
             type="button"
@@ -776,6 +787,24 @@ export const DailyPlannerView: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {findImageFor && (
+        <ImagePickerModal
+          title="Find a picture for this page"
+          wide={false}
+          onClose={() => setFindImageFor(null)}
+          onPick={(img) => {
+            const d = findImageFor;
+            setFindImageFor(null);
+            if (pageFor(d).attachments.filter((a) => a.kind === 'image').length >= MAX_IMAGES_PER_PAGE) {
+              showToast(`A page holds up to ${MAX_IMAGES_PER_PAGE} images`, 'warning');
+              return;
+            }
+            addAttachments(d, [{ id: newId('img'), kind: 'image', url: img.src, title: img.alt || img.credit, addedAt: new Date().toISOString() }]);
+            showToast('Picture added to the page', 'success');
+          }}
+        />
       )}
 
       {viewer && (

@@ -7,7 +7,7 @@
  * listed libraries are passed through, up to MAX_BYTES.
  */
 const MAX_BYTES = 12 * 1024 * 1024;
-const ALLOWED_HOSTS = ['wikimedia.org', 'wikipedia.org', 'staticflickr.com', 'flickr.com', 'openverse.org', 'metmuseum.org', 'loc.gov', 'img.youtube.com', 'ytimg.com'];
+const ALLOWED_HOSTS = ['wikimedia.org', 'wikipedia.org', 'staticflickr.com', 'flickr.com', 'openverse.org', 'metmuseum.org', 'loc.gov', 'img.youtube.com', 'ytimg.com', 'pixabay.com', 'pexels.com', 'unsplash.com'];
 
 const fail = (status, error) =>
   new Response(JSON.stringify({ ok: false, error }), {
