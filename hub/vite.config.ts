@@ -51,6 +51,12 @@ function hubApiPlugin(): Plugin {
 export default defineConfig({
   base: '/Hub/',
   plugins: [react(), hubApiPlugin()],
+  resolve: {
+    // The Staff Composer Lite reuses the main site's notation code from ../src (see src/types/main.d.ts).
+    alias: { '@main': new URL('../src', import.meta.url).pathname },
+    // …and must share this app's copy of React rather than the main site's.
+    dedupe: ['react', 'react-dom']
+  },
   server: {
     port: 5173,
     host: true
