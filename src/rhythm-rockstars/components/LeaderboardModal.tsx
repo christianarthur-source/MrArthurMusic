@@ -22,7 +22,7 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
   const loadLeaderboard = async () => {
     setIsLoading(true);
     try {
-      const data = await apiClient.fetchLeaderboard('ALL');
+      const data = await apiClient.fetchLeaderboard('ALL', currentStudent);
       setEntries(data);
     } catch (err) {
       console.error(err);
@@ -35,7 +35,7 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
     if (isOpen) {
       loadLeaderboard();
     }
-  }, [isOpen]);
+  }, [isOpen, currentStudent?.id, currentStudent?.totalScore]);
 
   if (!isOpen) return null;
 
@@ -84,7 +84,11 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
         {/* Scrollable Simple Leaderboard List */}
         <div className="p-4 sm:p-6 overflow-y-auto space-y-2.5 flex-1">
           {entries.map((entry) => {
-            const isMe = currentStudent?.id === entry.id;
+            const isMe = Boolean(
+              currentStudent &&
+                (currentStudent.id === entry.id ||
+                  currentStudent.name.trim().toLowerCase() === entry.name.trim().toLowerCase())
+            );
             const isTop1 = entry.rank === 1;
             const isTop2 = entry.rank === 2;
             const isTop3 = entry.rank === 3;

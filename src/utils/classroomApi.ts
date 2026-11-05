@@ -804,7 +804,7 @@ function executeLocalFallback(payload: Record<string, any>): any {
 
   // 17. STAFF WARS LEADERBOARD (LOCAL FALLBACK)
   if (action === 'staff_wars_leaderboard') {
-    const requestedLevel = parseInt(payload.level, 10) || 1;
+    const requestedLevel = Math.min(5, Math.max(1, parseInt(payload.level, 10) || 1));
     const key = `staff_wars_leaderboard_level_${requestedLevel}`;
     let list: any[] = [];
     try {
@@ -819,7 +819,7 @@ function executeLocalFallback(payload: Record<string, any>): any {
   if (action === 'staff_wars_submit_score') {
     const name = String(payload.name || '').trim();
     const score = parseInt(payload.score, 10);
-    const level = parseInt(payload.level, 10) || 1;
+    const level = Math.min(5, Math.max(1, parseInt(payload.level, 10) || 1));
     const studentId = payload.studentId || null;
     const key = `staff_wars_leaderboard_level_${level}`;
     let list: any[] = [];
@@ -827,18 +827,21 @@ function executeLocalFallback(payload: Record<string, any>): any {
       const raw = localStorage.getItem(key);
       if (raw) list = JSON.parse(raw);
     } catch {}
+    const normName = normalizeStudentName(name);
     const existingIdx = list.findIndex(
-      (e: any) => ((studentId && e.studentId === studentId) || (!studentId && e.name.toLowerCase() === name.toLowerCase())) &&
-                  ((parseInt(e.level, 10) || 1) === level)
+      (e: any) =>
+        ((studentId && e.studentId === studentId) ||
+          ((!studentId || !e.studentId) && normalizeStudentName(String(e.name || '')) === normName)) &&
+        (parseInt(e.level, 10) || 1) === level
     );
     const now = new Date().toISOString();
     if (existingIdx >= 0) {
-      if (score > list[existingIdx].score) {
-        list[existingIdx].score = score;
-        list[existingIdx].name = name;
-        list[existingIdx].level = level;
-        list[existingIdx].updatedAt = now;
-      }
+      const best = Math.max(Number(list[existingIdx].score) || 0, score);
+      list[existingIdx].score = best;
+      list[existingIdx].name = name;
+      list[existingIdx].level = level;
+      if (studentId) list[existingIdx].studentId = studentId;
+      list[existingIdx].updatedAt = now;
     } else {
       list.push({
         id: 'sw_' + Math.random().toString(36).substring(2, 9),
@@ -854,6 +857,124 @@ function executeLocalFallback(payload: Record<string, any>): any {
       localStorage.setItem(key, JSON.stringify(list));
     } catch {}
     return { ok: true, level, leaderboard: list.slice(0, 50) };
+  }
+
+  // 18. RHYTHM ROCKSTARS LEADERBOARD (LOCAL FALLBACK)
+  if (action === 'rhythm_rockstars_leaderboard') {
+    const key = 'rhythm_rockstars_leaderboard_v1';
+    let list: any[] = [];
+    try {
+      const raw = localStorage.getItem(key);
+      if (raw) list = JSON.parse(raw);
+    } catch {}
+    const sorted = (Array.isArray(list) ? list : [])
+      .sort((a: any, b: any) => (Number(b.totalScore) || 0) - (Number(a.totalScore) || 0))
+      .slice(0, 150)
+      .map((item: any, idx: number) => ({ ...item, rank: idx + 1 }));
+    const studentId = payload.studentId ? String(payload.studentId).trim() : '';
+    const student = studentId ? sorted.find((e: any) => e.id === studentId) || null : null;
+    return { ok: true, leaderboard: sorted, student };
+  }
+
+  if (action === 'rhythm_rockstars_submit_score') {
+    const key = 'rhythm_rockstars_leaderboard_v1';
+    let list: any[] = [];
+    try {
+      const raw = localStorage.getItem(key);
+      if (raw) list = JSON.parse(raw);
+      if (!Array.isArray(list)) list = [];
+    } catch {
+      list = [];
+    }
+
+    const studentId = String(payload.studentId || '').trim();
+    const rawName = String(payload.name || '').trim().slice(0, 40);
+    const name = rawName ? formatStudentDisplayName(rawName) : 'Rockstar';
+    const pointsEarned = Math.max(0, parseInt(payload.pointsEarned, 10) || 0);
+    const reportedTotal = Math.max(0, parseInt(payload.totalScore, 10) || 0);
+    const streak = Math.max(0, parseInt(payload.streak, 10) || 0);
+    const reportedHighestStreak = Math.max(0, parseInt(payload.highestStreak, 10) || 0);
+    const level = Math.max(1, parseInt(payload.level, 10) || 1);
+    const stars = Math.max(0, Math.min(3, parseInt(payload.stars, 10) || 0));
+    const accuracy = Math.max(0, Math.min(100, parseInt(payload.accuracy, 10) || 0));
+
+    const normName = normalizeStudentName(name);
+    const idx = list.findIndex(
+      (e: any) =>
+        (studentId && e.id === studentId) ||
+        ((!studentId || !e.id) && normName && normalizeStudentName(String(e.name || '')) === normName)
+    );
+    const existing = idx >= 0 ? list[idx] : null;
+    const now = new Date().toISOString();
+
+    const mergedProgress: Record<string, { stars: number; highAccuracy: number }> = {
+      ...(existing?.levelProgress && typeof existing.levelProgress === 'object' ? existing.levelProgress : {}),
+    };
+    if (payload.levelProgress && typeof payload.levelProgress === 'object') {
+      for (const [k, v] of Object.entries(payload.levelProgress as Record<string, any>)) {
+        const lvlNum = parseInt(k, 10);
+        if (!Number.isFinite(lvlNum) || lvlNum < 1) continue;
+        const prev = mergedProgress[lvlNum] || { stars: 0, highAccuracy: 0 };
+        mergedProgress[lvlNum] = {
+          stars: Math.max(prev.stars || 0, Math.min(3, parseInt(v?.stars, 10) || 0)),
+          highAccuracy: Math.max(prev.highAccuracy || 0, Math.min(100, parseInt(v?.highAccuracy, 10) || 0)),
+        };
+      }
+    }
+    if (payload.level !== undefined && (stars > 0 || accuracy > 0 || !mergedProgress[level])) {
+      const prev = mergedProgress[level] || { stars: 0, highAccuracy: 0 };
+      mergedProgress[level] = {
+        stars: Math.max(prev.stars || 0, stars),
+        highAccuracy: Math.max(prev.highAccuracy || 0, accuracy),
+      };
+    }
+
+    const badgeSet = new Set<string>([
+      ...(Array.isArray(existing?.badges) ? existing.badges.map(String) : ['rockstar_rookie']),
+      ...(Array.isArray(payload.badges) ? payload.badges.map(String) : []),
+      ...(Array.isArray(payload.newBadges) ? payload.newBadges.map(String) : []),
+    ]);
+    const badges = Array.from(badgeSet);
+
+    const baseScore = Number(existing?.totalScore) || 0;
+    const totalScore = Math.max(baseScore + pointsEarned, reportedTotal);
+    const highestStreak = Math.max(Number(existing?.highestStreak) || 0, streak, reportedHighestStreak);
+    const incrementedQuizzes = (Number(existing?.quizzesCompleted) || 0) + (pointsEarned > 0 ? 1 : 0);
+    const quizzesCompleted = Math.max(incrementedQuizzes, parseInt(payload.quizzesCompleted, 10) || 0);
+    const progressLevels = Object.keys(mergedProgress)
+      .map((k) => parseInt(k, 10))
+      .filter((n) => Number.isFinite(n) && n >= 1);
+    const highestLevel = Math.max(1, Number(existing?.highestLevel) || 1, level, ...progressLevels);
+    const starsCount = Object.values(mergedProgress).reduce((sum, p) => sum + (Number(p?.stars) || 0), 0);
+
+    const updatedRecord = {
+      id: studentId || existing?.id || 'rr_' + Math.random().toString(36).slice(2, 10),
+      name: rawName ? name : existing?.name || 'Rockstar',
+      avatar: payload.avatar || existing?.avatar || '🎸',
+      classCode: payload.classCode || existing?.classCode || 'Classroom',
+      totalScore,
+      highestLevel,
+      highestStreak,
+      quizzesCompleted,
+      levelProgress: mergedProgress,
+      badges,
+      badgesCount: badges.length,
+      starsCount,
+      updatedAt: now,
+    };
+
+    if (idx >= 0) {
+      list[idx] = updatedRecord;
+    } else {
+      list.push(updatedRecord);
+    }
+    list.sort((a: any, b: any) => (Number(b.totalScore) || 0) - (Number(a.totalScore) || 0));
+    const top = list.slice(0, 150).map((item: any, i: number) => ({ ...item, rank: i + 1 }));
+    try {
+      localStorage.setItem(key, JSON.stringify(top));
+    } catch {}
+    const savedStudent = top.find((e: any) => e.id === updatedRecord.id) || { ...updatedRecord, rank: top.length + 1 };
+    return { ok: true, student: savedStudent, leaderboard: top };
   }
 
   throw new Error('Unknown classroom action: ' + action);
@@ -1241,7 +1362,7 @@ export async function teacherAssignProject(params: {
 export async function fetchStaffWarsLeaderboard(level = 1): Promise<any[]> {
   const res = await callClassroomBackend({
     action: 'staff_wars_leaderboard',
-    level,
+    level: Math.min(5, Math.max(1, level || 1)),
   });
   return res.leaderboard || [];
 }
@@ -1256,8 +1377,51 @@ export async function submitStaffWarsScore(params: {
   const res = await callClassroomBackend({
     action: 'staff_wars_submit_score',
     ...params,
+    level: Math.min(5, Math.max(1, params.level || 1)),
   });
   return res.leaderboard || [];
 }
+
+export async function fetchRhythmRockstarsLeaderboard(studentId?: string): Promise<{
+  leaderboard: any[];
+  student: any | null;
+}> {
+  const res = await callClassroomBackend({
+    action: 'rhythm_rockstars_leaderboard',
+    ...(studentId ? { studentId } : {}),
+  });
+  return {
+    leaderboard: res.leaderboard || [],
+    student: res.student || null,
+  };
+}
+
+export async function submitRhythmRockstarsScore(params: {
+  studentId: string;
+  name: string;
+  avatar?: string;
+  classCode?: string;
+  pointsEarned?: number;
+  totalScore?: number;
+  streak?: number;
+  highestStreak?: number;
+  quizzesCompleted?: number;
+  level?: number;
+  stars?: number;
+  accuracy?: number;
+  levelProgress?: Record<number, { stars: number; highAccuracy: number }>;
+  badges?: string[];
+  newBadges?: string[];
+}): Promise<{ student: any | null; leaderboard: any[] }> {
+  const res = await callClassroomBackend({
+    action: 'rhythm_rockstars_submit_score',
+    ...params,
+  });
+  return {
+    student: res.student || null,
+    leaderboard: res.leaderboard || [],
+  };
+}
+
 
 
