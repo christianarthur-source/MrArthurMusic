@@ -152,6 +152,20 @@ expect('My Classes needs a PIN', r[0] === 401, r);
 await call({ action: 'staff_wars_submit_score', name: 'Test A.', score: 50, level: 1 });
 r = await call({ action: 'staff_wars_leaderboard', level: 1 });
 expect('Staff Wars leaderboard', r[1].leaderboard[0].score === 50, r);
+await call({ action: 'staff_wars_submit_score', studentId: 'stu_a', name: 'Test A.', score: 900, level: 1 });
+r = await call({ action: 'staff_wars_leaderboard', level: 1 });
+expect('Staff Wars upgrades guest entry and updates score', r[1].leaderboard.length === 1 && r[1].leaderboard[0].score === 900 && r[1].leaderboard[0].studentId === 'stu_a', r);
+await call({ action: 'staff_wars_submit_score', studentId: 'stu_a', name: 'Test A.', score: 4200, level: 7 });
+r = await call({ action: 'staff_wars_leaderboard', level: 5 });
+expect('Staff Wars level 6+ clamps to level 5 board', r[1].leaderboard[0]?.score === 4200, r);
+
+r = await call({ action: 'rhythm_rockstars_submit_score', studentId: 'stu_a', name: 'Test A.', pointsEarned: 0, totalScore: 1850, streak: 6, level: 3, stars: 3, accuracy: 95 });
+expect('Rhythm Rockstars syncs existing local high score', r[0] === 200 && r[1].student.totalScore === 1850 && r[1].student.highestLevel === 3, r);
+r = await call({ action: 'rhythm_rockstars_submit_score', studentId: 'stu_a', name: 'Test A.', pointsEarned: 250, streak: 8, level: 4, stars: 2, accuracy: 88 });
+expect('Rhythm Rockstars adds earned points', r[0] === 200 && r[1].student.totalScore === 2100 && r[1].student.highestStreak === 8 && r[1].student.highestLevel === 4, r);
+r = await call({ action: 'rhythm_rockstars_leaderboard', studentId: 'stu_a' });
+expect('Rhythm Rockstars leaderboard returns student and rankings', r[0] === 200 && r[1].leaderboard[0].id === 'stu_a' && r[1].leaderboard[0].totalScore === 2100 && r[1].student.totalScore === 2100, r);
+
 r = await call({ action: 'public_roster' }, {});
 expect('no secret key -> 503', r[0] === 503, r);
 r = await call({ action: 'nope' });
