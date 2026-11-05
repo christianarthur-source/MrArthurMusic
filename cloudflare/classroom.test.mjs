@@ -155,9 +155,10 @@ expect('Staff Wars leaderboard', r[1].leaderboard[0].score === 50, r);
 await call({ action: 'staff_wars_submit_score', studentId: 'stu_a', name: 'Test A.', score: 900, level: 1 });
 r = await call({ action: 'staff_wars_leaderboard', level: 1 });
 expect('Staff Wars upgrades guest entry and updates score', r[1].leaderboard.length === 1 && r[1].leaderboard[0].score === 900 && r[1].leaderboard[0].studentId === 'stu_a', r);
+T.classroom_config.push({ key: 'staff_wars_leaderboard_level_6', value: [{ id: 'sw_cam', name: 'Cameron K.', score: 34400, level: 6 }] });
 await call({ action: 'staff_wars_submit_score', studentId: 'stu_a', name: 'Test A.', score: 4200, level: 7 });
-r = await call({ action: 'staff_wars_leaderboard', level: 5 });
-expect('Staff Wars level 6+ clamps to level 5 board', r[1].leaderboard[0]?.score === 4200, r);
+r = await call({ action: 'staff_wars_leaderboard', level: 1 });
+expect('Staff Wars merges all levels into unified Top Pilots board', r[1].leaderboard[0]?.name === 'Cameron K.' && r[1].leaderboard[0]?.score === 34400 && r[1].leaderboard[1]?.score === 4200 && r[1].leaderboard[1]?.level === 7, r);
 
 r = await call({ action: 'rhythm_rockstars_submit_score', studentId: 'stu_a', name: 'Test A.', pointsEarned: 0, totalScore: 1850, streak: 6, level: 3, stars: 3, accuracy: 95 });
 expect('Rhythm Rockstars syncs existing local high score', r[0] === 200 && r[1].student.totalScore === 1850 && r[1].student.highestLevel === 3, r);
