@@ -282,18 +282,16 @@ function classroomApiPlugin(): Plugin {
           }
 
           if (action === 'staff_wars_leaderboard') {
-            const requestedLevel = Math.min(5, Math.max(1, parseInt(body.level || (req.url && new URL(req.url, 'http://localhost').searchParams.get('level')), 10) || 1));
-            const allList = ((db.staffWarsLeaderboard || []) as any[]).filter(
-              (e: any) => (parseInt(e.level, 10) || 1) === requestedLevel
-            );
-            allList.sort((a: any, b: any) => b.score - a.score);
-            return send(200, { ok: true, level: requestedLevel, leaderboard: allList.slice(0, 50) });
+            const requestedLevel = Math.min(99, Math.max(1, parseInt(body.level || (req.url && new URL(req.url, 'http://localhost').searchParams.get('level')), 10) || 1));
+            const allList = [...((db.staffWarsLeaderboard || []) as any[])];
+            allList.sort((a: any, b: any) => (Number(b.score) || 0) - (Number(a.score) || 0));
+            return send(200, { ok: true, level: requestedLevel, leaderboard: allList.slice(0, 100) });
           }
 
           if (action === 'staff_wars_submit_score') {
             const name = String(body.name || '').trim();
             const score = parseInt(body.score, 10);
-            const level = Math.min(5, Math.max(1, parseInt(body.level, 10) || 1));
+            const level = Math.min(99, Math.max(1, parseInt(body.level, 10) || 1));
             const studentId = body.studentId || null;
             if (!name || isNaN(score) || score < 0) {
               return send(400, { ok: false, error: 'Invalid name or score' });
@@ -302,15 +300,15 @@ function classroomApiPlugin(): Plugin {
             const normName = normalizeStudentName(name);
             const existingIdx = db.staffWarsLeaderboard.findIndex(
               (e: any) =>
-                ((studentId && e.studentId === studentId) ||
-                  ((!studentId || !e.studentId) && normalizeStudentName(e.name) === normName)) &&
-                (parseInt(e.level, 10) || 1) === level
+                (studentId && e.studentId === studentId) ||
+                ((!studentId || !e.studentId) && normalizeStudentName(e.name) === normName)
             );
             if (existingIdx >= 0) {
-              const best = Math.max(Number(db.staffWarsLeaderboard[existingIdx].score) || 0, score);
-              db.staffWarsLeaderboard[existingIdx].score = best;
+              const prevScore = Number(db.staffWarsLeaderboard[existingIdx].score) || 0;
+              const prevLevel = Math.max(1, parseInt(db.staffWarsLeaderboard[existingIdx].level, 10) || 1);
+              db.staffWarsLeaderboard[existingIdx].score = Math.max(prevScore, score);
               db.staffWarsLeaderboard[existingIdx].name = name;
-              db.staffWarsLeaderboard[existingIdx].level = level;
+              db.staffWarsLeaderboard[existingIdx].level = Math.max(prevLevel, level);
               if (studentId) db.staffWarsLeaderboard[existingIdx].studentId = studentId;
               db.staffWarsLeaderboard[existingIdx].updatedAt = new Date().toISOString();
             } else {
@@ -323,10 +321,9 @@ function classroomApiPlugin(): Plugin {
                 updatedAt: new Date().toISOString(),
               });
             }
-            db.staffWarsLeaderboard.sort((a: any, b: any) => b.score - a.score);
+            db.staffWarsLeaderboard.sort((a: any, b: any) => (Number(b.score) || 0) - (Number(a.score) || 0));
             saveClassroomDb(db);
-            const filtered = db.staffWarsLeaderboard.filter((e: any) => (parseInt(e.level, 10) || 1) === level);
-            return send(200, { ok: true, level, leaderboard: filtered.slice(0, 50) });
+            return send(200, { ok: true, level, leaderboard: db.staffWarsLeaderboard.slice(0, 100) });
           }
 
           if (action === 'rhythm_rockstars_leaderboard') {
