@@ -694,10 +694,15 @@ async function runAction(payload: Record<string, any>, db: Db, env: ClassroomEnv
     return { ok: true, assignedCount: rows.length, projects: projects.map(projectOut) };
   }
 
-  // 18. STAFF WARS LEADERBOARD (public, unified across all levels)
+  // 18. STAFF WARS LEADERBOARD (public, main overall board + optional per-clef boards)
   if (action === 'staff_wars_leaderboard') {
     const level = Math.min(99, Math.max(1, parseInt(payload.level, 10) || 1));
-    return { ok: true, level, leaderboard: await readLeaderboard(db) };
+    const rawClef = String(payload.clef || '').trim().toLowerCase();
+    const validClefs = ['treble', 'bass', 'alto', 'tenor', 'grand'];
+    if (validClefs.includes(rawClef)) {
+      return { ok: true, level, clef: rawClef, leaderboard: await readClefLeaderboard(db, rawClef) };
+    }
+    return { ok: true, level, clef: 'all', leaderboard: await readLeaderboard(db) };
   }
 
   if (action === 'staff_wars_submit_score') {
@@ -705,6 +710,9 @@ async function runAction(payload: Record<string, any>, db: Db, env: ClassroomEnv
     const score = parseInt(payload.score, 10);
     const level = Math.min(99, Math.max(1, parseInt(payload.level, 10) || 1));
     const studentId = payload.studentId ? String(payload.studentId) : null;
+    const rawClef = String(payload.clef || '').trim().toLowerCase();
+    const validClefs = ['treble', 'bass', 'alto', 'tenor', 'grand'];
+    const clef = validClefs.includes(rawClef) ? rawClef : null;
     if (!name || !Number.isFinite(score) || score < 0 || score > 10_000_000) throw new UserError('Invalid score.');
     if (containsProfanity(name)) throw new UserError('Please use a school-appropriate name.');
 
@@ -725,19 +733,51 @@ async function runAction(payload: Record<string, any>, db: Db, env: ClassroomEnv
         score: bestScore,
         name,
         level: bestLevel,
+        ...(clef && score >= prevScore ? { clef } : {}),
         ...(studentId ? { studentId } : {}),
         updatedAt: now,
       });
     } else {
-      list.push({ id: randomId('sw', 7), studentId, name, score, level, updatedAt: now });
+      list.push({ id: randomId('sw', 7), studentId, name, score, level, ...(clef ? { clef } : {}), updatedAt: now });
     }
     list.sort((a: any, b: any) => (Number(b.score) || 0) - (Number(a.score) || 0) || (Number(b.level) || 1) - (Number(a.level) || 1));
     const top = list.slice(0, 100);
-    await db.upsert('classroom_config', [
+    const upserts: { key: string; value: any }[] = [
       { key: 'staff_wars_leaderboard', value: top },
       { key: 'staff_wars_leaderboard_level_1', value: top },
-    ]);
-    return { ok: true, level, leaderboard: top };
+    ];
+
+    let clefTop: any[] | null = null;
+    if (clef) {
+      const clefList = await readClefLeaderboard(db, clef);
+      const cIdx = clefList.findIndex(
+        (e: any) =>
+          (studentId && e.studentId === studentId) ||
+          ((!studentId || !e.studentId) && normalizeStudentName(String(e.name || '')) === normName),
+      );
+      if (cIdx >= 0) {
+        const prevScore = Number(clefList[cIdx].score) || 0;
+        const prevLevel = Math.max(1, parseInt(clefList[cIdx].level, 10) || 1);
+        const bestScore = Math.max(prevScore, score);
+        const bestLevel = score >= prevScore ? Math.max(prevLevel, level) : prevLevel;
+        Object.assign(clefList[cIdx], {
+          score: bestScore,
+          name,
+          level: bestLevel,
+          clef,
+          ...(studentId ? { studentId } : {}),
+          updatedAt: now,
+        });
+      } else {
+        clefList.push({ id: randomId('sw', 7), studentId, name, score, level, clef, updatedAt: now });
+      }
+      clefList.sort((a: any, b: any) => (Number(b.score) || 0) - (Number(a.score) || 0) || (Number(b.level) || 1) - (Number(a.level) || 1));
+      clefTop = clefList.slice(0, 100);
+      upserts.push({ key: `staff_wars_leaderboard_clef_${clef}`, value: clefTop });
+    }
+
+    await db.upsert('classroom_config', upserts);
+    return { ok: true, level, clef: clef || 'all', leaderboard: top, ...(clefTop ? { clefLeaderboard: clefTop } : {}) };
   }
 
   // 19. RHYTHM ROCKSTARS LEADERBOARD & SCORE SYNC (public)
@@ -895,6 +935,14 @@ async function readLeaderboard(db: Db): Promise<any[]> {
     }
   }
   return merged
+    .sort((a: any, b: any) => (Number(b.score) || 0) - (Number(a.score) || 0) || (Number(b.level) || 1) - (Number(a.level) || 1))
+    .slice(0, 100);
+}
+
+async function readClefLeaderboard(db: Db, clef: string): Promise<any[]> {
+  const configs = (await db.fetch(`classroom_config?key=${eq(`staff_wars_leaderboard_clef_${clef}`)}`)) || [];
+  const list = configs[0] && Array.isArray(configs[0].value) ? [...configs[0].value] : [];
+  return list
     .sort((a: any, b: any) => (Number(b.score) || 0) - (Number(a.score) || 0) || (Number(b.level) || 1) - (Number(a.level) || 1))
     .slice(0, 100);
 }

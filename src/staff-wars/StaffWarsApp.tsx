@@ -89,6 +89,7 @@ export interface StaffWarsLeaderboardEntry {
   name: string;
   score: number;
   level?: number;
+  clef?: StaffClef;
   studentId?: string;
   updatedAt?: string;
 }
@@ -99,6 +100,15 @@ const DEFAULT_LEADERBOARD_ENTRIES: StaffWarsLeaderboardEntry[] = [
   { id: 'def_3_1', name: 'Commander Rex', score: 1680, level: 3 },
   { id: 'def_2_1', name: 'Pilot Wedge', score: 1450, level: 2 },
   { id: 'def_1_1', name: 'Cadet Luke', score: 1250, level: 1 },
+];
+
+const CLEF_LEADERBOARD_TABS: { id: 'all' | StaffClef; label: string; icon: string }[] = [
+  { id: 'all', label: 'Main Board', icon: '🏆' },
+  { id: 'treble', label: 'Treble', icon: '𝄞' },
+  { id: 'bass', label: 'Bass', icon: '𝄢' },
+  { id: 'alto', label: 'Alto', icon: '𝄡' },
+  { id: 'tenor', label: 'Tenor', icon: '𝄡' },
+  { id: 'grand', label: 'Grand', icon: '𝄞/𝄢' },
 ];
 
 export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
@@ -138,21 +148,31 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
   const [notesHit, setNotesHit] = useState<number>(0);
   const [notesMissed, setNotesMissed] = useState<number>(0);
 
-  // Refs to ensure Game Over and async callbacks always see the latest score and level
+  // Refs to ensure Game Over and async callbacks always see the latest score, level, and clef
   const scoreRef = useRef<number>(0);
   scoreRef.current = score;
   const levelRef = useRef<number>(1);
   levelRef.current = level;
+  const clefRef = useRef<StaffClef>('treble');
+  clefRef.current = clef;
 
   // Student High Score key helpers
   const getHighScoreKey = (session: StudentSession | null) => {
     return session?.id ? `staff_wars_high_score_${session.id}` : 'staff_wars_high_score';
   };
+  const getClefHighScoreKey = (session: StudentSession | null, targetClef: StaffClef) => {
+    return session?.id
+      ? `staff_wars_high_score_${session.id}_clef_${targetClef}`
+      : `staff_wars_high_score_clef_${targetClef}`;
+  };
 
   const [highScore, setHighScore] = useState<number>(0);
 
-  // Leaderboard State & Sync (Unified Overall High Scores)
+  // Leaderboard State & Sync (Main Board + Per-Clef Boards)
   const [showLeaderboard, setShowLeaderboard] = useState<boolean>(false);
+  const [leaderboardClef, setLeaderboardClef] = useState<'all' | StaffClef>('all');
+  const leaderboardClefRef = useRef<'all' | StaffClef>('all');
+  leaderboardClefRef.current = leaderboardClef;
   const [leaderboard, setLeaderboard] = useState<StaffWarsLeaderboardEntry[]>(DEFAULT_LEADERBOARD_ENTRIES);
   const [isLeaderboardLoading, setIsLeaderboardLoading] = useState<boolean>(false);
   const [guestPlayerName, setGuestPlayerName] = useState<string>(() => {
@@ -182,14 +202,16 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
     return entries;
   }, []);
 
-  // Merge defaults, local entries, and cloud entries into one unified overall ranking
+  // Merge defaults (for main board), local entries, and cloud entries into one ranking
   const mergeLeaderboardEntries = useCallback(
     (
       localEntries: StaffWarsLeaderboardEntry[],
-      cloudEntries: StaffWarsLeaderboardEntry[]
+      cloudEntries: StaffWarsLeaderboardEntry[],
+      includeDefaults = true
     ): StaffWarsLeaderboardEntry[] => {
       const mergedList: StaffWarsLeaderboardEntry[] = [];
-      for (const entry of [...DEFAULT_LEADERBOARD_ENTRIES, ...localEntries, ...cloudEntries]) {
+      const seeds = includeDefaults ? DEFAULT_LEADERBOARD_ENTRIES : [];
+      for (const entry of [...seeds, ...localEntries, ...cloudEntries]) {
         if (!entry || !entry.name) continue;
         const normName = entry.name.trim().toLowerCase();
         const entryScore = Number(entry.score) || 0;
@@ -221,43 +243,66 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
     []
   );
 
-  const loadLeaderboard = useCallback(async () => {
-    setIsLeaderboardLoading(true);
-    const localList = readAllLocalLeaderboardEntries();
+  const loadLeaderboard = useCallback(
+    async (targetClef: 'all' | StaffClef = leaderboardClefRef.current) => {
+      setIsLeaderboardLoading(true);
+      const isMainBoard = targetClef === 'all';
+      const storageKey = isMainBoard ? 'staff_wars_leaderboard' : `staff_wars_leaderboard_clef_${targetClef}`;
 
-    try {
-      const cloudScores = await fetchStaffWarsLeaderboard(1);
-      const merged = mergeLeaderboardEntries(
-        localList,
-        Array.isArray(cloudScores) ? cloudScores : []
-      );
+      let localList: StaffWarsLeaderboardEntry[] = [];
+      if (isMainBoard) {
+        localList = readAllLocalLeaderboardEntries();
+      } else {
+        try {
+          const saved = localStorage.getItem(storageKey);
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed)) localList = parsed;
+          }
+        } catch {}
+      }
+
       try {
-        localStorage.setItem('staff_wars_leaderboard', JSON.stringify(merged));
-      } catch {}
-      setLeaderboard(merged);
-      setIsLeaderboardLoading(false);
-      return;
-    } catch (err) {
-      console.warn('Failed to fetch cloud leaderboard', err);
-    }
+        const cloudScores = await fetchStaffWarsLeaderboard(1, targetClef);
+        const merged = mergeLeaderboardEntries(
+          localList,
+          Array.isArray(cloudScores) ? cloudScores : [],
+          isMainBoard
+        );
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(merged));
+        } catch {}
+        if (leaderboardClefRef.current === targetClef) {
+          setLeaderboard(merged);
+        }
+        setIsLeaderboardLoading(false);
+        return;
+      } catch (err) {
+        console.warn('Failed to fetch cloud leaderboard', err);
+      }
 
-    const sorted = mergeLeaderboardEntries(localList, []);
-    setLeaderboard(sorted);
-    setIsLeaderboardLoading(false);
-  }, [mergeLeaderboardEntries, readAllLocalLeaderboardEntries]);
+      const sorted = mergeLeaderboardEntries(localList, [], isMainBoard);
+      if (leaderboardClefRef.current === targetClef) {
+        setLeaderboard(sorted);
+      }
+      setIsLeaderboardLoading(false);
+    },
+    [mergeLeaderboardEntries, readAllLocalLeaderboardEntries]
+  );
 
   useEffect(() => {
-    loadLeaderboard();
-  }, [loadLeaderboard]);
+    loadLeaderboard(leaderboardClef);
+  }, [loadLeaderboard, leaderboardClef]);
 
   const submitHighScore = useCallback(
-    async (newScore: number, forLevel = 1) => {
+    async (newScore: number, forLevel = 1, forClef?: StaffClef) => {
       if (!newScore || newScore <= 0) return;
       const playerName = studentSession?.firstName || guestPlayerName || 'Cadet Player';
       const studentId = studentSession?.id;
       const targetLvl = Math.min(99, Math.max(1, forLevel || levelRef.current || 1));
+      const activeClef: StaffClef | undefined = forClef;
 
-      // Update overall local high score
+      // Update overall and per-clef local high scores
       try {
         const overallKey = getHighScoreKey(studentSession);
         const prevOverall = parseInt(localStorage.getItem(overallKey) || '0', 10) || 0;
@@ -265,9 +310,17 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
           localStorage.setItem(overallKey, String(newScore));
           setHighScore(newScore);
         }
+        if (activeClef) {
+          const clefKey = getClefHighScoreKey(studentSession, activeClef);
+          const prevClef = parseInt(localStorage.getItem(clefKey) || '0', 10) || 0;
+          if (newScore > prevClef) {
+            localStorage.setItem(clefKey, String(newScore));
+          }
+        }
       } catch {}
 
-      let localUpdated: StaffWarsLeaderboardEntry[] = [];
+      let localMainUpdated: StaffWarsLeaderboardEntry[] = [];
+      let localClefUpdated: StaffWarsLeaderboardEntry[] = [];
       try {
         const existingLocal = readAllLocalLeaderboardEntries();
         const newEntry: StaffWarsLeaderboardEntry = {
@@ -276,11 +329,25 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
           name: playerName,
           score: newScore,
           level: targetLvl,
+          ...(activeClef ? { clef: activeClef } : {}),
           updatedAt: new Date().toISOString(),
         };
-        localUpdated = mergeLeaderboardEntries([...existingLocal, newEntry], []);
-        localStorage.setItem('staff_wars_leaderboard', JSON.stringify(localUpdated));
-        setLeaderboard(localUpdated);
+        localMainUpdated = mergeLeaderboardEntries([...existingLocal, newEntry], [], true);
+        localStorage.setItem('staff_wars_leaderboard', JSON.stringify(localMainUpdated));
+
+        if (activeClef) {
+          const clefStorageKey = `staff_wars_leaderboard_clef_${activeClef}`;
+          const savedClef = localStorage.getItem(clefStorageKey);
+          const existingClef: StaffWarsLeaderboardEntry[] = savedClef ? JSON.parse(savedClef) : [];
+          localClefUpdated = mergeLeaderboardEntries([...existingClef, newEntry], [], false);
+          localStorage.setItem(clefStorageKey, JSON.stringify(localClefUpdated));
+        }
+
+        if (leaderboardClefRef.current === 'all') {
+          setLeaderboard(localMainUpdated);
+        } else if (activeClef && leaderboardClefRef.current === activeClef) {
+          setLeaderboard(localClefUpdated);
+        }
       } catch {}
 
       try {
@@ -289,14 +356,26 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
           name: playerName,
           score: newScore,
           level: targetLvl,
+          clef: activeClef,
           classGroup: studentSession?.classGroup,
         });
-        if (Array.isArray(res)) {
-          const merged = mergeLeaderboardEntries(localUpdated, res);
+        if (res && Array.isArray(res.leaderboard)) {
+          const mergedMain = mergeLeaderboardEntries(localMainUpdated, res.leaderboard, true);
           try {
-            localStorage.setItem('staff_wars_leaderboard', JSON.stringify(merged));
+            localStorage.setItem('staff_wars_leaderboard', JSON.stringify(mergedMain));
           } catch {}
-          setLeaderboard(merged);
+          if (leaderboardClefRef.current === 'all') {
+            setLeaderboard(mergedMain);
+          }
+        }
+        if (activeClef && res && Array.isArray(res.clefLeaderboard)) {
+          const mergedClef = mergeLeaderboardEntries(localClefUpdated, res.clefLeaderboard, false);
+          try {
+            localStorage.setItem(`staff_wars_leaderboard_clef_${activeClef}`, JSON.stringify(mergedClef));
+          } catch {}
+          if (leaderboardClefRef.current === activeClef) {
+            setLeaderboard(mergedClef);
+          }
         }
       } catch (err) {
         console.warn('Failed to submit high score to backend:', err);
@@ -305,7 +384,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
     [studentSession, guestPlayerName, mergeLeaderboardEntries, readAllLocalLeaderboardEntries]
   );
 
-  // Synchronize High Score with logged-in student or guest session, and auto-post existing local high score
+  // Synchronize High Score with logged-in student or guest session, and auto-post existing local high score to Main Board
   useEffect(() => {
     try {
       const key = getHighScoreKey(studentSession);
@@ -466,9 +545,10 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
         setMicActive(false);
         const finalScore = scoreRef.current;
         const finalLevel = levelRef.current;
+        const finalClef = clefRef.current;
         if (finalScore > 0) {
           queueMicrotask(() => {
-            submitHighScore(finalScore, finalLevel);
+            submitHighScore(finalScore, finalLevel, finalClef);
           });
         }
         return 0;
@@ -565,7 +645,15 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
             const key = getHighScoreKey(studentSession);
             localStorage.setItem(key, String(newScore));
           } catch {}
-          submitHighScore(newScore, level);
+        }
+
+        let prevClefBest = 0;
+        try {
+          const clefKey = getClefHighScoreKey(studentSession, clef);
+          prevClefBest = parseInt(localStorage.getItem(clefKey) || '0', 10) || 0;
+        } catch {}
+        if (newScore > highScore || newScore > prevClefBest) {
+          submitHighScore(newScore, level, clef);
         }
 
         const newStreak = streak + 1;
@@ -598,7 +686,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
         if (totalHit % 10 === 0) {
           const nextLvl = level + 1;
           setLevel(nextLvl);
-          submitHighScore(newScore, nextLvl);
+          submitHighScore(newScore, nextLvl, clef);
           staffWarsAudio.playLevelUp();
           try {
             confetti({ particleCount: 65, spread: 75, origin: { y: 0.5 } });
@@ -640,9 +728,10 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
                 staffWarsAudio.playGameOver();
                 const finalScore = scoreRef.current;
                 const finalLevel = levelRef.current;
+                const finalClef = clefRef.current;
                 if (finalScore > 0) {
                   queueMicrotask(() => {
-                    submitHighScore(finalScore, finalLevel);
+                    submitHighScore(finalScore, finalLevel, finalClef);
                   });
                 }
                 return 0;
@@ -665,7 +754,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
         }
       }
     },
-    [status, activeNote, streak, score, highScore, notesHit, level, triggerExplosion, spawnNote, submitHighScore, inputMode, wrongPressCount, studentSession]
+    [status, activeNote, streak, score, highScore, notesHit, level, clef, triggerExplosion, spawnNote, submitHighScore, inputMode, wrongPressCount, studentSession]
   );
 
 
@@ -1469,7 +1558,11 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
                   <h3 className="text-lg font-black text-amber-400 tracking-wide leading-tight">
                     HIGH SCORE LEADERBOARD
                   </h3>
-                  <p className="text-xs text-slate-400">Staff Wars Top Pilots — Overall High Scores</p>
+                  <p className="text-xs text-slate-400">
+                    {leaderboardClef === 'all'
+                      ? 'Staff Wars Top Pilots — Overall High Scores'
+                      : `${CLEF_OPTIONS.find((c) => c.id === leaderboardClef)?.title || 'Clef'} Leaderboard`}
+                  </p>
                 </div>
               </div>
               <button
@@ -1482,29 +1575,59 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
               </button>
             </div>
 
-            {/* Current Player High Score Badge */}
-            <div className="px-4 py-2.5 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-center justify-between text-xs">
-              <div className="flex items-center gap-1.5 text-slate-400">
-                <User className="w-3.5 h-3.5 text-slate-400" />
-                <span>Your Best:</span>
-                <span className="font-bold text-white">
-                  {studentSession?.firstName || guestPlayerName}
+            {/* Current Player High Score Badge & Clef Leaderboard Switcher */}
+            <div className="space-y-2.5">
+              <div className="px-4 py-2.5 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-center justify-between text-xs">
+                <div className="flex items-center gap-1.5 text-slate-400">
+                  <User className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Your Best:</span>
+                  <span className="font-bold text-white">
+                    {studentSession?.firstName || guestPlayerName}
+                  </span>
+                </div>
+                <span className="font-mono font-black text-amber-400 text-sm">
+                  {highScore > 0 ? `${highScore.toLocaleString()} PTS` : '0 PTS'}
                 </span>
               </div>
-              <span className="font-mono font-black text-amber-400 text-sm">
-                {highScore > 0 ? `${highScore.toLocaleString()} PTS` : '0 PTS'}
-              </span>
+
+              {/* Clef Leaderboard Selector Buttons */}
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-1 p-1 bg-slate-950/90 border border-slate-800 rounded-2xl">
+                {CLEF_LEADERBOARD_TABS.map((tab) => {
+                  const isActive = leaderboardClef === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => {
+                        setLeaderboardClef(tab.id);
+                        loadLeaderboard(tab.id);
+                      }}
+                      className={`py-1.5 px-1.5 rounded-xl text-[11px] font-black transition-all cursor-pointer flex items-center justify-center gap-1 ${
+                        isActive
+                          ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-400/20'
+                          : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                      }`}
+                      title={tab.id === 'all' ? 'Main Overall Leaderboard' : `${tab.label} Clef Leaderboard`}
+                    >
+                      <span>{tab.icon}</span>
+                      <span className="truncate">{tab.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Unified List showing Name, Level Reached, and Best Score */}
-            <div className="overflow-y-auto flex-1 pr-1 space-y-2 max-h-[52vh]">
+            <div className="overflow-y-auto flex-1 pr-1 space-y-2 max-h-[48vh]">
               {isLeaderboardLoading ? (
                 <div className="py-12 text-center text-slate-500 text-xs">
-                  Loading Top Pilots rankings...
+                  Loading {leaderboardClef === 'all' ? 'Top Pilots' : `${CLEF_OPTIONS.find((c) => c.id === leaderboardClef)?.title || ''}`} rankings...
                 </div>
               ) : leaderboard.length === 0 ? (
                 <div className="py-12 text-center text-slate-500 text-xs">
-                  No high scores recorded yet. Be the first Cadet to claim the top spot!
+                  {leaderboardClef === 'all'
+                    ? 'No high scores recorded yet. Be the first Cadet to claim the top spot!'
+                    : `No ${CLEF_OPTIONS.find((c) => c.id === leaderboardClef)?.title || 'clef'} scores recorded yet. Play a mission in this clef to claim #1!`}
                 </div>
               ) : (
                 leaderboard.map((entry, index) => {
