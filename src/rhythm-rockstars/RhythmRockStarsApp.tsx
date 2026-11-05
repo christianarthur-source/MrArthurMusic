@@ -35,7 +35,9 @@ export default function RhythmRockStarsApp({
   onOpenAvatar = () => {},
 }: RhythmRockStarsAppProps = {}) {
   // Current Student Session
-  const [student, setStudent] = useState<StudentProfile | null>(() => apiClient.getLocalProfile());
+  const [student, setStudent] = useState<StudentProfile | null>(() =>
+    studentSession ? apiClient.getLocalProfile(studentSession.id, studentSession.firstName) : null
+  );
 
   // Game Navigation & State
   const [currentMode, setCurrentMode] = useState<GameMode>('quiz');
@@ -70,29 +72,35 @@ export default function RhythmRockStarsApp({
   const [showSettings, setShowSettings] = useState(false);
   const [showLevelMap, setShowLevelMap] = useState(false);
 
-  // Synchronize global student session
+  // Synchronize global student session & auto-post existing local high score to cloud leaderboard
   useEffect(() => {
     if (studentSession) {
-      const existing = apiClient.getLocalProfile();
-      if (!existing || existing.name !== studentSession.firstName) {
-        const synced: StudentProfile = {
-          id: studentSession.id,
-          name: studentSession.firstName,
-          avatar: '🎸',
-          passcode: studentSession.pin || '1234',
-          classCode: studentSession.classGroup || 'Classroom',
-          totalScore: existing?.totalScore || 0,
-          highestStreak: existing?.highestStreak || 0,
-          quizzesCompleted: existing?.quizzesCompleted || 0,
-          levelProgress: existing?.levelProgress || { 1: { stars: 3, highAccuracy: 100 } },
-          badges: existing?.badges || ['rockstar_rookie'],
-          updatedAt: new Date().toISOString(),
-        };
-        apiClient.saveLocalProfile(synced);
-        setStudent(synced);
-      } else {
-        setStudent(existing);
-      }
+      const existing = apiClient.getLocalProfile(studentSession.id, studentSession.firstName);
+      const baseProfile: StudentProfile = {
+        id: studentSession.id,
+        name: studentSession.firstName,
+        avatar: existing?.avatar || '🎸',
+        passcode: studentSession.pin || '1234',
+        classCode: studentSession.classGroup || 'Classroom',
+        totalScore: existing?.totalScore || 0,
+        highestStreak: existing?.highestStreak || 0,
+        quizzesCompleted: existing?.quizzesCompleted || 0,
+        levelProgress: existing?.levelProgress || { 1: { stars: 3, highAccuracy: 100 } },
+        badges: existing?.badges || ['rockstar_rookie'],
+        updatedAt: new Date().toISOString(),
+      };
+      apiClient.saveLocalProfile(baseProfile);
+      setStudent(baseProfile);
+
+      let cancelled = false;
+      apiClient.syncStudentProfile(baseProfile).then((synced) => {
+        if (!cancelled && synced) {
+          setStudent(synced);
+        }
+      });
+      return () => {
+        cancelled = true;
+      };
     } else {
       setStudent(null);
     }
