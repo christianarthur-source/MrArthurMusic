@@ -54,7 +54,6 @@ const CLEF_OPTIONS: { id: StaffClef; title: string; subtitle: string; icon: stri
   { id: 'treble', title: 'Treble Clef', subtitle: 'Flute, Violin, Piano RH & Voice', icon: '𝄞' },
   { id: 'bass', title: 'Bass Clef', subtitle: 'Cello, Bass, Tuba & Piano LH', icon: '𝄢' },
   { id: 'alto', title: 'Alto Clef', subtitle: 'Viola (Middle C on Line 3)', icon: '𝄡' },
-  { id: 'tenor', title: 'Tenor Clef', subtitle: 'Upper Cello & Trombone', icon: '𝄡' },
   { id: 'grand', title: 'Grand Staff', subtitle: 'Treble + Bass Combined', icon: '𝄞/𝄢' },
 ];
 
@@ -107,7 +106,6 @@ const CLEF_LEADERBOARD_TABS: { id: 'all' | StaffClef; label: string; icon: strin
   { id: 'treble', label: 'Treble', icon: '𝄞' },
   { id: 'bass', label: 'Bass', icon: '𝄢' },
   { id: 'alto', label: 'Alto', icon: '𝄡' },
-  { id: 'tenor', label: 'Tenor', icon: '𝄡' },
   { id: 'grand', label: 'Grand', icon: '𝄞/𝄢' },
 ];
 
@@ -1137,7 +1135,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
               <label className="text-xs font-extrabold uppercase tracking-wider text-slate-300">
                 2. Choose Your Clef:
               </label>
-              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {CLEF_OPTIONS.map((opt) => (
                   <button
                     key={opt.id}
@@ -1591,7 +1589,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
               </div>
 
               {/* Clef Leaderboard Selector Buttons */}
-              <div className="grid grid-cols-3 sm:grid-cols-6 gap-1 p-1 bg-slate-950/90 border border-slate-800 rounded-2xl">
+              <div className="grid grid-cols-3 sm:grid-cols-5 gap-1 p-1 bg-slate-950/90 border border-slate-800 rounded-2xl">
                 {CLEF_LEADERBOARD_TABS.map((tab) => {
                   const isActive = leaderboardClef === tab.id;
                   return (
