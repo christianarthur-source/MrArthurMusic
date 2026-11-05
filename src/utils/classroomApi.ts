@@ -852,8 +852,21 @@ function executeLocalFallback(payload: Record<string, any>): any {
 
   if (action === 'staff_wars_leaderboard') {
     const requestedLevel = Math.min(99, Math.max(1, parseInt(payload.level, 10) || 1));
+    const rawClef = String(payload.clef || '').trim().toLowerCase();
+    const validClefs = ['treble', 'bass', 'alto', 'tenor', 'grand'];
+    if (validClefs.includes(rawClef)) {
+      let clefList: any[] = [];
+      try {
+        const raw = localStorage.getItem(`staff_wars_leaderboard_clef_${rawClef}`);
+        if (raw) clefList = JSON.parse(raw);
+      } catch {}
+      const sorted = (Array.isArray(clefList) ? clefList : []).sort(
+        (a: any, b: any) => (Number(b.score) || 0) - (Number(a.score) || 0)
+      );
+      return { ok: true, level: requestedLevel, clef: rawClef, leaderboard: sorted.slice(0, 100) };
+    }
     const list = readUnifiedLocalStaffWars();
-    return { ok: true, level: requestedLevel, leaderboard: list.slice(0, 100) };
+    return { ok: true, level: requestedLevel, clef: 'all', leaderboard: list.slice(0, 100) };
   }
 
   if (action === 'staff_wars_submit_score') {
@@ -861,6 +874,9 @@ function executeLocalFallback(payload: Record<string, any>): any {
     const score = parseInt(payload.score, 10);
     const level = Math.min(99, Math.max(1, parseInt(payload.level, 10) || 1));
     const studentId = payload.studentId || null;
+    const rawClef = String(payload.clef || '').trim().toLowerCase();
+    const validClefs = ['treble', 'bass', 'alto', 'tenor', 'grand'];
+    const clef = validClefs.includes(rawClef) ? rawClef : null;
     const list = readUnifiedLocalStaffWars();
     const normName = normalizeStudentName(name);
     const existingIdx = list.findIndex(
@@ -875,6 +891,7 @@ function executeLocalFallback(payload: Record<string, any>): any {
       list[existingIdx].score = Math.max(prevScore, score);
       list[existingIdx].name = name;
       list[existingIdx].level = Math.max(prevLevel, level);
+      if (clef && score >= prevScore) list[existingIdx].clef = clef;
       if (studentId) list[existingIdx].studentId = studentId;
       list[existingIdx].updatedAt = now;
     } else {
@@ -884,6 +901,7 @@ function executeLocalFallback(payload: Record<string, any>): any {
         name,
         score,
         level,
+        ...(clef ? { clef } : {}),
         updatedAt: now,
       });
     }
@@ -891,7 +909,49 @@ function executeLocalFallback(payload: Record<string, any>): any {
     try {
       localStorage.setItem('staff_wars_leaderboard', JSON.stringify(list));
     } catch {}
-    return { ok: true, level, leaderboard: list.slice(0, 100) };
+
+    let clefTop: any[] | undefined;
+    if (clef) {
+      let clefList: any[] = [];
+      try {
+        const raw = localStorage.getItem(`staff_wars_leaderboard_clef_${clef}`);
+        if (raw) clefList = JSON.parse(raw);
+        if (!Array.isArray(clefList)) clefList = [];
+      } catch {
+        clefList = [];
+      }
+      const cIdx = clefList.findIndex(
+        (e: any) =>
+          (studentId && e.studentId === studentId) ||
+          ((!studentId || !e.studentId) && normalizeStudentName(String(e.name || '')) === normName)
+      );
+      if (cIdx >= 0) {
+        const prevScore = Number(clefList[cIdx].score) || 0;
+        const prevLevel = Math.max(1, parseInt(clefList[cIdx].level, 10) || 1);
+        clefList[cIdx].score = Math.max(prevScore, score);
+        clefList[cIdx].name = name;
+        clefList[cIdx].level = Math.max(prevLevel, level);
+        clefList[cIdx].clef = clef;
+        if (studentId) clefList[cIdx].studentId = studentId;
+        clefList[cIdx].updatedAt = now;
+      } else {
+        clefList.push({
+          id: 'sw_' + Math.random().toString(36).substring(2, 9),
+          studentId,
+          name,
+          score,
+          level,
+          clef,
+          updatedAt: now,
+        });
+      }
+      clefList.sort((a: any, b: any) => (Number(b.score) || 0) - (Number(a.score) || 0));
+      clefTop = clefList.slice(0, 100);
+      try {
+        localStorage.setItem(`staff_wars_leaderboard_clef_${clef}`, JSON.stringify(clefTop));
+      } catch {}
+    }
+    return { ok: true, level, clef: clef || 'all', leaderboard: list.slice(0, 100), ...(clefTop ? { clefLeaderboard: clefTop } : {}) };
   }
 
   // 18. RHYTHM ROCKSTARS LEADERBOARD (LOCAL FALLBACK)
@@ -1394,10 +1454,11 @@ export async function teacherAssignProject(params: {
   };
 }
 
-export async function fetchStaffWarsLeaderboard(level = 1): Promise<any[]> {
+export async function fetchStaffWarsLeaderboard(level = 1, clef = 'all'): Promise<any[]> {
   const res = await callClassroomBackend({
     action: 'staff_wars_leaderboard',
     level: Math.min(99, Math.max(1, level || 1)),
+    clef,
   });
   return res.leaderboard || [];
 }
@@ -1406,15 +1467,19 @@ export async function submitStaffWarsScore(params: {
   name: string;
   score: number;
   level: number;
+  clef?: string;
   studentId?: string;
   classGroup?: string;
-}): Promise<any[]> {
+}): Promise<{ leaderboard: any[]; clefLeaderboard?: any[] }> {
   const res = await callClassroomBackend({
     action: 'staff_wars_submit_score',
     ...params,
     level: Math.min(99, Math.max(1, params.level || 1)),
   });
-  return res.leaderboard || [];
+  return {
+    leaderboard: res.leaderboard || [],
+    ...(Array.isArray(res.clefLeaderboard) ? { clefLeaderboard: res.clefLeaderboard } : {}),
+  };
 }
 
 export async function fetchRhythmRockstarsLeaderboard(studentId?: string): Promise<{
