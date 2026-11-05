@@ -802,44 +802,79 @@ function executeLocalFallback(payload: Record<string, any>): any {
     };
   }
 
-  // 17. STAFF WARS LEADERBOARD (LOCAL FALLBACK)
+  // 17. STAFF WARS LEADERBOARD (LOCAL FALLBACK — UNIFIED ACROSS ALL LEVELS)
+  const readUnifiedLocalStaffWars = (): any[] => {
+    const keys = [
+      'staff_wars_leaderboard',
+      'staff_wars_leaderboard_level_1',
+      'staff_wars_leaderboard_level_2',
+      'staff_wars_leaderboard_level_3',
+      'staff_wars_leaderboard_level_4',
+      'staff_wars_leaderboard_level_5',
+    ];
+    const merged: any[] = [];
+    for (const k of keys) {
+      let arr: any[] = [];
+      try {
+        const raw = localStorage.getItem(k);
+        if (raw) arr = JSON.parse(raw);
+      } catch {}
+      if (!Array.isArray(arr)) continue;
+      for (const entry of arr) {
+        if (!entry || !entry.name) continue;
+        const entryScore = Number(entry.score) || 0;
+        const entryLevel = Math.max(1, parseInt(entry.level, 10) || 1);
+        const studentId = entry.studentId || null;
+        const normName = normalizeStudentName(String(entry.name || ''));
+        const idx = merged.findIndex(
+          (e: any) =>
+            (studentId && e.studentId === studentId) ||
+            ((!studentId || !e.studentId) && normName && normalizeStudentName(String(e.name || '')) === normName)
+        );
+        if (idx >= 0) {
+          const prev = merged[idx];
+          const prevScore = Number(prev.score) || 0;
+          const prevLevel = Math.max(1, parseInt(prev.level, 10) || 1);
+          merged[idx] = {
+            ...prev,
+            ...(entryScore >= prevScore ? entry : {}),
+            studentId: studentId || prev.studentId || null,
+            score: Math.max(prevScore, entryScore),
+            level: Math.max(prevLevel, entryLevel),
+          };
+        } else {
+          merged.push({ ...entry, studentId, score: entryScore, level: entryLevel });
+        }
+      }
+    }
+    return merged.sort((a: any, b: any) => (Number(b.score) || 0) - (Number(a.score) || 0));
+  };
+
   if (action === 'staff_wars_leaderboard') {
-    const requestedLevel = Math.min(5, Math.max(1, parseInt(payload.level, 10) || 1));
-    const key = `staff_wars_leaderboard_level_${requestedLevel}`;
-    let list: any[] = [];
-    try {
-      const raw = localStorage.getItem(key) || localStorage.getItem('staff_wars_leaderboard');
-      if (raw) list = JSON.parse(raw);
-    } catch {}
-    const filtered = (list || []).filter((e: any) => (parseInt(e.level, 10) || 1) === requestedLevel);
-    filtered.sort((a: any, b: any) => b.score - a.score);
-    return { ok: true, level: requestedLevel, leaderboard: filtered.slice(0, 50) };
+    const requestedLevel = Math.min(99, Math.max(1, parseInt(payload.level, 10) || 1));
+    const list = readUnifiedLocalStaffWars();
+    return { ok: true, level: requestedLevel, leaderboard: list.slice(0, 100) };
   }
 
   if (action === 'staff_wars_submit_score') {
     const name = String(payload.name || '').trim();
     const score = parseInt(payload.score, 10);
-    const level = Math.min(5, Math.max(1, parseInt(payload.level, 10) || 1));
+    const level = Math.min(99, Math.max(1, parseInt(payload.level, 10) || 1));
     const studentId = payload.studentId || null;
-    const key = `staff_wars_leaderboard_level_${level}`;
-    let list: any[] = [];
-    try {
-      const raw = localStorage.getItem(key);
-      if (raw) list = JSON.parse(raw);
-    } catch {}
+    const list = readUnifiedLocalStaffWars();
     const normName = normalizeStudentName(name);
     const existingIdx = list.findIndex(
       (e: any) =>
-        ((studentId && e.studentId === studentId) ||
-          ((!studentId || !e.studentId) && normalizeStudentName(String(e.name || '')) === normName)) &&
-        (parseInt(e.level, 10) || 1) === level
+        (studentId && e.studentId === studentId) ||
+        ((!studentId || !e.studentId) && normalizeStudentName(String(e.name || '')) === normName)
     );
     const now = new Date().toISOString();
     if (existingIdx >= 0) {
-      const best = Math.max(Number(list[existingIdx].score) || 0, score);
-      list[existingIdx].score = best;
+      const prevScore = Number(list[existingIdx].score) || 0;
+      const prevLevel = Math.max(1, parseInt(list[existingIdx].level, 10) || 1);
+      list[existingIdx].score = Math.max(prevScore, score);
       list[existingIdx].name = name;
-      list[existingIdx].level = level;
+      list[existingIdx].level = Math.max(prevLevel, level);
       if (studentId) list[existingIdx].studentId = studentId;
       list[existingIdx].updatedAt = now;
     } else {
@@ -852,11 +887,11 @@ function executeLocalFallback(payload: Record<string, any>): any {
         updatedAt: now,
       });
     }
-    list.sort((a: any, b: any) => b.score - a.score);
+    list.sort((a: any, b: any) => (Number(b.score) || 0) - (Number(a.score) || 0));
     try {
-      localStorage.setItem(key, JSON.stringify(list));
+      localStorage.setItem('staff_wars_leaderboard', JSON.stringify(list));
     } catch {}
-    return { ok: true, level, leaderboard: list.slice(0, 50) };
+    return { ok: true, level, leaderboard: list.slice(0, 100) };
   }
 
   // 18. RHYTHM ROCKSTARS LEADERBOARD (LOCAL FALLBACK)
@@ -1362,7 +1397,7 @@ export async function teacherAssignProject(params: {
 export async function fetchStaffWarsLeaderboard(level = 1): Promise<any[]> {
   const res = await callClassroomBackend({
     action: 'staff_wars_leaderboard',
-    level: Math.min(5, Math.max(1, level || 1)),
+    level: Math.min(99, Math.max(1, level || 1)),
   });
   return res.leaderboard || [];
 }
@@ -1377,7 +1412,7 @@ export async function submitStaffWarsScore(params: {
   const res = await callClassroomBackend({
     action: 'staff_wars_submit_score',
     ...params,
-    level: Math.min(5, Math.max(1, params.level || 1)),
+    level: Math.min(99, Math.max(1, params.level || 1)),
   });
   return res.leaderboard || [];
 }

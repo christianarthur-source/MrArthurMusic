@@ -694,44 +694,49 @@ async function runAction(payload: Record<string, any>, db: Db, env: ClassroomEnv
     return { ok: true, assignedCount: rows.length, projects: projects.map(projectOut) };
   }
 
-  // 18. STAFF WARS LEADERBOARD (public)
+  // 18. STAFF WARS LEADERBOARD (public, unified across all levels)
   if (action === 'staff_wars_leaderboard') {
-    const level = Math.min(5, Math.max(1, parseInt(payload.level, 10) || 1));
-    return { ok: true, level, leaderboard: await readLeaderboard(db, level) };
+    const level = Math.min(99, Math.max(1, parseInt(payload.level, 10) || 1));
+    return { ok: true, level, leaderboard: await readLeaderboard(db) };
   }
 
   if (action === 'staff_wars_submit_score') {
     const name = String(payload.name || '').trim().slice(0, 40);
     const score = parseInt(payload.score, 10);
-    const level = Math.min(5, Math.max(1, parseInt(payload.level, 10) || 1));
+    const level = Math.min(99, Math.max(1, parseInt(payload.level, 10) || 1));
     const studentId = payload.studentId ? String(payload.studentId) : null;
     if (!name || !Number.isFinite(score) || score < 0 || score > 10_000_000) throw new UserError('Invalid score.');
     if (containsProfanity(name)) throw new UserError('Please use a school-appropriate name.');
 
-    const list = await readLeaderboard(db, level);
+    const list = await readLeaderboard(db);
     const normName = normalizeStudentName(name);
     const idx = list.findIndex(
       (e: any) =>
-        ((studentId && e.studentId === studentId) ||
-          ((!studentId || !e.studentId) && normalizeStudentName(String(e.name || '')) === normName)) &&
-        (parseInt(e.level, 10) || 1) === level,
+        (studentId && e.studentId === studentId) ||
+        ((!studentId || !e.studentId) && normalizeStudentName(String(e.name || '')) === normName),
     );
     const now = new Date().toISOString();
     if (idx >= 0) {
-      const best = Math.max(Number(list[idx].score) || 0, score);
+      const prevScore = Number(list[idx].score) || 0;
+      const prevLevel = Math.max(1, parseInt(list[idx].level, 10) || 1);
+      const bestScore = Math.max(prevScore, score);
+      const bestLevel = score >= prevScore ? Math.max(prevLevel, level) : prevLevel;
       Object.assign(list[idx], {
-        score: best,
+        score: bestScore,
         name,
-        level,
+        level: bestLevel,
         ...(studentId ? { studentId } : {}),
         updatedAt: now,
       });
     } else {
       list.push({ id: randomId('sw', 7), studentId, name, score, level, updatedAt: now });
     }
-    list.sort((a: any, b: any) => b.score - a.score);
-    const top = list.slice(0, 50);
-    await db.upsert('classroom_config', [{ key: `staff_wars_leaderboard_level_${level}`, value: top }]);
+    list.sort((a: any, b: any) => (Number(b.score) || 0) - (Number(a.score) || 0) || (Number(b.level) || 1) - (Number(a.level) || 1));
+    const top = list.slice(0, 100);
+    await db.upsert('classroom_config', [
+      { key: 'staff_wars_leaderboard', value: top },
+      { key: 'staff_wars_leaderboard_level_1', value: top },
+    ]);
     return { ok: true, level, leaderboard: top };
   }
 
@@ -844,10 +849,54 @@ async function runAction(payload: Record<string, any>, db: Db, env: ClassroomEnv
   throw new UserError('Unknown classroom action: ' + action);
 }
 
-async function readLeaderboard(db: Db, level: number): Promise<any[]> {
-  const configs = (await db.fetch(`classroom_config?key=${eq(`staff_wars_leaderboard_level_${level}`)}`)) || [];
-  const list = configs[0] && Array.isArray(configs[0].value) ? [...configs[0].value] : [];
-  return list.sort((a: any, b: any) => b.score - a.score).slice(0, 50);
+async function readLeaderboard(db: Db): Promise<any[]> {
+  const configs = (await db.fetch('classroom_config?key=ilike.staff_wars_leaderboard*')) || [];
+  const merged: any[] = [];
+  for (const row of configs) {
+    if (!row || !Array.isArray(row.value)) continue;
+    const keyLevelMatch = String(row.key || '').match(/level_(\d+)/);
+    const fallbackLevel = keyLevelMatch ? Math.max(1, parseInt(keyLevelMatch[1], 10) || 1) : 1;
+    for (const entry of row.value) {
+      if (!entry || !entry.name) continue;
+      const entryScore = Number(entry.score) || 0;
+      const entryLevel = Math.max(1, parseInt(entry.level, 10) || fallbackLevel);
+      const studentId = entry.studentId ? String(entry.studentId) : null;
+      const normName = normalizeStudentName(String(entry.name || ''));
+      const idx = merged.findIndex(
+        (e: any) =>
+          (studentId && e.studentId === studentId) ||
+          ((!studentId || !e.studentId) && normName && normalizeStudentName(String(e.name || '')) === normName),
+      );
+      if (idx >= 0) {
+        const prev = merged[idx];
+        const prevScore = Number(prev.score) || 0;
+        const prevLevel = Math.max(1, parseInt(prev.level, 10) || 1);
+        merged[idx] = {
+          ...prev,
+          ...(entryScore >= prevScore ? entry : {}),
+          id: prev.id || entry.id,
+          studentId: studentId || prev.studentId || null,
+          name: entryScore >= prevScore ? entry.name : prev.name,
+          score: Math.max(prevScore, entryScore),
+          level: Math.max(prevLevel, entryLevel),
+          updatedAt:
+            entryScore >= prevScore
+              ? entry.updatedAt || prev.updatedAt
+              : prev.updatedAt || entry.updatedAt,
+        };
+      } else {
+        merged.push({
+          ...entry,
+          studentId,
+          score: entryScore,
+          level: entryLevel,
+        });
+      }
+    }
+  }
+  return merged
+    .sort((a: any, b: any) => (Number(b.score) || 0) - (Number(a.score) || 0) || (Number(b.level) || 1) - (Number(a.level) || 1))
+    .slice(0, 100);
 }
 
 async function readRhythmLeaderboard(db: Db): Promise<any[]> {
