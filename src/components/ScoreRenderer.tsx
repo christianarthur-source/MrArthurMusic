@@ -100,6 +100,8 @@ interface ScoreRendererProps {
   bigStaffMeasureIndex?: number;
   onBigStaffMeasureChange?: (measureIndex: number) => void;
   onBigStaffAddMeasure?: () => void;
+  /** Enlarges note labels and counting text (e.g. 1.8 for projecting examples). Defaults to 1. */
+  labelScale?: number;
 }
 
 interface BeamGroupNote {
@@ -359,8 +361,11 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
   bigStaffMeasureIndex = 0,
   onBigStaffMeasureChange,
   onBigStaffAddMeasure,
+  labelScale = 1,
 }) => {
   const isSimpleMode = uiMode === 'simple';
+  // Bigger labels sit a little further from the staff so they don't crowd it
+  const countingY = STAFF_HEIGHT + (showBeatCounters ? 46 : 30) + (labelScale - 1) * 10;
   // In Simple mode: always show Boomwhacker colors & note names.
   // In Standard & Advanced modes: regular black notes unless explicitly enabled in pedagogy bar.
   const effectiveBoomwhacker = isSimpleMode ? true : boomwhackerColors;
@@ -1676,8 +1681,8 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
                                     {countingText && (
                                       <text
                                         x={itemX}
-                                        y={trackTopY + STAFF_TOP_Y + STAFF_HEIGHT + (showBeatCounters ? 46 : 30)}
-                                        fontSize="11"
+                                        y={trackTopY + STAFF_TOP_Y + countingY}
+                                        fontSize={11 * labelScale}
                                         fontWeight="700"
                                         fill="#64748B"
                                         textAnchor="middle"
@@ -2016,10 +2021,10 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
                                         {/* Note Label (Letter, Solfege, or Scale Degree): dark slate text with subtle white halo */}
                                         {pitchLabelText && (
                                           <text
-                                            x={noteX + (isDrum ? 0 : item.isDotted ? 22 : 15)}
-                                            y={isDrum ? (isStemDown ? noteY - 12 : noteY + 18) : noteY + 4}
+                                            x={noteX + (isDrum ? 0 : (item.isDotted ? 22 : 15) + (labelScale - 1) * 3)}
+                                            y={isDrum ? (isStemDown ? noteY - 12 : noteY + 18) : noteY + 4 * labelScale}
                                             textAnchor={isDrum ? 'middle' : 'start'}
-                                            fontSize="12"
+                                            fontSize={12 * labelScale}
                                             fontWeight="800"
                                             fill={isSelected ? '#0369A1' : '#0F172A'}
                                             stroke="#FFFFFF"
@@ -2121,8 +2126,8 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
                                   {countingText && (
                                     <text
                                       x={itemX}
-                                      y={trackTopY + STAFF_TOP_Y + STAFF_HEIGHT + (showBeatCounters ? 46 : 30)}
-                                      fontSize="11"
+                                      y={trackTopY + STAFF_TOP_Y + countingY}
+                                      fontSize={11 * labelScale}
                                       fontWeight="700"
                                       fill="#0284C7"
                                       textAnchor="middle"

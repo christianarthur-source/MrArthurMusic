@@ -1,0 +1,312 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --brand-50: #f0f7ff;
+    --brand-100: #e0effe;
+    --brand-200: #bae0fd;
+    --brand-300: #7cc5fb;
+    --brand-400: #36a4f6;
+    --brand-500: #0c87eb;
+    --brand-600: #006bc9;
+    --brand-700: #0155a3;
+    --brand-800: #064986;
+    --brand-900: #0b3d6f;
+
+    /* Tailwind stone 700–950, as "r g b" so opacity modifiers keep working */
+    --stone-700: 68 64 60;
+    --stone-800: 41 37 36;
+    --stone-900: 28 25 23;
+    --stone-950: 12 10 9;
+  }
+
+  /* Dark mode is built on the navy of the logo tile (#13171d) instead of warm black. */
+  .dark {
+    --stone-700: 51 60 74;
+    --stone-800: 36 43 54;
+    --stone-900: 27 33 42;
+    --stone-950: 19 23 29;
+  }
+
+  /* The Daily Planner notebook keeps its original charcoal frame and ink in dark mode. */
+  .dark .planner-notebook {
+    --stone-700: 68 64 60;
+    --stone-800: 41 37 36;
+    --stone-900: 28 25 23;
+    --stone-950: 12 10 9;
+  }
+
+  body {
+    @apply antialiased text-stone-900 bg-stone-50 dark:bg-stone-950 dark:text-stone-100;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+}
+
+/* Custom modern scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.4);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.7);
+}
+
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Safe area padding for mobile iPhones/iPads */
+.safe-bottom {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+}
+
+@media print {
+  aside, header, nav, .floating-timer, .no-print {
+    display: none !important;
+  }
+  body, main {
+    background: white !important;
+    color: black !important;
+    padding: 0 !important;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Daily Planner: notebook paper, rich text and page turns
+   Pages stay light paper in dark mode too. Text sits on a 28px rhythm to match the ruled paper.
+--------------------------------------------------------------------------- */
+.planner-page {
+  --planner-paper: #fbf7ee;
+  --planner-line: rgba(120, 104, 80, 0.16);
+  --planner-ink: #292524;
+  background-color: var(--planner-paper);
+  color: var(--planner-ink);
+}
+.planner-paper-lined {
+  background-image: linear-gradient(to bottom, transparent 27px, var(--planner-line) 27px);
+  background-size: 100% 28px;
+}
+.planner-paper-dotted {
+  background-image: radial-gradient(circle, var(--planner-line) 1.2px, transparent 1.4px);
+  background-size: 28px 28px;
+  background-position: -14px -14px;
+}
+.planner-paper-grid {
+  background-image:
+    linear-gradient(to bottom, transparent 27px, var(--planner-line) 27px),
+    linear-gradient(to right, transparent 27px, var(--planner-line) 27px);
+  background-size: 28px 28px;
+}
+
+.planner-rich {
+  line-height: 28px;
+  font-size: 15px;
+  word-break: break-word;
+}
+.planner-rich p,
+.planner-rich div {
+  margin: 0;
+}
+.planner-rich h2,
+.planner-rich h3 {
+  font-family: 'Newsreader', Georgia, serif;
+  font-weight: 600;
+  font-size: 1.2rem;
+  line-height: 28px;
+  margin: 0;
+}
+.planner-rich ul,
+.planner-rich ol {
+  margin: 0;
+  padding-left: 1.5rem;
+}
+.planner-rich ul {
+  list-style: disc;
+}
+.planner-rich ol {
+  list-style: decimal;
+}
+.planner-rich a {
+  color: #1d4ed8;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.planner-rich blockquote {
+  border-left: 3px solid var(--planner-line);
+  padding-left: 0.75rem;
+  margin: 0;
+}
+.planner-rich ul.planner-checklist {
+  list-style: none;
+  padding-left: 0;
+}
+.planner-rich ul.planner-checklist > li {
+  position: relative;
+  padding-left: 1.75rem;
+}
+.planner-rich ul.planner-checklist > li::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 6px;
+  width: 16px;
+  height: 16px;
+  border: 1.5px solid #a8a29e;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+}
+.planner-rich ul.planner-checklist > li[data-checked='true'] {
+  color: #a8a29e;
+  text-decoration: line-through;
+}
+.planner-rich ul.planner-checklist > li[data-checked='true']::before {
+  background: #0c87eb;
+  border-color: #0c87eb;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='white' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 8.5l2.5 2.5L12 5.5'/%3E%3C/svg%3E");
+}
+
+/* Page turns: the new page fades in underneath while a sheet of paper flips over the spine. */
+@keyframes planner-turn-in {
+  from {
+    opacity: 0.35;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.planner-turn-next,
+.planner-turn-prev {
+  animation: planner-turn-in 0.45s ease-out;
+}
+
+.planner-flip {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 20;
+  pointer-events: none;
+  transform-style: preserve-3d;
+  animation-duration: 0.6s;
+  animation-timing-function: cubic-bezier(0.45, 0.05, 0.35, 1);
+  animation-fill-mode: forwards;
+}
+.planner-flip > .planner-page {
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.18);
+  background-image: linear-gradient(to right, rgba(0, 0, 0, 0.08), transparent 18%, transparent 82%, rgba(0, 0, 0, 0.06));
+}
+/* Turning forward: the right-hand page lifts from the spine and lands on the left. */
+.planner-flip-next {
+  left: 50%;
+  width: 50%;
+  transform-origin: left center;
+  animation-name: planner-flip-next;
+}
+/* Turning back: the left-hand page lifts and lands on the right. */
+.planner-flip-prev {
+  left: 0;
+  width: 50%;
+  transform-origin: right center;
+  animation-name: planner-flip-prev;
+}
+/* One page at a time (phones, and the month grid): the whole page turns from its left edge. */
+@media (max-width: 1023px) {
+  .planner-flip-next,
+  .planner-flip-prev {
+    left: 0;
+    width: 100%;
+    transform-origin: left center;
+  }
+  .planner-flip-prev {
+    animation-name: planner-flip-next;
+    animation-direction: reverse;
+  }
+}
+.planner-flip-single.planner-flip-next,
+.planner-flip-single.planner-flip-prev {
+  left: 0;
+  width: 100%;
+  transform-origin: left center;
+}
+@keyframes planner-flip-next {
+  0% {
+    transform: rotateY(0deg);
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    transform: rotateY(-180deg);
+    opacity: 0;
+  }
+}
+@keyframes planner-flip-prev {
+  0% {
+    transform: rotateY(0deg);
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    transform: rotateY(180deg);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .planner-turn-next,
+  .planner-turn-prev {
+    animation: none;
+  }
+  .planner-flip {
+    display: none;
+  }
+}
+
+/* Checklist items moved to a later day (paper planner "migrate" arrow) */
+.planner-rich ul.planner-checklist > li[data-checked='moved'] {
+  color: #a8a29e;
+}
+.planner-rich ul.planner-checklist > li[data-checked='moved']::before {
+  content: '→';
+  border: none;
+  color: #d97706;
+  font-weight: 700;
+  top: 0;
+  line-height: 28px;
+}
+
+/* ---------------------------------------------------------------------------
+   Slides: printing a deck (one slide per landscape page; see SlidesView PrintDeck)
+--------------------------------------------------------------------------- */
+.slides-print-root {
+  display: none;
+}
+@media print {
+  body.printing-slides #root {
+    display: none !important;
+  }
+  body.printing-slides .slides-print-root {
+    display: block;
+  }
+  .slides-print-root .print-slide {
+    break-after: page;
+    page-break-after: always;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

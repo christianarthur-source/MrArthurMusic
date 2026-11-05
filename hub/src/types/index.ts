@@ -1,0 +1,475 @@
+// Core Type Definitions for Music Teacher Command Center
+
+export type GradeLevel = 'K' | '1' | '2' | '3' | '4' | '5' | '6' | 'Chorus' | 'All';
+
+export interface UserPreferences {
+  appName: string;
+  teacherName: string;
+  schoolName: string;
+  roomNumber: string;
+  darkMode: boolean;
+  accentColor: string; // 'blue' | 'amber' | 'emerald' | 'rose' | 'purple'
+  defaultClassDuration: number; // in minutes, e.g. 35, 40, 45
+  metronomeSound: 'woodblock' | 'beep' | 'drum' | 'cowbell';
+  tunerRefA4: number; // default 440
+  googleDriveClientId?: string;
+  googleCalendarConnected: boolean;
+  aiApiKey?: string;
+  aiProvider?: 'builtin' | 'free' | 'claude' | 'gemini';
+  claudeApiKey?: string;
+  geminiApiKey?: string;
+  pinnedNavigation: string[];
+}
+
+export type TaskListType = 'inbox' | 'today' | 'upcoming' | 'anytime' | 'someday' | 'logbook';
+
+export interface Subtask {
+  id: string;
+  title: string;
+  completed: boolean;
+}
+
+export interface TaskItem {
+  id: string;
+  title: string;
+  notes?: string;
+  completed: boolean;
+  completedAt?: string;
+  createdAt: string;
+  dueDate?: string; // YYYY-MM-DD
+  startDate?: string;
+  priority: 'none' | 'low' | 'medium' | 'high';
+  tags: string[];
+  areaId?: string;
+  projectId?: string;
+  listType: TaskListType;
+  subtasks: Subtask[];
+  linkedEntityId?: string; // e.g. lesson or chorus song
+  linkedEntityType?: 'lesson' | 'chorus' | 'event';
+}
+
+export interface Area {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+}
+
+export interface Project {
+  id: string;
+  title: string;
+  areaId: string;
+  notes?: string;
+  deadline?: string;
+  completed: boolean;
+  color: string;
+}
+
+export interface ActivityStep {
+  id: string;
+  title: string;
+  durationMinutes: number;
+  description: string;
+  materials?: string[];
+  musicalConcept?: string; // e.g. 'Beat', 'Rhythm', 'Pitch', 'Form', 'Movement', 'Singing'
+  notes?: string;
+}
+
+export interface LessonPlan {
+  id: string;
+  title: string;
+  grade: GradeLevel;
+  unit: string;
+  durationMinutes: number;
+  overview: string;
+  objectives: string[];
+  musicalConcepts: string[];
+  standards: string[]; // NYS Arts standards codes e.g. 'MU:Cr1.1.4a'
+  materialsNeeded: string[];
+  activities: ActivityStep[];
+  assessmentStrategy: string;
+  differentiationNotes?: string;
+  teacherReflection?: string;
+  driveLinks?: string[];
+  createdAt: string;
+  updatedAt: string;
+  favorite?: boolean;
+  displayImage?: LessonImage; // a picture to project with the lesson (AI, photo library or upload)
+}
+
+export interface LessonImage {
+  src: string;
+  alt?: string;
+  credit?: string;
+  creditUrl?: string;
+  remote?: boolean; // shown from the library's own address (Unsplash requires this) instead of a saved copy
+}
+
+export interface ClassSection {
+  id: string;
+  name: string; // e.g. '1-Smith', '4-Rodriguez'
+  grade: GradeLevel;
+  room: string;
+  meetingDayTime: string; // e.g. 'Day 2, Period 3 (10:15 - 10:55)'
+  lastLessonDeliveredId?: string;
+  lastDeliveredDate?: string;
+  completedActivitiesCount?: number;
+  notesForNextTime?: string;
+  studentCount: number;
+}
+
+export interface CalendarEvent {
+  id: string;
+  title: string;
+  description?: string;
+  startDate: string; // ISO date string or YYYY-MM-DDTHH:mm
+  endDate: string;
+  allDay?: boolean;
+  category: 'class' | 'chorus' | 'concert' | 'assembly' | 'meeting' | 'duty' | 'pd' | 'rehearsal';
+  location?: string;
+  grade?: GradeLevel;
+  color?: string;
+  source: 'local' | 'imported_ics' | 'google' | 'subscription';
+  sourceId?: string;
+  calendarName?: string;
+}
+
+export interface CalendarSubscription {
+  id: string;
+  name: string;
+  description?: string;
+  color: string;
+  sourceType: 'local' | 'ics_url' | 'ics_file' | 'google' | 'apple';
+  url?: string;
+  enabled: boolean;
+  eventCount?: number;
+  lastSynced?: string;
+  isBuiltIn?: boolean;
+}
+
+export interface ChorusSong {
+  id: string;
+  title: string;
+  composer: string;
+  arranger?: string;
+  voicing: ChorusVoicing;
+  key: string;
+  tempoBpm: number;
+  durationString: string; // e.g. '3:20'
+  status: 'considering' | 'learning' | 'refining' | 'polished' | 'performed';
+  notes: string;
+  targetConcert?: string; // e.g. 'Winter Concert 2026'
+  part1Notes?: string;
+  part2Notes?: string;
+  audioTrackUrl?: string;
+  sheetMusicDriveUrl?: string;
+  rehearsalHistory: {
+    date: string;
+    focusMeasures: string;
+    notes: string;
+  }[];
+  copies?: number; // octavos on the shelf
+  difficulty?: number; // 1 (easy) to 5 (hard)
+  referenceUrl?: string; // a performance recording / video
+  parts?: PartTrack[]; // practice tracks for each voice part
+  updatedAt?: string;
+}
+
+export type ChorusVoicing = 'Unison' | '2-Part' | '3-Part' | 'SA' | 'SSA' | 'SAB' | 'SATB' | 'TB';
+
+/** A practice track for one voice part: a web link (audio file, Drive, YouTube) or a file kept on one device. */
+export interface PartTrack {
+  id: string;
+  name: string; // e.g. 'Part 1', 'Alto', 'Full mix', 'Accompaniment'
+  url?: string;
+  localId?: string; // Audio Studio library id (this device only)
+}
+
+export interface ConcertProgram {
+  id: string;
+  title: string;
+  date: string;
+  time: string;
+  location: string;
+  notes: string;
+  repertoireIds: string[];
+  orderOfProgram: {
+    songId?: string;
+    customTitle?: string;
+    ensemble: string; // e.g. '6th Grade Chorus', '5th Grade Select', 'Combined Finale'
+    notes?: string;
+    durationMinutes: number;
+  }[];
+}
+
+export interface SeatStudent {
+  id: string;
+  name: string; // First name or Initials (privacy-friendly)
+  seatNumber: number;
+  voicePart?: 'Part 1' | 'Part 2' | 'Soprano' | 'Alto';
+  notes?: string;
+  tags?: string[]; // e.g. 'needs front', 'strong leader', 'recorder helper'
+}
+
+export interface SeatingChart {
+  id: string;
+  title: string;
+  classSectionId?: string;
+  grade: GradeLevel;
+  layoutType: 'semicircle' | 'rows' | 'risers' | 'tables' | 'horseshoe';
+  rowsCount: number;
+  seatsPerRow: number;
+  teacherDeskPosition: 'front-center' | 'front-left' | 'front-right';
+  pianoPosition: 'left' | 'right' | 'none';
+  instrumentCartPosition: 'back' | 'front-left' | 'front-right';
+  students: {
+    row: number;
+    col: number;
+    student: SeatStudent;
+  }[];
+  createdAt: string;
+}
+
+export interface JournalEntry {
+  id: string;
+  date: string; // YYYY-MM-DD
+  title: string;
+  content: string;
+  tags: string[];
+  mood: 'great' | 'good' | 'neutral' | 'challenging' | 'exhausting';
+  energyLevel: 1 | 2 | 3 | 4 | 5;
+  weather?: 'sunny' | 'cloudy' | 'rainy' | 'snowy' | 'indoor_recess';
+  location?: string;
+  gradeLevel?: GradeLevel;
+  photoUrl?: string; // base64 or object URL for photo attachment
+  starred?: boolean;
+  templateType?: 'daily_reflection' | 'what_worked' | 'reuse_next_year' | 'chorus_notes' | 'concert_debrief' | 'sub_plan';
+  pinned?: boolean;
+}
+
+export interface ResourceLink {
+  id: string;
+  title: string;
+  url: string;
+  description?: string;
+  category: 'drive' | 'youtube' | 'game' | 'theory' | 'sheet_music' | 'listening' | 'movement';
+  grade: GradeLevel;
+  tags: string[];
+  isGoogleDrive: boolean;
+  driveType?: 'doc' | 'sheet' | 'slide' | 'folder' | 'pdf';
+  isFavorite: boolean;
+  lastUsed?: string;
+  thumbnailUrl?: string;
+}
+
+export interface InstrumentItem {
+  id: string;
+  name: string; // e.g. 'Soprano Xylophone (Studio 49)', 'Baritone Ukulele #3'
+  category: InstrumentCategory;
+  location: string; // e.g. 'Music cart', 'Closet B'
+  quantity: number;
+  condition: 'excellent' | 'good' | 'needs_tuning' | 'repair_needed';
+  notes?: string;
+  assetTag?: string; // serial number or school asset tag
+  image?: string; // photo (data URL or library address)
+  checkouts?: InstrumentCheckout[];
+  updatedAt?: string;
+}
+
+export type InstrumentCategory =
+  | 'orff_barred'
+  | 'ukulele'
+  | 'recorder'
+  | 'unpitched_percussion'
+  | 'boomwhackers'
+  | 'electronic'
+  | 'guitar'
+  | 'keyboard'
+  | 'drums'
+  | 'strings'
+  | 'winds'
+  | 'accessory'
+  | 'other';
+
+export interface InstrumentCheckout {
+  id: string;
+  who: string; // student or class
+  out: string; // YYYY-MM-DD
+  due?: string; // YYYY-MM-DD
+  returned?: string; // YYYY-MM-DD
+  quantity?: number;
+}
+
+export interface AudioPracticeTrack {
+  id: string;
+  title: string;
+  fileName: string;
+  artist?: string;
+  blobUrl?: string;
+  duration: number;
+  markers: {
+    id: string;
+    time: number;
+    label: string;
+    notes?: string;
+  }[];
+  loopA?: number;
+  loopB?: number;
+  playbackSpeed: number; // 0.5 to 1.5
+  pitchShiftSemitones: number; // -12 to +12
+  isBuiltin?: boolean;
+}
+
+export interface SongMakerPattern {
+  id: string;
+  title: string;
+  tempo: number;
+  steps: number; // 16
+  melodyInstrument: 'xylophone' | 'piano' | 'synth' | 'marimba';
+  drumInstrument: 'acoustic' | 'electronic' | 'orff';
+  melodyPitches: string[]; // ['C5', 'B4', 'A4', 'G4', 'F4', 'E4', 'D4', 'C4']
+  melodyGrid: boolean[][]; // [pitchIndex][stepIndex]
+  drumGrid: boolean[][]; // [0=Kick, 1=Snare/Woodblock, 2=HiHat/Triangle][stepIndex]
+}
+
+export interface BeatPattern {
+  id: string;
+  title: string;
+  tempo: number;
+  timeSignature: '4/4' | '3/4' | '6/8';
+  steps: number; // 16
+  tracks: {
+    name: string;
+    sound: string;
+    volume: number;
+    muted: boolean;
+    solo: boolean;
+    grid: boolean[];
+  }[];
+  category: 'educational' | 'groove' | 'world' | 'custom';
+}
+
+// Daily Planner (one page per date; stored per month, see storage.ts)
+export interface PlannerAttachment {
+  id: string;
+  kind: 'image' | 'link';
+  url: string; // image: compressed data URL; link: http(s) address
+  title?: string;
+  addedAt: string;
+}
+
+export interface PlannerPage {
+  date: string; // YYYY-MM-DD
+  html: string; // the day's rich-text note
+  attachments: PlannerAttachment[];
+  updatedAt: string;
+  carryHandled?: boolean; // unfinished items from an earlier page were brought over or dismissed
+  reflectionId?: string; // Daily Journal entry holding this day's end-of-day reflection
+}
+
+/** Per rotation class, per date: the lesson taught and a "where we left off" note. */
+export interface ClassLogEntry {
+  date: string; // YYYY-MM-DD
+  lessonId?: string;
+  note?: string;
+}
+
+export type PlannerPaper = 'lined' | 'dotted' | 'grid' | 'plain';
+
+export interface PlannerSettings {
+  paper: PlannerPaper;
+  view: 'day' | 'week' | 'month';
+  showPermanent: boolean;
+}
+
+export interface PlannerPermanentNote {
+  html: string;
+  updatedAt: string;
+}
+
+// Class rotation (a cycle of school days, e.g. Day 1–6, each with its own class list)
+export interface RotationClass {
+  id: string;
+  start: string; // HH:mm
+  end?: string; // HH:mm
+  name: string; // e.g. "Kent – Grade 2"
+  grade?: GradeLevel;
+  room?: string;
+}
+
+export interface RotationSettings {
+  cycleLength: number; // number of days in the cycle
+  anchorDate: string; // YYYY-MM-DD, a school day whose cycle day is known…
+  anchorDay: number; // …and which day it is (1-based)
+  schoolDays: number[]; // JS weekday numbers that are school days (1 = Monday … 5 = Friday)
+  noSchoolDates: string[]; // YYYY-MM-DD days off (snow days, holidays); the cycle doesn't advance
+  days: RotationClass[][]; // classes for Day 1, Day 2, …
+}
+
+// Slide decks (each stored under its own key, see storage.ts)
+export type SlideLayout =
+  | 'title'
+  | 'bullets'
+  | 'image-right'
+  | 'image-full'
+  | 'big-idea'
+  // interactive slides (live in the presenter)
+  | 'video'
+  | 'audio'
+  | 'timer'
+  | 'picker';
+export type PictureKind = 'photo' | 'illustration' | 'none';
+export type PictureStyle = 'storybook' | 'cartoon' | 'flat' | 'realistic';
+
+/** What a deck was asked to be (kept so slides can be rewritten in the same spirit). */
+export interface DeckBrief {
+  description: string;
+  grade?: string;
+  slideCount: number;
+  tone: string;
+  pictureStyle: PictureStyle;
+  pictureSource: 'auto' | 'ai' | 'photos' | 'none';
+  mustInclude?: string;
+  sourceText?: string;
+  lessonId?: string;
+}
+export type SlideTheme = 'navy' | 'chalkboard' | 'sunny' | 'paper' | 'concert';
+
+export interface Slide {
+  id: string;
+  layout: SlideLayout;
+  title: string;
+  subtitle?: string;
+  bullets: string[];
+  notes?: string; // speaker notes, not shown to the class
+  image?: LessonImage;
+  imageIdea?: string; // what picture would suit this slide (used to fetch or draw one)
+  pictureKind?: PictureKind; // a real photo (real things) or an illustration (ideas, scenes)
+  subject?: string; // the named thing pictured, e.g. "Bassoon" (looked up on Wikipedia)
+  video?: { youtubeId: string; title: string };
+  audio?: { trackId: string; title: string }; // a track saved in this device's Audio Studio
+  timerMinutes?: number;
+  pickerListId?: string; // a Name Picker list on this device
+}
+
+export interface SlideDeck {
+  id: string; // lowercase letters and digits (part of its storage key)
+  title: string;
+  theme: SlideTheme;
+  lessonId?: string;
+  brief?: DeckBrief;
+  sources?: { title: string; url: string }[]; // Wikipedia pages the AI wrote from
+  slides: Slide[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SlideDeckSummary {
+  id: string;
+  title: string;
+  theme: SlideTheme;
+  lessonId?: string;
+  slideCount: number;
+  cover?: string; // first picture in the deck, for the deck list
+  updatedAt: string;
+}
