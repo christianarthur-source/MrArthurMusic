@@ -44,6 +44,8 @@ function loadDb() {
     classrooms: [...defaultClassrooms],
     students: [],
     projects: [],
+    staffWarsLeaderboard: [],
+    rhythmRockstarsLeaderboard: [],
   };
   if (!fs.existsSync(DB_PATH)) {
     fs.writeFileSync(DB_PATH, JSON.stringify(defaultDb, null, 2), 'utf-8');
@@ -58,6 +60,8 @@ function loadDb() {
       classrooms: Array.isArray(parsed.classrooms) && parsed.classrooms.length > 0 ? parsed.classrooms : [...defaultClassrooms],
       students: Array.isArray(parsed.students) ? parsed.students : [],
       projects: Array.isArray(parsed.projects) ? parsed.projects : [],
+      staffWarsLeaderboard: Array.isArray(parsed.staffWarsLeaderboard) ? parsed.staffWarsLeaderboard : [],
+      rhythmRockstarsLeaderboard: Array.isArray(parsed.rhythmRockstarsLeaderboard) ? parsed.rhythmRockstarsLeaderboard : [],
     };
   } catch {
     return defaultDb;
@@ -245,7 +249,7 @@ const server = http.createServer((req, res) => {
       }
 
       if (action === 'staff_wars_leaderboard') {
-        const requestedLevel = parseInt(body.level || (req.url && new URL(req.url, 'http://localhost').searchParams.get('level')), 10) || 1;
+        const requestedLevel = Math.min(5, Math.max(1, parseInt(body.level || (req.url && new URL(req.url, 'http://localhost').searchParams.get('level')), 10) || 1));
         const allList = (db.staffWarsLeaderboard || []).filter(
           (e) => (parseInt(e.level, 10) || 1) === requestedLevel
         );
@@ -256,23 +260,24 @@ const server = http.createServer((req, res) => {
       if (action === 'staff_wars_submit_score') {
         const name = String(body.name || '').trim();
         const score = parseInt(body.score, 10);
-        const level = parseInt(body.level, 10) || 1;
+        const level = Math.min(5, Math.max(1, parseInt(body.level, 10) || 1));
         const studentId = body.studentId || null;
-        if (!name || isNaN(score) || score <= 0) {
+        if (!name || isNaN(score) || score < 0) {
           return send(400, { ok: false, error: 'Invalid name or score' });
         }
         if (!db.staffWarsLeaderboard) db.staffWarsLeaderboard = [];
+        const normName = normalizeStudentName(name);
         const existingIdx = db.staffWarsLeaderboard.findIndex(
-          (e) => ((studentId && e.studentId === studentId) || (!studentId && e.name.toLowerCase() === name.toLowerCase())) &&
+          (e) => ((studentId && e.studentId === studentId) || ((!studentId || !e.studentId) && normalizeStudentName(e.name) === normName)) &&
                  ((parseInt(e.level, 10) || 1) === level)
         );
         if (existingIdx >= 0) {
-          if (score > db.staffWarsLeaderboard[existingIdx].score) {
-            db.staffWarsLeaderboard[existingIdx].score = score;
-            db.staffWarsLeaderboard[existingIdx].name = name;
-            db.staffWarsLeaderboard[existingIdx].level = level;
-            db.staffWarsLeaderboard[existingIdx].updatedAt = new Date().toISOString();
-          }
+          const best = Math.max(Number(db.staffWarsLeaderboard[existingIdx].score) || 0, score);
+          db.staffWarsLeaderboard[existingIdx].score = best;
+          db.staffWarsLeaderboard[existingIdx].name = name;
+          db.staffWarsLeaderboard[existingIdx].level = level;
+          if (studentId) db.staffWarsLeaderboard[existingIdx].studentId = studentId;
+          db.staffWarsLeaderboard[existingIdx].updatedAt = new Date().toISOString();
         } else {
           db.staffWarsLeaderboard.push({
             id: 'sw_' + Math.random().toString(36).substring(2, 9),
@@ -287,6 +292,99 @@ const server = http.createServer((req, res) => {
         saveDb(db);
         const filtered = db.staffWarsLeaderboard.filter((e) => (parseInt(e.level, 10) || 1) === level);
         return send(200, { ok: true, level, leaderboard: filtered.slice(0, 50) });
+      }
+
+      if (action === 'rhythm_rockstars_leaderboard') {
+        const list = (db.rhythmRockstarsLeaderboard || [])
+          .sort((a, b) => (Number(b.totalScore) || 0) - (Number(a.totalScore) || 0))
+          .slice(0, 150)
+          .map((item, idx) => ({ ...item, rank: idx + 1 }));
+        const studentId = body.studentId ? String(body.studentId).trim() : '';
+        const student = studentId ? list.find((e) => e.id === studentId) || null : null;
+        return send(200, { ok: true, leaderboard: list, student });
+      }
+
+      if (action === 'rhythm_rockstars_submit_score') {
+        if (!db.rhythmRockstarsLeaderboard) db.rhythmRockstarsLeaderboard = [];
+        const studentId = String(body.studentId || '').trim();
+        const rawName = String(body.name || '').trim();
+        const name = rawName ? formatStudentDisplayName(rawName) : 'Rockstar';
+        const pointsEarned = Math.max(0, parseInt(body.pointsEarned, 10) || 0);
+        const reportedTotal = Math.max(0, parseInt(body.totalScore, 10) || 0);
+        const streak = Math.max(0, parseInt(body.streak, 10) || 0);
+        const reportedHighestStreak = Math.max(0, parseInt(body.highestStreak, 10) || 0);
+        const level = Math.max(1, parseInt(body.level, 10) || 1);
+        const stars = Math.max(0, Math.min(3, parseInt(body.stars, 10) || 0));
+        const accuracy = Math.max(0, Math.min(100, parseInt(body.accuracy, 10) || 0));
+
+        const normName = normalizeStudentName(name);
+        const idx = db.rhythmRockstarsLeaderboard.findIndex(
+          (e) =>
+            (studentId && e.id === studentId) ||
+            ((!studentId || !e.id) && normName && normalizeStudentName(e.name) === normName)
+        );
+        const existing = idx >= 0 ? db.rhythmRockstarsLeaderboard[idx] : null;
+        const mergedProgress = {
+          ...(existing?.levelProgress && typeof existing.levelProgress === 'object' ? existing.levelProgress : {}),
+        };
+        if (body.levelProgress && typeof body.levelProgress === 'object') {
+          for (const [k, v] of Object.entries(body.levelProgress)) {
+            const lvlNum = parseInt(k, 10);
+            if (!Number.isFinite(lvlNum) || lvlNum < 1) continue;
+            const prev = mergedProgress[lvlNum] || { stars: 0, highAccuracy: 0 };
+            mergedProgress[lvlNum] = {
+              stars: Math.max(prev.stars || 0, Math.min(3, parseInt(v?.stars, 10) || 0)),
+              highAccuracy: Math.max(prev.highAccuracy || 0, Math.min(100, parseInt(v?.highAccuracy, 10) || 0)),
+            };
+          }
+        }
+        if (body.level !== undefined && (stars > 0 || accuracy > 0 || !mergedProgress[level])) {
+          const prev = mergedProgress[level] || { stars: 0, highAccuracy: 0 };
+          mergedProgress[level] = {
+            stars: Math.max(prev.stars || 0, stars),
+            highAccuracy: Math.max(prev.highAccuracy || 0, accuracy),
+          };
+        }
+        const badgeSet = new Set([
+          ...(Array.isArray(existing?.badges) ? existing.badges.map(String) : ['rockstar_rookie']),
+          ...(Array.isArray(body.badges) ? body.badges.map(String) : []),
+          ...(Array.isArray(body.newBadges) ? body.newBadges.map(String) : []),
+        ]);
+        const badges = Array.from(badgeSet);
+        const baseScore = Number(existing?.totalScore) || 0;
+        const totalScore = Math.max(baseScore + pointsEarned, reportedTotal);
+        const highestStreak = Math.max(Number(existing?.highestStreak) || 0, streak, reportedHighestStreak);
+        const incrementedQuizzes = (Number(existing?.quizzesCompleted) || 0) + (pointsEarned > 0 ? 1 : 0);
+        const quizzesCompleted = Math.max(incrementedQuizzes, parseInt(body.quizzesCompleted, 10) || 0);
+        const progressLevels = Object.keys(mergedProgress)
+          .map((k) => parseInt(k, 10))
+          .filter((n) => Number.isFinite(n) && n >= 1);
+        const highestLevel = Math.max(1, Number(existing?.highestLevel) || 1, level, ...progressLevels);
+        const starsCount = Object.values(mergedProgress).reduce((sum, p) => sum + (Number(p?.stars) || 0), 0);
+
+        const updatedRecord = {
+          id: studentId || existing?.id || makeId('rr'),
+          name,
+          avatar: body.avatar || existing?.avatar || '🎸',
+          classCode: body.classCode || existing?.classCode || 'Classroom',
+          totalScore,
+          highestLevel,
+          highestStreak,
+          quizzesCompleted,
+          levelProgress: mergedProgress,
+          badges,
+          badgesCount: badges.length,
+          starsCount,
+          updatedAt: new Date().toISOString(),
+        };
+        if (idx >= 0) db.rhythmRockstarsLeaderboard[idx] = updatedRecord;
+        else db.rhythmRockstarsLeaderboard.push(updatedRecord);
+        db.rhythmRockstarsLeaderboard.sort((a, b) => (Number(b.totalScore) || 0) - (Number(a.totalScore) || 0));
+        const top = db.rhythmRockstarsLeaderboard.slice(0, 150).map((item, i) => ({ ...item, rank: i + 1 }));
+        db.rhythmRockstarsLeaderboard = top;
+        saveDb(db);
+        const savedStudent = top.find((e) => e.id === updatedRecord.id) || { ...updatedRecord, rank: top.length + 1 };
+        return send(200, { ok: true, student: savedStudent, leaderboard: top });
       }
 
       if (action === 'save_project') {
