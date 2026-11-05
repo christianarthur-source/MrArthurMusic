@@ -93,34 +93,13 @@ export interface StaffWarsLeaderboardEntry {
   updatedAt?: string;
 }
 
-const DEFAULT_LEADERBOARDS_BY_LEVEL: Record<number, StaffWarsLeaderboardEntry[]> = {
-  1: [
-    { id: 'def_1_1', name: 'Cadet Luke', score: 1250, level: 1 },
-    { id: 'def_1_2', name: 'Cadet Leia', score: 980, level: 1 },
-    { id: 'def_1_3', name: 'Cadet Han', score: 820, level: 1 },
-    { id: 'def_1_4', name: 'Cadet Chewie', score: 650, level: 1 },
-    { id: 'def_1_5', name: 'Cadet Ahsoka', score: 500, level: 1 },
-  ],
-  2: [
-    { id: 'def_2_1', name: 'Pilot Wedge', score: 1450, level: 2 },
-    { id: 'def_2_2', name: 'Cadet Luke', score: 1180, level: 2 },
-    { id: 'def_2_3', name: 'Cadet Leia', score: 920, level: 2 },
-    { id: 'def_2_4', name: 'Cadet Han', score: 780, level: 2 },
-  ],
-  3: [
-    { id: 'def_3_1', name: 'Commander Rex', score: 1680, level: 3 },
-    { id: 'def_3_2', name: 'Pilot Wedge', score: 1320, level: 3 },
-    { id: 'def_3_3', name: 'Cadet Luke', score: 1050, level: 3 },
-  ],
-  4: [
-    { id: 'def_4_1', name: 'General Kenobi', score: 2100, level: 4 },
-    { id: 'def_4_2', name: 'Commander Rex', score: 1540, level: 4 },
-  ],
-  5: [
-    { id: 'def_5_1', name: 'Master Yoda', score: 2650, level: 5 },
-    { id: 'def_5_2', name: 'General Kenobi', score: 1980, level: 5 },
-  ],
-};
+const DEFAULT_LEADERBOARD_ENTRIES: StaffWarsLeaderboardEntry[] = [
+  { id: 'def_5_1', name: 'Master Yoda', score: 2650, level: 5 },
+  { id: 'def_4_1', name: 'General Kenobi', score: 2100, level: 4 },
+  { id: 'def_3_1', name: 'Commander Rex', score: 1680, level: 3 },
+  { id: 'def_2_1', name: 'Pilot Wedge', score: 1450, level: 2 },
+  { id: 'def_1_1', name: 'Cadet Luke', score: 1250, level: 1 },
+];
 
 export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
   onBackToHub,
@@ -165,51 +144,56 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
   const levelRef = useRef<number>(1);
   levelRef.current = level;
 
-  // Clamp any gameplay level (1..∞) to leaderboard tabs (1..5)
-  const clampLeaderboardLevel = (lvl: number) => Math.min(5, Math.max(1, lvl || 1));
-
-  // Student High Score key helpers (overall + per-level)
+  // Student High Score key helpers
   const getHighScoreKey = (session: StudentSession | null) => {
     return session?.id ? `staff_wars_high_score_${session.id}` : 'staff_wars_high_score';
-  };
-  const getLevelHighScoreKey = (session: StudentSession | null, lvl: number) => {
-    const capped = clampLeaderboardLevel(lvl);
-    return session?.id
-      ? `staff_wars_high_score_${session.id}_lvl_${capped}`
-      : `staff_wars_high_score_lvl_${capped}`;
   };
 
   const [highScore, setHighScore] = useState<number>(0);
 
-  // Leaderboard State & Sync
+  // Leaderboard State & Sync (Unified Overall High Scores)
   const [showLeaderboard, setShowLeaderboard] = useState<boolean>(false);
-  const [leaderboardLevel, setLeaderboardLevel] = useState<number>(1);
-  const leaderboardLevelRef = useRef<number>(1);
-  leaderboardLevelRef.current = leaderboardLevel;
-  const [leaderboard, setLeaderboard] = useState<StaffWarsLeaderboardEntry[]>(DEFAULT_LEADERBOARDS_BY_LEVEL[1] || []);
+  const [leaderboard, setLeaderboard] = useState<StaffWarsLeaderboardEntry[]>(DEFAULT_LEADERBOARD_ENTRIES);
   const [isLeaderboardLoading, setIsLeaderboardLoading] = useState<boolean>(false);
   const [guestPlayerName, setGuestPlayerName] = useState<string>(() => {
     return localStorage.getItem('staff_wars_player_name') || 'Cadet Guest';
   });
 
-  // Merge defaults, local entries, and cloud entries consistently for a given level
+  // Read and merge all local leaderboard keys (overall + legacy per-level keys)
+  const readAllLocalLeaderboardEntries = useCallback((): StaffWarsLeaderboardEntry[] => {
+    const keys = [
+      'staff_wars_leaderboard',
+      'staff_wars_leaderboard_level_1',
+      'staff_wars_leaderboard_level_2',
+      'staff_wars_leaderboard_level_3',
+      'staff_wars_leaderboard_level_4',
+      'staff_wars_leaderboard_level_5',
+    ];
+    const entries: StaffWarsLeaderboardEntry[] = [];
+    for (const k of keys) {
+      try {
+        const saved = localStorage.getItem(k);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) entries.push(...parsed);
+        }
+      } catch {}
+    }
+    return entries;
+  }, []);
+
+  // Merge defaults, local entries, and cloud entries into one unified overall ranking
   const mergeLeaderboardEntries = useCallback(
     (
-      targetLevel: number,
       localEntries: StaffWarsLeaderboardEntry[],
       cloudEntries: StaffWarsLeaderboardEntry[]
     ): StaffWarsLeaderboardEntry[] => {
-      const capped = clampLeaderboardLevel(targetLevel);
-      const defaults = DEFAULT_LEADERBOARDS_BY_LEVEL[capped] || [
-        { id: `def_${capped}_1`, name: 'Cadet Luke', score: 1000 + capped * 200, level: capped },
-        { id: `def_${capped}_2`, name: 'Cadet Leia', score: 800 + capped * 150, level: capped },
-        { id: `def_${capped}_3`, name: 'Cadet Han', score: 600 + capped * 100, level: capped },
-      ];
-
       const mergedList: StaffWarsLeaderboardEntry[] = [];
-      for (const entry of [...defaults, ...localEntries, ...cloudEntries]) {
+      for (const entry of [...DEFAULT_LEADERBOARD_ENTRIES, ...localEntries, ...cloudEntries]) {
         if (!entry || !entry.name) continue;
         const normName = entry.name.trim().toLowerCase();
+        const entryScore = Number(entry.score) || 0;
+        const entryLevel = Math.max(1, parseInt(String(entry.level || 1), 10) || 1);
         const existingIdx = mergedList.findIndex(
           (e) =>
             (entry.studentId && e.studentId && e.studentId === entry.studentId) ||
@@ -217,80 +201,63 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
         );
         if (existingIdx >= 0) {
           const prev = mergedList[existingIdx];
-          if ((Number(entry.score) || 0) >= (Number(prev.score) || 0)) {
-            mergedList[existingIdx] = {
-              ...prev,
-              ...entry,
-              studentId: entry.studentId || prev.studentId,
-              score: Math.max(Number(prev.score) || 0, Number(entry.score) || 0),
-              level: capped,
-            };
-          } else if (entry.studentId && !prev.studentId) {
-            mergedList[existingIdx].studentId = entry.studentId;
-          }
+          const prevScore = Number(prev.score) || 0;
+          const prevLevel = Math.max(1, parseInt(String(prev.level || 1), 10) || 1);
+          mergedList[existingIdx] = {
+            ...prev,
+            ...(entryScore >= prevScore ? entry : {}),
+            studentId: entry.studentId || prev.studentId,
+            score: Math.max(prevScore, entryScore),
+            level: Math.max(prevLevel, entryLevel),
+          };
         } else {
-          mergedList.push({ ...entry, level: capped });
+          mergedList.push({ ...entry, score: entryScore, level: entryLevel });
         }
       }
-      return mergedList.sort((a, b) => b.score - a.score);
+      return mergedList.sort(
+        (a, b) => (Number(b.score) || 0) - (Number(a.score) || 0) || (Number(b.level) || 1) - (Number(a.level) || 1)
+      );
     },
     []
   );
 
-  const loadLeaderboard = useCallback(
-    async (rawLevel?: number) => {
-      const targetLevel = clampLeaderboardLevel(rawLevel ?? leaderboardLevelRef.current);
-      setIsLeaderboardLoading(true);
-      let localList: StaffWarsLeaderboardEntry[] = [];
-      const levelKey = `staff_wars_leaderboard_level_${targetLevel}`;
+  const loadLeaderboard = useCallback(async () => {
+    setIsLeaderboardLoading(true);
+    const localList = readAllLocalLeaderboardEntries();
+
+    try {
+      const cloudScores = await fetchStaffWarsLeaderboard(1);
+      const merged = mergeLeaderboardEntries(
+        localList,
+        Array.isArray(cloudScores) ? cloudScores : []
+      );
       try {
-        const saved = localStorage.getItem(levelKey);
-        if (saved) {
-          localList = JSON.parse(saved);
-        }
+        localStorage.setItem('staff_wars_leaderboard', JSON.stringify(merged));
       } catch {}
-
-      try {
-        const cloudScores = await fetchStaffWarsLeaderboard(targetLevel);
-        const merged = mergeLeaderboardEntries(
-          targetLevel,
-          localList,
-          Array.isArray(cloudScores) ? cloudScores : []
-        );
-        try {
-          localStorage.setItem(levelKey, JSON.stringify(merged));
-        } catch {}
-        if (leaderboardLevelRef.current === targetLevel) {
-          setLeaderboard(merged);
-        }
-        setIsLeaderboardLoading(false);
-        return;
-      } catch (err) {
-        console.warn('Failed to fetch cloud leaderboard for level', targetLevel, err);
-      }
-
-      const sorted = mergeLeaderboardEntries(targetLevel, localList, []);
-      if (leaderboardLevelRef.current === targetLevel) {
-        setLeaderboard(sorted);
-      }
+      setLeaderboard(merged);
       setIsLeaderboardLoading(false);
-    },
-    [mergeLeaderboardEntries]
-  );
+      return;
+    } catch (err) {
+      console.warn('Failed to fetch cloud leaderboard', err);
+    }
+
+    const sorted = mergeLeaderboardEntries(localList, []);
+    setLeaderboard(sorted);
+    setIsLeaderboardLoading(false);
+  }, [mergeLeaderboardEntries, readAllLocalLeaderboardEntries]);
 
   useEffect(() => {
-    loadLeaderboard(leaderboardLevel);
-  }, [loadLeaderboard, leaderboardLevel]);
+    loadLeaderboard();
+  }, [loadLeaderboard]);
 
   const submitHighScore = useCallback(
     async (newScore: number, forLevel = 1) => {
       if (!newScore || newScore <= 0) return;
       const playerName = studentSession?.firstName || guestPlayerName || 'Cadet Player';
       const studentId = studentSession?.id;
-      const targetLvl = clampLeaderboardLevel(forLevel || levelRef.current || 1);
-      const levelKey = `staff_wars_leaderboard_level_${targetLvl}`;
+      const targetLvl = Math.min(99, Math.max(1, forLevel || levelRef.current || 1));
 
-      // Update overall and per-level local high scores
+      // Update overall local high score
       try {
         const overallKey = getHighScoreKey(studentSession);
         const prevOverall = parseInt(localStorage.getItem(overallKey) || '0', 10) || 0;
@@ -298,17 +265,11 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
           localStorage.setItem(overallKey, String(newScore));
           setHighScore(newScore);
         }
-        const lvlKey = getLevelHighScoreKey(studentSession, targetLvl);
-        const prevLvl = parseInt(localStorage.getItem(lvlKey) || '0', 10) || 0;
-        if (newScore > prevLvl) {
-          localStorage.setItem(lvlKey, String(newScore));
-        }
       } catch {}
 
       let localUpdated: StaffWarsLeaderboardEntry[] = [];
       try {
-        const saved = localStorage.getItem(levelKey);
-        const existingLocal: StaffWarsLeaderboardEntry[] = saved ? JSON.parse(saved) : [];
+        const existingLocal = readAllLocalLeaderboardEntries();
         const newEntry: StaffWarsLeaderboardEntry = {
           id: 'sw_' + Math.random().toString(36).substring(2, 9),
           studentId,
@@ -317,11 +278,9 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
           level: targetLvl,
           updatedAt: new Date().toISOString(),
         };
-        localUpdated = mergeLeaderboardEntries(targetLvl, [...existingLocal, newEntry], []);
-        localStorage.setItem(levelKey, JSON.stringify(localUpdated));
-        if (leaderboardLevelRef.current === targetLvl) {
-          setLeaderboard(localUpdated);
-        }
+        localUpdated = mergeLeaderboardEntries([...existingLocal, newEntry], []);
+        localStorage.setItem('staff_wars_leaderboard', JSON.stringify(localUpdated));
+        setLeaderboard(localUpdated);
       } catch {}
 
       try {
@@ -333,19 +292,17 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
           classGroup: studentSession?.classGroup,
         });
         if (Array.isArray(res)) {
-          const merged = mergeLeaderboardEntries(targetLvl, localUpdated, res);
+          const merged = mergeLeaderboardEntries(localUpdated, res);
           try {
-            localStorage.setItem(levelKey, JSON.stringify(merged));
+            localStorage.setItem('staff_wars_leaderboard', JSON.stringify(merged));
           } catch {}
-          if (leaderboardLevelRef.current === targetLvl) {
-            setLeaderboard(merged);
-          }
+          setLeaderboard(merged);
         }
       } catch (err) {
         console.warn('Failed to submit high score to backend:', err);
       }
     },
-    [studentSession, guestPlayerName, mergeLeaderboardEntries]
+    [studentSession, guestPlayerName, mergeLeaderboardEntries, readAllLocalLeaderboardEntries]
   );
 
   // Synchronize High Score with logged-in student or guest session, and auto-post existing local high score
@@ -608,15 +565,6 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
             const key = getHighScoreKey(studentSession);
             localStorage.setItem(key, String(newScore));
           } catch {}
-        }
-
-        // Submit if this beats the player's overall highScore OR their high score for the current level
-        let prevLevelBest = 0;
-        try {
-          const lvlKey = getLevelHighScoreKey(studentSession, level);
-          prevLevelBest = parseInt(localStorage.getItem(lvlKey) || '0', 10) || 0;
-        } catch {}
-        if (newScore > highScore || newScore > prevLevelBest) {
           submitHighScore(newScore, level);
         }
 
@@ -884,9 +832,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
           <button
             type="button"
             onClick={() => {
-              const targetLvl = clampLeaderboardLevel(level || 1);
-              setLeaderboardLevel(targetLvl);
-              loadLeaderboard(targetLvl);
+              loadLeaderboard();
               setShowLeaderboard(true);
             }}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-amber-400/50 text-xs text-amber-300 transition-colors cursor-pointer group shadow-xs"
@@ -960,7 +906,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
                 <button
                   type="button"
                   onClick={() => {
-                    loadLeaderboard(leaderboardLevel);
+                    loadLeaderboard();
                     setShowLeaderboard(true);
                   }}
                   className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-400/15 hover:bg-amber-400/25 border border-amber-400/40 text-amber-300 font-bold text-xs transition-all cursor-pointer shadow-md hover:scale-102"
@@ -1482,9 +1428,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
               <button
                 type="button"
                 onClick={() => {
-                  const targetLvl = clampLeaderboardLevel(level || 1);
-                  setLeaderboardLevel(targetLvl);
-                  loadLeaderboard(targetLvl);
+                  loadLeaderboard();
                   setShowLeaderboard(true);
                 }}
                 className="w-full py-3 rounded-2xl bg-amber-400/15 hover:bg-amber-400/25 text-amber-300 font-bold text-sm border border-amber-400/40 flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-sm"
@@ -1505,7 +1449,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
         )}
       </main>
 
-      {/* 4. HIGH SCORE LEADERBOARD MODAL (Simple List Showing Name and Score) */}
+      {/* 4. HIGH SCORE LEADERBOARD MODAL (Unified Top Pilots Hall of Fame) */}
       {showLeaderboard && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-xs p-4 animate-in fade-in duration-150"
@@ -1525,7 +1469,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
                   <h3 className="text-lg font-black text-amber-400 tracking-wide leading-tight">
                     HIGH SCORE LEADERBOARD
                   </h3>
-                  <p className="text-xs text-slate-400">Staff Wars Cadet Hall of Fame</p>
+                  <p className="text-xs text-slate-400">Staff Wars Top Pilots — Overall High Scores</p>
                 </div>
               </div>
               <button
@@ -1538,55 +1482,29 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
               </button>
             </div>
 
-            {/* Current Player High Score Badge & Level Selector */}
-            <div className="space-y-2.5">
-              <div className="px-4 py-2.5 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-center justify-between text-xs">
-                <div className="flex items-center gap-1.5 text-slate-400">
-                  <User className="w-3.5 h-3.5 text-slate-400" />
-                  <span>Your Best:</span>
-                  <span className="font-bold text-white">
-                    {studentSession?.firstName || guestPlayerName}
-                  </span>
-                </div>
-                <span className="font-mono font-black text-amber-400 text-sm">
-                  {highScore > 0 ? `${highScore.toLocaleString()} PTS` : '0 PTS'}
+            {/* Current Player High Score Badge */}
+            <div className="px-4 py-2.5 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-center justify-between text-xs">
+              <div className="flex items-center gap-1.5 text-slate-400">
+                <User className="w-3.5 h-3.5 text-slate-400" />
+                <span>Your Best:</span>
+                <span className="font-bold text-white">
+                  {studentSession?.firstName || guestPlayerName}
                 </span>
               </div>
-
-              {/* Level Selector Tabs */}
-              <div className="flex items-center justify-between gap-1 p-1 bg-slate-950/90 border border-slate-800 rounded-2xl">
-                {[1, 2, 3, 4, 5].map((lvl) => {
-                  const isActive = leaderboardLevel === lvl;
-                  return (
-                    <button
-                      key={lvl}
-                      type="button"
-                      onClick={() => {
-                        setLeaderboardLevel(lvl);
-                        loadLeaderboard(lvl);
-                      }}
-                      className={`flex-1 py-1.5 px-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
-                        isActive
-                          ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-400/20'
-                          : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-                      }`}
-                    >
-                      Level {lvl}
-                    </button>
-                  );
-                })}
-              </div>
+              <span className="font-mono font-black text-amber-400 text-sm">
+                {highScore > 0 ? `${highScore.toLocaleString()} PTS` : '0 PTS'}
+              </span>
             </div>
 
-            {/* Simple List showing Name and Score */}
-            <div className="overflow-y-auto flex-1 pr-1 space-y-2 max-h-[46vh]">
+            {/* Unified List showing Name, Level Reached, and Best Score */}
+            <div className="overflow-y-auto flex-1 pr-1 space-y-2 max-h-[52vh]">
               {isLeaderboardLoading ? (
                 <div className="py-12 text-center text-slate-500 text-xs">
-                  Loading Level {leaderboardLevel} rankings...
+                  Loading Top Pilots rankings...
                 </div>
               ) : leaderboard.length === 0 ? (
                 <div className="py-12 text-center text-slate-500 text-xs">
-                  No high scores recorded yet for Level {leaderboardLevel}. Be the first Cadet to claim the top spot!
+                  No high scores recorded yet. Be the first Cadet to claim the top spot!
                 </div>
               ) : (
                 leaderboard.map((entry, index) => {
@@ -1626,11 +1544,16 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
                           {rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`}
                         </div>
 
-                        {/* Cadet / Student Name */}
-                        <div className="flex items-center gap-2">
+                        {/* Cadet / Student Name + Level Reached */}
+                        <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-extrabold text-sm text-slate-100">
                             {entry.name}
                           </span>
+                          {entry.level && entry.level >= 1 && (
+                            <span className="text-[10px] uppercase font-mono font-bold px-1.5 py-0.5 rounded bg-sky-500/15 text-sky-300 border border-sky-400/30">
+                              LVL {entry.level}
+                            </span>
+                          )}
                           {isCurrentPlayer && (
                             <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded bg-amber-400/20 text-amber-300 border border-amber-400/40">
                               YOU
@@ -1640,7 +1563,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
                       </div>
 
                       {/* Right: Score */}
-                      <div className="font-mono font-black text-base text-amber-300">
+                      <div className="font-mono font-black text-base text-amber-300 shrink-0">
                         {entry.score.toLocaleString()}{' '}
                         <span className="text-xs text-amber-400/80 font-normal">PTS</span>
                       </div>
