@@ -14,7 +14,7 @@ export const Logo: React.FC<LogoProps> = ({
   collapsed = false,
   compact = false,
   teacherName = 'Music Teacher',
-  appName = 'Music Teacher Hub',
+  appName = 'The Staff Room',
   className = ''
 }) => {
   if (collapsed) {
