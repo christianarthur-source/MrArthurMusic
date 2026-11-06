@@ -16,6 +16,7 @@ import {
   Search,
   Tag,
   Trash2,
+  Edit3,
   CheckCircle2,
   LayoutGrid,
   List,
@@ -34,6 +35,7 @@ export const ResourceLibraryView: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useRememberedState<string>('resources.category', 'all');
   const [viewMode, setViewMode] = useRememberedState<'grid' | 'list'>('resources.view', 'grid');
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [editingResource, setEditingResource] = useState<ResourceLink | null>(null);
 
   // Form State
   const [url, setUrl] = useState('');
@@ -155,6 +157,31 @@ export const ResourceLibraryView: React.FC = () => {
     }
   };
 
+  const openEditModal = (res: ResourceLink, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingResource(res);
+    setUrl(res.url);
+    setTitle(res.title);
+    setDescription(res.description || '');
+    setCategory(res.category);
+    setGrade(res.grade);
+    setTagsStr(res.tags.join(', '));
+    setThumbnailUrl(res.thumbnailUrl || '');
+    setIsAddOpen(true);
+  };
+
+  const handleOpenAddModal = () => {
+    setEditingResource(null);
+    setUrl('');
+    setTitle('');
+    setDescription('');
+    setCategory('drive');
+    setGrade('All');
+    setTagsStr('curriculum, scores');
+    setThumbnailUrl('');
+    setIsAddOpen(true);
+  };
+
   const handleAddResource = (e: React.FormEvent) => {
     e.preventDefault();
     if (!url.trim() || !title.trim()) return;
@@ -170,26 +197,42 @@ export const ResourceLibraryView: React.FC = () => {
       }
     }
 
-    const created = storage.addResource({
-      title: title.trim(),
-      url: url.trim(),
-      description: description.trim(),
-      category: isDrive ? 'drive' : category,
-      grade,
-      tags: tagsStr.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean),
-      isGoogleDrive: isDrive,
-      driveType,
-      isFavorite: false,
-      lastUsed: new Date().toISOString().split('T')[0],
-      thumbnailUrl: finalThumb || undefined
-    });
+    if (editingResource) {
+      storage.updateResource(editingResource.id, {
+        title: title.trim(),
+        url: url.trim(),
+        description: description.trim(),
+        category: isDrive ? 'drive' : category,
+        grade,
+        tags: tagsStr.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean),
+        isGoogleDrive: isDrive,
+        driveType: driveType || editingResource.driveType,
+        thumbnailUrl: finalThumb || undefined
+      });
+      showToast(`Updated ${title.trim()}`, 'success');
+    } else {
+      const created = storage.addResource({
+        title: title.trim(),
+        url: url.trim(),
+        description: description.trim(),
+        category: isDrive ? 'drive' : category,
+        grade,
+        tags: tagsStr.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean),
+        isGoogleDrive: isDrive,
+        driveType,
+        isFavorite: false,
+        lastUsed: new Date().toISOString().split('T')[0],
+        thumbnailUrl: finalThumb || undefined
+      });
+      showToast(`Added ${created.title}`, 'success');
+    }
 
     setIsAddOpen(false);
+    setEditingResource(null);
     setUrl('');
     setTitle('');
     setDescription('');
     setThumbnailUrl('');
-    showToast(`Added ${created.title}`, 'success');
   };
 
   const handleDelete = (id: string, e: React.MouseEvent) => {
@@ -278,7 +321,7 @@ export const ResourceLibraryView: React.FC = () => {
           </div>
 
           <button
-            onClick={() => setIsAddOpen(true)}
+            onClick={handleOpenAddModal}
             className="px-4 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all shrink-0"
           >
             <Plus className="w-4 h-4" />
@@ -444,6 +487,13 @@ export const ResourceLibraryView: React.FC = () => {
                       <Star className={`w-3.5 h-3.5 ${res.isFavorite ? 'text-amber-400 fill-amber-400' : ''}`} />
                     </button>
                     <button
+                      onClick={(e) => openEditModal(res, e)}
+                      className="p-1.5 rounded-xl bg-black/60 backdrop-blur-md text-stone-300 hover:text-white transition-colors shadow-sm"
+                      title="Edit resource"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                    </button>
+                    <button
                       onClick={(e) => copyResourceUrl(res.url, e)}
                       className="p-1.5 rounded-xl bg-black/60 backdrop-blur-md text-stone-300 hover:text-white transition-colors shadow-sm"
                       title="Copy URL"
@@ -562,6 +612,14 @@ export const ResourceLibraryView: React.FC = () => {
                   </a>
 
                   <button
+                    onClick={(e) => openEditModal(res, e)}
+                    className="p-2 text-stone-400 hover:text-stone-700 dark:hover:text-stone-200"
+                    title="Edit resource"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                  </button>
+
+                  <button
                     onClick={(e) => handleDelete(res.id, e)}
                     className="p-2 text-stone-400 hover:text-rose-500"
                     title="Remove"
@@ -585,7 +643,7 @@ export const ResourceLibraryView: React.FC = () => {
             <div className="flex items-center justify-between pb-2 border-b border-stone-100 dark:border-stone-800">
               <h3 className="text-base font-bold text-stone-900 dark:text-white flex items-center gap-2">
                 <FolderSync className="w-5 h-5 text-brand-600" />
-                <span>Add Teaching Resource or Drive Link</span>
+                <span>{editingResource ? 'Edit Teaching Resource' : 'Add Teaching Resource or Drive Link'}</span>
               </h3>
             </div>
 
@@ -691,7 +749,10 @@ export const ResourceLibraryView: React.FC = () => {
             <div className="flex justify-end gap-2 pt-2">
               <button
                 type="button"
-                onClick={() => setIsAddOpen(false)}
+                onClick={() => {
+                  setIsAddOpen(false);
+                  setEditingResource(null);
+                }}
                 className="px-4 py-2 rounded-xl text-stone-600 dark:text-stone-300 text-xs font-semibold"
               >
                 Cancel
@@ -700,7 +761,7 @@ export const ResourceLibraryView: React.FC = () => {
                 type="submit"
                 className="px-5 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold shadow-xs"
               >
-                Save Resource
+                {editingResource ? 'Update Resource' : 'Save Resource'}
               </button>
             </div>
           </form>

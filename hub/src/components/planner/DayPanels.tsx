@@ -23,61 +23,59 @@ const paperInput = 'w-full text-sm px-2.5 py-1.5 rounded-lg bg-white/80 border b
 // ---------------------------------------------------------------------------
 
 const ClassRow: React.FC<{ c: RotationClass; date: string }> = ({ c, date }) => {
-  const { openTeachMode } = useApp();
-  const lessons = storage.getLessonPlans();
   const log = storage.getClassLog(c.id);
   const todayEntry = log.find((e) => e.date === date);
   const earlier = log.filter((e) => e.date < date);
   const lastNote = [...earlier].reverse().find((e) => e.note);
-  const lastLesson = [...earlier].reverse().find((e) => e.lessonId)?.lessonId;
-  const lessonId = todayEntry?.lessonId || lastLesson || '';
-  const lesson = lessons.find((l) => l.id === lessonId);
+  const [notes, setNotes] = useState(todayEntry?.notes || '');
   const [note, setNote] = useState(todayEntry?.note || '');
 
-  useEffect(() => setNote(storage.getClassLog(c.id).find((e) => e.date === date)?.note || ''), [c.id, date]);
+  useEffect(() => {
+    const entry = storage.getClassLog(c.id).find((e) => e.date === date);
+    setNotes(entry?.notes || '');
+    setNote(entry?.note || '');
+  }, [c.id, date]);
 
   return (
-    <li className="py-2.5 border-b border-stone-300/60 last:border-b-0 space-y-1.5">
+    <li className="py-3 border-b border-stone-300/60 last:border-b-0 space-y-2">
       <div className="flex items-center gap-2">
-        <span className="w-16 shrink-0 text-xs font-mono text-stone-500">{formatTime(c.start)}</span>
-        <span className="font-semibold text-sm truncate flex-1">{c.name || 'Class'}</span>
-        <button
-          type="button"
-          disabled={!lesson}
-          onClick={() => {
-            if (!lesson) return;
-            storage.saveClassLogEntry(c.id, date, { lessonId: lesson.id });
-            openTeachMode(lesson);
-          }}
-          title={lesson ? `Teach "${lesson.title}"` : 'Pin a lesson first'}
-          className="px-2.5 py-1 rounded-lg bg-brand-600 hover:bg-brand-700 disabled:opacity-30 text-white text-xs font-semibold flex items-center gap-1"
-        >
-          <Presentation className="w-3.5 h-3.5" />
-          Teach
-        </button>
+        <span className="w-16 shrink-0 text-xs font-mono font-medium text-stone-500">{formatTime(c.start)}</span>
+        <span className="font-bold text-sm text-stone-800 truncate flex-1">{c.name || 'Class'}</span>
+        {c.grade && (
+          <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-stone-200/70 text-stone-600">
+            Gr {c.grade}
+          </span>
+        )}
       </div>
-      <div className="pl-[4.5rem] space-y-1.5">
-        <select
-          value={lessonId}
-          onChange={(e) => storage.saveClassLogEntry(c.id, date, { lessonId: e.target.value || undefined })}
-          aria-label={`Lesson for ${c.name}`}
-          className="w-full text-xs px-2 py-1 rounded-lg bg-white/80 border border-stone-300/80"
-        >
-          <option value="">{lessons.length ? 'Pin a lesson…' : 'No lessons yet: make one in the Lesson Planner'}</option>
-          {lessons
-            .filter((l) => !c.grade || l.grade === c.grade || l.id === lessonId)
-            .concat(c.grade ? lessons.filter((l) => l.grade !== c.grade && l.id !== lessonId) : [])
-            .map((l) => (
-              <option key={l.id} value={l.id}>
-                {l.title}{c.grade && l.grade !== c.grade ? ` (Gr ${l.grade})` : ''}
-              </option>
-            ))}
-        </select>
+      <div className="pl-0 sm:pl-[4.5rem] space-y-2">
+        {/* Expandable freeform class notes area */}
+        <textarea
+          value={notes}
+          onChange={(e) => {
+            setNotes(e.target.value);
+            e.currentTarget.style.height = 'auto';
+            e.currentTarget.style.height = `${e.currentTarget.scrollHeight}px`;
+          }}
+          onBlur={(e) => storage.saveClassLogEntry(c.id, date, { notes: e.currentTarget.value.trim() || undefined })}
+          ref={(el) => {
+            if (el) {
+              el.style.height = 'auto';
+              el.style.height = `${Math.max(el.scrollHeight, 44)}px`;
+            }
+          }}
+          placeholder="Class notes, lesson plan, activities…"
+          aria-label={`Notes for ${c.name}`}
+          rows={1}
+          className={`${paperInput} text-xs leading-relaxed resize-none overflow-hidden transition-[height]`}
+        />
+
         {lastNote && (
-          <p className="text-xs text-stone-500 italic">
+          <p className="text-[11px] text-stone-500 italic">
             Last time ({shortDate(lastNote.date)}): {lastNote.note}
           </p>
         )}
+
+        {/* Where we left off today field */}
         <input
           value={note}
           onChange={(e) => setNote(e.target.value)}
