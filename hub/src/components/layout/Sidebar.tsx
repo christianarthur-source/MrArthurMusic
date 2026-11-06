@@ -60,7 +60,7 @@ export const Sidebar: React.FC = () => {
       group: 'Workspace',
       items: [
         { id: 'daily-planner', label: 'Daily Planner', icon: NotebookPen },
-        { id: 'journal', label: 'Daily Journal', icon: BookMarked },
+        { id: 'journal', label: 'Journal', icon: BookMarked },
         { id: 'tasks', label: 'Tasks', icon: CheckSquare, badgeCount: todayTaskCount },
         { id: 'calendar', label: 'Calendar', icon: Calendar },
         { id: 'rotation', label: 'Class Rotation', icon: CalendarClock },
@@ -97,7 +97,7 @@ export const Sidebar: React.FC = () => {
   return (
     <aside
       className={`hidden lg:flex flex-col h-screen sticky top-0 bg-stone-100/70 dark:bg-stone-900/80 border-r border-stone-200/80 dark:border-stone-800 transition-all duration-300 z-20 ${
-        isSidebarCollapsed ? 'w-20' : 'w-[270px]'
+        isSidebarCollapsed ? 'w-20' : 'w-[290px]'
       }`}
     >
       {/* Brand Header with Custom Logo */}
@@ -112,15 +112,15 @@ export const Sidebar: React.FC = () => {
       </div>
 
       {/* Nav List */}
-      <div className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
+      <div className="flex-1 overflow-y-auto px-3.5 py-4 space-y-6">
         {navGroups.map((group) => (
           <div key={group.group}>
             {!isSidebarCollapsed && (
-              <h3 className="px-3 mb-1.5 text-[11px] font-semibold tracking-wider uppercase text-stone-400 dark:text-stone-500">
+              <h3 className="px-3 mb-2 text-xs font-bold tracking-wider uppercase text-stone-400 dark:text-stone-500">
                 {group.group}
               </h3>
             )}
-            <nav className="space-y-0.5">
+            <nav className="space-y-1">
               {group.items.map((item) => {
                 const Icon = item.icon;
                 const isActive = activeView === item.id;
@@ -129,16 +129,16 @@ export const Sidebar: React.FC = () => {
                     key={item.id}
                     onClick={() => setActiveView(item.id)}
                     title={isSidebarCollapsed ? item.label : undefined}
-                    className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium transition-all ${
+                    className={`w-full flex items-center gap-3.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${
                       isActive
-                        ? 'bg-white dark:bg-stone-800 text-brand-600 dark:text-brand-400 shadow-card font-semibold'
-                        : 'text-stone-600 dark:text-stone-300 hover:bg-stone-200/60 dark:hover:bg-stone-800/60 hover:text-stone-900 dark:hover:text-white'
+                        ? 'bg-white dark:bg-stone-800 text-brand-600 dark:text-brand-400 shadow-card font-bold'
+                        : 'text-stone-700 dark:text-stone-200 hover:bg-stone-200/60 dark:hover:bg-stone-800/60 hover:text-stone-900 dark:hover:text-white'
                     } ${isSidebarCollapsed ? 'justify-center px-2' : ''}`}
                   >
-                    <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-brand-600 dark:text-brand-400' : 'text-stone-400'}`} />
+                    <Icon className={`w-5 h-5 shrink-0 ${isActive ? 'text-brand-600 dark:text-brand-400' : 'text-stone-500 dark:text-stone-400'}`} />
                     {!isSidebarCollapsed && <span className="truncate">{item.label}</span>}
                     {!isSidebarCollapsed && item.badgeCount !== undefined && item.badgeCount > 0 && (
-                      <span className="ml-auto px-2 py-0.5 text-[10px] font-bold rounded-full bg-brand-100 dark:bg-brand-900/60 text-brand-700 dark:text-brand-300">
+                      <span className="ml-auto px-2 py-0.5 text-xs font-bold rounded-full bg-brand-100 dark:bg-brand-900/60 text-brand-700 dark:text-brand-300">
                         {item.badgeCount}
                       </span>
                     )}

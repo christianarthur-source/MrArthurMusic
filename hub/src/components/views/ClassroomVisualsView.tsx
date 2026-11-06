@@ -268,7 +268,7 @@ export const ClassroomVisualsView: React.FC = () => {
             <span className="p-2 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white shadow-md">
               <Sparkles className="w-5 h-5" />
             </span>
-            <span>Interactive Music Literacy Visuals & Smartboard Posters</span>
+            <span>Staff and Visuals</span>
           </h1>
           <p className="text-xs sm:text-sm text-stone-500 dark:text-stone-400 mt-1">
             Extra-large, high-contrast visual teaching aids for classroom smartboards: labeled music staff, full piano keyboard, Curwen solfege, and Kodály rhythm flashcards.
