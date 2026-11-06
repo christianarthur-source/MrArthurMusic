@@ -21,7 +21,7 @@ import {
 // starting content, since they are tools rather than sample records.
 
 export const INITIAL_PREFERENCES: UserPreferences = {
-  appName: 'Music Teacher Hub',
+  appName: 'The Staff Room',
   teacherName: '',
   schoolName: '',
   roomNumber: '',
