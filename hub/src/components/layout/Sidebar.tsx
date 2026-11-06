@@ -154,7 +154,7 @@ export const Sidebar: React.FC = () => {
       <div className="p-3 border-t border-stone-200/60 dark:border-stone-800 flex items-center justify-between">
         {!isSidebarCollapsed && (
           <span className="text-[11px] text-stone-400 dark:text-stone-500">
-            Music Teacher Hub v1.0
+            The Staff Room v1.0
           </span>
         )}
         <button
