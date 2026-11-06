@@ -37,7 +37,7 @@ export const SettingsView: React.FC = () => {
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
     updatePreferences({
-      appName: appName.trim() || 'Music Teacher Hub',
+      appName: appName.trim() || 'The Staff Room',
       teacherName: teacherName.trim(),
       schoolName: schoolName.trim(),
       roomNumber: roomNumber.trim(),
@@ -118,7 +118,7 @@ export const SettingsView: React.FC = () => {
               type="text"
               value={appName}
               onChange={(e) => setAppName(e.target.value)}
-              placeholder="e.g. Music Teacher Hub"
+              placeholder="e.g. The Staff Room"
               className="w-full text-xs sm:text-sm px-3.5 py-2.5 bg-stone-50 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl"
               required
             />
