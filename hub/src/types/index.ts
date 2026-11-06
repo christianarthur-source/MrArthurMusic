@@ -367,10 +367,11 @@ export interface PlannerPage {
   reflectionId?: string; // Daily Journal entry holding this day's end-of-day reflection
 }
 
-/** Per rotation class, per date: the lesson taught and a "where we left off" note. */
+/** Per rotation class, per date: class notes and a "where we left off" note. */
 export interface ClassLogEntry {
   date: string; // YYYY-MM-DD
   lessonId?: string;
+  notes?: string;
   note?: string;
 }
 

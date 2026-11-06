@@ -240,7 +240,7 @@ Activities for sub (e.g. Chrome Music Lab or video listening lesson in Link Libr
             <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-amber-500 to-rose-500 flex items-center justify-center text-white shadow-md">
               <BookMarked className="w-5 h-5" />
             </div>
-            <span>Daily Teaching Journal & Day One Reflections</span>
+            <span>Journal</span>
           </h1>
           <p className="text-xs sm:text-sm text-stone-500 dark:text-stone-400 mt-1">
             Capture lesson breakthroughs, tag keeper activities, log weather & mood, attach classroom photos, and revisit past reflections.
