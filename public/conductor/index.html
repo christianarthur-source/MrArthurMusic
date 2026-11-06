@@ -1,0 +1,1237 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Maestro! · Virtual Orchestra Conductor | Mr. Arthur Music</title>
+  <meta name="description" content="Conduct a live virtual orchestra with your webcam or mouse baton! Control tempo, dynamics, and instrument sections in real time." />
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Nunito:wght@400;600;800;900&display=swap" rel="stylesheet">
+  
+  <!-- MediaPipe Pose for high-performance in-browser vision -->
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
+
+  <style>
+    :root {
+      --gold: #F59E0B;
+      --gold-light: #FDE68A;
+      --bg: #090B10;
+      --stage-wood: #2A170F;
+      --brass: #FBBF24;
+      --strings: #EC4899;
+      --woodwinds: #10B981;
+      --violins: #3B82F6;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg);
+      color: #F3F4F6;
+      font-family: 'Nunito', system-ui, sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Concert Hall Atmosphere */
+    .concert-hall {
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at 50% 25%, #1E1B4B 0%, #0B0E17 65%, #05060A 100%);
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .spotlight {
+      position: absolute;
+      top: -10%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80vw;
+      height: 70vh;
+      background: radial-gradient(ellipse at center, rgba(251, 191, 36, 0.12) 0%, rgba(251, 191, 36, 0) 70%);
+      pointer-events: none;
+    }
+
+    /* Stage Floor Arc */
+    .stage-arc {
+      position: absolute;
+      bottom: -15vh;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 120vw;
+      height: 55vh;
+      background: radial-gradient(ellipse at 50% 100%, #3B2113 0%, #1A0D07 50%, #000 90%);
+      border-top: 3px solid rgba(245, 158, 11, 0.3);
+      border-radius: 50% 50% 0 0;
+      box-shadow: 0 -20px 60px rgba(0, 0, 0, 0.9), inset 0 10px 40px rgba(245, 158, 11, 0.15);
+      z-index: 1;
+    }
+
+    /* Main Container */
+    .app-wrap {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      max-width: 1400px;
+      margin: 0 auto;
+      width: 100%;
+      padding: 1rem 1.5rem;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      padding-bottom: 0.75rem;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .brand-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #F59E0B, #B45309);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      box-shadow: 0 4px 14px rgba(245, 158, 11, 0.35);
+    }
+
+    .brand h1 {
+      font-family: 'Cinzel', serif;
+      font-size: 1.5rem;
+      font-weight: 900;
+      letter-spacing: 0.05em;
+      color: #FFF;
+      line-height: 1.1;
+    }
+
+    .brand span {
+      font-size: 0.75rem;
+      color: #9CA3AF;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      font-weight: 800;
+    }
+
+    /* Head Gauge: BPM & Dynamics HUD */
+    .hud-bar {
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 0.5rem 1.25rem;
+      border-radius: 20px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .hud-stat {
+      text-align: center;
+    }
+
+    .hud-stat .label {
+      font-size: 0.65rem;
+      font-weight: 900;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: #94A3B8;
+    }
+
+    .hud-stat .value {
+      font-family: 'Cinzel', serif;
+      font-size: 1.6rem;
+      font-weight: 900;
+      color: #FBBF24;
+      line-height: 1;
+    }
+
+    .hud-stat .sub {
+      font-size: 0.75rem;
+      font-weight: 800;
+      color: #E2E8F0;
+    }
+
+    .volume-meter {
+      width: 100px;
+      height: 10px;
+      background: #1E293B;
+      border-radius: 6px;
+      overflow: hidden;
+      margin-top: 4px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .volume-fill {
+      width: 70%;
+      height: 100%;
+      background: linear-gradient(90deg, #10B981, #F59E0B, #EF4444);
+      transition: width 0.1s ease;
+    }
+
+    /* Control Toggles */
+    .controls-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .btn {
+      padding: 0.6rem 1.2rem;
+      border-radius: 14px;
+      font-weight: 800;
+      font-size: 0.85rem;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      text-decoration: none;
+    }
+
+    .btn-gold {
+      background: linear-gradient(135deg, #F59E0B, #D97706);
+      color: #000;
+      box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+    }
+    .btn-gold:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(245, 158, 11, 0.6);
+    }
+
+    .btn-dark {
+      background: rgba(30, 41, 59, 0.8);
+      color: #E2E8F0;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .btn-dark:hover {
+      background: rgba(51, 65, 85, 0.9);
+      color: #FFF;
+      transform: translateY(-2px);
+    }
+
+    .btn-active {
+      background: #3B82F6 !important;
+      color: #FFF !important;
+      box-shadow: 0 0 16px rgba(59, 130, 246, 0.5);
+    }
+
+    /* Main Stage Area */
+    .stage-container {
+      flex: 1;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 580px;
+      margin-top: 0.5rem;
+    }
+
+    /* Orchestra Seating Grid */
+    .orchestra-pit {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      margin-top: 1.5rem;
+      z-index: 5;
+    }
+
+    .orchestra-section {
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(10px);
+      border-radius: 24px;
+      padding: 1.25rem;
+      text-align: center;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .orchestra-section.active {
+      background: rgba(30, 58, 138, 0.4);
+      border-color: rgba(96, 165, 250, 0.8);
+      transform: scale(1.03);
+      box-shadow: 0 10px 40px rgba(59, 130, 246, 0.35);
+    }
+
+    .orchestra-section.playing::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border: 2px solid #F59E0B;
+      border-radius: 24px;
+      animation: pulseGlow 1s infinite alternate;
+      pointer-events: none;
+    }
+
+    @keyframes pulseGlow {
+      from { opacity: 0.3; }
+      to { opacity: 0.9; }
+    }
+
+    .section-badge {
+      display: inline-block;
+      font-size: 0.65rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      padding: 0.25rem 0.6rem;
+      border-radius: 8px;
+      margin-bottom: 0.5rem;
+    }
+
+    .badge-left { background: rgba(59, 130, 246, 0.25); color: #93C5FD; }
+    .badge-center { background: rgba(16, 185, 129, 0.25); color: #6EE7B7; }
+    .badge-right { background: rgba(236, 72, 153, 0.25); color: #F472B6; }
+
+    .section-title {
+      font-family: 'Cinzel', serif;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #FFF;
+      margin-bottom: 0.25rem;
+    }
+
+    .section-instruments {
+      font-size: 0.75rem;
+      color: #94A3B8;
+      margin-bottom: 1rem;
+    }
+
+    .musicians-row {
+      display: flex;
+      justify-content: center;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .musician-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: #1E293B;
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .musician-avatar.active-note {
+      transform: translateY(-6px) scale(1.15);
+      border-color: #FBBF24;
+      background: #78350F;
+      box-shadow: 0 0 15px rgba(245, 158, 11, 0.7);
+    }
+
+    /* Conductor Podium & Vision Stage */
+    .podium-stage {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      margin-top: 1rem;
+      z-index: 20;
+    }
+
+    /* Video & Baton Canvas Container */
+    .vision-box {
+      position: relative;
+      width: 520px;
+      height: 390px;
+      border-radius: 28px;
+      overflow: hidden;
+      border: 3px solid rgba(245, 158, 11, 0.4);
+      background: #000;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 30px rgba(245, 158, 11, 0.2);
+    }
+
+    #webcam-video {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1);
+    }
+
+    #vision-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 2;
+      transform: scaleX(-1);
+    }
+
+    /* Overlay Guide & Baton Feedback */
+    .stage-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 5;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 1rem;
+    }
+
+    .zone-dividers {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      pointer-events: none;
+      opacity: 0.25;
+    }
+
+    .zone-col {
+      flex: 1;
+      border-right: 1px dashed rgba(255, 255, 255, 0.4);
+    }
+    .zone-col:last-child {
+      border-right: none;
+    }
+
+    .cue-toast {
+      background: rgba(0, 0, 0, 0.75);
+      border: 1px solid rgba(245, 158, 11, 0.5);
+      backdrop-filter: blur(8px);
+      padding: 0.4rem 1rem;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 800;
+      align-self: center;
+      color: #FDE68A;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+
+    /* Mode Banner */
+    .mode-banner {
+      position: absolute;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      padding: 0.35rem 0.9rem;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      color: #E2E8F0;
+      white-space: nowrap;
+      z-index: 6;
+      pointer-events: auto;
+    }
+
+    /* Interactive Mouse Baton Pad */
+    .mouse-pad {
+      position: absolute;
+      inset: 0;
+      z-index: 8;
+      cursor: crosshair;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at center, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0.9) 100%);
+    }
+
+    .mouse-baton-tip {
+      position: absolute;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #FFF 0%, #F59E0B 70%);
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      box-shadow: 0 0 20px #F59E0B, 0 0 40px #FBBF24;
+      display: none;
+    }
+
+    /* Start / Permission Overlay */
+    .stage-curtain {
+      position: absolute;
+      inset: 0;
+      z-index: 30;
+      background: rgba(9, 11, 16, 0.92);
+      backdrop-filter: blur(14px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 2rem;
+      border-radius: 28px;
+    }
+
+    .stage-curtain h2 {
+      font-family: 'Cinzel', serif;
+      font-size: 2rem;
+      color: #FBBF24;
+      margin-bottom: 0.5rem;
+    }
+
+    .stage-curtain p {
+      max-width: 380px;
+      font-size: 0.9rem;
+      color: #CBD5E1;
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+
+    /* Tutorial Mini Tips */
+    .tips-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-top: 1.5rem;
+      z-index: 5;
+    }
+
+    .tip-card {
+      background: rgba(15, 23, 42, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 18px;
+      padding: 0.85rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .tip-icon {
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+
+    .tip-card h4 {
+      font-size: 0.8rem;
+      font-weight: 800;
+      color: #F1F5F9;
+    }
+
+    .tip-card p {
+      font-size: 0.7rem;
+      color: #94A3B8;
+      line-height: 1.3;
+    }
+
+    @media (max-width: 900px) {
+      .orchestra-pit {
+        grid-template-columns: 1fr;
+      }
+      .vision-box {
+        width: 100%;
+        max-width: 480px;
+        height: 320px;
+      }
+      .tips-row {
+        grid-template-columns: 1fr;
+      }
+      header {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .hud-bar {
+        justify-content: space-around;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="concert-hall">
+    <div class="spotlight"></div>
+    <div class="stage-arc"></div>
+  </div>
+
+  <div class="app-wrap">
+    <!-- Top Header -->
+    <header>
+      <a href="/" class="brand" title="Return to Mr. Arthur Music">
+        <div class="brand-icon">🪄</div>
+        <div>
+          <h1>MAESTRO!</h1>
+          <span>Virtual Orchestra Conductor</span>
+        </div>
+      </a>
+
+      <!-- Realtime Conductor HUD -->
+      <div class="hud-bar">
+        <div class="hud-stat">
+          <div class="label">Tempo</div>
+          <div class="value" id="hud-bpm">--</div>
+          <div class="sub" id="hud-tempo-name">Ready</div>
+        </div>
+
+        <div class="hud-stat">
+          <div class="label">Dynamics</div>
+          <div class="value" id="hud-dynamics" style="color: #6EE7B7;">mf</div>
+          <div class="volume-meter">
+            <div class="volume-fill" id="volume-fill"></div>
+          </div>
+        </div>
+
+        <div class="hud-stat">
+          <div class="label">Active Cue</div>
+          <div class="value" id="hud-cue" style="color: #93C5FD; font-size: 1.2rem; padding-top: 4px;">Tutti</div>
+          <div class="sub">Full Orchestra</div>
+        </div>
+      </div>
+
+      <!-- Action Toggles -->
+      <div class="controls-bar">
+        <button id="mode-toggle-btn" class="btn btn-dark" title="Switch between Webcam and Mouse Baton">
+          <span>📹</span>
+          <span id="mode-label">Webcam Mode</span>
+        </button>
+        <button id="song-btn" class="btn btn-dark" title="Piece: Mozart - Eine Kleine Nachtmusik">
+          <span>🎼</span>
+          <span>Mozart</span>
+        </button>
+        <a href="/" class="btn btn-dark" title="Back to Music Lab">
+          <span>🏠</span>
+          <span>Exit</span>
+        </a>
+      </div>
+    </header>
+
+    <!-- Main Stage View -->
+    <div class="stage-container">
+
+      <!-- Orchestra Sections -->
+      <div class="orchestra-pit">
+        <!-- Left Section: 1st & 2nd Violins -->
+        <div class="orchestra-section" id="sec-left">
+          <span class="section-badge badge-left">Left Section</span>
+          <h3 class="section-title">Violin Section</h3>
+          <p class="section-instruments">1st & 2nd Violins · High Melody</p>
+          <div class="musicians-row">
+            <div class="musician-avatar" id="m-v1" title="1st Violin">🎻</div>
+            <div class="musician-avatar" id="m-v2" title="2nd Violin">🎻</div>
+            <div class="musician-avatar" id="m-v3" title="Violin Ensemble">🎻</div>
+          </div>
+        </div>
+
+        <!-- Center Section: Violas & Woodwinds -->
+        <div class="orchestra-section" id="sec-center">
+          <span class="section-badge badge-center">Center Section</span>
+          <h3 class="section-title">Viola & Winds</h3>
+          <p class="section-instruments">Viola Ensemble · Warm Inner Harmonies</p>
+          <div class="musicians-row">
+            <div class="musician-avatar" id="m-va1" title="Viola">🎻</div>
+            <div class="musician-avatar" id="m-va2" title="Viola Harmony">🎻</div>
+            <div class="musician-avatar" id="m-flute" title="Flute / Woodwinds">🪈</div>
+          </div>
+        </div>
+
+        <!-- Right Section: Celli & Double Bass -->
+        <div class="orchestra-section" id="sec-right">
+          <span class="section-badge badge-right">Right Section</span>
+          <h3 class="section-title">Celli & Basses</h3>
+          <p class="section-instruments">Violoncello & Contrabass · Bassline & Pulse</p>
+          <div class="musicians-row">
+            <div class="musician-avatar" id="m-vc1" title="Violoncello">🎻</div>
+            <div class="musician-avatar" id="m-vc2" title="Cello Rhythms">🎻</div>
+            <div class="musician-avatar" id="m-cb1" title="Double Bass">🪕</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Conductor Podium Box -->
+      <div class="podium-stage">
+        <div class="vision-box" id="vision-box">
+          <!-- Hidden Video Feed -->
+          <video id="webcam-video" autoplay playsinline muted></video>
+          <!-- Canvas for Pose Skeletal Mesh & Baton Particles -->
+          <canvas id="vision-canvas" width="640" height="480"></canvas>
+
+          <!-- Zone Lines Overlay -->
+          <div class="zone-dividers">
+            <div class="zone-col"></div>
+            <div class="zone-col"></div>
+            <div class="zone-col"></div>
+          </div>
+
+          <!-- Mouse Baton Pad (active when in Mouse Mode) -->
+          <div class="mouse-pad" id="mouse-pad" style="display: none;">
+            <div class="mouse-baton-tip" id="mouse-tip"></div>
+            <div style="text-align: center; pointer-events: none; opacity: 0.7;">
+              <p style="font-size: 1.2rem; font-weight: 800; color: #FDE68A;">🪄 Mouse Baton Active</p>
+              <p style="font-size: 0.75rem; color: #94A3B8;">Move cursor rhythmically up & down across sections</p>
+            </div>
+          </div>
+
+          <!-- Stage Curtain / Start Prompt -->
+          <div class="stage-curtain" id="stage-curtain">
+            <h2>Take the Podium</h2>
+            <p>Conduct Mozart's masterpiece! Move your hands up and down to set the tempo. Lift high for <em>forte</em>, low for <em>piano</em>, and cue sections left or right.</p>
+            <div style="display: flex; gap: 0.75rem;">
+              <button class="btn btn-gold" id="start-cam-btn">
+                <span>📹</span>
+                <span>Start with Webcam</span>
+              </button>
+              <button class="btn btn-dark" id="start-mouse-btn">
+                <span>🪄</span>
+                <span>Conduct with Mouse</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Bottom Mode Info Pill -->
+          <div class="mode-banner" id="stage-status-pill">
+            <span>Stand in frame & lift arms to begin</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Instructional Classroom Cards -->
+      <div class="tips-row">
+        <div class="tip-card">
+          <div class="tip-icon">⏱️</div>
+          <div>
+            <h4>Tempo (Speed)</h4>
+            <p>Faster downbeats accelerate the orchestra (Allegro). Slower arm sweeps bring them to Adagio.</p>
+          </div>
+        </div>
+
+        <div class="tip-card">
+          <div class="tip-icon">📢</div>
+          <div>
+            <h4>Dynamics (Volume)</h4>
+            <p>Conduct with big, wide arm sweeps for <strong>Forte (loud)</strong>. Keep hands small and low for <strong>Piano (quiet)</strong>.</p>
+          </div>
+        </div>
+
+        <div class="tip-card">
+          <div class="tip-icon">👉</div>
+          <div>
+            <h4>Cueing Sections</h4>
+            <p>Point or face towards the Violins (left), Violas (center), or Celli (right) to spotlight their parts.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Audio Synthesis & Conductor Engine -->
+  <script>
+    (function() {
+      // -------------------------------------------------------------
+      // 1. Audio Context & Orchestral Synthesizer
+      // -------------------------------------------------------------
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      let ctx = null;
+      let masterGain = null;
+      let reverbNode = null;
+
+      // Track stems and notes from Mozart's score
+      let scoreData = null;
+      let isPlaying = false;
+      let playbackPosition = 0; // in seconds
+      let currentBpm = 120;
+      let targetBpm = 120;
+      let currentVolume = 0.7; // 0.1 to 1.0
+      let activeZone = 1; // 0 = left, 1 = center, 2 = right
+      let isWebcamMode = true;
+
+      // Section gain controls for live zone cueing
+      let sectionGains = {
+        left: null,
+        center: null,
+        right: null
+      };
+
+      // Soundfont note audio buffer cache
+      const sampleCache = new Map();
+
+      async function initAudio() {
+        if (!ctx) {
+          ctx = new AudioCtx();
+          masterGain = ctx.createGain();
+          masterGain.gain.setValueAtTime(0.7, ctx.currentTime);
+
+          // Simple Convolver Reverb for concert hall acoustic depth
+          reverbNode = ctx.createConvolver();
+          createSimpleReverb(ctx, 2.4, 0.4).then(buf => {
+            reverbNode.buffer = buf;
+          });
+
+          // Section Submixers
+          ['left', 'center', 'right'].forEach(sec => {
+            const g = ctx.createGain();
+            g.gain.setValueAtTime(1.0, ctx.currentTime);
+            g.connect(masterGain);
+            sectionGains[sec] = g;
+          });
+
+          masterGain.connect(reverbNode);
+          reverbNode.connect(ctx.destination);
+          masterGain.connect(ctx.destination);
+        }
+        if (ctx.state === 'suspended') {
+          await ctx.resume();
+        }
+      }
+
+      function createSimpleReverb(audioCtx, duration, decay) {
+        const rate = audioCtx.sampleRate;
+        const length = rate * duration;
+        const impulse = audioCtx.createBuffer(2, length, rate);
+        for (let i = 0; i < 2; i++) {
+          const channel = impulse.getChannelData(i);
+          for (let j = 0; j < length; j++) {
+            channel[j] = (Math.random() * 2 - 1) * Math.pow(1 - j / length, decay);
+          }
+        }
+        return Promise.resolve(impulse);
+      }
+
+      // Convert MIDI note number to Frequency
+      function midiToFreq(m) {
+        return 440 * Math.pow(2, (m - 69) / 12);
+      }
+
+      // Play rich bowed string instrument voice (dual sawtooth + warmth filter)
+      function triggerStringVoice(midi, duration, velocity, section) {
+        if (!ctx || ctx.state !== 'running') return;
+
+        const freq = midiToFreq(midi);
+        const now = ctx.currentTime;
+        const secGain = sectionGains[section] || masterGain;
+
+        // Dual detuned oscillators for orchestral ensemble unison effect
+        const osc1 = ctx.createOscillator();
+        const osc2 = ctx.createOscillator();
+        osc1.type = 'sawtooth';
+        osc2.type = 'sawtooth';
+        osc1.frequency.setValueAtTime(freq, now);
+        osc2.frequency.setValueAtTime(freq * 1.002, now); // slight chorus detune
+
+        // Warm lowpass filter to mimic wooden instrument bodies
+        const filter = ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        const cutoff = Math.min(freq * 3.5 + 400, 4800);
+        filter.frequency.setValueAtTime(cutoff, now);
+        filter.Q.setValueAtTime(2.0, now);
+
+        // Amplitude Envelope (Soft string bow attack, steady sustain, natural ring)
+        const env = ctx.createGain();
+        const peakGain = Math.max(0.04, Math.min(0.28, velocity * currentVolume * 0.25));
+        
+        env.gain.setValueAtTime(0.0001, now);
+        env.gain.linearRampToValueAtTime(peakGain, now + 0.04);
+        env.gain.setValueAtTime(peakGain * 0.85, now + Math.max(0.06, duration * 0.8));
+        env.gain.exponentialRampToValueAtTime(0.0001, now + duration + 0.12);
+
+        osc1.connect(filter);
+        osc2.connect(filter);
+        filter.connect(env);
+        env.connect(secGain);
+
+        osc1.start(now);
+        osc2.start(now);
+        osc1.stop(now + duration + 0.15);
+        osc2.stop(now + duration + 0.15);
+      }
+
+      // -------------------------------------------------------------
+      // 2. Score Loading & Scheduling Engine
+      // -------------------------------------------------------------
+      async function loadScore() {
+        try {
+          const res = await fetch('/conductor/eine-kleine-nachtmusik.json');
+          scoreData = await res.json();
+          console.log('Score loaded:', scoreData.header.name);
+        } catch (err) {
+          console.error('Failed to load score:', err);
+        }
+      }
+
+      // Track playing notes & schedule ahead loop
+      let lastAudioTick = 0;
+      function audioLoop(timestamp) {
+        if (!isPlaying || !scoreData) {
+          requestAnimationFrame(audioLoop);
+          return;
+        }
+
+        if (!lastAudioTick) lastAudioTick = timestamp;
+        const deltaSeconds = (timestamp - lastAudioTick) / 1000;
+        lastAudioTick = timestamp;
+
+        // Advance score playback relative to current dynamic BPM
+        const tempoScale = currentBpm / scoreData.header.bpm;
+        const prevPos = playbackPosition;
+        playbackPosition += deltaSeconds * tempoScale;
+
+        // Loop piece when it reaches the end
+        if (playbackPosition > scoreData.duration) {
+          playbackPosition = 0;
+        }
+
+        // Check which notes fall within this window and trigger them
+        scoreData.tracks.forEach((track, trackIdx) => {
+          let section = 'center';
+          if (trackIdx === 0 || trackIdx === 1) section = 'left';       // Violins
+          else if (trackIdx === 2) section = 'center';                  // Violas
+          else if (trackIdx === 3 || trackIdx === 4) section = 'right'; // Celli & Basses
+
+          track.notes.forEach(note => {
+            if (note.time >= prevPos && note.time < playbackPosition) {
+              const scaledDuration = note.duration / Math.max(0.4, tempoScale);
+              triggerStringVoice(note.midi, scaledDuration, note.velocity, section);
+              highlightMusician(section, note.name);
+            }
+          });
+        });
+
+        requestAnimationFrame(audioLoop);
+      }
+
+      // Visual flash on musician avatars when notes are sounded
+      function highlightMusician(section, noteName) {
+        let avatarId = 'm-v1';
+        if (section === 'left') {
+          avatarId = Math.random() > 0.5 ? 'm-v1' : 'm-v2';
+        } else if (section === 'center') {
+          avatarId = Math.random() > 0.5 ? 'm-va1' : 'm-va2';
+        } else {
+          avatarId = Math.random() > 0.5 ? 'm-vc1' : 'm-cb1';
+        }
+
+        const el = document.getElementById(avatarId);
+        if (el) {
+          el.classList.add('active-note');
+          setTimeout(() => el.classList.remove('active-note'), 160);
+        }
+      }
+
+      // -------------------------------------------------------------
+      // 3. Pose Detection & Conducting Gestures (MediaPipe)
+      // -------------------------------------------------------------
+      const videoEl = document.getElementById('webcam-video');
+      const canvasEl = document.getElementById('vision-canvas');
+      const canvasCtx = canvasEl.getContext('2d');
+      let mediaCamera = null;
+      let mediaPose = null;
+
+      // Gesture tracking buffers
+      let wristHistory = [];
+      let lastBeatTime = performance.now();
+      let lastWristY = 0;
+      let wristVelocity = 0;
+
+      async function setupMediaPipe() {
+        mediaPose = new Pose({
+          locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
+        });
+
+        mediaPose.setOptions({
+          modelComplexity: 0, // Lite model for ultra-low latency on school hardware
+          smoothLandmarks: true,
+          minDetectionConfidence: 0.5,
+          minTrackingConfidence: 0.5
+        });
+
+        mediaPose.onResults(onPoseResults);
+
+        mediaCamera = new Camera(videoEl, {
+          onFrame: async () => {
+            if (isWebcamMode) {
+              await mediaPose.send({ image: videoEl });
+            }
+          },
+          width: 640,
+          height: 480
+        });
+
+        await mediaCamera.start();
+      }
+
+      function onPoseResults(results) {
+        canvasCtx.save();
+        canvasCtx.clearRect(0, 0, canvasEl.width, canvasEl.height);
+
+        if (!results.poseLandmarks) {
+          canvasCtx.restore();
+          return;
+        }
+
+        const landmarks = results.poseLandmarks;
+        const rightWrist = landmarks[16]; // Right wrist (conductor baton hand)
+        const leftWrist = landmarks[15];  // Left wrist (expression hand)
+        const rightShoulder = landmarks[12];
+        const leftShoulder = landmarks[11];
+
+        // Draw Conducting Baton Glow Point at wrist
+        if (rightWrist && rightWrist.visibility > 0.4) {
+          const rx = rightWrist.x * canvasEl.width;
+          const ry = rightWrist.y * canvasEl.height;
+
+          // Baton head
+          canvasCtx.beginPath();
+          canvasCtx.arc(rx, ry, 12, 0, 2 * Math.PI);
+          canvasCtx.fillStyle = '#F59E0B';
+          canvasCtx.shadowColor = '#FBBF24';
+          canvasCtx.shadowBlur = 24;
+          canvasCtx.fill();
+
+          // Connect forearm to wrist
+          if (landmarks[14]) {
+            const ex = landmarks[14].x * canvasEl.width;
+            const ey = landmarks[14].y * canvasEl.height;
+            canvasCtx.beginPath();
+            canvasCtx.moveTo(ex, ey);
+            canvasCtx.lineTo(rx, ry);
+            canvasCtx.strokeStyle = 'rgba(245, 158, 11, 0.7)';
+            canvasCtx.lineWidth = 4;
+            canvasCtx.stroke();
+          }
+
+          // 1. Calculate Conducting Tempo (Vertical downbeat / inflection)
+          trackConductingGesture(rightWrist.y, rightWrist.x);
+
+          // 2. Calculate Dynamics from hand elevation & armspan
+          if (rightShoulder && leftWrist) {
+            const avgY = (rightWrist.y + leftWrist.y) / 2;
+            const shoulderY = (rightShoulder.y + leftShoulder.y) / 2;
+            // Higher hands = forte, lower hands = piano
+            const elevationFactor = Math.max(0.15, Math.min(1.0, (shoulderY + 0.35 - avgY) * 1.5));
+            updateDynamics(elevationFactor);
+          }
+
+          // 3. Calculate Section Cueing (Horizontal placement)
+          updateSectionCue(rightWrist.x);
+        }
+
+        canvasCtx.restore();
+      }
+
+      // Measure downbeat velocity and calculate BPM
+      function trackConductingGesture(yNorm, xNorm) {
+        const now = performance.now();
+        const deltaT = now - (wristHistory[wristHistory.length - 1]?.t || now);
+        
+        wristHistory.push({ y: yNorm, x: xNorm, t: now });
+        if (wristHistory.length > 18) wristHistory.shift();
+
+        // Check for direction reversal (inflection at the bottom of a beat stroke)
+        if (wristHistory.length >= 4) {
+          const prev2 = wristHistory[wristHistory.length - 3].y;
+          const prev1 = wristHistory[wristHistory.length - 2].y;
+          const curr = wristHistory[wristHistory.length - 1].y;
+
+          // Downward motion turning upward (The "Ictus" / Rebound of a conducting beat)
+          if (prev1 > prev2 && curr < prev1 && prev1 > 0.45) {
+            const beatInterval = now - lastBeatTime;
+            if (beatInterval > 220 && beatInterval < 1400) {
+              const rawBpm = 60000 / beatInterval;
+              // Smooth BPM
+              targetBpm = targetBpm * 0.6 + rawBpm * 0.4;
+              updateBpmDisplay(targetBpm);
+              lastBeatTime = now;
+            }
+          }
+        }
+      }
+
+      // -------------------------------------------------------------
+      // 4. Mouse Baton Alternative (for laptops/devices without cam)
+      // -------------------------------------------------------------
+      const mousePad = document.getElementById('mouse-pad');
+      const mouseTip = document.getElementById('mouse-tip');
+      let lastMouseY = 0;
+      let lastMouseT = performance.now();
+
+      mousePad.addEventListener('mousemove', (e) => {
+        if (isWebcamMode) return;
+        const rect = mousePad.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        const my = e.clientY - rect.top;
+
+        mouseTip.style.display = 'block';
+        mouseTip.style.left = `${mx}px`;
+        mouseTip.style.top = `${my}px`;
+
+        const yNorm = my / rect.height;
+        const xNorm = 1 - (mx / rect.width); // Mirrored for natural feel
+
+        trackConductingGesture(yNorm, xNorm);
+
+        // Height determines dynamics in mouse mode
+        const dyn = Math.max(0.15, Math.min(1.0, 1 - yNorm * 0.9));
+        updateDynamics(dyn);
+
+        updateSectionCue(xNorm);
+      });
+
+      // -------------------------------------------------------------
+      // 5. GUI State & Feedback Updates
+      // -------------------------------------------------------------
+      const hudBpm = document.getElementById('hud-bpm');
+      const hudTempoName = document.getElementById('hud-tempo-name');
+      const hudDynamics = document.getElementById('hud-dynamics');
+      const volumeFill = document.getElementById('volume-fill');
+      const hudCue = document.getElementById('hud-cue');
+      const secLeft = document.getElementById('sec-left');
+      const secCenter = document.getElementById('sec-center');
+      const secRight = document.getElementById('sec-right');
+
+      function updateBpmDisplay(bpm) {
+        currentBpm = Math.max(50, Math.min(220, Math.round(bpm)));
+        hudBpm.textContent = currentBpm;
+
+        // Italian Musical Tempo Terms for Classroom Education
+        if (currentBpm < 70) hudTempoName.textContent = 'Adagio (Slow)';
+        else if (currentBpm < 95) hudTempoName.textContent = 'Andante (Walking)';
+        else if (currentBpm < 125) hudTempoName.textContent = 'Moderato';
+        else if (currentBpm < 155) hudTempoName.textContent = 'Allegro (Lively)';
+        else hudTempoName.textContent = 'Presto (Very Fast!)';
+      }
+
+      function updateDynamics(factor) {
+        currentVolume = factor;
+        const pct = Math.round(factor * 100);
+        volumeFill.style.width = `${pct}%`;
+
+        if (masterGain && ctx) {
+          masterGain.gain.setValueAtTime(factor * 0.8, ctx.currentTime);
+        }
+
+        if (pct < 30) {
+          hudDynamics.textContent = 'p (Piano)';
+          hudDynamics.style.color = '#93C5FD';
+        } else if (pct < 65) {
+          hudDynamics.textContent = 'mf (Mezzo-Forte)';
+          hudDynamics.style.color = '#6EE7B7';
+        } else {
+          hudDynamics.textContent = 'f (Forte!)';
+          hudDynamics.style.color = '#F59E0B';
+        }
+      }
+
+      function updateSectionCue(xNorm) {
+        // xNorm is 0 (left of mirror) to 1 (right of mirror)
+        let zone = 1; // Center
+        if (xNorm > 0.62) zone = 0;      // Violins (Stage Left)
+        else if (xNorm < 0.38) zone = 2; // Celli (Stage Right)
+
+        if (zone === activeZone) return;
+        activeZone = zone;
+
+        secLeft.classList.toggle('active', zone === 0);
+        secCenter.classList.toggle('active', zone === 1);
+        secRight.classList.toggle('active', zone === 2);
+
+        if (zone === 0) {
+          hudCue.textContent = 'Violins';
+          hudCue.style.color = '#93C5FD';
+          setSectionLevels(1.0, 0.45, 0.45);
+        } else if (zone === 2) {
+          hudCue.textContent = 'Celli & Bass';
+          hudCue.style.color = '#F472B6';
+          setSectionLevels(0.45, 0.45, 1.0);
+        } else {
+          hudCue.textContent = 'Tutti (All)';
+          hudCue.style.color = '#6EE7B7';
+          setSectionLevels(1.0, 1.0, 1.0);
+        }
+      }
+
+      function setSectionLevels(l, c, r) {
+        if (!ctx) return;
+        const now = ctx.currentTime;
+        sectionGains.left?.gain.setTargetAtTime(l, now, 0.1);
+        sectionGains.center?.gain.setTargetAtTime(c, now, 0.1);
+        sectionGains.right?.gain.setTargetAtTime(r, now, 0.1);
+      }
+
+      // -------------------------------------------------------------
+      // 6. Mode & Start Buttons
+      // -------------------------------------------------------------
+      const stageCurtain = document.getElementById('stage-curtain');
+      const startCamBtn = document.getElementById('start-cam-btn');
+      const startMouseBtn = document.getElementById('start-mouse-btn');
+      const modeToggleBtn = document.getElementById('mode-toggle-btn');
+      const modeLabel = document.getElementById('mode-label');
+      const stageStatusPill = document.getElementById('stage-status-pill');
+
+      async function beginPerformance(webcam) {
+        await initAudio();
+        await loadScore();
+        stageCurtain.style.display = 'none';
+        isPlaying = true;
+
+        if (webcam) {
+          isWebcamMode = true;
+          mousePad.style.display = 'none';
+          modeLabel.textContent = 'Webcam Mode';
+          stageStatusPill.textContent = 'Move hands rhythmically to conduct';
+          try {
+            await setupMediaPipe();
+          } catch (err) {
+            console.warn('Webcam permission denied or error:', err);
+            enableMouseMode();
+          }
+        } else {
+          enableMouseMode();
+        }
+
+        requestAnimationFrame(audioLoop);
+      }
+
+      function enableMouseMode() {
+        isWebcamMode = false;
+        mousePad.style.display = 'flex';
+        modeLabel.textContent = 'Mouse Baton';
+        stageStatusPill.textContent = 'Move mouse up & down to beat time';
+      }
+
+      startCamBtn.addEventListener('click', () => beginPerformance(true));
+      startMouseBtn.addEventListener('click', () => beginPerformance(false));
+
+      modeToggleBtn.addEventListener('click', () => {
+        if (isWebcamMode) {
+          enableMouseMode();
+        } else {
+          isWebcamMode = true;
+          mousePad.style.display = 'none';
+          modeLabel.textContent = 'Webcam Mode';
+          stageStatusPill.textContent = 'Move hands rhythmically to conduct';
+          if (!mediaCamera) setupMediaPipe();
+        }
+      });
+
+    })();
+  </script>
+</body>
+</html>
