@@ -743,7 +743,7 @@ class StorageService {
     const entries = log[classId] || [];
     const existing = entries.find((e) => e.date === date);
     const merged: ClassLogEntry = { ...(existing || { date }), ...updates, date };
-    const empty = !merged.lessonId && !merged.note?.trim();
+    const empty = !merged.lessonId && !merged.note?.trim() && !merged.notes?.trim();
     log[classId] = [...entries.filter((e) => e.date !== date), ...(empty ? [] : [merged])];
     this.setItem(STORAGE_KEYS.CLASS_LOG, log);
   }
