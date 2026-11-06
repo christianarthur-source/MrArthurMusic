@@ -103,7 +103,6 @@ const DEFAULT_LEADERBOARD_ENTRIES: StaffWarsLeaderboardEntry[] = [
 
 const CLEF_LEADERBOARD_TABS: { id: 'all' | StaffClef; label: string; icon: string }[] = [
   { id: 'all', label: 'Main Board', icon: '🏆' },
-  { id: 'treble', label: 'Treble', icon: '𝄞' },
   { id: 'bass', label: 'Bass', icon: '𝄢' },
   { id: 'alto', label: 'Alto', icon: '𝄡' },
   { id: 'grand', label: 'Grand', icon: '𝄞/𝄢' },
@@ -1589,7 +1588,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
               </div>
 
               {/* Clef Leaderboard Selector Buttons */}
-              <div className="grid grid-cols-3 sm:grid-cols-5 gap-1 p-1 bg-slate-950/90 border border-slate-800 rounded-2xl">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 p-1 bg-slate-950/90 border border-slate-800 rounded-2xl">
                 {CLEF_LEADERBOARD_TABS.map((tab) => {
                   const isActive = leaderboardClef === tab.id;
                   return (
