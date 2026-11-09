@@ -3,6 +3,14 @@ import react from '@vitejs/plugin-react';
 import fs from 'fs';
 import path from 'path';
 import { defineConfig, Plugin } from 'vite';
+import {
+  allowedBadges,
+  clampRhythmLevel,
+  clampStaffWarsLevel,
+  clampStreak,
+  rhythmMaxPoints,
+  staffWarsMaxScore,
+} from './src/server/leaderboardRules';
 
 interface StudentRecord {
   id: string;
@@ -294,10 +302,18 @@ function classroomApiPlugin(): Plugin {
           }
 
           if (action === 'staff_wars_submit_score') {
-            const name = String(body.name || '').trim();
+            // Same rules as the live server: signed-in students need their PIN; scores must be possible.
+            const studentId = body.studentId ? String(body.studentId) : null;
+            const signedIn = studentId ? db.students.find((s) => s.id === studentId) : null;
+            if (studentId && (!signedIn || String(signedIn.pin).trim() !== String(body.pin || '').trim())) {
+              return send(401, { ok: false, error: 'Please sign in again to save your score.' });
+            }
+            const name = signedIn ? signedIn.firstName : String(body.name || '').trim();
             const score = parseInt(body.score, 10);
-            const level = Math.min(99, Math.max(1, parseInt(body.level, 10) || 1));
-            const studentId = body.studentId || null;
+            const level = clampStaffWarsLevel(body.level);
+            if (score > staffWarsMaxScore(level)) {
+              return send(400, { ok: false, error: `That score isn't possible at level ${level}.` });
+            }
             const rawClef = String(body.clef || '').trim().toLowerCase();
             const validClefs = ['treble', 'bass', 'alto', 'tenor', 'grand'];
             const clef = validClefs.includes(rawClef) ? rawClef : null;
@@ -309,8 +325,7 @@ function classroomApiPlugin(): Plugin {
             const existingIdx = db.staffWarsLeaderboard.findIndex(
               (e: any) =>
                 !e._clefOnly &&
-                ((studentId && e.studentId === studentId) ||
-                  ((!studentId || !e.studentId) && normalizeStudentName(e.name) === normName))
+                (studentId ? e.studentId === studentId || (!e.studentId && normalizeStudentName(e.name) === normName) : !e.studentId && normalizeStudentName(e.name) === normName)
             );
             if (existingIdx >= 0) {
               const prevScore = Number(db.staffWarsLeaderboard[existingIdx].score) || 0;
@@ -337,8 +352,7 @@ function classroomApiPlugin(): Plugin {
                 (e: any) =>
                   e._clefOnly &&
                   e.clef === clef &&
-                  ((studentId && e.studentId === studentId) ||
-                    ((!studentId || !e.studentId) && normalizeStudentName(e.name) === normName))
+                  (studentId ? e.studentId === studentId || (!e.studentId && normalizeStudentName(e.name) === normName) : !e.studentId && normalizeStudentName(e.name) === normName)
               );
               if (cIdx >= 0) {
                 const prevScore = Number(db.staffWarsLeaderboard[cIdx].score) || 0;
@@ -379,75 +393,53 @@ function classroomApiPlugin(): Plugin {
           }
 
           if (action === 'rhythm_rockstars_submit_score') {
+            // Same rules as the live server: needs the student's PIN; points trimmed to one round's worth.
             if (!db.rhythmRockstarsLeaderboard) db.rhythmRockstarsLeaderboard = [];
             const studentId = String(body.studentId || '').trim();
-            const name = String(body.name || '').trim() || 'Rockstar';
-            const pointsEarned = Math.max(0, parseInt(body.pointsEarned, 10) || 0);
-            const reportedTotal = Math.max(0, parseInt(body.totalScore, 10) || 0);
-            const streak = Math.max(0, parseInt(body.streak, 10) || 0);
-            const reportedHighestStreak = Math.max(0, parseInt(body.highestStreak, 10) || 0);
-            const level = Math.max(1, parseInt(body.level, 10) || 1);
+            const st = db.students.find((s) => s.id === studentId);
+            if (!st || String(st.pin).trim() !== String(body.pin || '').trim()) {
+              return send(401, { ok: false, error: 'Please sign in again to save your score.' });
+            }
+            const hasLevel = body.level !== undefined && body.level !== null;
+            const level = clampRhythmLevel(body.level);
             const stars = Math.max(0, Math.min(3, parseInt(body.stars, 10) || 0));
             const accuracy = Math.max(0, Math.min(100, parseInt(body.accuracy, 10) || 0));
-
-            const normName = normalizeStudentName(name);
-            const idx = db.rhythmRockstarsLeaderboard.findIndex(
-              (e: any) =>
-                (studentId && e.id === studentId) ||
-                ((!studentId || !e.id) && normName && normalizeStudentName(e.name) === normName)
-            );
+            const streak = clampStreak(body.streak);
+            const pointsEarned = hasLevel
+              ? Math.min(Math.max(0, parseInt(body.pointsEarned, 10) || 0), rhythmMaxPoints(level, stars, streak))
+              : 0;
+            const idx = db.rhythmRockstarsLeaderboard.findIndex((e: any) => e.id === studentId);
             const existing = idx >= 0 ? db.rhythmRockstarsLeaderboard[idx] : null;
             const mergedProgress: Record<string, { stars: number; highAccuracy: number }> = {
               ...(existing?.levelProgress && typeof existing.levelProgress === 'object' ? existing.levelProgress : {}),
             };
-            if (body.levelProgress && typeof body.levelProgress === 'object') {
-              for (const [k, v] of Object.entries(body.levelProgress as Record<string, any>)) {
-                const lvlNum = parseInt(k, 10);
-                if (!Number.isFinite(lvlNum) || lvlNum < 1) continue;
-                const prev = mergedProgress[lvlNum] || { stars: 0, highAccuracy: 0 };
-                mergedProgress[lvlNum] = {
-                  stars: Math.max(prev.stars || 0, Math.min(3, parseInt(v?.stars, 10) || 0)),
-                  highAccuracy: Math.max(prev.highAccuracy || 0, Math.min(100, parseInt(v?.highAccuracy, 10) || 0)),
-                };
-              }
-            }
-            if (body.level !== undefined && (stars > 0 || accuracy > 0 || !mergedProgress[level])) {
+            if (hasLevel && (stars > 0 || accuracy > 0 || !mergedProgress[level])) {
               const prev = mergedProgress[level] || { stars: 0, highAccuracy: 0 };
               mergedProgress[level] = {
                 stars: Math.max(prev.stars || 0, stars),
                 highAccuracy: Math.max(prev.highAccuracy || 0, accuracy),
               };
             }
-            const badgeSet = new Set<string>([
-              ...(Array.isArray(existing?.badges) ? existing.badges.map(String) : ['rockstar_rookie']),
-              ...(Array.isArray(body.badges) ? body.badges.map(String) : []),
-              ...(Array.isArray(body.newBadges) ? body.newBadges.map(String) : []),
-            ]);
-            const badges = Array.from(badgeSet);
-            const baseScore = Number(existing?.totalScore) || 0;
-            const totalScore = Math.max(baseScore + pointsEarned, reportedTotal);
-            const highestStreak = Math.max(Number(existing?.highestStreak) || 0, streak, reportedHighestStreak);
-            const incrementedQuizzes = (Number(existing?.quizzesCompleted) || 0) + (pointsEarned > 0 ? 1 : 0);
-            const quizzesCompleted = Math.max(incrementedQuizzes, parseInt(body.quizzesCompleted, 10) || 0);
-            const progressLevels = Object.keys(mergedProgress)
-              .map((k) => parseInt(k, 10))
-              .filter((n) => Number.isFinite(n) && n >= 1);
-            const highestLevel = Math.max(1, Number(existing?.highestLevel) || 1, level, ...progressLevels);
-            const starsCount = Object.values(mergedProgress).reduce((sum, p) => sum + (Number(p?.stars) || 0), 0);
-
+            const badges = Array.from(
+              new Set<string>([
+                ...(Array.isArray(existing?.badges) ? allowedBadges(existing.badges) : ['rockstar_rookie']),
+                ...allowedBadges(body.newBadges),
+              ])
+            );
+            const progressLevels = Object.keys(mergedProgress).map((k) => parseInt(k, 10)).filter((n) => n >= 1);
             const updatedRecord = {
-              id: studentId || existing?.id || makeId('rr'),
-              name,
+              id: studentId,
+              name: st.firstName,
               avatar: body.avatar || existing?.avatar || '🎸',
               classCode: body.classCode || existing?.classCode || 'Classroom',
-              totalScore,
-              highestLevel,
-              highestStreak,
-              quizzesCompleted,
+              totalScore: (Number(existing?.totalScore) || 0) + pointsEarned,
+              highestLevel: Math.max(1, Number(existing?.highestLevel) || 1, hasLevel ? level : 1, ...progressLevels),
+              highestStreak: Math.max(Number(existing?.highestStreak) || 0, hasLevel ? streak : 0),
+              quizzesCompleted: (Number(existing?.quizzesCompleted) || 0) + (pointsEarned > 0 ? 1 : 0),
               levelProgress: mergedProgress,
               badges,
               badgesCount: badges.length,
-              starsCount,
+              starsCount: Object.values(mergedProgress).reduce((sum, p) => sum + (Number(p?.stars) || 0), 0),
               updatedAt: new Date().toISOString(),
             };
             if (idx >= 0) db.rhythmRockstarsLeaderboard[idx] = updatedRecord;
@@ -456,7 +448,7 @@ function classroomApiPlugin(): Plugin {
             const top = db.rhythmRockstarsLeaderboard.slice(0, 150).map((item: any, i: number) => ({ ...item, rank: i + 1 }));
             db.rhythmRockstarsLeaderboard = top;
             saveClassroomDb(db);
-            const savedStudent = top.find((e: any) => e.id === updatedRecord.id) || { ...updatedRecord, rank: top.length + 1 };
+            const savedStudent = top.find((e: any) => e.id === studentId) || { ...updatedRecord, rank: top.length + 1 };
             return send(200, { ok: true, student: savedStudent, leaderboard: top });
           }
 
@@ -555,6 +547,22 @@ function classroomApiPlugin(): Plugin {
             db.myClasses = { ...(db.myClasses || {}), [t.id]: Array.isArray(body.classIds) ? body.classIds.map(String) : [] };
             saveClassroomDb(db);
             return send(200, { ok: true, myClassIds: db.myClasses[t.id] });
+          }
+
+          if (action === 'teacher_leaderboard_remove') {
+            if (!devTeacherFor(String(body.teacherPin || ''))) return send(401, { ok: false, error: 'Invalid Teacher PIN.' });
+            const studentId = String(body.studentId || '').trim();
+            const normName = normalizeStudentName(String(body.name || ''));
+            if (!studentId && !normName) return send(400, { ok: false, error: 'Pick an entry to remove.' });
+            const idKey = body.game === 'rhythm_rockstars' ? 'id' : 'studentId';
+            const listKey = body.game === 'rhythm_rockstars' ? 'rhythmRockstarsLeaderboard' : 'staffWarsLeaderboard';
+            const list: any[] = (db as any)[listKey] || [];
+            const kept = list.filter((e: any) =>
+              studentId ? String(e[idKey] || '') !== studentId : e[idKey] || normalizeStudentName(String(e.name || '')) !== normName
+            );
+            (db as any)[listKey] = kept;
+            saveClassroomDb(db);
+            return send(200, { ok: true, removed: list.length - kept.length });
           }
 
           if (action === 'teacher_login' || action === 'teacher_overview') {

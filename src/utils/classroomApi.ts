@@ -1072,6 +1072,29 @@ function executeLocalFallback(payload: Record<string, any>): any {
     return { ok: true, student: savedStudent, leaderboard: top };
   }
 
+  if (action === 'teacher_leaderboard_remove') {
+    // Offline copy: drop the entry from this browser's cached Staff Wars boards.
+    const studentId = String(payload.studentId || '');
+    const normName = normalizeStudentName(String(payload.name || ''));
+    let removed = 0;
+    if (payload.game === 'staff_wars') {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (!key || !key.startsWith('staff_wars_leaderboard')) continue;
+        try {
+          const list = JSON.parse(localStorage.getItem(key) || '[]');
+          if (!Array.isArray(list)) continue;
+          const kept = list.filter((e: any) =>
+            studentId ? e?.studentId !== studentId : e?.studentId || normalizeStudentName(String(e?.name || '')) !== normName
+          );
+          removed += list.length - kept.length;
+          if (kept.length !== list.length) localStorage.setItem(key, JSON.stringify(kept));
+        } catch {}
+      }
+    }
+    return { ok: true, removed };
+  }
+
   throw new Error('Unknown classroom action: ' + action);
 }
 
@@ -1454,6 +1477,12 @@ export async function teacherAssignProject(params: {
   };
 }
 
+/** The signed-in student's PIN, sent with a score so the server knows it's really them. */
+function pinFor(studentId?: string): { pin?: string } {
+  const session = getSavedStudentSession();
+  return studentId && session?.id === studentId && session.pin ? { pin: session.pin } : {};
+}
+
 export async function fetchStaffWarsLeaderboard(level = 1, clef = 'all'): Promise<any[]> {
   const res = await callClassroomBackend({
     action: 'staff_wars_leaderboard',
@@ -1474,6 +1503,7 @@ export async function submitStaffWarsScore(params: {
   const res = await callClassroomBackend({
     action: 'staff_wars_submit_score',
     ...params,
+    ...pinFor(params.studentId),
     level: Math.min(99, Math.max(1, params.level || 1)),
   });
   return {
@@ -1516,6 +1546,7 @@ export async function submitRhythmRockstarsScore(params: {
   const res = await callClassroomBackend({
     action: 'rhythm_rockstars_submit_score',
     ...params,
+    ...pinFor(params.studentId),
   });
   return {
     student: res.student || null,
@@ -1523,5 +1554,14 @@ export async function submitRhythmRockstarsScore(params: {
   };
 }
 
-
+/** Teacher: remove a student's (by id) or a guest's (by name) entry from a game leaderboard. */
+export async function teacherRemoveLeaderboardEntry(params: {
+  teacherPin: string;
+  game: 'staff_wars' | 'rhythm_rockstars';
+  studentId?: string;
+  name?: string;
+}): Promise<number> {
+  const res = await callClassroomBackend({ action: 'teacher_leaderboard_remove', ...params });
+  return Number(res.removed) || 0;
+}
 

@@ -34,8 +34,10 @@ import {
   CheckCircle2,
   Save,
   Star,
+  Trophy,
 } from 'lucide-react';
 import { EdLawPrivacyModal } from './EdLawPrivacyModal';
+import { LeaderboardManager } from './LeaderboardManager';
 import { Score } from '../types/music';
 import {
   PublicStudentInfo,
@@ -224,7 +226,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
   const [myClassIds, setMyClassIds] = useState<string[]>([]);
   const [classView, setClassView] = useState<'mine' | 'all'>('all');
   const [newTeacherPinField, setNewTeacherPinField] = useState<string>('');
-  const [teacherTab, setTeacherTab] = useState<'students' | 'classrooms' | 'projects' | 'teachers' | 'settings'>('students');
+  const [teacherTab, setTeacherTab] = useState<'students' | 'classrooms' | 'projects' | 'teachers' | 'leaderboards' | 'settings'>('students');
   const [allStudents, setAllStudents] = useState<StudentRecord[]>([]);
   const [allProjects, setAllProjects] = useState<SavedProjectRecord[]>([]);
   const [teacherError, setTeacherError] = useState<string | null>(null);
@@ -2047,6 +2049,18 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                   </button>
                   <button
                     type="button"
+                    onClick={() => setTeacherTab('leaderboards')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer ${
+                      teacherTab === 'leaderboards'
+                        ? 'bg-amber-400 text-slate-950 shadow-sm'
+                        : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                    }`}
+                  >
+                    <Trophy className="w-3.5 h-3.5" />
+                    <span>Leaderboards</span>
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => setTeacherTab('settings')}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer ${
                       teacherTab === 'settings'
@@ -3337,6 +3351,8 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
               )}
 
               {/* TAB C: SETTINGS & BACKUP */}
+              {teacherTab === 'leaderboards' && <LeaderboardManager teacherPin={activeTeacherPin} />}
+
               {teacherTab === 'settings' && (
                 <div className="space-y-4 text-xs">
                   <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 flex items-center justify-between gap-4">
