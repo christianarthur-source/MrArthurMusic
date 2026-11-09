@@ -6,6 +6,8 @@
  * and never written back. See ARCHITECTURE.md §"Time model".
  */
 
+import type { SongKey } from './musicKey';
+
 export const PROJECT_SCHEMA_VERSION = 1;
 export const PPQ = 960;
 
@@ -105,6 +107,9 @@ export interface MidiRegion extends RegionBase {
   /** Ticks of one loop cycle; notes outside [0, loopLength) are ignored when looping. */
   loopLength: number;
   loop: boolean;
+  /** Groove applied while playing (0..1 each); the stored notes stay straight. */
+  swing?: number;
+  humanize?: number;
 }
 
 export type Region = AudioRegion | MidiRegion;
@@ -118,7 +123,8 @@ export type EffectType =
   | 'phaser'
   | 'distortion'
   | 'filter'
-  | 'limiter';
+  | 'limiter'
+  | 'robot';
 
 export interface EffectInstance {
   id: Id;
@@ -183,6 +189,10 @@ export interface EditorSettings {
   metronome: boolean;
   countInBars: number;
   followPlayhead: boolean;
+  /** Pitch new loops that have a key so they fit the song key. */
+  matchKey: boolean;
+  /** Piano roll: new and moved notes snap to the song key's scale. */
+  keyLock: boolean;
 }
 
 /**
@@ -224,4 +234,8 @@ export interface Project {
   loop: { enabled: boolean; start: number; end: number };
   editor: EditorSettings;
   video?: VideoInfo;
+  /** The song's key, set by the student or by the first loop that has one. */
+  key?: SongKey;
+  /** Title of the song this one was remixed from (shared links open as a remix). */
+  remixOf?: string;
 }

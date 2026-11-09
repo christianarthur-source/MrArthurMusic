@@ -5,6 +5,7 @@ import { secondsPerTick } from '../model/time';
 import { AudioRegion, PPQ, Region, StretchMode } from '../model/types';
 import { cx, EditableText, fmtDb, Slider } from './controls';
 import { EffectsChain } from './Effects';
+import { applyVoice, makeSampler, VoicePreset } from './actions';
 import { useProject, useStudio, useUi } from './studio';
 
 /** Bottom panel: selected clip properties + selected track's effects. */
@@ -92,6 +93,7 @@ function AudioProps({
   commit: (l: string) => void;
   update: (l: string, p: Partial<AudioRegion>, k?: string) => void;
 }) {
+  const s = useStudio();
   const project = useProject((p) => p);
   const asset = project.assets[region.assetId];
   const { rate } = audioPlayback(project, region);
@@ -155,12 +157,55 @@ function AudioProps({
         <input type="checkbox" className="accent-amber-400" checked={region.reversed} onChange={() => update('Reverse', { reversed: !region.reversed })} />
         Reverse (play backwards)
       </label>
+      <VoiceChanger region={region} />
+      <button
+        type="button"
+        data-testid="make-sampler"
+        className="w-full rounded-lg bg-slate-800 px-3 py-1.5 text-left text-xs font-semibold text-slate-100 hover:bg-slate-700"
+        title="Make an instrument from this sound: play it on the computer keys, on-screen piano or in the note editor"
+        onClick={() => makeSampler(s, region.id)}
+      >
+        🎹 Play this sound on keys (sampler)
+      </button>
       {asset && (
         <p className="text-[11px] leading-snug text-slate-500">
           Source: {asset.name} · {asset.durationSec.toFixed(2)} s · {asset.channels === 1 ? 'mono' : 'stereo'} · {asset.sampleRate} Hz
           {asset.ref.kind === 'library' ? ` · library loop (license: ${asset.license ?? 'see library'})` : ' · saved on this computer'}
         </p>
       )}
+    </div>
+  );
+}
+
+const VOICES: { id: VoicePreset; label: string; help: string }[] = [
+  { id: 'normal', label: '🙂 Normal', help: 'Original pitch, robot off' },
+  { id: 'chipmunk', label: '🐿️ Chipmunk', help: 'Higher and squeaky (up 7)' },
+  { id: 'giant', label: '👹 Giant', help: 'Lower and deep (down 7)' },
+  { id: 'robot', label: '🤖 Robot', help: 'Adds the Robot effect to this track' },
+  { id: 'radio', label: '📻 Radio', help: 'Thin, old-radio sound on this track' },
+];
+
+function VoiceChanger({ region }: { region: AudioRegion }) {
+  const s = useStudio();
+  const robotOn = useProject((p) => !!p.tracks.find((t) => t.id === region.trackId)?.effects.some((fx) => fx.type === 'robot' && !fx.bypass));
+  const active: VoicePreset | null = robotOn ? 'robot' : region.pitchSemitones === 7 ? 'chipmunk' : region.pitchSemitones === -7 ? 'giant' : null;
+  return (
+    <div>
+      <div className="mb-1 text-xs text-slate-300">Voice changer</div>
+      <div className="flex flex-wrap gap-1" role="group" aria-label="Voice changer">
+        {VOICES.map((v) => (
+          <button
+            key={v.id}
+            type="button"
+            title={v.help}
+            aria-pressed={active === v.id}
+            onClick={() => applyVoice(s, region.id, v.id)}
+            className={cx('rounded-md px-2 py-1 text-xs', active === v.id ? 'bg-amber-400 font-semibold text-slate-950' : 'bg-slate-800 text-slate-200 hover:bg-slate-700')}
+          >
+            {v.label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

@@ -17,6 +17,7 @@ import {
 import { useEffect, useRef, useState } from 'react';
 import { formatBarBeat, formatSeconds, GRID_DIVISIONS, tickToBarBeat, ticksToSeconds } from '../model/time';
 import { GridDivision } from '../model/types';
+import { ALL_KEYS, keyName, keyShortName } from '../model/musicKey';
 import * as A from './actions';
 import { cx, IconButton } from './controls';
 import { useEngineState, useProject, useStudio, useUi } from './studio';
@@ -119,6 +120,7 @@ export function TransportBar() {
             ))}
           </select>
         </label>
+        <KeyPicker />
         {!beginner && (
           <label className="flex items-center gap-1 text-xs text-slate-400" title="Count-in bars before recording">
             Count-in
@@ -266,6 +268,60 @@ function PositionDisplay() {
         0:00.000
       </span>
       {countIn && <span className="text-xs font-bold text-rose-400">COUNT-IN</span>}
+    </div>
+  );
+}
+
+/** Song key: set by the first loop that has one, or picked here. Changing it transposes the song. */
+function KeyPicker() {
+  const s = useStudio();
+  const key = useProject((p) => p.key);
+  const matchKey = useProject((p) => p.editor.matchKey);
+  const value = key ? `${key.tonic}:${key.mode}` : '';
+  return (
+    <div className="flex items-center gap-1">
+      <label className="flex items-center gap-1 text-xs text-slate-400" title="Song key. The first loop with a key sets it. Changing it moves your loops and notes (not drums) to the new key.">
+        <span className="font-semibold">Key</span>
+        <select
+          aria-label="Song key"
+          data-testid="song-key"
+          className={cx('h-8 rounded-lg bg-slate-800 px-1 text-sm', key ? 'font-semibold text-amber-300' : 'text-slate-400')}
+          value={value}
+          onChange={(e) => {
+            if (!e.target.value) return A.setSongKey(s, null);
+            const [t, m] = e.target.value.split(':');
+            A.setSongKey(s, { tonic: Number(t), mode: m as 'major' | 'minor' });
+          }}
+        >
+          <option value="">Not set</option>
+          <optgroup label="Major (happy, bright)">
+            {ALL_KEYS.filter((k) => k.mode === 'major').map((k) => (
+              <option key={`${k.tonic}:major`} value={`${k.tonic}:major`}>
+                {keyName(k)}
+              </option>
+            ))}
+          </optgroup>
+          <optgroup label="Minor (sad, dark)">
+            {ALL_KEYS.filter((k) => k.mode === 'minor').map((k) => (
+              <option key={`${k.tonic}:minor`} value={`${k.tonic}:minor`}>
+                {keyName(k)}
+              </option>
+            ))}
+          </optgroup>
+        </select>
+      </label>
+      <button
+        type="button"
+        aria-pressed={matchKey}
+        title={matchKey ? 'Match loops: on. New loops that have a key are moved to fit the song key. Click to turn off.' : 'Match loops: off. Loops play in their own key. Click to turn on (and match the loops already in the song).'}
+        className={cx('rounded-lg px-2 py-1 text-xs font-semibold', matchKey ? 'bg-amber-400/20 text-amber-300 ring-1 ring-amber-400/50' : 'bg-slate-800 text-slate-400 hover:bg-slate-700')}
+        onClick={() => {
+          s.store.exec('Match loops to key', (p) => ({ ...p, editor: { ...p.editor, matchKey: !p.editor.matchKey } }));
+          if (!matchKey) A.matchLoopsToKey(s);
+        }}
+      >
+        {matchKey ? `♪ Fit ${key ? keyShortName(key) : 'key'}` : '♪ Fit off'}
+      </button>
     </div>
   );
 }

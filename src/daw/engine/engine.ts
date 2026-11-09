@@ -2,7 +2,7 @@ import { LibraryCatalog } from '../library/catalog';
 import { secondsToTicks, ticksPerBar, ticksToSeconds } from '../model/time';
 import { Project, Region } from '../model/types';
 import { AssetManager } from './assets';
-import { InstrumentBank } from './instruments';
+import { InstrumentBank, SAMPLER_PREFIX } from './instruments';
 import { MixGraph } from './mixGraph';
 import { audioPlayback, RegionScheduler, segmentTimeMap, TimeMap } from './scheduler';
 
@@ -86,6 +86,10 @@ export class AudioEngine {
     this.graph = new MixGraph(this.ctx, this.ctx.destination, true);
     this.assets = new AssetManager(this.ctx, catalog);
     this.instruments = new InstrumentBank(this.ctx);
+    this.instruments.sampleSource = (key) => {
+      const a = this.project.assets[key];
+      return a ? this.assets.load(a) : Promise.resolve(undefined);
+    };
     this.scheduler = new RegionScheduler(this.ctx, this.graph, this.assets, this.instruments, true);
     this.graph.sync(project);
     this.clock = new Worker(new URL('./clock.worker.ts', import.meta.url), { type: 'module' });
@@ -172,6 +176,7 @@ export class AudioEngine {
   private preload(p: Project) {
     const used = new Set<string>();
     for (const r of p.regions) if (r.kind === 'audio') used.add(r.assetId);
+    for (const t of p.tracks) if (t.instrument?.id.startsWith(SAMPLER_PREFIX)) used.add(t.instrument.id.slice(SAMPLER_PREFIX.length));
     this.assets.setPinned(used);
     for (const id of used) {
       const a = p.assets[id];

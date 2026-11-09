@@ -128,7 +128,7 @@ function track(v: unknown, i: number, seen: Set<string>, warnings: string[]): Tr
   };
   if (kind === 'instrument') {
     const inst = isObj(v.instrument) && typeof v.instrument.id === 'string' ? v.instrument.id : 'piano';
-    t.instrument = { id: /^[A-Za-z0-9_:-]{1,48}$/.test(inst) ? inst : 'piano' };
+    t.instrument = { id: /^[A-Za-z0-9_:.@-]{1,96}$/.test(inst) ? inst : 'piano' };
   }
   t.automation = (Array.isArray(v.automation) ? v.automation : [])
     .slice(0, 32)
@@ -187,6 +187,10 @@ function region(v: unknown, trackIds: Set<string>, assets: Record<string, AudioA
       loopLength: int(v.loopLength, base.length, 1),
       loop: bool(v.loop, false),
     };
+    const swing = num(v.swing, 0, 0, 1);
+    const humanize = num(v.humanize, 0, 0, 1);
+    if (swing > 0) r.swing = swing;
+    if (humanize > 0) r.humanize = humanize;
     return r;
   }
   return null;
@@ -309,10 +313,19 @@ export function validateProject(input: unknown): ValidationResult {
       metronome: bool(ed.metronome, false),
       countInBars: int(ed.countInBars, 1, 0, 2),
       followPlayhead: bool(ed.followPlayhead, true),
+      matchKey: bool(ed.matchKey, DEFAULT_EDITOR.matchKey),
+      keyLock: bool(ed.keyLock, DEFAULT_EDITOR.keyLock),
     },
   };
   const video = videoInfo(raw.video, trackIds);
   if (video) project.video = video;
+  if (isObj(raw.key) && (raw.key.mode === 'major' || raw.key.mode === 'minor')) {
+    project.key = { tonic: int(raw.key.tonic, 0, 0, 11), mode: raw.key.mode };
+  }
+  if (typeof raw.remixOf === 'string') {
+    const from = sanitizeText(raw.remixOf, '', 60);
+    if (from) project.remixOf = from;
+  }
   return { project, warnings: dedupe(warnings) };
 }
 

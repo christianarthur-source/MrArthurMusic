@@ -146,3 +146,31 @@ export function safeFileName(title: string, ext: string): string {
   const base = title.replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '_').slice(0, 60) || 'song';
   return `${base}.${ext}`;
 }
+
+/** Encode to MP3 in a worker (the encoder loads only now). `onProgress` gets 0..1. */
+export function encodeMp3(channels: Float32Array[], sampleRate: number, kbps = 192, onProgress?: (f: number) => void, signal?: AbortSignal): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const worker = new Worker(new URL('./mp3.worker.ts', import.meta.url), { type: 'module' });
+    const done = () => worker.terminate();
+    signal?.addEventListener('abort', () => {
+      done();
+      reject(new RenderCancelled('Export cancelled.'));
+    }, { once: true });
+    worker.onmessage = (e: MessageEvent<{ progress?: number; data?: Uint8Array[]; error?: string }>) => {
+      if (e.data.progress !== undefined) onProgress?.(e.data.progress);
+      else if (e.data.data) {
+        done();
+        resolve(new Blob(e.data.data as Uint8Array<ArrayBuffer>[], { type: 'audio/mpeg' }));
+      } else {
+        done();
+        reject(new Error(e.data.error || 'MP3 encoding failed.'));
+      }
+    };
+    worker.onerror = (e) => {
+      done();
+      reject(new Error(e.message || 'MP3 encoding failed.'));
+    };
+    // Copies (not transfers) so a caller can still use the channels afterwards.
+    worker.postMessage({ channels, sampleRate, kbps });
+  });
+}

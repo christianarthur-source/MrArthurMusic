@@ -6,7 +6,9 @@ import { AudioAssetInfo, MidiNote, PPQ, Project, Region } from '../model/types';
 import { parseMidi, rescaleToPpq, writeMidi, SmfFile } from '../midi/smf';
 import { encodeWav } from '../dsp/wav';
 import { saveUserAudio } from '../persistence/projectRepo';
+import { keyName, parseKey, semitonesToMatch, SongKey } from '../model/musicKey';
 import { RecorderError } from '../engine/recorder';
+import { SAMPLER_PREFIX } from '../engine/instruments';
 import { downloadBlob, safeFileName } from '../export/render';
 import { Studio } from './studio';
 
@@ -83,6 +85,24 @@ export function tapTempo(s: Studio) {
 
 export function setTimeSig(s: Studio, num: number, den: number) {
   s.store.exec('Change time signature', (p) => ops.setTimeSignature(p, num, den));
+}
+
+export function setSongKey(s: Studio, key: SongKey | null) {
+  const prev = s.store.get().key;
+  s.store.exec(key ? `Key: ${keyName(key)}` : 'Clear song key', (p) => ops.setSongKey(p, key));
+  if (key && prev && semitonesToMatch(prev, key) !== 0) {
+    s.ui.toast('info', `Changed the song to ${keyName(key)}. Loops with a key and your notes (not drums) moved with it.`, { label: 'Undo', run: () => undo(s) });
+  }
+}
+
+export function matchLoopsToKey(s: Studio) {
+  const r = ops.matchAllLoopsToKey(s.store.get());
+  if (!r.changed) {
+    s.ui.toast('info', s.store.get().key ? 'All loops with a key already fit the song key.' : 'Pick a song key first.');
+    return;
+  }
+  s.store.exec('Match loops to key', () => r.project);
+  s.ui.toast('success', `Moved ${r.changed} loop${r.changed === 1 ? '' : 's'} to fit the song key.`, { label: 'Undo', run: () => undo(s) });
 }
 
 // ------------------------------------------------------------------ selection & edit
@@ -269,9 +289,13 @@ export function addLoop(s: Studio, e: CatalogEntry, tick: number, trackId?: stri
   if (synced && (ratio < 0.5 || ratio > 2)) {
     s.ui.toast('warn', `"${e.name}" was recorded at ${e.bpm} BPM. Stretching it to ${p0.tempoMap[0].bpm} BPM is extreme and may sound rough.`);
   }
+  // Song key: the first loop with a key sets it; later ones are pitched to fit (if turned on).
+  const loopKey = synced ? parseKey(e.key) : null;
+  const setsKey = !!loopKey && !p0.key;
+  const semitones = loopKey && p0.key && p0.editor.matchKey ? semitonesToMatch(loopKey, p0.key) : 0;
   let regionId = '';
   s.store.exec(`Add "${e.name}"`, (p) => {
-    let proj = p;
+    let proj = setsKey && loopKey ? { ...p, key: loopKey } : p;
     let tId = target?.id;
     if (!tId) {
       const r = ops.addTrack(proj, 'audio', trackNameFor(e));
@@ -288,9 +312,15 @@ export function addLoop(s: Studio, e: CatalogEntry, tick: number, trackId?: stri
       assetId: `lib:${e.id}`,
       stretch: synced ? 'sync' : 'off',
     });
+    region.pitchSemitones = semitones;
     regionId = region.id;
     return ops.addRegions(proj, [region], [loopAssetInfo(e)]);
   });
+  if (setsKey && loopKey) {
+    s.ui.toast('info', `Song key set to ${keyName(loopKey)} from "${e.name}". Loops you add next will be moved to fit it.`);
+  } else if (semitones !== 0 && loopKey && p0.key) {
+    s.ui.toast('info', `"${e.name}" is in ${keyName(loopKey)}, so it was moved ${semitones > 0 ? 'up' : 'down'} ${Math.abs(semitones)} to fit ${keyName(p0.key)}.`);
+  }
   s.ui.set({ selectedRegions: [regionId], selectedTrack: s.store.get().regions.find((r) => r.id === regionId)?.trackId ?? null });
   return regionId;
 }
@@ -569,4 +599,72 @@ export function recordOffsetMs(): number {
   } catch {
     return 0;
   }
+}
+
+// ------------------------------------------------------------------ note tools
+
+/** Apply a note transform (arpeggiate, strum) to the selected notes of a clip, or all of them. */
+export function transformNotes(s: Studio, regionId: string, label: string, fn: (notes: MidiNote[]) => MidiNote[]) {
+  const r = s.store.get().regions.find((x) => x.id === regionId);
+  if (!r || r.kind !== 'midi') return;
+  const sel = new Set(s.ui.get().selectedNotes.filter((id) => r.notes.some((n) => n.id === id)));
+  const target = sel.size ? r.notes.filter((n) => sel.has(n.id)) : r.notes;
+  if (target.length < 2) {
+    s.ui.toast('info', 'Add a chord first (several notes that start together), then try again.');
+    return;
+  }
+  const rest = sel.size ? r.notes.filter((n) => !sel.has(n.id)) : [];
+  const out = fn(target);
+  s.store.exec(label, (p) => ops.setNotes(p, regionId, [...rest, ...out]));
+  s.ui.set({ selectedNotes: out.map((n) => n.id) });
+}
+
+// ------------------------------------------------------------------ sampler & voice changer
+
+/** Turn an audio clip's sound into an instrument: a new track you play with keys or notes. */
+export function makeSampler(s: Studio, regionId: string) {
+  const p = s.store.get();
+  const r = p.regions.find((x) => x.id === regionId);
+  if (!r || r.kind !== 'audio') return;
+  const asset = p.assets[r.assetId];
+  if (!asset) return;
+  const name = `${asset.name.slice(0, 24)} keys`;
+  const bar = ticksPerBar(p.timeSigMap[0].sig);
+  const start = snap(s, s.engine.currentTick(), 'floor');
+  let trackId = '';
+  let clipId = '';
+  s.store.exec('Make an instrument from a sound', (proj) => {
+    const t = ops.addTrack(proj, 'instrument', name, `${SAMPLER_PREFIX}${asset.id}`);
+    trackId = t.track.id;
+    const clip = createMidiRegion({ trackId, name, start, length: bar * 2, loopLength: bar * 2, notes: [] });
+    clipId = clip.id;
+    return ops.addRegions(t.project, [clip]);
+  });
+  s.ui.set({ selectedTrack: trackId, selectedRegions: [clipId], editRegion: clipId, bottom: 'editor' });
+  s.ui.toast('success', `"${name}" is ready. Play it with your computer keys or the on-screen piano. Middle C plays the sound as recorded; higher keys play it higher.`);
+}
+
+export type VoicePreset = 'normal' | 'chipmunk' | 'giant' | 'robot' | 'radio';
+
+/** Fun voice effects for a clip: pitch for chipmunk/giant, track effects for robot/radio. */
+export function applyVoice(s: Studio, regionId: string, voice: VoicePreset) {
+  const p = s.store.get();
+  const r = p.regions.find((x) => x.id === regionId);
+  if (!r || r.kind !== 'audio') return;
+  const track = p.tracks.find((t) => t.id === r.trackId);
+  if (!track) return;
+  const owner = { trackId: track.id };
+  const label = { normal: 'Normal voice', chipmunk: 'Chipmunk voice', giant: 'Giant voice', robot: 'Robot voice', radio: 'Radio voice' }[voice];
+  s.store.exec(label, (proj) => {
+    let next = proj;
+    // Robot is the only voice effect we add, so "normal" and pitch voices take it off again.
+    for (const fx of track.effects) if (fx.type === 'robot' && voice !== 'robot') next = ops.removeEffect(next, owner, fx.id);
+    if (voice === 'normal' || voice === 'robot' || voice === 'radio') next = ops.updateRegion(next, regionId, { pitchSemitones: 0 });
+    if (voice === 'chipmunk') next = ops.updateRegion(next, regionId, { pitchSemitones: 7 });
+    if (voice === 'giant') next = ops.updateRegion(next, regionId, { pitchSemitones: -7 });
+    if (voice === 'robot' && !track.effects.some((fx) => fx.type === 'robot')) next = ops.addEffect(next, owner, 'robot');
+    if (voice === 'radio') next = ops.applyChainPreset(next, track.id, 'radio-voice');
+    return next;
+  });
+  if (voice === 'robot' || voice === 'radio') s.ui.toast('info', `${label} is on the whole "${track.name}" track. Open Effects to adjust it.`);
 }

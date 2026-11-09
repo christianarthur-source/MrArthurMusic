@@ -1,3 +1,5 @@
+import { applyGroove } from '../midi/noteTools';
+import { parseKey, semitonesToMatch, SongKey } from './musicKey';
 import { CHAIN_PRESETS, EFFECT_DEFS } from './effectDefs';
 import { createEffect, createTrack, newId } from './factory';
 import { quantizeTicks } from './quantizeTicks';
@@ -268,8 +270,9 @@ export function expandMidiNotes(r: MidiRegion): MidiNote[] {
   const L = r.loopLength;
   const iterations = r.loop ? Math.ceil((r.length + (r.contentOffset % L)) / L) + 1 : 1;
   const phase = r.loop ? r.contentOffset % L : r.contentOffset;
+  const notes = applyGroove(r.notes, r.swing, r.humanize, r.loop ? L : undefined);
   for (let k = 0; k < iterations; k++) {
-    for (const n of r.notes) {
+    for (const n of notes) {
       if (r.loop && n.start >= L) continue;
       const rel = k * L + n.start - phase;
       if (rel < 0 || rel >= r.length) continue;
@@ -414,4 +417,52 @@ export function projectEndTick(p: Project): number {
 
 export function addMarker(p: Project, tick: number, name: string): Project {
   return { ...p, markers: [...p.markers, { id: newId('mk'), tick, name }].sort((a, b) => a.tick - b.tick) };
+}
+
+// ---------------------------------------------------------------- song key
+
+/** The key an audio region's loop was recorded in, if the library knows it. */
+export function regionLoopKey(p: Project, r: Region): SongKey | null {
+  if (r.kind !== 'audio') return null;
+  return parseKey(p.assets[r.assetId]?.key);
+}
+
+const wrapPitch = (n: number) => (n > 12 ? n - 12 : n < -12 ? n + 12 : n);
+
+/**
+ * Change the song key. With a previous key this transposes the song: loops that have a key
+ * and every non-drum MIDI note move by the smallest step from the old key to the new one.
+ * Setting a key for the first time (or clearing it) only changes the label.
+ */
+export function setSongKey(p: Project, key: SongKey | null): Project {
+  if (!key) {
+    const { key: _drop, ...rest } = p;
+    return rest;
+  }
+  const prev = p.key;
+  if (!prev || (prev.tonic === key.tonic && prev.mode === key.mode)) return { ...p, key };
+  const d = semitonesToMatch(prev, key);
+  if (d === 0) return { ...p, key };
+  const drums = new Set(p.tracks.filter((t) => t.instrument?.id.startsWith('drum')).map((t) => t.id));
+  const regions = p.regions.map((r) => {
+    if (r.kind === 'audio') return regionLoopKey(p, r) ? { ...r, pitchSemitones: wrapPitch(r.pitchSemitones + d) } : r;
+    if (drums.has(r.trackId) || !r.notes.length) return r;
+    return { ...r, notes: r.notes.map((n) => ({ ...n, pitch: Math.max(0, Math.min(127, n.pitch + d)) })) };
+  });
+  return { ...p, key, regions };
+}
+
+/** Pitch every loop that has a key so it fits the song key (manual pitch changes are replaced). */
+export function matchAllLoopsToKey(p: Project): { project: Project; changed: number } {
+  if (!p.key) return { project: p, changed: 0 };
+  let changed = 0;
+  const regions = p.regions.map((r) => {
+    const lk = regionLoopKey(p, r);
+    if (!lk || r.kind !== 'audio') return r;
+    const st = semitonesToMatch(lk, p.key!);
+    if (st === r.pitchSemitones) return r;
+    changed++;
+    return { ...r, pitchSemitones: st };
+  });
+  return { project: changed ? { ...p, regions } : p, changed };
 }

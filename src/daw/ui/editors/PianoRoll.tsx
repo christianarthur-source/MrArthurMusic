@@ -6,6 +6,7 @@ import { gridTicks, snapTick, ticksPerBar, ticksPerBeat } from '../../model/time
 import { MidiNote, MidiRegion, PPQ, Track } from '../../model/types';
 import { useProject, useStudio, useUi } from '../studio';
 import { hexA } from '../timeline/draw';
+import { chordNotes, ChordType, inScale, snapToScale } from '../../model/musicKey';
 
 /**
  * Piano roll for one MIDI clip. Shows one loop cycle (content ticks
@@ -25,9 +26,12 @@ type Drag =
   | { kind: 'velocity' }
   | { kind: 'select'; x0: number; y0: number; x1: number; y1: number };
 
-export function PianoRoll({ region, track }: { region: MidiRegion; track: Track }) {
+export function PianoRoll({ region, track, chord = 'single' }: { region: MidiRegion; track: Track; chord?: ChordType | 'single' }) {
   const s = useStudio();
   const editor = useProject((p) => p.editor);
+  const songKey = useProject((p) => p.key);
+  const lock = !!songKey && editor.keyLock;
+  const fit = (pitch: number) => (lock && songKey ? snapToScale(songKey, pitch) : pitch);
   const sig = useProject((p) => p.timeSigMap[0].sig);
   const selectedNotes = useUi((u) => u.selectedNotes);
   const wrap = useRef<HTMLDivElement>(null);
@@ -83,7 +87,11 @@ export function PianoRoll({ region, track }: { region: MidiRegion; track: Track 
       const y = yOf(p);
       if (y > rollH || y + ROW_H < 0) continue;
       const black = [1, 3, 6, 8, 10].includes(p % 12);
-      g.fillStyle = black ? '#0c1426' : '#111b31';
+      if (songKey) {
+        // In-key rows are lit; out-of-key rows are dark (darker still when locked).
+        const inKey = inScale(songKey, p);
+        g.fillStyle = inKey ? (p % 12 === songKey.tonic ? '#1c2a4a' : '#15223d') : lock ? '#05080f' : '#090f1c';
+      } else g.fillStyle = black ? '#0c1426' : '#111b31';
       g.fillRect(KEY_W, y, size.w - KEY_W, ROW_H);
       if (p % 12 === 0) {
         g.fillStyle = 'rgba(148,163,184,0.25)';
@@ -123,6 +131,10 @@ export function PianoRoll({ region, track }: { region: MidiRegion; track: Track 
       const black = [1, 3, 6, 8, 10].includes(p % 12);
       g.fillStyle = black ? '#1e293b' : '#e2e8f0';
       g.fillRect(0, y, KEY_W, ROW_H - 1);
+      if (songKey && inScale(songKey, p)) {
+        g.fillStyle = p % 12 === songKey.tonic ? '#f59e0b' : 'rgba(245,158,11,0.45)';
+        g.fillRect(KEY_W - 6, y + 1, 4, ROW_H - 3);
+      }
       if (p % 12 === 0) {
         g.fillStyle = '#0f172a';
         g.font = '600 9px Inter, system-ui';
@@ -229,11 +241,13 @@ export function PianoRoll({ region, track }: { region: MidiRegion; track: Track 
       s.ui.toast('info', 'That is past the end of this looping clip. Make the loop longer in the toolbar.');
       return;
     }
-    const note: MidiNote = { id: newId('n'), pitch: pitchOf(y), start, length: grid, velocity: 100 };
-    setNotes([...region.notes, note]);
-    s.ui.set({ selectedNotes: [note.id] });
-    s.engine.auditionNote(track.id, note.pitch);
-    drag.current = { kind: 'resize', ids: [note.id], x0: x, orig: new Map([[note.id, note]]) };
+    const root = fit(pitchOf(y));
+    const pitches = chord === 'single' ? [root] : chordNotes(root, chord, songKey);
+    const added: MidiNote[] = pitches.map((pitch) => ({ id: newId('n'), pitch, start, length: chord === 'single' ? grid : Math.max(grid, ticksPerBar(sig)), velocity: 100 }));
+    setNotes([...region.notes, ...added]);
+    s.ui.set({ selectedNotes: added.map((n) => n.id) });
+    for (const n of added) s.engine.auditionNote(track.id, n.pitch);
+    drag.current = { kind: 'resize', ids: added.map((n) => n.id), x0: x, orig: new Map(added.map((n) => [n.id, n])) };
   };
 
   const setVelocityAt = (x: number, y: number) => {
@@ -260,8 +274,8 @@ export function PianoRoll({ region, track }: { region: MidiRegion; track: Track 
       const dp = pitchOf(y) - pitchOf(d.y0);
       const minStart = Math.min(...[...d.orig.values()].map((n) => n.start));
       const dtc = Math.max(dt, -minStart);
-      const newPitch = Math.max(LOW, Math.min(HIGH, d.anchor.pitch + dp));
-      setNotes(region.notes.map((n) => (d.orig.has(n.id) ? { ...n, start: d.orig.get(n.id)!.start + dtc, pitch: Math.max(0, Math.min(127, d.orig.get(n.id)!.pitch + dp)) } : n)));
+      const newPitch = fit(Math.max(LOW, Math.min(HIGH, d.anchor.pitch + dp)));
+      setNotes(region.notes.map((n) => (d.orig.has(n.id) ? { ...n, start: d.orig.get(n.id)!.start + dtc, pitch: fit(Math.max(0, Math.min(127, d.orig.get(n.id)!.pitch + dp))) } : n)));
       if (dp !== d.lastDp) {
         d.lastDp = dp;
         s.engine.auditionNote(track.id, newPitch, d.anchor.velocity, 0.15);

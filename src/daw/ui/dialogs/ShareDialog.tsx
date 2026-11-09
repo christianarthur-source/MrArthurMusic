@@ -47,7 +47,7 @@ export function ShareDialog({ onClose }: { onClose: () => void }) {
     <Modal title="Share your song" onClose={onClose}>
       <div className="space-y-3 text-sm text-slate-300">
         <p>
-          Anyone with this link can open <b className="text-slate-100">“{project.title}”</b> and listen. They get their own copy, so nothing they change affects your song.
+          Anyone with this link can open <b className="text-slate-100">“{project.title}”</b> and listen, or remix it. They get their own copy (marked “Remix of {project.title}”), so nothing they change affects your song.
         </p>
         {error ? (
           <p className="rounded-lg bg-rose-500/10 p-2 text-rose-200">Sorry, the link could not be made: {error}</p>

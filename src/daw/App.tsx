@@ -104,11 +104,14 @@ export function DawApp(
       return converted;
     }
 
-    // Opening a shared link (currentProjectId is null): treat as a copy
+    // Opening a shared link (currentProjectId is null): the listener's own copy, credited as a remix
     if (!currentProjectIdRef.current) {
+      const title = String(converted.title || 'Song').slice(0, 60);
       return {
         ...converted,
         id: generateCopyId(),
+        title: title.endsWith('(remix)') ? title : `${title.slice(0, 51)} (remix)`,
+        remixOf: typeof converted.remixOf === 'string' && converted.remixOf ? converted.remixOf : title.replace(/ \(remix\)$/, ''),
       };
     }
 
