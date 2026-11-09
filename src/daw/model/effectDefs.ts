@@ -121,6 +121,16 @@ export const EFFECT_DEFS: Record<EffectType, EffectDef> = {
       { key: 'gain', label: 'Input gain', min: 0, max: 12, default: 0, step: 0.5, unit: 'dB' },
     ],
   },
+  robot: {
+    type: 'robot',
+    name: 'Robot',
+    help: 'Turns a voice into a robot. Lower Pitch sounds more like a buzzing machine.',
+    params: [
+      { key: 'pitch', label: 'Pitch', min: 20, max: 200, default: 60, unit: 'Hz', scale: 'log', automatable: true },
+      { key: 'metal', label: 'Metal', min: 0, max: 1, default: 0.5, step: 0.01 },
+      { key: 'mix', label: 'Mix', min: 0, max: 1, default: 0.85, step: 0.01 },
+    ],
+  },
 };
 
 export const EFFECT_ORDER: EffectType[] = [
@@ -132,6 +142,7 @@ export const EFFECT_ORDER: EffectType[] = [
   'phaser',
   'delay',
   'reverb',
+  'robot',
   'limiter',
 ];
 

@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { analyse, defaultRange, downloadBlob, renderProject, RenderCancelled, safeFileName, toWavBlob, trimTail } from '../../export/render';
+import { analyse, defaultRange, downloadBlob, encodeMp3, renderProject, RenderCancelled, safeFileName, toWavBlob, trimTail } from '../../export/render';
 import { barToTick, formatSeconds, tickToBarBeat, ticksToSeconds } from '../../model/time';
 import { projectToArchive, projectToJson } from '../../persistence/projectRepo';
 import { exportMidi } from '../actions';
@@ -13,7 +13,9 @@ export function ExportDialog({ onClose }: { onClose: () => void }) {
   const [fromBar, setFromBar] = useState(tickToBarBeat(project.timeSigMap, def.fromTick).bar);
   const [toBar, setToBar] = useState(Math.max(tickToBarBeat(project.timeSigMap, def.toTick - 1).bar + 1, 2));
   const [sampleRate, setSampleRate] = useState(44100);
+  const [format, setFormat] = useState<'mp3' | 'wav'>('mp3');
   const [bits, setBits] = useState<16 | 24>(16);
+  const [stage, setStage] = useState('Exporting your song…');
   const [tail, setTail] = useState(true);
   const [progress, setProgress] = useState<number | null>(null);
   const [result, setResult] = useState<string | null>(null);
@@ -31,6 +33,7 @@ export function ExportDialog({ onClose }: { onClose: () => void }) {
       return;
     }
     abort.current = new AbortController();
+    setStage('Mixing your song…');
     setProgress(0);
     try {
       s.engine.pause();
@@ -42,15 +45,20 @@ export function ExportDialog({ onClose }: { onClose: () => void }) {
         sampleRate,
         tailSec: tail ? 4 : 0,
         signal: abort.current.signal,
-        onProgress: setProgress,
+        onProgress: (f) => setProgress(format === 'mp3' ? f * 0.6 : f),
       });
       const minFrames = Math.round(seconds * sampleRate);
       const channels = tail ? trimTail(buf, minFrames) : Array.from({ length: buf.numberOfChannels }, (_, c) => buf.getChannelData(c).slice(0, minFrames));
       const a = analyse(buf);
-      const blob = toWavBlob(channels, sampleRate, bits);
-      downloadBlob(blob, safeFileName(project.title, 'wav'));
+      let blob: Blob;
+      if (format === 'mp3') {
+        setStage('Making the MP3…');
+        blob = await encodeMp3(channels, sampleRate, 192, (f) => setProgress(0.6 + f * 0.4), abort.current.signal);
+      } else blob = toWavBlob(channels, sampleRate, bits);
+      const file = safeFileName(project.title, format);
+      downloadBlob(blob, file);
       const dur = channels[0].length / sampleRate;
-      const notes = [`Saved ${safeFileName(project.title, 'wav')} — ${formatSeconds(dur)} long, ${(blob.size / 1048576).toFixed(1)} MB, peak ${a.peakDb.toFixed(1)} dBFS.`];
+      const notes = [`Saved ${file} — ${formatSeconds(dur)} long, ${(blob.size / 1048576).toFixed(1)} MB, peak ${a.peakDb.toFixed(1)} dBFS.`];
       if (a.silent) notes.push('Warning: the export is silent. Are all tracks muted?');
       if (a.clippedSamples > 0) notes.push(`Warning: ${a.clippedSamples} samples hit full scale. Turn the master or loud tracks down a little.`);
       if (Math.abs(dur - seconds) > 0.01 && !tail) notes.push(`Note: length ${dur.toFixed(3)} s differs from range ${seconds.toFixed(3)} s.`);
@@ -78,7 +86,17 @@ export function ExportDialog({ onClose }: { onClose: () => void }) {
   return (
     <Modal title="Export & download" onClose={() => (abort.current ? abort.current.abort() : onClose())}>
       <section className="space-y-3">
-        <h3 className="text-sm font-bold text-slate-200">🎧 Audio file (WAV)</h3>
+        <h3 className="text-sm font-bold text-slate-200">🎧 Audio file</h3>
+        <div className="flex gap-1 rounded-lg bg-slate-800 p-0.5 text-sm" role="radiogroup" aria-label="File type">
+          {([
+            ['mp3', 'MP3 (small, for Google Classroom and sharing)'],
+            ['wav', 'WAV (full quality, big file)'],
+          ] as const).map(([f, label]) => (
+            <button key={f} type="button" role="radio" aria-checked={format === f} data-testid={`format-${f}`} onClick={() => setFormat(f)} className={format === f ? 'flex-1 rounded-md bg-slate-600 px-2 py-1 text-white' : 'flex-1 rounded-md px-2 py-1 text-slate-400 hover:text-slate-200'}>
+              {label}
+            </button>
+          ))}
+        </div>
         <div className="grid grid-cols-2 gap-3 text-sm">
           <label className="flex flex-col gap-1 text-slate-300">
             From bar
@@ -95,31 +113,31 @@ export function ExportDialog({ onClose }: { onClose: () => void }) {
               <option value={48000}>48 kHz (video)</option>
             </select>
           </label>
-          <label className="flex flex-col gap-1 text-slate-300">
+          {format === 'wav' && <label className="flex flex-col gap-1 text-slate-300">
             Bit depth
             <select value={bits} onChange={(e) => setBits(Number(e.target.value) as 16 | 24)} className="rounded-lg bg-slate-800 px-2 py-1">
               <option value={16}>16-bit (smaller, plays everywhere)</option>
               <option value={24}>24-bit (studio)</option>
             </select>
-          </label>
+          </label>}
         </div>
         <label className="flex items-center gap-2 text-sm text-slate-300">
           <input type="checkbox" className="accent-amber-400" checked={tail} onChange={(e) => setTail(e.target.checked)} />
           Let echoes and reverb ring out at the end
         </label>
         <p className="text-xs text-slate-500">
-          Length: {formatSeconds(seconds)} · about {((seconds * sampleRate * 2 * (bits / 8)) / 1048576).toFixed(1)} MB. MP3 export is not available yet (see the project docs); WAV files can be uploaded or converted anywhere.
+          Length: {formatSeconds(seconds)} · about {(format === 'mp3' ? (seconds * 192000) / 8 / 1048576 : (seconds * sampleRate * 2 * (bits / 8)) / 1048576).toFixed(1)} MB.
         </p>
         {progress !== null ? (
           <div className="space-y-2">
-            <ProgressBar progress={progress} label="Exporting your song…" />
+            <ProgressBar progress={progress} label={stage} />
             <button type="button" className="rounded-lg bg-slate-700 px-3 py-1.5 text-sm" onClick={() => abort.current?.abort()}>
               Cancel
             </button>
           </div>
         ) : (
           <button type="button" data-testid="export-wav" className="rounded-lg bg-amber-400 px-4 py-2 font-semibold text-slate-950 hover:bg-amber-300" onClick={() => void run()}>
-            Export WAV
+            Export {format.toUpperCase()}
           </button>
         )}
         {result && <p className="rounded-lg bg-emerald-500/10 p-2 text-sm text-emerald-200" role="status">{result}</p>}

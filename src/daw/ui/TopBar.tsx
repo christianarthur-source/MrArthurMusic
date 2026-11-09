@@ -1,4 +1,4 @@
-import { ArrowLeft, Check, Cloud, HelpCircle, Home, KeyboardMusic, Library, Loader2, Mic, Menu, Redo2, Save, Share2, Sliders, Undo2 } from 'lucide-react';
+import { ArrowLeft, Check, Cloud, HelpCircle, Home, KeyboardMusic, Library, Loader2, Mic, Menu, Redo2, Save, Share2, Sliders, Undo2, Gauge } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { saveProjectLocal, duplicateProject } from '../persistence/projectRepo';
 import { importFiles, redo, undo } from './actions';
@@ -8,6 +8,7 @@ import { useProject, useStudio, useSubscribe, useUi } from './studio';
 export function TopBar({ onHome, onSave, cloudLabel }: { onHome: () => void; onSave: () => void; cloudLabel?: string }) {
   const s = useStudio();
   const title = useProject((p) => p.title);
+  const remixOf = useProject((p) => p.remixOf);
   const save = useSubscribe((fn) => s.autosave.subscribe(fn), () => s.autosave.status);
   useProject((p) => p); // re-render for undo/redo availability
   const libraryOpen = useUi((u) => u.libraryOpen);
@@ -50,7 +51,7 @@ export function TopBar({ onHome, onSave, cloudLabel }: { onHome: () => void; onS
             {item('Share (link)…', () => s.ui.set({ dialog: 'share' }))}
             {item('New song…', onHome)}
             {item('Save', onSave, 'Ctrl+S')}
-            {item('Save a copy', async () => {
+            {item('Save a copy (remix it)', async () => {
               const copy = duplicateProject(s.store.get());
               await saveProjectLocal(copy);
               s.loadProject(copy);
@@ -101,6 +102,11 @@ export function TopBar({ onHome, onSave, cloudLabel }: { onHome: () => void; onS
             s.store.exec('Rename song', (p) => ({ ...p, title: v.slice(0, 60) }));
           }}
         />
+        {remixOf && (
+          <span className="hidden shrink-0 rounded-full bg-violet-500/20 px-2 py-0.5 text-[11px] font-semibold text-violet-200 sm:inline" title={`This song is a remix of "${remixOf}"`}>
+            🔁 Remix of {remixOf}
+          </span>
+        )}
         <span className={cx('flex items-center gap-1 text-xs', save === 'error' ? 'text-rose-300' : save === 'saved' ? 'text-emerald-400' : 'text-slate-400')} role="status" title={save === 'error' ? (s.autosave.lastError ?? '') : 'Songs save automatically on this computer'} data-testid="save-status">
           {save === 'saving' ? <Loader2 size={12} className="animate-spin" /> : save === 'saved' ? <Check size={12} /> : null}
           {save === 'saved' ? 'Saved' : save === 'saving' ? 'Saving…' : save === 'unsaved' ? 'Unsaved changes' : 'Not saved!'}
@@ -118,6 +124,9 @@ export function TopBar({ onHome, onSave, cloudLabel }: { onHome: () => void; onS
       </IconButton>
       <IconButton label="Recording setup" onClick={() => s.ui.set({ dialog: 'record' })}>
         <Mic size={16} />
+      </IconButton>
+      <IconButton label="Tuner: tune a ukulele, guitar or your voice with the microphone" onClick={() => s.ui.set({ dialog: 'tuner' })}>
+        <Gauge size={16} /> <span className="hidden xl:inline">Tuner</span>
       </IconButton>
       <IconButton label="Mixer" shortcut="M" active={bottom === 'mixer'} onClick={() => s.ui.set({ bottom: bottom === 'mixer' ? 'none' : 'mixer' })}>
         <Sliders size={16} />

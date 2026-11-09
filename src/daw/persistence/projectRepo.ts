@@ -46,6 +46,14 @@ export async function deleteProjectLocal(id: string): Promise<void> {
   await idbDelete('projects', id);
 }
 
+/** A shared song opened by someone else: their own copy, titled and credited as a remix. */
+export function asRemix(p: Project): Project {
+  const original = p.remixOf ? p.title.replace(/ \(remix\)$/, '') : p.title;
+  const title = p.title.endsWith('(remix)') ? p.title : `${p.title.slice(0, 51)} (remix)`;
+  const now = new Date().toISOString();
+  return { ...p, id: newId('proj'), title, remixOf: p.remixOf ?? original.slice(0, 60), createdAt: now, updatedAt: now };
+}
+
 export function duplicateProject(p: Project, title?: string): Project {
   const now = new Date().toISOString();
   return { ...p, id: newId('proj'), title: (title ?? `${p.title} (copy)`).slice(0, 60), createdAt: now, updatedAt: now };

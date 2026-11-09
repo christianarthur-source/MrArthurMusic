@@ -41,6 +41,8 @@ export const DEFAULT_EDITOR: EditorSettings = {
   metronome: false,
   countInBars: 1,
   followPlayhead: true,
+  matchKey: true,
+  keyLock: false,
 };
 
 export function createProject(title = 'My Song', bpm = 110): Project {

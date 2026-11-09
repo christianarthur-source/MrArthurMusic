@@ -170,12 +170,50 @@ class SampledInstrument implements PlayableInstrument {
   }
 }
 
+/** Instrument id for a sampler built from a project audio asset ("sampler:<asset key>"). */
+export const SAMPLER_PREFIX = 'sampler:';
+/** The key on the keyboard that plays a sampler's sound at its recorded pitch (middle C). */
+export const SAMPLER_ROOT = 60;
+const SAMPLER_MAX_SEC = 8;
+
+/**
+ * Prepare a recording to be played as an instrument: cut the silence before and after it,
+ * keep at most 8 s, and bring the peak up to a steady level so every sampler is about as loud.
+ */
+export function trimSample(ctx: BaseAudioContext, buf: AudioBuffer): AudioBuffer {
+  const chans = Array.from({ length: buf.numberOfChannels }, (_, c) => buf.getChannelData(c));
+  let peak = 0;
+  for (const d of chans) for (let i = 0; i < d.length; i++) peak = Math.max(peak, Math.abs(d[i]));
+  if (peak < 1e-4) return buf;
+  const thr = peak * 0.04;
+  let first = buf.length;
+  let last = 0;
+  for (const d of chans) {
+    for (let i = 0; i < d.length; i++) if (Math.abs(d[i]) > thr) { first = Math.min(first, i); break; }
+    for (let i = d.length - 1; i >= 0; i--) if (Math.abs(d[i]) > thr) { last = Math.max(last, i); break; }
+  }
+  const sr = buf.sampleRate;
+  const start = Math.max(0, first - Math.round(0.004 * sr));
+  const end = Math.min(buf.length, last + Math.round(0.08 * sr), start + SAMPLER_MAX_SEC * sr);
+  const len = Math.max(1, end - start);
+  const out = ctx.createBuffer(buf.numberOfChannels, len, sr);
+  const gain = Math.min(8, 0.8 / peak);
+  const fade = Math.min(len, Math.round(0.01 * sr));
+  chans.forEach((d, c) => {
+    const o = out.getChannelData(c);
+    for (let i = 0; i < len; i++) o[i] = d[start + i] * gain * (i >= len - fade ? (len - i) / fade : 1);
+  });
+  return out;
+}
+
 /** Loads the manifest and instruments on demand; decoded samples are shared. */
 export class InstrumentBank {
   private manifestPromise: Promise<InstrumentManifest | null> | null = null;
   private loaded = new Map<string, PlayableInstrument>();
   private loading = new Map<string, Promise<PlayableInstrument>>();
   error: string | null = null;
+  /** Supplies the audio for "sampler:" instruments (set by the engine). */
+  sampleSource: ((assetKey: string) => Promise<AudioBuffer | undefined>) | null = null;
 
   constructor(
     private ctx: BaseAudioContext,
@@ -229,6 +267,11 @@ export class InstrumentBank {
 
   private async doLoad(id: string): Promise<PlayableInstrument> {
     if (id.startsWith('synth:')) return new SynthInstrument(id, id.slice(6));
+    if (id.startsWith(SAMPLER_PREFIX)) {
+      const buf = await this.sampleSource?.(id.slice(SAMPLER_PREFIX.length)).catch(() => undefined);
+      if (!buf) throw new Error('The sound for this sampler is not available on this computer.');
+      return new SampledInstrument(id, 'melodic', new Map([[SAMPLER_ROOT, trimSample(this.ctx, buf)]]));
+    }
     const m = await this.loadManifest();
     const def = m?.instruments.find((i) => i.id === id);
     if (!m || !def) {

@@ -397,6 +397,40 @@ class Limiter extends Base {
   }
 }
 
+/**
+ * Robot voice: ring modulation (the input multiplied by a sine at `pitch` Hz) plus a short
+ * metallic comb. Native nodes only, so it costs about as much as the chorus.
+ */
+class Robot extends Base {
+  readonly type = 'robot' as const;
+  private ring = this.track(this.ctx.createGain());
+  private carrier = this.ctx.createOscillator();
+  private comb = this.track(this.ctx.createDelay(0.05));
+  private feedback = this.track(this.ctx.createGain());
+  private wetMix = this.track(this.ctx.createGain());
+  private dryMix = this.track(this.ctx.createGain());
+  constructor(ctx: BaseAudioContext) {
+    super(ctx);
+    this.ring.gain.value = 0; // the carrier drives the gain between -1 and 1
+    this.carrier.connect(this.ring.gain);
+    this.fxIn.connect(this.ring).connect(this.comb).connect(this.wetMix).connect(this.fxOut);
+    this.comb.connect(this.feedback).connect(this.comb);
+    this.fxIn.connect(this.dryMix).connect(this.fxOut);
+    this.carrier.start();
+    this.nodes.push(this.carrier);
+    this.sources.push(this.carrier);
+  }
+  protected apply(p: Record<string, number>) {
+    this.set(this.carrier.frequency, p.pitch);
+    this.set(this.comb.delayTime, 1 / Math.max(40, p.pitch * 4));
+    const fb = p.metal * 0.7;
+    this.set(this.feedback.gain, fb);
+    // The comb boosts up to 1/(1-fb); scale the wet path back so Robot is about as loud as the input.
+    this.set(this.wetMix.gain, p.mix * (1 - fb) * 1.1);
+    this.set(this.dryMix.gain, 1 - p.mix);
+  }
+}
+
 const CTORS: Record<EffectType, new (ctx: BaseAudioContext) => Base> = {
   eq3: Eq3,
   compressor: Compressor,
@@ -407,6 +441,7 @@ const CTORS: Record<EffectType, new (ctx: BaseAudioContext) => Base> = {
   distortion: Distortion,
   filter: Filter,
   limiter: Limiter,
+  robot: Robot,
 };
 
 export function createEffectNode(ctx: BaseAudioContext, fx: EffectInstance): EffectNode {

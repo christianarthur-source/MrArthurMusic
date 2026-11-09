@@ -1,6 +1,6 @@
 import { AudioLines, ChevronDown, ChevronUp, Copy, Mic, MoreVertical, Piano, Plus, Spline, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { InstrumentDescriptor } from '../engine/instruments';
+import { InstrumentDescriptor, SAMPLER_PREFIX } from '../engine/instruments';
 import { automatableTargets, automationTargetInfo } from '../model/automation';
 import * as ops from '../model/ops';
 import { Track } from '../model/types';
@@ -113,6 +113,7 @@ function TrackHeader({ track, height, selected, instruments, index, count }: { t
   const meterBuf = useMemo(() => new Float32Array(512), []);
   const readMeter = useCallback(() => s.engine.meterLevel(s.engine.graph.strip(track.id)?.meter, meterBuf), [s, track.id, meterBuf]);
   const compact = height < 64;
+  const assets = useProject((p) => p.assets);
 
   return (
     <div
@@ -170,7 +171,7 @@ function TrackHeader({ track, height, selected, instruments, index, count }: { t
                     ))}
                   </optgroup>
                 ))}
-                {!instruments.some((i) => i.id === track.instrument?.id) && <option value={track.instrument?.id}>{track.instrument?.id}</option>}
+                {!instruments.some((i) => i.id === track.instrument?.id) && <option value={track.instrument?.id}>{samplerLabel(track.instrument?.id, assets) ?? track.instrument?.id}</option>}
               </select>
             ) : (
               <span className="flex min-w-0 flex-1 items-center gap-1 text-[11px] text-slate-500">{track.arm ? <><Mic size={11} /> armed</> : 'Audio'}</span>
@@ -295,4 +296,10 @@ export function groupBy<T>(list: T[], key: (t: T) => string): [string, T[]][] {
     m.get(k)!.push(x);
   }
   return [...m];
+}
+
+/** "🎤 My sound: <name>" for sampler tracks made from a clip. */
+function samplerLabel(id: string | undefined, assets: Record<string, { name: string }>): string | null {
+  if (!id?.startsWith(SAMPLER_PREFIX)) return null;
+  return `🎤 My sound: ${assets[id.slice(SAMPLER_PREFIX.length)]?.name ?? 'missing'}`;
 }

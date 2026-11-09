@@ -5,7 +5,7 @@
 
 export type Tool = 'pointer' | 'split' | 'draw';
 export type BottomPanel = 'none' | 'inspector' | 'editor' | 'mixer' | 'keyboard';
-export type Dialog = 'none' | 'export' | 'shortcuts' | 'diagnostics' | 'record' | 'open' | 'storage' | 'about' | 'share' | 'video';
+export type Dialog = 'none' | 'export' | 'shortcuts' | 'diagnostics' | 'record' | 'open' | 'storage' | 'about' | 'share' | 'video' | 'tuner';
 
 export interface Toast {
   id: number;

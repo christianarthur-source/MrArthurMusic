@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { createProject, newId } from './model/factory';
+import { createProject } from './model/factory';
 import { Project } from './model/types';
 import { validateProject, ValidationResult } from './model/validate';
-import { saveProjectLocal } from './persistence/projectRepo';
+import { asRemix, saveProjectLocal } from './persistence/projectRepo';
 import { readShareFromLocation } from './persistence/shareLink';
 import { cx, Modal } from './ui/controls';
 import { ExportDialog } from './ui/dialogs/ExportDialog';
@@ -22,6 +22,7 @@ import { TransportBar } from './ui/TransportBar';
 import { VirtualKeyboard } from './ui/VirtualKeyboard';
 import { AddVideoDialog, TheaterMode, VideoStrip, VideoWindow } from './ui/VideoTrack';
 import { ShareDialog } from './ui/dialogs/ShareDialog';
+import { TunerDialog } from './ui/dialogs/TunerDialog';
 import { BottomPanel } from './ui/uiStore';
 import { useKeyboard, useMidiInput } from './ui/useKeyboard';
 import { LibraryCatalog } from './library/catalog';
@@ -111,7 +112,7 @@ export function DawApp(props: DawAppProps) {
       .then((data) => {
         if (!data) return;
         const r = validateProject(data);
-        open({ ...r, project: { ...r.project, id: newId('proj') }, warnings: ['This is a shared song. It is your own copy: changes you make never change the original.', ...r.warnings] });
+        open({ ...r, project: asRemix(r.project), warnings: [`This is a shared song, so it opened as your own remix of "${r.project.title}". Change anything you like: the original never changes.`, ...r.warnings] });
       })
       .catch(() => setWarnings(['This share link is damaged or incomplete, so the song could not be opened.']));
   }, [catalog]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -241,6 +242,7 @@ function StudioView({ onHome, currentProjectId, onProjectSaved, onNeedLogin }: {
       {dialog === 'about' && <AboutDialog onClose={close} />}
       {dialog === 'share' && <ShareDialog onClose={close} />}
       {dialog === 'video' && <AddVideoDialog onClose={close} />}
+      {dialog === 'tuner' && <TunerDialog onClose={close} />}
       <VideoWindow />
       <TheaterMode />
       <ContextMenu />
