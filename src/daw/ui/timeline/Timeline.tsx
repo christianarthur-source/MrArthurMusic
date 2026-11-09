@@ -5,6 +5,7 @@ import { gridTicks, snapTick, ticksPerBar, ticksPerBeat } from '../../model/time
 import { AutomationPoint, PPQ, Project, Region } from '../../model/types';
 import { addLoop, copy, cut, deleteSelection, duplicate, importFiles, paste, snap, splitAt, zoom } from '../actions';
 import { useProject, useStudio, useUi } from '../studio';
+import { useTheme } from '../theme';
 import { COLORS, drawTimeline, laneValueToY, laneYToValue, View } from './draw';
 import { computeRows, contentHeight, Row, rowAt, ticksToPx } from './layout';
 import { Ruler } from './Ruler';
@@ -33,6 +34,7 @@ export function Timeline() {
   const overlay = useRef<HTMLCanvasElement>(null);
   const [size, setSize] = useState({ w: 800, h: 400 });
   const [assetTick, setAssetTick] = useState(0);
+  const theme = useTheme();
   const [marquee, setMarquee] = useState<View['marquee']>(null);
   const drag = useRef<Drag | null>(null);
   const [cursor, setCursor] = useState('default');
@@ -88,7 +90,7 @@ export function Timeline() {
       drawTimeline(g, project, rows, view, s.engine.assets);
     });
     return () => cancelAnimationFrame(raf);
-  }, [project, rows, view, size, assetTick, s]);
+  }, [project, rows, view, size, assetTick, s, theme]);
 
   // Playhead overlay: reads the audio clock every frame; never drives audio.
   useEffect(() => {

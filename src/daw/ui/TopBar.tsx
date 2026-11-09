@@ -3,6 +3,7 @@ import { useRef, useState } from 'react';
 import { saveProjectLocal, duplicateProject } from '../persistence/projectRepo';
 import { importFiles, redo, undo } from './actions';
 import { cx, EditableText, IconButton } from './controls';
+import { ThemeMenu } from './ThemeMenu';
 import { useProject, useStudio, useSubscribe, useUi } from './studio';
 
 export function TopBar({ onHome, onSave, cloudLabel }: { onHome: () => void; onSave: () => void; cloudLabel?: string }) {
@@ -119,6 +120,7 @@ export function TopBar({ onHome, onSave, cloudLabel }: { onHome: () => void; onS
       <IconButton label="Share a link to this song" onClick={() => s.ui.set({ dialog: 'share' })}>
         <Share2 size={16} /> <span className="hidden xl:inline">Share</span>
       </IconButton>
+      <ThemeMenu />
       <IconButton label="Keyboard: play notes with the mouse, computer keys or a MIDI keyboard" shortcut="N" active={bottom === 'keyboard'} onClick={() => s.ui.set({ bottom: bottom === 'keyboard' ? 'none' : 'keyboard' })}>
         <KeyboardMusic size={16} /> <span className="hidden lg:inline">Keyboard</span>
       </IconButton>

@@ -25,20 +25,42 @@ export interface View {
   marquee: { x0: number; y0: number; x1: number; y1: number } | null;
 }
 
+/** Canvas palette. Filled by theme.ts for the light or dark theme and the accent color. */
 export const COLORS = {
   bg: '#0b1220',
   rowA: '#0f172a',
   rowB: '#111c33',
   lane: '#0c1528',
+  rowLine: 'rgba(0,0,0,0.35)',
   bar: 'rgba(148,163,184,0.28)',
   beat: 'rgba(148,163,184,0.12)',
   sub: 'rgba(148,163,184,0.05)',
   loop: 'rgba(251,191,36,0.07)',
   loopEdge: 'rgba(251,191,36,0.55)',
+  loopBar: 'rgba(251,191,36,0.85)',
+  accentSoft: 'rgba(251,191,36,0.35)',
+  dropOk: 'rgba(251,191,36,0.18)',
   text: '#e2e8f0',
   textDim: '#94a3b8',
   select: '#ffffff',
   accent: '#fbbf24',
+  ruler: '#0a0f1c',
+  rulerTick: 'rgba(148,163,184,0.35)',
+  rulerLine: 'rgba(0,0,0,0.5)',
+  rollBg: '#0b1220',
+  rollWhite: '#111b31',
+  rollBlack: '#0c1426',
+  rollTonic: '#1c2a4a',
+  rollInKey: '#15223d',
+  rollOutKey: '#090f1c',
+  rollOutKeyLocked: '#05080f',
+  rollOctave: 'rgba(148,163,184,0.25)',
+  rollEnd: 'rgba(0,0,0,0.45)',
+  keyWhite: '#e2e8f0',
+  keyBlack: '#1e293b',
+  keyLabel: '#0f172a',
+  velBg: '#070b14',
+  velLabel: '#64748b',
 };
 
 export function hexA(hex: string, a: number): string {
@@ -62,7 +84,7 @@ export function drawTimeline(ctx: CanvasRenderingContext2D, p: Project, rows: Ro
     if (y > H || y + r.h < 0) return;
     ctx.fillStyle = r.kind === 'lane' ? COLORS.lane : i % 2 ? COLORS.rowB : COLORS.rowA;
     ctx.fillRect(0, y, W, r.h);
-    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.fillStyle = COLORS.rowLine;
     ctx.fillRect(0, y + r.h - 1, W, 1);
   });
 
@@ -104,7 +126,7 @@ export function drawTimeline(ctx: CanvasRenderingContext2D, p: Project, rows: Ro
   for (const m of p.markers) {
     const mx = x(m.tick);
     if (mx < -2 || mx > W) continue;
-    ctx.fillStyle = 'rgba(251,191,36,0.35)';
+    ctx.fillStyle = COLORS.accentSoft;
     ctx.fillRect(Math.round(mx), 0, 1, H);
   }
 
@@ -114,7 +136,7 @@ export function drawTimeline(ctx: CanvasRenderingContext2D, p: Project, rows: Ro
     const row = v.dropHint.trackId ? rowByTrack.get(v.dropHint.trackId) : null;
     const y = row ? row.y - scrollY : rows.length ? rows[rows.length - 1].y + rows[rows.length - 1].h - scrollY : 0;
     const h = row ? row.h : 64;
-    ctx.fillStyle = v.dropHint.valid ? 'rgba(251,191,36,0.18)' : 'rgba(244,63,94,0.18)';
+    ctx.fillStyle = v.dropHint.valid ? COLORS.dropOk : 'rgba(244,63,94,0.18)';
     ctx.strokeStyle = v.dropHint.valid ? COLORS.accent : '#f43f5e';
     ctx.setLineDash([5, 4]);
     ctx.fillRect(dx, y + 2, 140, h - 4);
