@@ -108,9 +108,9 @@ export function VirtualKeyboard() {
               tabIndex={-1}
               aria-label={`Note ${p}`}
               {...keyProps(p)}
-              className={cx('relative flex flex-1 flex-col items-center justify-end rounded-b-md pb-1 text-[10px] font-semibold transition-colors', s.live.active.has(p) ? 'bg-amber-300 text-slate-900' : 'bg-slate-100 text-slate-500 hover:bg-white')}
+              className={cx('relative flex flex-1 flex-col items-center justify-end rounded-b-md pb-1 text-[10px] font-semibold transition-colors', s.live.active.has(p) ? 'bg-amber-400 text-[#0f172a]' : 'bg-[#f1f5f9] text-[#64748b] hover:bg-white')}
             >
-              {label(p) && <span className="mb-0.5 rounded bg-slate-300/70 px-1 text-slate-700">{label(p)}</span>}
+              {label(p) && <span className="mb-0.5 rounded bg-[#cbd5e1]/70 px-1 text-[#334155]">{label(p)}</span>}
               {p % 12 === 0 && <span>C{p / 12 - 1}</span>}
             </button>
           ))}
@@ -125,7 +125,7 @@ export function VirtualKeyboard() {
               tabIndex={-1}
               aria-label={`Note ${b}`}
               {...keyProps(b)}
-              className={cx('absolute top-0 z-10 flex h-[60%] flex-col items-center justify-end rounded-b-md pb-1 text-[10px] font-semibold', s.live.active.has(b) ? 'bg-amber-400 text-slate-900' : 'bg-slate-900 text-slate-400 ring-1 ring-slate-700 hover:bg-slate-700')}
+              className={cx('absolute top-0 z-10 flex h-[60%] flex-col items-center justify-end rounded-b-md pb-1 text-[10px] font-semibold', s.live.active.has(b) ? 'bg-amber-400 text-[#0f172a]' : 'bg-[#0f172a] text-[#94a3b8] ring-1 ring-[#334155] hover:bg-[#334155]')}
               style={{ left: `calc(${((i + 1) / whites.length) * 100}% - ${(0.6 / whites.length) * 50}%)`, width: `${(0.6 / whites.length) * 100}%` }}
             >
               {label(b)}

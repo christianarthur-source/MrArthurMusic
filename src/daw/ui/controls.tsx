@@ -272,7 +272,7 @@ export function Fader({
   onCommit,
   label,
   defaultValue = 0,
-  accent = '#fbbf24',
+  accent = 'var(--color-amber-400)',
 }: {
   value: number;
   onChange: (db: number) => void;

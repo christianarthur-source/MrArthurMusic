@@ -23,6 +23,7 @@ import { VirtualKeyboard } from './ui/VirtualKeyboard';
 import { AddVideoDialog, TheaterMode, VideoStrip, VideoWindow } from './ui/VideoTrack';
 import { ShareDialog } from './ui/dialogs/ShareDialog';
 import { TunerDialog } from './ui/dialogs/TunerDialog';
+import { themeRootProps, useTheme } from './ui/theme';
 import { BottomPanel } from './ui/uiStore';
 import { useKeyboard, useMidiInput } from './ui/useKeyboard';
 import { LibraryCatalog } from './library/catalog';
@@ -55,6 +56,7 @@ export interface DawAppProps {
 export function DawApp(props: DawAppProps) {
   const [studio, setStudio] = useState<Studio | null>(null);
   const [screen, setScreen] = useState<'start' | 'studio'>('start');
+  const theme = useTheme();
   const [catalog, setCatalog] = useState<LibraryCatalog | null>(null);
   const studioRef = useRef<Studio | null>(null);
   const [warnings, setWarnings] = useState<string[]>([]);
@@ -130,7 +132,7 @@ export function DawApp(props: DawAppProps) {
   }, [loadedProjectData, catalog]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <div className="daw-root fixed inset-0 flex flex-col bg-slate-950  text-slate-100">
+    <div className="daw-root fixed inset-0 flex flex-col bg-slate-950  text-slate-100" {...themeRootProps(theme)}>
       {!catalog ? null : screen === 'start' || !studio ? (
         <StartScreen catalog={catalog} onOpen={open} onExit={props.onBackToHub} studentName={props.studentSession?.firstName} />
       ) : (

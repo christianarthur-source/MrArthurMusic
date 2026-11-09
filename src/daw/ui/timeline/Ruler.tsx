@@ -3,6 +3,7 @@ import { snapTick, ticksPerBar, ticksPerBeat } from '../../model/time';
 import { PPQ, Project } from '../../model/types';
 import { useStudio } from '../studio';
 import { COLORS } from './draw';
+import { useTheme } from '../theme';
 import { RULER_H, ticksToPx } from './layout';
 
 /**
@@ -15,6 +16,7 @@ export function Ruler({ project, scrollX, width }: { project: Project; scrollX: 
   const drag = useRef<{ mode: 'seek' | 'range' | 'loopStart' | 'loopEnd'; anchor: number; moved: boolean } | null>(null);
   const ppb = project.editor.pxPerBeat;
   const sig = project.timeSigMap[0].sig;
+  const theme = useTheme();
   const barT = ticksPerBar(sig);
 
   useEffect(() => {
@@ -25,13 +27,13 @@ export function Ruler({ project, scrollX, width }: { project: Project; scrollX: 
     c.height = Math.round(RULER_H * dpr);
     const g = c.getContext('2d')!;
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
-    g.fillStyle = '#0a0f1c';
+    g.fillStyle = COLORS.ruler;
     g.fillRect(0, 0, width, RULER_H);
     const x = (t: number) => ticksToPx(t, ppb) - scrollX;
     const t0 = (scrollX * PPQ) / ppb;
     const t1 = ((scrollX + width) * PPQ) / ppb;
     if (project.loop.enabled || project.loop.end > project.loop.start) {
-      g.fillStyle = project.loop.enabled ? 'rgba(251,191,36,0.85)' : 'rgba(148,163,184,0.25)';
+      g.fillStyle = project.loop.enabled ? COLORS.loopBar : COLORS.rulerTick;
       g.fillRect(x(project.loop.start), 0, x(project.loop.end) - x(project.loop.start), 7);
     }
     const pxBar = ticksToPx(barT, ppb);
@@ -47,7 +49,7 @@ export function Ruler({ project, scrollX, width }: { project: Project; scrollX: 
         g.fillText(String(b + 1), xx + 4, 24);
       }
       if (ticksToPx(beatT, ppb) > 10) {
-        g.fillStyle = 'rgba(148,163,184,0.35)';
+        g.fillStyle = COLORS.rulerTick;
         for (let k = 1; k < sig.numerator; k++) g.fillRect(Math.round(x(b * barT + k * beatT)), RULER_H - 6, 1, 6);
       }
     }
@@ -63,9 +65,9 @@ export function Ruler({ project, scrollX, width }: { project: Project; scrollX: 
       g.font = '600 10px Inter, system-ui';
       g.fillText(m.name, mx + 8, 16);
     }
-    g.fillStyle = 'rgba(0,0,0,0.5)';
+    g.fillStyle = COLORS.rulerLine;
     g.fillRect(0, RULER_H - 1, width, 1);
-  }, [project, scrollX, width, ppb, barT, sig]);
+  }, [project, scrollX, width, ppb, barT, sig, theme]);
 
   const tickAt = (clientX: number) => {
     const rect = canvas.current!.getBoundingClientRect();
