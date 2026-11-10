@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Volume2, VolumeX, RotateCcw, Sparkles } from 'lucide-react';
 import { soundEngine } from '../../audio/soundEngine';
+import { TempoChallenge } from './TempoChallenge';
 
 interface AnimalTier {
   name: string;
@@ -101,6 +102,7 @@ export const TempoTapper: React.FC = () => {
   const [isMetronomeActive, setIsMetronomeActive] = useState<boolean>(false);
   const [beatPulse, setBeatPulse] = useState<boolean>(false);
   const [runnerPosition, setRunnerPosition] = useState<number>(10);
+  const [mode, setMode] = useState<'free' | 'challenge'>('free');
 
   const metronomeTimerRef = useRef<number | null>(null);
   const currentTier = getTierForBpm(bpm);
@@ -147,8 +149,9 @@ export const TempoTapper: React.FC = () => {
     });
   }, [playTapClick]);
 
-  // Spacebar hotkey listener
+  // Spacebar hotkey listener (Tempo Challenge has its own while it's shown)
   useEffect(() => {
+    if (mode !== 'free') return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === 'Space' && !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) {
         e.preventDefault();
@@ -157,7 +160,7 @@ export const TempoTapper: React.FC = () => {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleTap]);
+  }, [handleTap, mode]);
 
   // Animated animal runner movement
   useEffect(() => {
@@ -211,8 +214,43 @@ export const TempoTapper: React.FC = () => {
     setIsMetronomeActive(false);
   };
 
+  const modeTabs = (
+    <div className="flex items-center gap-2 p-1 rounded-2xl bg-slate-900 border border-slate-800 w-fit">
+      {([
+        ['free', '🥁 Free Tap'],
+        ['challenge', '🏆 Tempo Challenge'],
+      ] as const).map(([m, label]) => (
+        <button
+          key={m}
+          type="button"
+          onClick={(e) => {
+            e.currentTarget.blur();
+            if (m === 'challenge') setIsMetronomeActive(false);
+            setMode(m);
+          }}
+          className={`px-4 py-2 rounded-xl text-sm font-black font-['Fredoka',sans-serif] transition-colors cursor-pointer ${
+            mode === m ? 'bg-amber-400 text-slate-950' : 'text-slate-300 hover:text-white'
+          }`}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  );
+
+  if (mode === 'challenge') {
+    return (
+      <div className="space-y-6">
+        {modeTabs}
+        <TempoChallenge startBpm={bpm} />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      {modeTabs}
+
       {/* Top Overview & Animal Speed Card */}
       <div
         className={`relative overflow-hidden rounded-3xl p-6 sm:p-8 bg-gradient-to-r ${currentTier.borderGlow} p-0.5 shadow-2xl transition-all duration-300`}
