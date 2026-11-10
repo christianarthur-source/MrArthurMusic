@@ -116,6 +116,15 @@ export class KandinskyApp {
       });
     }
 
+    // Don't let toolbar controls keep keyboard focus after they're used: otherwise
+    // an accidental space bar press "clicks" the last one again (e.g. Reset Canvas).
+    [this.playBtn, this.schemeBtn, this.undoBtn, this.clearBtn].forEach((btn) => {
+      if (btn) btn.addEventListener('click', () => btn.blur());
+    });
+    if (this.presetSelect) {
+      this.presetSelect.addEventListener('change', () => this.presetSelect.blur());
+    }
+
     this.updateSchemeIndicator();
     this.updateUndoState();
   }
@@ -187,6 +196,10 @@ export class KandinskyApp {
 
     const onDown = (ev) => {
       ev.preventDefault();
+      // preventDefault() stops the browser moving focus off whatever was clicked last,
+      // so drop it ourselves; a focused button would fire again on the space bar.
+      const focused = document.activeElement;
+      if (focused && focused !== document.body && typeof focused.blur === 'function') focused.blur();
       audioEngine.ensureContext();
       const pos = getPos(ev);
 
