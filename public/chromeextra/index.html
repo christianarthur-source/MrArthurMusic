@@ -682,6 +682,14 @@
         <button id="sm-export-wav" class="btn-primary">Download WAV Audio (.wav)</button>
         <button id="sm-export-midi" class="tool-btn" style="justify-content: center;">Download Standard MIDI File (.mid)</button>
       </div>
+      <div class="form-field" style="margin-bottom: 18px;">
+        <label for="sm-share-url">Share Link (anyone with the link can open your song)</label>
+        <div style="display: flex; gap: 8px;">
+          <input id="sm-share-url" type="text" readonly placeholder="Click “Make Share Link”" style="flex: 1; min-width: 0; font-family: monospace;" />
+          <button id="sm-share-btn" class="btn-primary" style="white-space: nowrap;">🔗 Make Share Link</button>
+        </div>
+        <div id="sm-share-status" style="font-size: 0.78rem; color: var(--text-secondary); min-height: 1em; margin-top: 6px;" aria-live="polite"></div>
+      </div>
       <div class="form-field" style="margin-bottom: 14px;">
         <label for="sm-json-code">Shareable Song JSON Data (Copy or Paste to Load)</label>
         <textarea id="sm-json-code" rows="4" style="font-family: monospace; font-size: 0.76rem;"></textarea>
