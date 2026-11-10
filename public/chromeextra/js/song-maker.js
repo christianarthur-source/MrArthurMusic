@@ -1320,9 +1320,6 @@ export class SongMakerApp {
     const closeBtn = document.getElementById('sm-save-close');
     const wavBtn = document.getElementById('sm-export-wav');
     const midiBtn = document.getElementById('sm-export-midi');
-    const copyJsonBtn = document.getElementById('sm-copy-json');
-    const jsonTextarea = document.getElementById('sm-json-code');
-    const loadJsonBtn = document.getElementById('sm-load-json');
     const shareBtn = document.getElementById('sm-share-btn');
     const shareUrl = document.getElementById('sm-share-url');
     const shareStatus = document.getElementById('sm-share-status');
@@ -1331,9 +1328,6 @@ export class SongMakerApp {
     if (this.saveBtn && modal) {
       this.saveBtn.addEventListener('click', () => {
         const json = JSON.stringify(this.getSongData());
-        if (jsonTextarea) {
-          jsonTextarea.value = json;
-        }
         // A link made earlier still fits only if the song hasn't changed since
         if (shareUrl && json !== sharedFor) {
           shareUrl.value = '';
@@ -1352,7 +1346,7 @@ export class SongMakerApp {
         const url = await createSongShortLink(data);
         shareBtn.disabled = false;
         if (!url) {
-          if (shareStatus) shareStatus.textContent = 'Couldn\'t make a link right now. You can still copy the Song Data below.';
+          if (shareStatus) shareStatus.textContent = 'Couldn\'t make a link right now. Check your internet and try again.';
           return;
         }
         sharedFor = json;
@@ -1410,27 +1404,6 @@ export class SongMakerApp {
           rowIndexToMidi: (r) => this.rowIndexToMidi(r)
         });
         this.triggerDownload(blob, 'chrome-music-lab-extra-song.mid');
-      });
-    }
-
-    if (copyJsonBtn && jsonTextarea) {
-      copyJsonBtn.addEventListener('click', () => {
-        navigator.clipboard.writeText(jsonTextarea.value);
-        copyJsonBtn.textContent = 'Copied to Clipboard!';
-        setTimeout(() => { copyJsonBtn.textContent = 'Copy Song Data'; }, 1600);
-      });
-    }
-
-    if (loadJsonBtn && jsonTextarea && modal) {
-      loadJsonBtn.addEventListener('click', () => {
-        try {
-          const parsed = JSON.parse(jsonTextarea.value);
-          if (this.applySongData(parsed)) {
-            modal.classList.remove('open');
-          }
-        } catch (err) {
-          alert('Invalid Song JSON format.');
-        }
       });
     }
   }
