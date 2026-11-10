@@ -22,8 +22,20 @@ export const ANIMAL_AVATARS = [
   { emoji: '🦁', name: 'Lion' },
   { emoji: '🐸', name: 'Frog' },
   { emoji: '🦉', name: 'Owl' },
-  { emoji: '🦄', name: 'Unicorn' }
+  { emoji: '🦄', name: 'Unicorn' },
+  { emoji: '🐵', name: 'Monkey' },
+  { emoji: '🐰', name: 'Bunny' },
+  { emoji: '🐻', name: 'Bear' },
+  { emoji: '🐧', name: 'Penguin' },
+  { emoji: '🐙', name: 'Octopus' },
+  { emoji: '🐢', name: 'Turtle' },
+  { emoji: '🦒', name: 'Giraffe' },
+  { emoji: '🐘', name: 'Elephant' },
+  { emoji: '🦋', name: 'Butterfly' },
+  { emoji: '🐬', name: 'Dolphin' }
 ];
+// Keep in sync with AVATARS in the site's cloudflare/pianoRoom.mjs (the room server hands these out
+// so no two players in a room share an animal).
 
 export const SOLFEGE_NAMES = ['Do', 'Di', 'Re', 'Ri', 'Mi', 'Fa', 'Fi', 'Sol', 'Si', 'La', 'Li', 'Ti'];
 
@@ -40,7 +52,7 @@ export const KEYBOARD_MAP = {
 
 export class SharedPianoApp {
   constructor() {
-    this.myAvatar = ANIMAL_AVATARS[Math.floor(Math.random() * 6)];
+    this.myAvatar = ANIMAL_AVATARS[Math.floor(Math.random() * ANIMAL_AVATARS.length)];
     this.aiAvatar = { emoji: '🤖', name: 'AI Duet Bot' };
 
     this.settings = {
@@ -554,6 +566,9 @@ export class SharedPianoApp {
       if (ws !== this.room.ws) return;
       if (msg.t === 'welcome') {
         this.room.you = msg.you;
+        // The room picks an animal nobody else in it is using
+        const assigned = ANIMAL_AVATARS.find((a) => a.emoji === msg.emoji);
+        if (assigned) this.myAvatar = assigned;
         this.room.retries = 0;
         this.applyRoster(msg.players);
       } else if (msg.t === 'roster') {

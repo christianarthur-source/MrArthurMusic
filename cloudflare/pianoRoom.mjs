@@ -8,11 +8,11 @@
  * and a server-made id, and the room disappears when the last player leaves.
  *
  * Client → server (JSON):
- *   { t: 'hello', emoji }                       pick / change your avatar
+ *   { t: 'hello', emoji }                       join; emoji = the animal you'd like (kept if nobody has it)
  *   { t: 'on', midi, inst }                     key down
  *   { t: 'off', midi }                          key up
  * Server → client:
- *   { t: 'welcome', you, players: [{ id, emoji }] }
+ *   { t: 'welcome', you, emoji, players: [{ id, emoji }] }   emoji = the animal you were given
  *   { t: 'roster', players: [{ id, emoji }] }   someone joined, left or changed avatar
  *   { t: 'on' | 'off', from, midi, inst? }      another player's note
  *   { t: 'full' }                               room already has MAX_PLAYERS (socket then closes)
@@ -28,7 +28,9 @@ const MAX_MESSAGE_BYTES = 200;
 const RATE_WINDOW_MS = 1000;
 const RATE_MAX_MESSAGES = 60;
 
-const EMOJIS = new Set(['🐶', '🐱', '🦊', '🐼', '🐨', '🐯', '🦁', '🐸', '🦉', '🦄']); // ANIMAL_AVATARS in shared-piano.js
+// Same animals as ANIMAL_AVATARS in public/chromeextra/js/shared-piano.js. Each player in a room gets a
+// different one (MAX_PLAYERS is well below the list length, so there is always a free animal).
+const AVATARS = ['🐶', '🐱', '🦊', '🐼', '🐨', '🐯', '🦁', '🐸', '🦉', '🦄', '🐵', '🐰', '🐻', '🐧', '🐙', '🐢', '🦒', '🐘', '🦋', '🐬'];
 const INSTRUMENTS = new Set(['piano', 'marimba', 'strings', 'woodwind', 'synth', 'drum-kit', 'drum-machine']);
 
 /** Worker-side handler: validates the code and hands the WebSocket to that room's Durable Object. */
@@ -105,13 +107,12 @@ export class PianoRoom {
     if (!msg || typeof msg !== 'object') return;
 
     if (msg.t === 'hello') {
-      const emoji = EMOJIS.has(msg.emoji) ? msg.emoji : '🎹';
-      const first = !me.joined;
-      me.emoji = emoji;
+      if (me.joined) return; // avatar is fixed for the connection
+      me.emoji = this.pickAvatar(msg.emoji, ws);
       me.joined = true;
       ws.serializeAttachment(me);
-      if (first) ws.send(JSON.stringify({ t: 'welcome', you: me.id, players: this.players() }));
-      this.broadcast({ t: 'roster', players: this.players() }, first ? ws : null);
+      ws.send(JSON.stringify({ t: 'welcome', you: me.id, emoji: me.emoji, players: this.players() }));
+      this.broadcast({ t: 'roster', players: this.players() }, ws);
       return;
     }
 
@@ -143,6 +144,19 @@ export class PianoRoom {
       // already closed
     }
     this.broadcast({ t: 'roster', players: this.players(ws) }, ws);
+  }
+
+  /** The requested animal if it's valid and free in this room, otherwise a random free one. */
+  pickAvatar(wanted, self) {
+    const taken = new Set();
+    for (const s of this.state.getWebSockets()) {
+      if (s === self) continue;
+      const a = s.deserializeAttachment();
+      if (a?.joined) taken.add(a.emoji);
+    }
+    if (AVATARS.includes(wanted) && !taken.has(wanted)) return wanted;
+    const free = AVATARS.filter((e) => !taken.has(e));
+    return free.length ? free[Math.floor(Math.random() * free.length)] : '🎹';
   }
 
   /** Players who have said hello, optionally leaving one socket out (the one that is closing). */
