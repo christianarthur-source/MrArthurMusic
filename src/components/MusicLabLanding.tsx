@@ -842,6 +842,30 @@ export const MusicLabLanding: React.FC<MusicLabLandingProps> = ({
           </div>
         </section>
 
+        {/* More music experiments: Chrome Music Lab EXTRA (static site in public/chromeextra) */}
+        <a
+          href="/chromeextra/"
+          className="group flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-5 rounded-3xl bg-gradient-to-br from-slate-900 to-slate-950 border border-sky-500/30 hover:border-sky-400 hover:shadow-xl hover:shadow-sky-500/10 transition-all duration-200"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 shrink-0 rounded-2xl bg-sky-500/20 border border-sky-400/40 flex items-center justify-center text-3xl group-hover:scale-110 transition-transform shadow-inner">
+              🧪
+            </div>
+            <div>
+              <h4 className="text-xl font-black text-white font-['Fredoka',sans-serif] group-hover:text-sky-300 transition-colors">
+                Chrome Music Lab EXTRA
+              </h4>
+              <p className="text-xs text-sky-300 font-bold mt-0.5">
+                Song Maker, Kandinsky, Shared Piano &amp; Rhythm, with custom color themes 🎨
+              </p>
+            </div>
+          </div>
+          <span className="shrink-0 px-4 py-2.5 rounded-xl bg-slate-800 group-hover:bg-sky-400 group-hover:text-slate-950 text-sky-300 font-black text-xs transition-colors flex items-center gap-1.5 font-['Fredoka',sans-serif]">
+            <span>Open Music Lab EXTRA</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </span>
+        </a>
+
         {/* Visible Footer with NY Ed Law § 2-d & Parents' Bill of Rights */}
         <footer className="w-full pt-6 pb-10 border-t border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
           <div className="flex items-center gap-2">
