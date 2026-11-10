@@ -12,6 +12,12 @@
   ],
   // Workers AI (free daily allowance): the Hub's free lesson-plan AI (hub/server/freeAi.mjs).
   "ai": { "binding": "AI" },
+  // Chrome Music Lab EXTRA Shared Piano: one Durable Object per room code relays notes between players
+  // (cloudflare/pianoRoom.mjs). Nothing is stored. SQLite-backed class = available on the free plan.
+  "durable_objects": {
+    "bindings": [{ "name": "PIANO_ROOMS", "class_name": "PianoRoom" }]
+  },
+  "migrations": [{ "tag": "piano-rooms-v1", "new_sqlite_classes": ["PianoRoom"] }],
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",

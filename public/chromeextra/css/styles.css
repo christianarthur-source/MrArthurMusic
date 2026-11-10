@@ -1390,3 +1390,64 @@ html, body {
     height: 115px;
   }
 }
+
+/* ---------- Shared Piano: Play Together (online rooms) ---------- */
+.sp-room-panel {
+  position: absolute;
+  top: 56px;
+  right: 16px;
+  z-index: 20;
+  width: min(320px, calc(100% - 32px));
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.sp-room-panel[hidden], .sp-room-section[hidden] { display: none; }
+.sp-room-section { display: flex; flex-direction: column; gap: 10px; }
+.sp-room-title { font-weight: 800; font-size: 1rem; color: var(--text-primary); }
+.sp-room-help { font-size: 0.8rem; line-height: 1.4; color: var(--text-secondary); }
+.sp-room-x {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.sp-room-wide { justify-content: center; width: 100%; }
+.sp-room-join { display: flex; gap: 8px; }
+.sp-room-join input {
+  flex: 1;
+  min-width: 0;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+}
+.sp-room-join input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.sp-room-code-label { font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.08em; }
+.sp-room-code {
+  font-size: 2.2rem;
+  font-weight: 900;
+  letter-spacing: 0.25em;
+  color: var(--accent);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.sp-room-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.sp-room-status { font-size: 0.78rem; color: var(--text-secondary); min-height: 1em; }
+.sp-room-status:empty { display: none; }
+.sp-room-status.error { color: #f87171; }
+.sp-avatar-pill.peer.online { border-color: #34d399; }
