@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en" data-theme-mode="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chrome Music Lab EXTRA — Educational Dark Mode Edition</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <!-- ====================================================================
+       Top Navigation Header (Hub + 4 Experiments + Theme & Palette Studio)
+       ==================================================================== -->
+  <header class="top-header">
+    <a href="#hub" class="brand-group" data-nav-target="hub">
+      <div class="brand-logo">♫</div>
+      <div class="brand-title">
+        <span>Chrome Music Lab</span>
+        <span class="extra-badge">EXTRA</span>
+      </div>
+    </a>
+
+    <nav class="top-nav-tabs" aria-label="Experiments Navigation">
+      <button class="top-nav-tab active" data-nav-target="hub">
+        <span>Hub</span>
+      </button>
+      <button class="top-nav-tab" data-nav-target="song-maker">
+        <span class="tab-dot" style="background: var(--note-0)"></span>
+        <span>Song Maker</span>
+      </button>
+      <button class="top-nav-tab" data-nav-target="kandinsky">
+        <span class="tab-dot" style="background: var(--kandinsky-line)"></span>
+        <span>Kandinsky</span>
+      </button>
+      <button class="top-nav-tab" data-nav-target="shared-piano">
+        <span class="tab-dot" style="background: var(--note-4)"></span>
+        <span>Shared Piano</span>
+      </button>
+      <button class="top-nav-tab" data-nav-target="rhythm">
+        <span class="tab-dot" style="background: var(--note-9)"></span>
+        <span>Rhythm</span>
+      </button>
+    </nav>
+
+    <div class="header-actions">
+      <button class="palette-trigger-btn" id="open-palette-btn" title="Customize Colors & Themes">
+        <div class="mini-rainbow-dots">
+          <span style="background: var(--note-0)"></span>
+          <span style="background: var(--note-3)"></span>
+          <span style="background: var(--note-5)"></span>
+          <span style="background: var(--note-8)"></span>
+          <span style="background: var(--note-10)"></span>
+        </div>
+        <span>Color Palette &amp; Themes</span>
+      </button>
+      <button class="mode-toggle-btn" id="quick-theme-toggle" title="Toggle Dark / Light Mode">
+        <span>Light Mode</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ====================================================================
+       Main Stage Container
+       ==================================================================== -->
+  <main class="main-stage">
+
+    <!-- ==================================================================
+         VIEW 0: Chrome Music Lab EXTRA Hub
+         ================================================================== -->
+    <section id="view-hub" class="app-view active">
+      <div class="hub-container">
+        <div class="hub-hero">
+          <h1>Chrome Music Lab <span class="extra-badge" style="font-size: 0.9rem; vertical-align: middle;">EXTRA</span></h1>
+          <p>
+            Hands-on educational music experiments rebuilt in native <strong>Dark Mode</strong> with a customizable
+            <strong>12-Note Chromatic Palette Studio</strong>, offline WAV/MIDI export, AI Jam Partner, and zero-latency synthesis.
+          </p>
+        </div>
+
+        <div class="experiments-grid">
+          <!-- Card 1: Song Maker -->
+          <article class="exp-card" data-nav-target="song-maker">
+            <div class="exp-card-art">
+              <svg viewBox="0 0 240 130" width="210" height="115">
+                <rect x="20" y="20" width="32" height="18" rx="4" fill="var(--note-0)" />
+                <rect x="60" y="38" width="32" height="18" rx="4" fill="var(--note-2)" />
+                <rect x="100" y="56" width="32" height="18" rx="4" fill="var(--note-4)" />
+                <rect x="140" y="38" width="32" height="18" rx="4" fill="var(--note-7)" />
+                <rect x="180" y="20" width="32" height="18" rx="4" fill="var(--note-9)" />
+                <circle cx="36" cy="102" r="7" fill="var(--accent)" />
+                <polygon points="116,94 124,109 108,109" fill="var(--accent)" />
+                <circle cx="196" cy="102" r="7" fill="var(--accent)" />
+              </svg>
+            </div>
+            <div class="exp-card-body">
+              <div>
+                <div class="exp-card-title">
+                  <span>Song Maker</span>
+                  <span style="color: var(--accent)">→</span>
+                </div>
+                <p class="exp-card-desc">
+                  Paint melodies and drum grooves on a customizable multi-octave grid. Includes Mic pitch detection, 5 instruments, 4 drum kits, Preset Songs, and WAV/MIDI export.
+                </p>
+              </div>
+              <div class="exp-card-tags">
+                <span class="exp-tag">WAV / MIDI Export</span>
+                <span class="exp-tag">Mic Pitch Input</span>
+                <span class="exp-tag">Custom Scales</span>
+              </div>
+            </div>
+          </article>
+
+          <!-- Card 2: Kandinsky -->
+          <article class="exp-card" data-nav-target="kandinsky">
+            <div class="exp-card-art">
+              <svg viewBox="0 0 240 130" width="210" height="115">
+                <path d="M25,95 Q75,20 125,75 T215,40" fill="none" stroke="var(--kandinsky-line)" stroke-width="7" stroke-linecap="round" />
+                <circle cx="75" cy="58" r="24" fill="var(--kandinsky-circle)" />
+                <circle cx="67" cy="53" r="4" fill="#fff" />
+                <circle cx="83" cy="53" r="4" fill="#fff" />
+                <circle cx="67" cy="53" r="2" fill="#0f172a" />
+                <circle cx="83" cy="53" r="2" fill="#0f172a" />
+                <ellipse cx="75" cy="66" rx="6" ry="4" fill="#0f172a" />
+                <polygon points="175,32 198,74 152,74" fill="none" stroke="var(--kandinsky-triangle)" stroke-width="5" stroke-linejoin="round" />
+              </svg>
+            </div>
+            <div class="exp-card-body">
+              <div>
+                <div class="exp-card-title">
+                  <span>Kandinsky</span>
+                  <span style="color: var(--accent)">→</span>
+                </div>
+                <p class="exp-card-desc">
+                  Turn drawings into living sound! Circles morph into singing faces, triangles play percussion, and curves vibrate like plucked strings across 4 color/sound schemes.
+                </p>
+              </div>
+              <div class="exp-card-tags">
+                <span class="exp-tag">$1 Gesture AI</span>
+                <span class="exp-tag">Singing Faces</span>
+                <span class="exp-tag">4 Color Schemes</span>
+              </div>
+            </div>
+          </article>
+
+          <!-- Card 3: Shared Piano -->
+          <article class="exp-card" data-nav-target="shared-piano">
+            <div class="exp-card-art">
+              <svg viewBox="0 0 240 130" width="210" height="115">
+                <!-- Rising trails -->
+                <rect x="44" y="16" width="18" height="42" rx="5" fill="var(--note-0)" />
+                <rect x="98" y="28" width="18" height="30" rx="5" fill="var(--note-4)" />
+                <rect x="152" y="12" width="18" height="46" rx="5" fill="var(--note-7)" />
+                <!-- Mini piano keys -->
+                <rect x="30" y="68" width="24" height="46" rx="3" fill="#e2e8f0" />
+                <rect x="56" y="68" width="24" height="46" rx="3" fill="#e2e8f0" />
+                <rect x="82" y="68" width="24" height="46" rx="3" fill="var(--note-4)" />
+                <rect x="108" y="68" width="24" height="46" rx="3" fill="#e2e8f0" />
+                <rect x="134" y="68" width="24" height="46" rx="3" fill="var(--note-7)" />
+                <rect x="160" y="68" width="24" height="46" rx="3" fill="#e2e8f0" />
+                <rect x="186" y="68" width="24" height="46" rx="3" fill="#e2e8f0" />
+                <rect x="48" y="68" width="14" height="28" rx="2" fill="#0f172a" />
+                <rect x="74" y="68" width="14" height="28" rx="2" fill="#0f172a" />
+                <rect x="126" y="68" width="14" height="28" rx="2" fill="#0f172a" />
+                <rect x="152" y="68" width="14" height="28" rx="2" fill="#0f172a" />
+                <rect x="178" y="68" width="14" height="28" rx="2" fill="#0f172a" />
+              </svg>
+            </div>
+            <div class="exp-card-body">
+              <div>
+                <div class="exp-card-title">
+                  <span>Shared Piano</span>
+                  <span style="color: var(--accent)">→</span>
+                </div>
+                <p class="exp-card-desc">
+                  Play a multi-octave synthesizer with rising note trails, Solfège/Custom note names, multi-tab room sync, and an interactive AI Duet Jam Partner.
+                </p>
+              </div>
+              <div class="exp-card-tags">
+                <span class="exp-tag">AI Duet Partner</span>
+                <span class="exp-tag">Multi-Tab Sync</span>
+                <span class="exp-tag">QWERTY &amp; MIDI</span>
+              </div>
+            </div>
+          </article>
+
+          <!-- Card 4: Rhythm -->
+          <article class="exp-card" data-nav-target="rhythm">
+            <div class="exp-card-art">
+              <svg viewBox="0 0 240 130" width="210" height="115">
+                <!-- Big & Small Percussion Characters -->
+                <rect x="52" y="24" width="54" height="68" rx="26" fill="var(--note-2)" />
+                <circle cx="69" cy="46" r="5" fill="#fff" />
+                <circle cx="89" cy="46" r="5" fill="#fff" />
+                <circle cx="70" cy="46" r="2.5" fill="#0f172a" />
+                <circle cx="90" cy="46" r="2.5" fill="#0f172a" />
+                <rect x="138" y="42" width="44" height="50" rx="20" fill="var(--note-0)" />
+                <circle cx="152" cy="58" r="4.5" fill="#fff" />
+                <circle cx="168" cy="58" r="4.5" fill="#fff" />
+                <circle cx="151" cy="58" r="2.2" fill="#0f172a" />
+                <circle cx="167" cy="58" r="2.2" fill="#0f172a" />
+                <!-- Sequencer dots -->
+                <circle cx="55" cy="110" r="6" fill="var(--note-2)" />
+                <circle cx="95" cy="110" r="6" fill="var(--note-4)" />
+                <polygon points="135,103 142,116 128,116" fill="var(--note-0)" />
+                <circle cx="175" cy="110" r="6" fill="var(--note-7)" />
+              </svg>
+            </div>
+            <div class="exp-card-body">
+              <div>
+                <div class="exp-card-title">
+                  <span>Rhythm</span>
+                  <span style="color: var(--accent)">→</span>
+                </div>
+                <p class="exp-card-desc">
+                  Explore 3/4, 4/4, 5/4, and 6/4 time signatures with 4 animated character duos (Monkeys, Monsters, Robots, Birds) and a 3-track step sequencer.
+                </p>
+              </div>
+              <div class="exp-card-tags">
+                <span class="exp-tag">3/4 • 4/4 • 5/4 • 6/4</span>
+                <span class="exp-tag">4 Character Duos</span>
+                <span class="exp-tag">Tempo Control</span>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+
+      <!-- Interactive 8-Key Footer Piano Easter Egg (from shell/js/app.js) -->
+      <footer class="hub-footer">
+        <div class="hub-footer-caption">Click or drag across the footer bars to play a scale!</div>
+        <div id="hub-footer-piano" class="footer-piano-bar"></div>
+      </footer>
+    </section>
+
+    <!-- ==================================================================
+         VIEW 1: Song Maker
+         ================================================================== -->
+    <section id="view-song-maker" class="app-view">
+      <div class="exp-workspace">
+        <div class="sm-canvases-wrap">
+          <canvas id="sm-tonal-canvas"></canvas>
+          <canvas id="sm-perc-canvas"></canvas>
+        </div>
+
+        <div class="exp-control-bar">
+          <div class="control-group">
+            <button id="sm-play-btn" class="play-fab" title="Play / Pause (Space)">
+              <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor">
+                <path d="M8 5.14v14l11-7-11-7z"/>
+              </svg>
+            </button>
+
+            <button id="sm-inst-btn" class="tool-btn" title="Cycle Melodic Instrument">
+              <span class="inst-icon-slot"></span>
+              <span class="btn-label">Marimba</span>
+            </button>
+
+            <button id="sm-drum-btn" class="tool-btn" title="Cycle Percussion Kit">
+              <span class="inst-icon-slot"></span>
+              <span class="btn-label">Electronic</span>
+            </button>
+
+            <div class="tempo-control">
+              <span>Tempo</span>
+              <input type="range" id="sm-tempo-slider" min="40" max="240" value="120" />
+              <span id="sm-tempo-val" class="tempo-val">120</span>
+            </div>
+          </div>
+
+          <div class="control-group">
+            <select id="sm-preset-select" class="tool-select" title="Load Educational Preset Song">
+              <option value="">★ Load Preset Song...</option>
+              <option value="synthwave-arp">Neon Synthwave (8-Bit &amp; Electro)</option>
+              <option value="kalimba-rain">Kalimba Rainforest (Pentatonic)</option>
+              <option value="blues-jam">Blues Jam (Brass &amp; Blues Scale)</option>
+              <option value="caribbean-breeze">Caribbean Breeze (Steelpan &amp; Latin)</option>
+              <option value="ode-to-joy">Ode to Joy (Beethoven)</option>
+              <option value="twinkle">Twinkle Music Box (Lo-Fi)</option>
+            </select>
+
+            <button id="sm-magic-btn" class="tool-btn" style="border-color: #f43f5e; color: #f43f5e;" title="EXTRA Magic Creativity Tools (Arpeggio, Beat Generator, Transpose, Flip)">
+              <span>✨ Magic Tools</span>
+            </button>
+
+            <button id="sm-show-labels-btn" class="tool-btn active" title="Toggle Note Names on Grid">
+              <span>Note Labels</span>
+            </button>
+
+            <button id="sm-mic-btn" class="tool-btn" title="Sing into Microphone to enter notes">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                <line x1="12" y1="19" x2="12" y2="23"/>
+                <line x1="8" y1="23" x2="16" y2="23"/>
+              </svg>
+              <span class="btn-label">Mic</span>
+            </button>
+
+            <button id="sm-settings-btn" class="tool-btn" title="Grid & Scale Settings">
+              <span>Settings</span>
+            </button>
+
+            <button id="sm-undo-btn" class="tool-btn" title="Undo (Ctrl+Z)">
+              <span>Undo</span>
+            </button>
+
+            <button id="sm-clear-btn" class="tool-btn" title="Clear Grid">
+              <span>Restart</span>
+            </button>
+
+            <button id="sm-save-btn" class="tool-btn" style="border-color: var(--accent); color: var(--accent);" title="Export WAV, MIDI or Share Code">
+              <span>Save / Export</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================================================================
+         VIEW 2: Kandinsky
+         ================================================================== -->
+    <section id="view-kandinsky" class="app-view">
+      <div class="exp-workspace">
+        <div class="kandinsky-stage-wrap">
+          <div class="kandinsky-hint-pill">
+            <span>Draw <strong>Lines</strong> (melody), <strong>Circles</strong> (singing faces), or <strong>Triangles</strong> (percussion)</span>
+            <span>•</span>
+            <span id="kand-scheme-label">Teal / Green / Blue</span>
+          </div>
+          <canvas id="kandinsky-canvas"></canvas>
+        </div>
+
+        <div class="exp-control-bar">
+          <div class="control-group">
+            <button id="kand-play-btn" class="play-fab" title="Play / Pause Artwork">
+              <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor">
+                <path d="M8 5.14v14l11-7-11-7z"/>
+              </svg>
+            </button>
+
+            <button id="kand-scheme-btn" class="tool-btn" title="Switch Sound & Color Scheme">
+              <span class="kand-swatch-group"></span>
+              <span>Switch Sound &amp; Color Scheme</span>
+            </button>
+          </div>
+
+          <div class="control-group">
+            <select id="kand-preset-select" class="tool-select" title="Load Preset Kandinsky Artwork">
+              <option value="">★ Load Sample Artwork...</option>
+              <option value="kandinsky-symphony">Composition VIII Symphony</option>
+              <option value="singing-choir">Singing Circle Choir</option>
+              <option value="string-arpeggio">Harmonic String Cascade</option>
+            </select>
+
+            <button id="kand-undo-btn" class="tool-btn">
+              <span>Undo</span>
+            </button>
+
+            <button id="kand-clear-btn" class="tool-btn">
+              <span>Reset Canvas</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================================================================
+         VIEW 3: Shared Piano
+         ================================================================== -->
+    <section id="view-shared-piano" class="app-view">
+      <div class="exp-workspace">
+        <div class="sp-stage-wrap">
+          <div class="sp-top-overlay">
+            <div id="sp-avatar-bar" class="sp-avatar-bar"></div>
+            <div class="sp-kbd-hint">Play with Mouse, QWERTY keys (Z–M &amp; Q–P), or MIDI Keyboard • Hold Space for Sustain</div>
+          </div>
+          <canvas id="sp-roll-canvas"></canvas>
+          <div class="sp-trigger-line"></div>
+          <div id="sp-keyboard" class="sp-keyboard"></div>
+        </div>
+
+        <div class="exp-control-bar">
+          <div class="control-group">
+            <select id="sp-inst-select" class="tool-select" title="Choose Instrument">
+              <option value="piano">🎹 Piano</option>
+              <option value="marimba">🪵 Marimba</option>
+              <option value="strings">🎻 Strings</option>
+              <option value="woodwind">🪈 Woodwind</option>
+              <option value="synth">🎛️ Synth</option>
+              <option value="drum-kit">🥁 Drum Kit</option>
+              <option value="drum-machine">⚡ Drum Machine</option>
+            </select>
+
+            <select id="sp-ai-select" class="tool-select" title="AI Duet Jam Partner">
+              <option value="off">🤖 AI Jam Partner: Off</option>
+              <option value="harmony">🤖 AI Partner: Harmony Chords</option>
+              <option value="echo">🤖 AI Partner: Octave Marimba Echo</option>
+              <option value="bassGroove">🤖 AI Partner: Synth Bass Groove</option>
+            </select>
+          </div>
+
+          <div class="control-group">
+            <button id="sp-sustain-btn" class="tool-btn" title="Toggle Sustain Pedal (Spacebar)">
+              <span>Sustain</span>
+            </button>
+
+            <button id="sp-metro-btn" class="tool-btn" title="Toggle Metronome">
+              <span>Metronome</span>
+            </button>
+
+            <button id="sp-clear-btn" class="tool-btn" title="Clear Note Trails">
+              <span>Clear Roll</span>
+            </button>
+
+            <button id="sp-settings-btn" class="tool-btn" title="Keyboard & Note Label Settings">
+              <span>Piano Settings</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================================================================
+         VIEW 4: Rhythm
+         ================================================================== -->
+    <section id="view-rhythm" class="app-view">
+      <div class="exp-workspace">
+        <div class="rhythm-stage-wrap">
+          <div class="rhythm-stage-header">
+            <div id="rhythm-scene-title" class="rhythm-scene-badge">3/4 Meter — Timpani &amp; Triangle</div>
+            <div id="rhythm-scene-dots" class="rhythm-meter-dots"></div>
+          </div>
+
+          <button id="rhythm-prev-btn" class="rhythm-carousel-arrow prev" title="Previous Meter Scene">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <button id="rhythm-next-btn" class="rhythm-carousel-arrow next" title="Next Meter Scene">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+
+          <canvas id="rhythm-stage-canvas"></canvas>
+
+          <div class="rhythm-seq-panel">
+            <div id="rhythm-seq-grid"></div>
+          </div>
+        </div>
+
+        <div class="exp-control-bar">
+          <div class="control-group">
+            <button id="rhythm-play-btn" class="play-fab" title="Play / Pause Rhythm">
+              <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor">
+                <path d="M8 5.14v14l11-7-11-7z"/>
+              </svg>
+            </button>
+
+            <div class="tempo-control">
+              <span>Tempo</span>
+              <input type="range" id="rhythm-bpm-slider" min="50" max="220" value="105" />
+              <span id="rhythm-bpm-val" class="tempo-val">105</span>
+            </div>
+          </div>
+
+          <div class="control-group">
+            <button id="rhythm-reset-btn" class="tool-btn">
+              <span>Default Groove</span>
+            </button>
+            <button id="rhythm-clear-btn" class="tool-btn">
+              <span>Clear Pattern</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ====================================================================
+       Theme & Color Palette Studio Slide-Over Drawer
+       ==================================================================== -->
+  <div id="palette-backdrop" class="palette-backdrop"></div>
+  <aside id="palette-drawer" class="palette-drawer" aria-label="Color Palette and Theme Studio">
+    <div class="drawer-header">
+      <h2>🎨 Color Palette &amp; Theme Studio</h2>
+      <button id="close-palette-btn" class="tool-btn" style="height: 34px; padding: 0 10px;">✕</button>
+    </div>
+
+    <div class="drawer-body">
+      <div class="drawer-section">
+        <h3>Preset Themes (Dark &amp; Light)</h3>
+        <div id="palette-presets-grid" class="presets-grid"></div>
+      </div>
+
+      <div class="drawer-section">
+        <h3>Custom 12-Note Chromatic Palette (Click to Pick &amp; Audition)</h3>
+        <div id="palette-notes-grid" class="pitch-colors-grid"></div>
+      </div>
+
+      <div class="drawer-section">
+        <h3>Kandinsky Shape Colors</h3>
+        <div id="palette-kandinsky-grid" class="presets-grid"></div>
+      </div>
+
+      <div class="drawer-section">
+        <h3>Custom Background Surfaces</h3>
+        <div class="pitch-colors-grid">
+          <label class="pitch-color-item">
+            <div class="pitch-meta">
+              <span class="pitch-name">Canvas Background</span>
+              <span class="pitch-hex">Grid &amp; Stage</span>
+            </div>
+            <input type="color" id="palette-bg-canvas" value="#121521" />
+          </label>
+          <label class="pitch-color-item">
+            <div class="pitch-meta">
+              <span class="pitch-name">App Shell Background</span>
+              <span class="pitch-hex">Outer Frame</span>
+            </div>
+            <input type="color" id="palette-bg-primary" value="#0f111a" />
+          </label>
+        </div>
+      </div>
+
+      <div class="drawer-section">
+        <button id="reset-palette-btn" class="tool-btn" style="width: 100%; justify-content: center;">
+          Reset to Default Chrome Music Lab Dark
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ====================================================================
+       Song Maker EXTRA Magic Tools Modal
+       ==================================================================== -->
+  <div id="sm-magic-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>✨ Song Maker EXTRA Magic Tools</h3>
+        <button id="sm-magic-close" class="tool-btn" style="height: 32px;">✕</button>
+      </div>
+      <p style="color: var(--text-secondary); font-size: 0.85rem; line-height: 1.45; margin-bottom: 18px;">
+        Spark your creativity! Instantly generate melodies, add drum grooves, transpose pitch, or transform your song.
+      </p>
+
+      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 18px;">
+        <button id="sm-magic-arp" class="tool-btn" style="justify-content: center; background: rgba(56, 189, 248, 0.12); border-color: var(--accent); color: var(--accent);">
+          🎼 Auto Arpeggio Melody
+        </button>
+        <button id="sm-magic-drums" class="tool-btn" style="justify-content: center; background: rgba(244, 63, 94, 0.12); border-color: #f43f5e; color: #f43f5e;">
+          🥁 Fill Drum Groove
+        </button>
+        <button id="sm-magic-shift-up" class="tool-btn" style="justify-content: center;">
+          ⬆️ Transpose Pitch +1
+        </button>
+        <button id="sm-magic-shift-down" class="tool-btn" style="justify-content: center;">
+          ⬇️ Transpose Pitch -1
+        </button>
+        <button id="sm-magic-invert" class="tool-btn" style="justify-content: center;">
+          🔄 Invert Melody (Upside Down)
+        </button>
+        <button id="sm-magic-reverse" class="tool-btn" style="justify-content: center;">
+          ⏪ Reverse Song (Backwards)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       Song Maker Settings Modal
+       ==================================================================== -->
+  <div id="sm-settings-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Song Maker Settings</h3>
+        <button id="sm-settings-close" class="tool-btn" style="height: 32px;">✕</button>
+      </div>
+      <div class="form-grid">
+        <div class="form-field">
+          <label for="sm-opt-bars">Length (Bars: 1–16)</label>
+          <input type="number" id="sm-opt-bars" min="1" max="16" value="4" />
+        </div>
+        <div class="form-field">
+          <label for="sm-opt-beats">Beats per Bar (2–7)</label>
+          <input type="number" id="sm-opt-beats" min="2" max="7" value="4" />
+        </div>
+        <div class="form-field">
+          <label for="sm-opt-split">Split Beats (Subdivision: 1–4)</label>
+          <input type="number" id="sm-opt-split" min="1" max="4" value="2" />
+        </div>
+        <div class="form-field">
+          <label for="sm-opt-scale">Scale</label>
+          <select id="sm-opt-scale">
+            <option value="major">Major (Do Re Mi...)</option>
+            <option value="minor">Natural Minor (Melancholic)</option>
+            <option value="pentatonic">Pentatonic (5-Tone Harmony)</option>
+            <option value="chromatic">Chromatic (All 12 Notes)</option>
+            <option value="blues">Blues Scale (Soulful Hexatonic)</option>
+            <option value="dorian">Dorian Mode (Medieval / Jazz)</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label for="sm-opt-root">Start Note (Key)</label>
+          <select id="sm-opt-root">
+            <option value="0">C</option>
+            <option value="1">C# / Db</option>
+            <option value="2">D</option>
+            <option value="3">D# / Eb</option>
+            <option value="4">E</option>
+            <option value="5">F</option>
+            <option value="6">F# / Gb</option>
+            <option value="7">G</option>
+            <option value="8">G# / Ab</option>
+            <option value="9">A</option>
+            <option value="10">A# / Bb</option>
+            <option value="11">B</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label for="sm-opt-octave-start">Start Octave</label>
+          <select id="sm-opt-octave-start">
+            <option value="3">Low</option>
+            <option value="4" selected>Middle</option>
+            <option value="5">High</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label for="sm-opt-range">Range (Octaves: 1–3)</label>
+          <select id="sm-opt-range">
+            <option value="1">1 Octave</option>
+            <option value="2" selected>2 Octaves</option>
+            <option value="3">3 Octaves</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label for="sm-opt-drum-rows">Drum Grid Sounds</label>
+          <select id="sm-opt-drum-rows">
+            <option value="3" selected>3 Sounds (High Hat / Snare / Kick)</option>
+            <option value="2">2 Sounds (Classic CML High / Low)</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button id="sm-settings-apply" class="btn-primary">Apply Settings</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       Song Maker Save / Export Modal
+       ==================================================================== -->
+  <div id="sm-save-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Save &amp; Export Song</h3>
+        <button id="sm-save-close" class="tool-btn" style="height: 32px;">✕</button>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 18px;">
+        <button id="sm-export-wav" class="btn-primary">Download WAV Audio (.wav)</button>
+        <button id="sm-export-midi" class="tool-btn" style="justify-content: center;">Download Standard MIDI File (.mid)</button>
+      </div>
+      <div class="form-field" style="margin-bottom: 14px;">
+        <label for="sm-json-code">Shareable Song JSON Data (Copy or Paste to Load)</label>
+        <textarea id="sm-json-code" rows="4" style="font-family: monospace; font-size: 0.76rem;"></textarea>
+      </div>
+      <div class="modal-actions">
+        <button id="sm-copy-json" class="tool-btn">Copy Song Data</button>
+        <button id="sm-load-json" class="btn-primary">Load Pasted Song Data</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====================================================================
+       Shared Piano Settings Modal
+       ==================================================================== -->
+  <div id="sp-settings-modal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Shared Piano Settings</h3>
+        <button id="sp-settings-close" class="tool-btn" style="height: 32px;">✕</button>
+      </div>
+      <div class="form-grid">
+        <div class="form-field">
+          <label for="sp-opt-octaves">Visible Octaves</label>
+          <select id="sp-opt-octaves">
+            <option value="2">2 Octaves</option>
+            <option value="3" selected>3 Octaves (Default)</option>
+            <option value="4">4 Octaves</option>
+            <option value="5">5 Octaves</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label for="sp-opt-labels">Note Names Display</label>
+          <select id="sp-opt-labels">
+            <option value="letters">Letter Names (C, D, E...)</option>
+            <option value="solfege">Solfège (Do, Re, Mi...)</option>
+            <option value="hide">Hide Note Names</option>
+          </select>
+        </div>
+        <div class="form-field">
+          <label for="sp-opt-transpose">Transpose Semitones (-11 to +11)</label>
+          <input type="number" id="sp-opt-transpose" min="-11" max="11" value="0" />
+        </div>
+        <div class="form-field" style="justify-content: center; gap: 10px;">
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+            <input type="checkbox" id="sp-opt-emojis" checked /> Show Animal Emojis
+          </label>
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+            <input type="checkbox" id="sp-opt-trails" checked /> Show Rising Note Trails
+          </label>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button id="sp-settings-apply" class="btn-primary">Apply Piano Settings</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
