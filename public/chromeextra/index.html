@@ -373,6 +373,28 @@
             <div id="sp-avatar-bar" class="sp-avatar-bar"></div>
             <div class="sp-kbd-hint">Play with Mouse, QWERTY keys (Z–M &amp; Q–P), or MIDI Keyboard • Hold Space for Sustain</div>
           </div>
+          <!-- Play Together: online rooms across devices (needs mrarthurmusic.com's /api/piano-room) -->
+          <div id="sp-room-panel" class="sp-room-panel" role="dialog" aria-label="Play Together" hidden>
+            <button id="sp-room-close" class="sp-room-x" type="button" aria-label="Close">×</button>
+            <div class="sp-room-title">🌐 Play Together</div>
+            <div id="sp-room-idle" class="sp-room-section">
+              <p class="sp-room-help">Play the same piano with friends on other devices. Start a room and share the code, or type a friend's code to join.</p>
+              <button id="sp-room-create" class="tool-btn sp-room-wide" type="button">Start a Room</button>
+              <div class="sp-room-join">
+                <input id="sp-room-input" maxlength="4" placeholder="CODE" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Room code" />
+                <button id="sp-room-join" class="tool-btn" type="button">Join</button>
+              </div>
+            </div>
+            <div id="sp-room-live" class="sp-room-section" hidden>
+              <div class="sp-room-code-label">Room code</div>
+              <div id="sp-room-code" class="sp-room-code">----</div>
+              <div class="sp-room-actions">
+                <button id="sp-room-copy" class="tool-btn" type="button">Copy Link</button>
+                <button id="sp-room-leave" class="tool-btn" type="button">Leave Room</button>
+              </div>
+            </div>
+            <div id="sp-room-status" class="sp-room-status" aria-live="polite"></div>
+          </div>
           <canvas id="sp-roll-canvas"></canvas>
           <div class="sp-trigger-line"></div>
           <div id="sp-keyboard" class="sp-keyboard"></div>
@@ -399,6 +421,10 @@
           </div>
 
           <div class="control-group">
+            <button id="sp-room-btn" class="tool-btn" title="Play together on different devices">
+              <span id="sp-room-btn-label">🌐 Play Together</span>
+            </button>
+
             <button id="sp-sustain-btn" class="tool-btn" title="Toggle Sustain Pedal (Spacebar)">
               <span>Sustain</span>
             </button>
