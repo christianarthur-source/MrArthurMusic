@@ -10,6 +10,7 @@
  *   POST /api/classroom                               student / teacher logins and saved songs (PINs checked here)
  *   POST /api/omr                                     Pro Staff: read a photo/PDF of sheet music into MusicXML (teacher PIN)
  *   POST /api/wolfi                                   Wolfi: accounts, classes and cloud-saved scores (D1 database WOLFI_DB)
+ *   GET  /api/piano-room/<CODE>                     Chrome Music Lab EXTRA Shared Piano: WebSocket room (Durable Object PianoRoom)
  *   /api/hub/*                                        Music Teacher Hub (/Hub/): PIN lock, cloud sync (D1 HUB_DB), YouTube, calendar, Claude, free AI (AI binding) (hub/server)
  */
 import { handleDriveVideo } from './driveVideo.mjs';
@@ -17,6 +18,10 @@ import { handleClassroom } from '../src/server/classroomCloud.ts';
 import { handleOmr } from '../src/server/omr.ts';
 import { handleWolfi } from '../src/server/wolfi.ts';
 import { HUB_API_ROUTES } from '../hub/server/routes.mjs';
+import { handlePianoRoom, PianoRoom } from './pianoRoom.mjs';
+
+// Durable Object classes must be exported from the Worker entry.
+export { PianoRoom };
 
 export default {
   async fetch(request, env, ctx) {
@@ -25,6 +30,7 @@ export default {
     if (url.pathname === '/api/classroom') return handleClassroom(request, env);
     if (url.pathname === '/api/omr') return handleOmr(request, env, ctx);
     if (url.pathname === '/api/wolfi') return handleWolfi(request, env);
+    if (url.pathname.startsWith('/api/piano-room/')) return handlePianoRoom(request, env);
     if (HUB_API_ROUTES[url.pathname]) return HUB_API_ROUTES[url.pathname](request, env);
     if (url.pathname.startsWith('/api/')) return new Response('Not found', { status: 404 });
     return env.ASSETS.fetch(request);
