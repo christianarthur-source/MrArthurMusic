@@ -19,14 +19,16 @@
       <span class="current-song" id="curSong" hidden></span>
       <span class="loadpill" id="loadPill" hidden><span class="loadbar"><i id="loadFill"></i></span><span id="loadText">Loading sounds…</span></span>
     </div>
+    <button class="pill rec" id="recBtn" type="button" title="Record what you play"><span class="recdot"></span><span id="recText">Record</span></button>
     <button class="pill midi" id="midiBtn" type="button"><span class="dot" id="midiDot"></span><span id="midiText">MIDI keyboard</span></button>
     <label class="vol" title="Volume"><span>🔊</span><input type="range" id="vol" min="0" max="100" value="80" aria-label="Volume"></label>
     <button class="icon" id="fsBtn" type="button" title="Full screen" aria-label="Full screen">⛶</button>
   </header>
 
-  <section class="browser" aria-label="Instruments">
+  <!-- One row of drop-down menus: Songs, Grooves, Favorites and every instrument family -->
+  <section class="browser" id="browser" aria-label="Songs, grooves and instruments">
     <div class="tabsrow">
-      <div class="tabs" id="tabs" role="tablist"></div>
+      <div class="tabs" id="tabs"></div>
       <input type="search" id="search" class="search" placeholder="🔎 Find a sound" aria-label="Find a sound" autocomplete="off">
     </div>
     <div class="grid" id="grid"></div>
@@ -39,12 +41,6 @@
       <span class="ctl-val" id="octVal">C4–C6</span>
       <button class="step" id="octUp" type="button" aria-label="Octave up">+</button>
     </div>
-    <div class="ctl">
-      <span class="ctl-label">Transpose</span>
-      <button class="step" id="trDown" type="button" aria-label="Transpose down">−</button>
-      <span class="ctl-val narrow" id="trVal">0</span>
-      <button class="step" id="trUp" type="button" aria-label="Transpose up">+</button>
-    </div>
     <button class="toggle" id="susBtn" type="button" aria-pressed="false" title="Hold notes (Space bar or a sustain pedal also works)">🦶 Sustain</button>
     <div class="playing" id="playing" aria-live="off"><span class="playing-hint">Play something! 🎶</span></div>
     <div class="songctl" id="songCtl" hidden>
@@ -53,14 +49,7 @@
       <button class="toggle small" id="songStopBtn" type="button" title="Close the song">✕</button>
     </div>
     <button class="toggle small groovestop" id="grooveStopBtn" type="button" hidden></button>
-    <label class="ctl slider" title="Reverb (room echo)"><span class="ctl-label">Reverb</span><input type="range" id="reverb" min="0" max="127" value="45" aria-label="Reverb"></label>
-    <button class="toggle small" id="namesBtn" type="button" aria-pressed="true" title="Show the note names on the keys">🔤 Notes</button>
-    <button class="toggle small" id="keysBtn" type="button" aria-pressed="true" title="Show which computer key plays each note">⌨️ Keys</button>
-    <div class="ctl">
-      <span class="ctl-label">Size</span>
-      <button class="step" id="zoomOut" type="button" aria-label="Fewer, bigger keys" title="Fewer, bigger keys">−</button>
-      <button class="step" id="zoomIn" type="button" aria-label="More keys" title="More keys">+</button>
-    </div>
+    <button class="toggle" id="toolsBtn" type="button" aria-expanded="false" title="Labels, keyboard size, transpose and reverb">🛠️ Tools ▾</button>
   </section>
 
   <section class="stage">
@@ -72,6 +61,14 @@
   </section>
 </div>
 
+<div class="toolspanel" id="toolsPanel" hidden>
+  <div class="toolrow"><span class="tool-name">🔤 Note names on keys</span><button class="toggle small" id="namesBtn" type="button" aria-pressed="true">On</button></div>
+  <div class="toolrow"><span class="tool-name">⌨️ Typing-key labels</span><button class="toggle small" id="keysBtn" type="button" aria-pressed="true">On</button></div>
+  <div class="toolrow"><span class="tool-name">↔️ Keyboard size</span><span class="toolset"><button class="step" id="zoomOut" type="button" aria-label="Fewer, bigger keys" title="Fewer, bigger keys">−</button><span class="ctl-val narrow" id="sizeVal">2</span><button class="step" id="zoomIn" type="button" aria-label="More keys" title="More keys">+</button></span></div>
+  <div class="toolrow"><span class="tool-name">🎚️ Transpose</span><span class="toolset"><button class="step" id="trDown" type="button" aria-label="Transpose down">−</button><span class="ctl-val narrow" id="trVal">0</span><button class="step" id="trUp" type="button" aria-label="Transpose up">+</button></span></div>
+  <label class="toolrow"><span class="tool-name">🏛️ Reverb</span><input type="range" id="reverb" min="0" max="127" value="45" aria-label="Reverb"></label>
+</div>
+
 <div class="overlay" id="start">
   <button class="startcard" id="startBtn" type="button">
     <span class="start-emoji">🎹</span>
@@ -79,6 +76,18 @@
     <span class="start-go">▶ Tap to start</span>
     <span class="start-tips">Plug in a MIDI keyboard, tap the piano keys,<br>or play with your computer keyboard.</span>
   </button>
+</div>
+
+<div class="overlay" id="recDone" hidden>
+  <div class="reccard" role="dialog" aria-label="Your recording">
+    <span class="rec-title">🎙️ Your recording</span>
+    <span class="rec-info" id="recInfo"></span>
+    <audio id="recAudio" controls></audio>
+    <div class="rec-actions">
+      <button class="toggle recsave" id="recSave" type="button">💾 Save to this device</button>
+      <button class="toggle" id="recClose" type="button">Close</button>
+    </div>
+  </div>
 </div>
 <div class="toast" id="toast" hidden></div>
 

@@ -57,6 +57,8 @@ class Engine {
     this.master = this.ctx.createGain();
     this.master.gain.value = 0.8;
     this.master.connect(this.ctx.destination);
+    this.mix = this.ctx.createGain(); // everything that sounds goes through here; the recorder listens to it
+    this.mix.connect(this.master);
     this.synth = null;
     this.ch = 0; // 0 = melodic instrument, 9 = drum kit
     this.prog = 0;
@@ -87,7 +89,7 @@ class Engine {
     const makeup = this.ctx.createGain();
     makeup.gain.value = 2.4; // the SoundFont is mixed quietly
     synth.connect(makeup);
-    makeup.connect(this.master);
+    makeup.connect(this.mix);
     this.pendingSynth = synth;
     await this.setInstrument(this.want.prog, this.want.drum);
     return kits;
@@ -202,7 +204,7 @@ class Engine {
     g2.gain.value = 0.3;
     o1.connect(g);
     o2.connect(g2).connect(g);
-    g.connect(this.master);
+    g.connect(this.mix);
     o1.start(t);
     o2.start(t);
     this.voices.set(note, { g, o1, o2 });
@@ -262,6 +264,7 @@ const state = {
   transpose: 0,
   showNotes: saved.showNotes ?? true, // note names on the keys
   showKeys: saved.showKeys ?? !matchMedia('(pointer: coarse)').matches, // which computer key plays each note
+  menuOpen: false, // is the drop-down under the menu row showing?
   song: null, // { def, notes, i, demo } while a song guide is running
   latch: false, spaceDown: false, pedalDown: false,
 };
@@ -382,12 +385,10 @@ function setKeyWidth() {
 
 function buildKeyboard() {
   releaseAll('p:');
-  const center = state.start + 6 * state.octaves; // keep the middle of the view where it was when resizing
   const octaves = fitOctaves();
-  if (octaves !== state.octaves) {
+  if (octaves !== state.octaves) { // the left edge stays where it is when the keyboard grows or shrinks
     state.octaves = octaves;
-    const snapped = Math.round((center - 6 * octaves) / 12) * 12;
-    state.start = Math.max(12, Math.min(120 - octaves * 12, snapped));
+    state.start = Math.max(12, Math.min(120 - octaves * 12, state.start));
   }
   const first = state.start;
   const last = first + state.octaves * 12; // ends on a C
@@ -419,6 +420,7 @@ function buildKeyboard() {
   kb.appendChild(frag);
   setKeyWidth();
   $('octVal').textContent = `${noteName(first)}–${noteName(last)}`;
+  $('sizeVal').textContent = state.octaves;
   showGuide(false);
 }
 
@@ -453,7 +455,7 @@ window.addEventListener('keydown', (e) => {
   if (e.ctrlKey || e.metaKey || e.altKey) return;
   const t = e.target;
   if (t instanceof HTMLInputElement && t.type === 'search') {
-    if (e.key === 'Escape') t.blur();
+    if (e.key === 'Escape') { t.value = ''; t.blur(); setMenu(false); }
     return;
   }
   const i = KEY_CODES.indexOf(e.code);
@@ -470,7 +472,7 @@ window.addEventListener('keydown', (e) => {
     case 'KeyX': case 'ArrowRight': e.preventDefault(); setStart(state.start + 12); break;
     case 'ArrowDown': e.preventDefault(); setTranspose(state.transpose - 1); break;
     case 'ArrowUp': e.preventDefault(); setTranspose(state.transpose + 1); break;
-    case 'Escape': releaseAll(); engine.panic(); break;
+    case 'Escape': releaseAll(); engine.panic(); setMenu(false); setTools(false); break;
   }
 });
 window.addEventListener('keyup', (e) => {
@@ -605,10 +607,17 @@ const tabsEl = $('tabs');
 const gridEl = $('grid');
 const searchEl = $('search');
 
+/** Opens or closes the drop-down under the menu row. */
+function setMenu(open) {
+  state.menuOpen = open;
+  gridEl.classList.toggle('open', open);
+  drawTabs();
+  if (open) { drawGrid(); gridEl.scrollTop = 0; }
+}
+
 function drawTabs() {
   const tabs = [{ id: 'songs', name: '🎵 Songs', c: '#39e36b' }, { id: 'groove', name: '🥁 Grooves', c: '#ff7a59' }, { id: 'fav', name: '⭐ Favorites', c: '#ffb020' }, ...CATEGORIES.map((c) => ({ id: c.id, name: `${c.em} ${c.name}`, c: c.c }))];
-  tabsEl.innerHTML = tabs.map((t) => `<button class="tab" role="tab" data-tab="${t.id}" style="--c:${t.c}" aria-selected="${t.id === state.tab && !searchEl.value}">${t.name}</button>`).join('');
-  tabsEl.querySelector('[aria-selected=true]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  tabsEl.innerHTML = tabs.map((t) => `<button class="tab" role="tab" data-tab="${t.id}" style="--c:${t.c}" aria-selected="${state.menuOpen && t.id === state.tab && !searchEl.value}" aria-haspopup="true">${t.name}<span class="caret">▾</span></button>`).join('');
 }
 
 function drawGrid() {
@@ -652,12 +661,11 @@ function selectInstrument(inst, quiet) {
 tabsEl.addEventListener('click', (e) => {
   const tab = e.target.closest('.tab');
   if (!tab) return;
+  const same = state.menuOpen && !searchEl.value && state.tab === tab.dataset.tab;
   searchEl.value = '';
   state.tab = tab.dataset.tab;
   save({ tab: state.tab });
-  drawTabs();
-  drawGrid();
-  gridEl.scrollTop = 0;
+  setMenu(!same); // a second click on the same menu closes it
 });
 gridEl.addEventListener('click', (e) => {
   unlockAudio();
@@ -673,11 +681,31 @@ gridEl.addEventListener('click', (e) => {
   const tempoStep = e.target.closest('[data-tempo]');
   if (tempoStep) return setTempo(groove.bpm + Number(tempoStep.dataset.tempo));
   if (card?.dataset.groove) return toggleGroove(GROOVES.find((g) => g.id === card.dataset.groove));
-  if (card?.dataset.song) return startSong(SONGS.find((sg) => sg.id === card.dataset.song));
+  if (card?.dataset.song) { setMenu(false); return startSong(SONGS.find((sg) => sg.id === card.dataset.song)); }
   const inst = card && byId(card.dataset.id);
-  if (inst) selectInstrument(inst);
+  if (inst) { searchEl.value = ''; setMenu(false); selectInstrument(inst); }
 });
-searchEl.addEventListener('input', () => { drawTabs(); drawGrid(); });
+searchEl.addEventListener('input', () => setMenu(searchEl.value.trim() !== ''));
+searchEl.addEventListener('focus', () => { if (searchEl.value.trim()) setMenu(true); });
+
+// ---------------------------------------------------------------- tools menu
+const toolsBtn = $('toolsBtn');
+const toolsPanel = $('toolsPanel');
+function setTools(open) {
+  toolsPanel.hidden = !open;
+  toolsBtn.setAttribute('aria-expanded', String(open));
+  if (!open) return;
+  const r = toolsBtn.getBoundingClientRect();
+  toolsPanel.style.top = r.bottom + 6 + 'px';
+  toolsPanel.style.right = Math.max(8, window.innerWidth - r.right) + 'px';
+}
+toolsBtn.addEventListener('click', () => setTools(toolsPanel.hidden));
+// a tap anywhere else closes whichever menu is open
+document.addEventListener('pointerdown', (e) => {
+  if (state.menuOpen && !e.target.closest('#browser')) setMenu(false);
+  if (!toolsPanel.hidden && !e.target.closest('#toolsPanel, #toolsBtn')) setTools(false);
+}, true);
+window.addEventListener('resize', () => setTools(false));
 
 // ---------------------------------------------------------------- controls
 $('octDown').addEventListener('click', () => setStart(state.start - 12));
@@ -697,6 +725,8 @@ $('zoomIn').addEventListener('click', () => setOctaves(state.octaves + 1));
 function drawLabelButtons() {
   $('namesBtn').setAttribute('aria-pressed', String(state.showNotes));
   $('keysBtn').setAttribute('aria-pressed', String(state.showKeys));
+  $('namesBtn').textContent = state.showNotes ? 'On' : 'Off';
+  $('keysBtn').textContent = state.showKeys ? 'On' : 'Off';
 }
 $('namesBtn').addEventListener('click', () => { state.showNotes = !state.showNotes; save({ showNotes: state.showNotes }); drawLabelButtons(); buildKeyboard(); });
 $('keysBtn').addEventListener('click', () => { state.showKeys = !state.showKeys; save({ showKeys: state.showKeys }); drawLabelButtons(); buildKeyboard(); });
@@ -894,6 +924,74 @@ for (const b of document.querySelectorAll('button')) b.addEventListener('pointer
 const fsBtn = $('fsBtn');
 if (!document.documentElement.requestFullscreen) fsBtn.hidden = true;
 fsBtn.addEventListener('click', () => { if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(() => {}); });
+
+// ---------------------------------------------------------------- record
+// Records everything that sounds (the instrument, the groove, a song's Listen) and offers it as a file.
+const REC_MAX_SECONDS = 180;
+const rec = { node: null, worker: null, on: false, t0: 0, timer: 0, url: '', name: '' };
+const recBtn = $('recBtn');
+const clock = (sec) => `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, '0')}`;
+
+async function startRecording() {
+  unlockAudio();
+  try {
+    if (!rec.node) {
+      await engine.ctx.audioWorklet.addModule(new URL('./rec-processor.js', import.meta.url).href);
+      rec.node = new AudioWorkletNode(engine.ctx, 'mm-recorder', { numberOfInputs: 1, numberOfOutputs: 0, channelCount: 2, channelCountMode: 'explicit' });
+      engine.mix.connect(rec.node);
+      rec.worker = new Worker(new URL('./rec-worker.js', import.meta.url));
+      rec.worker.onmessage = (e) => { if (e.data.type === 'done') showRecording(e.data); };
+    }
+  } catch (err) {
+    console.error(err);
+    toast('Recording is not available in this browser.');
+    return;
+  }
+  const pipe = new MessageChannel(); // the sound goes straight from the audio thread to the encoder
+  rec.worker.postMessage({ type: 'start', sampleRate: engine.ctx.sampleRate, port: pipe.port1 }, [pipe.port1]);
+  rec.node.port.postMessage({ port: pipe.port2, on: true }, [pipe.port2]);
+  rec.on = true;
+  rec.t0 = performance.now();
+  recBtn.classList.add('on');
+  $('recText').textContent = '0:00';
+  rec.timer = setInterval(() => {
+    const sec = (performance.now() - rec.t0) / 1000;
+    $('recText').textContent = clock(sec);
+    if (sec >= REC_MAX_SECONDS) { stopRecording(); toast(`Recordings stop after ${REC_MAX_SECONDS / 60} minutes.`); }
+  }, 250);
+}
+
+function stopRecording() {
+  if (!rec.on) return;
+  rec.on = false;
+  clearInterval(rec.timer);
+  rec.node.port.postMessage({ on: false });
+  recBtn.classList.remove('on');
+  $('recText').textContent = 'Record';
+}
+
+function showRecording({ blob, ext, seconds }) {
+  if (rec.url) URL.revokeObjectURL(rec.url);
+  rec.url = URL.createObjectURL(blob);
+  const d = new Date();
+  const two = (n) => String(n).padStart(2, '0');
+  rec.name = `MIDI-Music-${d.getFullYear()}-${two(d.getMonth() + 1)}-${two(d.getDate())}-${two(d.getHours())}${two(d.getMinutes())}.${ext}`;
+  $('recInfo').textContent = `${clock(seconds)} · ${state.inst.name}${groove.style ? ' + ' + groove.style.name + ' beat' : ''} · ${(blob.size / 1e6).toFixed(1)} MB ${ext.toUpperCase()}`;
+  $('recAudio').src = rec.url;
+  $('recDone').hidden = false;
+}
+
+recBtn.addEventListener('click', () => (rec.on ? stopRecording() : startRecording()));
+$('recSave').addEventListener('click', () => {
+  const a = document.createElement('a');
+  a.href = rec.url;
+  a.download = rec.name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  toast('Saved! Look in your Downloads (or Files) for ' + rec.name);
+});
+$('recClose').addEventListener('click', () => { $('recAudio').pause(); $('recDone').hidden = true; });
 
 let toastTimer = 0;
 function toast(msg) {
