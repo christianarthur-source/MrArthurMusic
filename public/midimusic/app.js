@@ -927,7 +927,7 @@ fsBtn.addEventListener('click', () => { if (document.fullscreenElement) document
 
 // ---------------------------------------------------------------- record
 // Records everything that sounds (the instrument, the groove, a song's Listen) and offers it as a file.
-const REC_MAX_SECONDS = 180;
+const REC_MAX_SECONDS = 600; // MP3 at 160 kbps is about 1.2 MB a minute
 const rec = { node: null, worker: null, on: false, t0: 0, timer: 0, url: '', name: '' };
 const recBtn = $('recBtn');
 const clock = (sec) => `${Math.floor(sec / 60)}:${String(Math.floor(sec % 60)).padStart(2, '0')}`;
