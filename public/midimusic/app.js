@@ -7,6 +7,7 @@ import { SONGS, LEVELS, parseNotes } from './songs.js';
 // The SoundFont is shared with the rest of the site (same origin, cached by the browser for 30 days).
 const SF_PARTS = ['/audio/soundfont/MuseScore_General.sf3.partaa', '/audio/soundfont/MuseScore_General.sf3.partab'];
 const SF_BYTES = 39900972;
+const SAMPLE_ATTENUATION = 150; // centibels taken off a Sampler sound so it sits level with the library sounds
 const PROCESSOR_URL = new URL('./vendor/spessasynth_processor.min.js', import.meta.url).href;
 
 // ---------------------------------------------------------------- instruments
@@ -62,7 +63,7 @@ class Engine {
     this.synth = null;
     this.ch = 0; // 0 = melodic instrument, 9 = drum kit
     this.prog = 0;
-    this.want = { prog: 0, drum: false };
+    this.want = { prog: 0, drum: false, sample: null };
     this.reverb = 45;
     this.sustain = false;
     this.voices = new Map(); // starter-synth voices, used only until the SoundFont has loaded
@@ -91,17 +92,18 @@ class Engine {
     synth.connect(makeup);
     makeup.connect(this.mix);
     this.pendingSynth = synth;
-    await this.setInstrument(this.want.prog, this.want.drum);
+    await this.setInstrument(this.want.prog, this.want.drum, this.want.sample);
     return kits;
   }
 
   /** Chooses the instrument. The previous one keeps playing until the new one is decoded and ready. */
-  setInstrument(prog, drum) {
-    this.want = { prog, drum };
+  /** `sample` ({ pcm, rate, root }) is a sound the student recorded with the Sampler, instead of a library sound. */
+  setInstrument(prog, drum, sample = null) {
+    this.want = { prog, drum, sample };
     if (!this.worker) return Promise.resolve(false);
     return new Promise((resolve) => {
       this.queued?.resolve(false); // a newer choice replaces one that has not started decoding yet
-      this.queued = { prog, drum, resolve };
+      this.queued = { prog, drum, sample, resolve };
       this.pump();
     });
   }
@@ -110,7 +112,9 @@ class Engine {
     if (this.building || !this.queued) return;
     this.building = this.queued;
     this.queued = null;
-    this.worker.postMessage({ type: 'build', id: 0, prog: this.building.prog, drum: this.building.drum });
+    const job = this.building;
+    if (job.sample) this.worker.postMessage({ type: 'sample', id: 0, pcm: job.sample.pcm, rate: job.sample.rate, root: job.sample.root, attenuation: SAMPLE_ATTENUATION });
+    else this.worker.postMessage({ type: 'build', id: 0, prog: job.prog, drum: job.drum });
   }
 
   async onBuilt(m) {
@@ -254,6 +258,9 @@ const NOTE_NAMES = ['C', 'C♯', 'D', 'D♯', 'E', 'F', 'F♯', 'G', 'G♯', 'A'
 const isBlack = (n) => [1, 3, 6, 8, 10].includes(((n % 12) + 12) % 12);
 const noteName = (n) => NOTE_NAMES[((n % 12) + 12) % 12] + (Math.floor(n / 12) - 1);
 
+// The Sampler's sound is not in the library: it is whatever the student recorded (see "sampler" below).
+const SAMPLE_INST = { id: 'sample', name: 'My Sound', prog: 0, drum: false, sample: true, cat: { id: 'sampler', name: 'Sampler', em: '🎙️', c: '#ff4d6d' } };
+
 const state = {
   inst: byId(saved.inst) ?? byId('m0'),
   tab: saved.tab ?? 'piano',
@@ -280,6 +287,7 @@ const keyEls = new Map(); // note -> element
 function press(src, key, vel) {
   if (sources.has(src)) release(src);
   const note = key + state.transpose;
+  if (sampler.pickRoot && src !== 'demo') return setSampleRoot(note); // "Move it": this key is the sound's new home
   engine.noteOn(note, vel); // sound first, pixels second
   sources.set(src, { key, note });
   noteCount.set(note, (noteCount.get(note) || 0) + 1);
@@ -604,24 +612,34 @@ async function initMidi() {
 
 // ---------------------------------------------------------------- instrument browser
 const tabsEl = $('tabs');
+const actsEl = $('acts');
 const gridEl = $('grid');
 const searchEl = $('search');
 
 /** Opens or closes the drop-down under the menu row. */
 function setMenu(open) {
   state.menuOpen = open;
+  if (!open) cancelCapture();
   gridEl.classList.toggle('open', open);
   drawTabs();
   if (open) { drawGrid(); gridEl.scrollTop = 0; }
 }
 
 function drawTabs() {
-  const tabs = [{ id: 'songs', name: '🎵 Songs', c: '#39e36b' }, { id: 'groove', name: '🥁 Grooves', c: '#ff7a59' }, { id: 'fav', name: '⭐ Favorites', c: '#ffb020' }, ...CATEGORIES.map((c) => ({ id: c.id, name: `${c.em} ${c.name}`, c: c.c }))];
-  tabsEl.innerHTML = tabs.map((t) => `<button class="tab" role="tab" data-tab="${t.id}" style="--c:${t.c}" aria-selected="${state.menuOpen && t.id === state.tab && !searchEl.value}" aria-haspopup="true">${t.name}<span class="caret">▾</span></button>`).join('');
+  const on = (id) => state.menuOpen && id === state.tab && !searchEl.value;
+  // the instrument families are small chips on the left…
+  tabsEl.innerHTML = '<span class="tabs-label">Instruments</span>' + CATEGORIES.map((c) => `<button class="tab" role="tab" data-tab="${c.id}" style="--c:${c.c}" aria-selected="${on(c.id)}" aria-haspopup="true"><span class="tab-em">${c.em}</span>${c.name}</button>`).join('');
+  // …and the things to do sit apart on the right, under the search box
+  const acts = [{ id: 'songs', em: '🎵', name: 'Songs', c: '#39e36b' }, { id: 'groove', em: '🥁', name: 'Grooves', c: '#ff7a59' }, { id: 'sampler', em: '🎙️', name: 'Sampler', c: '#ff4d6d' }, { id: 'fav', em: '⭐', name: 'Favorites', c: '#ffb020' }];
+  actsEl.innerHTML = acts.map((t) => `<button class="tab act" role="tab" data-tab="${t.id}" style="--c:${t.c}" aria-selected="${on(t.id)}" aria-haspopup="true" title="${t.name}"><span class="tab-em">${t.em}</span><span class="tab-nm">${t.name}</span><span class="caret">▾</span></button>`).join('');
 }
 
 function drawGrid() {
   const q = searchEl.value.trim().toLowerCase();
+  const samplerView = !q && state.tab === 'sampler';
+  gridEl.classList.toggle('panel', samplerView);
+  if (samplerView) return drawSampler();
+  cancelCapture();
   if (!q && state.tab === 'songs') {
     gridEl.innerHTML = SONGS.map((sg) => `<button class="card song${state.song?.def === sg ? ' sel' : ''}" data-song="${sg.id}" style="--c:${LEVELS[sg.level].c}" title="${LEVELS[sg.level].name}"><span class="em">${LEVELS[sg.level].em}</span><span class="nm">${sg.title}</span></button>`).join('');
     return;
@@ -645,20 +663,21 @@ function selectInstrument(inst, quiet) {
   $('curIcon').textContent = inst.drum ? '🥁' : inst.cat.em;
   $('current').classList.add('busy');
   document.documentElement.style.setProperty('--kc', inst.cat.c);
-  save({ inst: inst.id });
+  if (!inst.sample) save({ inst: inst.id });
   for (const el of gridEl.querySelectorAll('.card[data-id]')) el.classList.toggle('sel', el.dataset.id === inst.id);
-  engine.setInstrument(inst.prog, inst.drum).then((ready) => {
+  const smp = inst.sample ? sampler.sample : null;
+  engine.setInstrument(inst.prog, inst.drum, smp).then((ready) => {
     if (!ready || state.inst !== inst) return;
     $('current').classList.remove('busy');
     if (quiet || noteCount.size) return;
     // a quick preview so students hear what they picked even before touching a key
-    const n = inst.drum ? 38 : inst.cat.id === 'bass' ? 36 : 60;
-    engine.noteOn(n, 90);
-    setTimeout(() => { if (!noteCount.has(n)) engine.noteOff(n); }, 350);
+    const n = smp ? smp.root : inst.drum ? 38 : inst.cat.id === 'bass' ? 36 : 60;
+    engine.noteOn(n, smp ? 110 : 90);
+    setTimeout(() => { if (!noteCount.has(n)) engine.noteOff(n); }, smp ? smp.seconds * 1000 + 60 : 350);
   });
 }
 
-tabsEl.addEventListener('click', (e) => {
+$('tabsRow').addEventListener('click', (e) => {
   const tab = e.target.closest('.tab');
   if (!tab) return;
   const same = state.menuOpen && !searchEl.value && state.tab === tab.dataset.tab;
@@ -669,6 +688,8 @@ tabsEl.addEventListener('click', (e) => {
 });
 gridEl.addEventListener('click', (e) => {
   unlockAudio();
+  const smp = e.target.closest('[data-smp]');
+  if (smp) return samplerAction(smp.dataset.smp);
   const fav = e.target.closest('[data-fav]');
   if (fav) {
     const id = fav.dataset.fav;
@@ -992,6 +1013,240 @@ $('recSave').addEventListener('click', () => {
   toast('Saved! Look in your Downloads (or Files) for ' + rec.name);
 });
 $('recClose').addEventListener('click', () => { $('recAudio').pause(); $('recDone').hidden = true; });
+
+// ---------------------------------------------------------------- sampler
+// The student records a short sound with the microphone; it is trimmed so it starts the instant a key
+// goes down, and then becomes an instrument: the key it "lives" on plays it as recorded, higher keys
+// play it faster and higher, lower keys slower and lower. The sound never leaves this device and is
+// not stored: it is gone when the page closes.
+const SAMPLE_LISTEN = 3; // seconds the microphone listens
+const SAMPLE_MAX = 2; // seconds of sound kept after trimming
+const sampler = { phase: 'idle', count: 0, sample: null, msg: '', pickRoot: false, run: 0, timers: [], chunks: [], got: 0, stream: null, src: null, node: null, moduleReady: false };
+const capturing = () => sampler.phase === 'asking' || sampler.phase === 'count' || sampler.phase === 'rec';
+
+function stopMic() {
+  for (const t of sampler.timers) clearTimeout(t);
+  sampler.timers = [];
+  if (sampler.node) sampler.node.port.onmessage = null;
+  sampler.src?.disconnect();
+  sampler.stream?.getTracks().forEach((t) => t.stop()); // turns the microphone light off
+  sampler.stream = sampler.src = sampler.node = null;
+}
+
+function cancelCapture() {
+  if (!capturing()) return;
+  sampler.run++;
+  stopMic();
+  sampler.phase = 'idle';
+}
+
+function samplerError(msg) {
+  stopMic();
+  sampler.phase = 'error';
+  sampler.msg = msg;
+  drawSampler();
+}
+
+async function startCapture() {
+  cancelCapture();
+  if (!navigator.mediaDevices?.getUserMedia) return samplerError('This browser cannot use the microphone.');
+  if (groove.style) toggleGroove(null); // the beat would end up in the sound
+  stopDemo();
+  releaseAll();
+  engine.panic();
+  sampler.pickRoot = false;
+  sampler.phase = 'asking';
+  drawSampler();
+  const run = ++sampler.run;
+  let stream;
+  try {
+    // the browser's call clean-up (echo cancelling, auto volume) mangles musical notes: turn it off
+    stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } });
+    if (!sampler.moduleReady) {
+      await engine.ctx.audioWorklet.addModule(new URL('./sample-processor.js', import.meta.url).href);
+      sampler.moduleReady = true;
+    }
+  } catch (err) {
+    stream?.getTracks().forEach((t) => t.stop());
+    if (run !== sampler.run) return;
+    console.error(err);
+    const blocked = err?.name === 'NotAllowedError' || err?.name === 'SecurityError';
+    return samplerError(blocked ? 'The microphone is blocked. Allow it for this page (the 🔒 or mic icon by the address), then try again.' : err?.name === 'NotFoundError' ? 'No microphone was found on this device.' : 'The microphone could not start.');
+  }
+  if (run !== sampler.run) { stream.getTracks().forEach((t) => t.stop()); return; }
+  sampler.stream = stream;
+  sampler.src = engine.ctx.createMediaStreamSource(stream);
+  sampler.node = new AudioWorkletNode(engine.ctx, 'mm-sampler', { numberOfInputs: 1, numberOfOutputs: 0, channelCount: 1, channelCountMode: 'explicit' });
+  sampler.src.connect(sampler.node);
+  sampler.chunks = [];
+  sampler.got = 0;
+  const total = SAMPLE_LISTEN * engine.ctx.sampleRate;
+  sampler.node.port.onmessage = (e) => {
+    const level = $('smpLevel');
+    if (level) level.style.width = Math.min(100, Math.sqrt(e.data.peak) * 100) + '%';
+    if (sampler.phase !== 'rec') return; // the count-in also lets the microphone settle
+    sampler.chunks.push(e.data.pcm);
+    sampler.got += e.data.pcm.length;
+    const prog = $('smpProg');
+    if (prog) prog.style.width = Math.min(100, (sampler.got / total) * 100) + '%';
+    if (sampler.got >= total) finishCapture();
+  };
+  sampler.phase = 'count';
+  const tick = (n) => {
+    if (run !== sampler.run) return;
+    if (n === 0) sampler.phase = 'rec'; else sampler.count = n;
+    drawSampler();
+    if (n > 0) sampler.timers.push(setTimeout(() => tick(n - 1), 600));
+  };
+  tick(3);
+}
+
+function finishCapture() {
+  if (sampler.phase !== 'rec') return;
+  const rate = engine.ctx.sampleRate;
+  const raw = new Float32Array(sampler.got);
+  let o = 0;
+  for (const c of sampler.chunks) { raw.set(c, o); o += c.length; }
+  sampler.chunks = [];
+  stopMic();
+  const cut = trimSample(raw, rate);
+  if (!cut) return samplerError('I did not hear anything. Get close to the microphone and try again!');
+  sampler.sample = { pcm: cut.pcm, rate, root: sampler.sample?.root ?? 60, seconds: cut.pcm.length / rate, view: cut.view };
+  sampler.phase = 'idle';
+  drawSampler();
+  if (!engine.synth) toast('Your sound will be ready as soon as the sounds finish loading.');
+  selectInstrument(SAMPLE_INST);
+}
+
+/**
+ * Auto-clip: finds where the sound really starts (the first moment it rises clearly above the room
+ * noise), keeps a few milliseconds before that so the attack is not chopped, drops the silence after
+ * the sound dies away, and brings it up to full volume. Returns null if there was only silence.
+ */
+function trimSample(raw, rate) {
+  const n = raw.length;
+  const x = new Float32Array(n);
+  const k = Math.exp((-2 * Math.PI * 70) / rate); // take out rumble and any DC offset below ~70 Hz
+  let low = 0;
+  for (let i = 0; i < n; i++) { low = k * low + (1 - k) * raw[i]; x[i] = raw[i] - low; }
+  const win = Math.max(1, Math.round(rate * 0.002)); // loudness in 2 ms steps
+  const m = Math.floor(n / win);
+  const lev = new Float32Array(m);
+  let peak = 0;
+  for (let w = 0; w < m; w++) {
+    let p = 0;
+    for (let i = w * win, end = i + win; i < end; i++) { const a = Math.abs(x[i]); if (a > p) p = a; }
+    lev[w] = p;
+    if (p > peak) peak = p;
+  }
+  if (m < 20 || peak < 0.012) return null;
+  const floor = Float32Array.from(lev).sort()[Math.floor(m * 0.1)]; // how loud the quiet room is
+  const onAt = Math.min(peak * 0.5, Math.max(peak * 0.1, floor * 4));
+  let first = 0;
+  for (let w = 0; w < m - 2; w++) {
+    // a single loud step is a click; a real sound stays up
+    if (lev[w] > onAt && (lev[w + 1] > onAt * 0.5 || lev[w + 2] > onAt * 0.5)) { first = w; break; }
+  }
+  const offAt = Math.min(peak * 0.3, Math.max(peak * 0.04, floor * 2));
+  let last = m - 1;
+  while (last > first && lev[last] < offAt) last--;
+  const start = Math.max(0, first * win - Math.round(rate * 0.004));
+  let end = Math.min(n, (last + 1) * win + Math.round(rate * 0.08));
+  end = Math.min(end, start + SAMPLE_MAX * rate);
+  end = Math.max(end, Math.min(n, start + Math.round(rate * 0.05)));
+  const pcm = x.slice(start, end);
+  const len = pcm.length;
+  const fadeIn = Math.min(len, Math.round(rate * 0.002));
+  const fadeOut = Math.min(Math.floor(len / 4), Math.round(rate * 0.04));
+  for (let i = 0; i < fadeIn; i++) pcm[i] *= i / fadeIn;
+  for (let i = 0; i < fadeOut; i++) pcm[len - 1 - i] *= i / fadeOut;
+  let top = 0;
+  for (let i = 0; i < len; i++) { const a = Math.abs(pcm[i]); if (a > top) top = a; }
+  const gain = 0.9 / (top || 1);
+  for (let i = 0; i < len; i++) pcm[i] *= gain;
+  // a small picture of the whole take, so the student can see what was kept
+  const cols = new Float32Array(240);
+  for (let c = 0; c < cols.length; c++) {
+    let p = 0;
+    for (let i = Math.floor((c * n) / cols.length), e2 = Math.floor(((c + 1) * n) / cols.length); i < e2; i++) { const a = Math.abs(x[i]); if (a > p) p = a; }
+    cols[c] = p / peak;
+  }
+  return { pcm, view: { cols, from: start / n, to: end / n } };
+}
+
+function setSampleRoot(note) {
+  sampler.pickRoot = false;
+  if (!sampler.sample) return;
+  sampler.sample.root = Math.max(0, Math.min(127, note));
+  toast(`Your sound now lives on ${noteName(sampler.sample.root)}.`);
+  selectInstrument(SAMPLE_INST);
+  drawSampler();
+}
+
+function samplerAction(what) {
+  if (what === 'rec') return startCapture();
+  if (what === 'done') return finishCapture();
+  if (what === 'cancel') { cancelCapture(); return drawSampler(); }
+  if (!sampler.sample) return;
+  if (what === 'hear') {
+    if (state.inst !== SAMPLE_INST) return selectInstrument(SAMPLE_INST); // choosing it plays it once
+    const n = sampler.sample.root;
+    engine.noteOn(n, 110);
+    setTimeout(() => { if (!noteCount.has(n)) engine.noteOff(n); }, sampler.sample.seconds * 1000 + 60);
+  } else if (what === 'use') {
+    if (state.inst !== SAMPLE_INST) selectInstrument(SAMPLE_INST, true);
+    setMenu(false);
+  } else if (what === 'move') {
+    if (state.inst !== SAMPLE_INST) selectInstrument(SAMPLE_INST, true);
+    sampler.pickRoot = true;
+    setMenu(false);
+    toast('Press the key where your sound should live.');
+  }
+}
+
+function drawSampler() {
+  if (!state.menuOpen || state.tab !== 'sampler' || searchEl.value.trim()) return;
+  const meter = '<div class="smp-meter" title="Microphone level"><i id="smpLevel"></i></div>';
+  const recBtn2 = (label) => `<button class="smp-big" data-smp="rec" type="button"><span class="recdot"></span>${label}</button>`;
+  let body;
+  if (sampler.phase === 'asking') {
+    body = '<div class="smp-msg">Waiting for the microphone… choose <b>Allow</b> if the browser asks.</div><button class="toggle small" data-smp="cancel" type="button">Cancel</button>';
+  } else if (sampler.phase === 'count') {
+    body = `<div class="smp-count">${sampler.count}</div><div class="smp-msg">Get ready…</div>${meter}<button class="toggle small" data-smp="cancel" type="button">Cancel</button>`;
+  } else if (sampler.phase === 'rec') {
+    body = `<div class="smp-count go">GO!</div><div class="smp-msg">Make your sound now 🎤</div>${meter}<div class="smp-meter time"><i id="smpProg"></i></div><button class="toggle small" data-smp="done" type="button">■ Done</button>`;
+  } else if (sampler.sample) {
+    const s = sampler.sample;
+    body = `<canvas class="smp-wave" id="smpWave" width="720" height="110" aria-label="Picture of your sound"></canvas>
+      <div class="smp-msg">${s.seconds.toFixed(1)} seconds · lives on <b>${noteName(s.root)}</b>${s.root === 60 ? ' (middle C)' : ''}. Higher keys play it higher, lower keys play it lower.</div>
+      <div class="smp-row"><button class="toggle" data-smp="hear" type="button">▶ Hear it</button><button class="toggle smp-use" data-smp="use" type="button">🎹 Play it!</button><button class="toggle" data-smp="move" type="button" title="Choose which key plays the sound as you recorded it">🎯 Move it to another key</button><button class="toggle" data-smp="rec" type="button">● Record again</button></div>`;
+  } else {
+    body = `${sampler.phase === 'error' ? `<div class="smp-msg warn">${sampler.msg}</div>` : '<div class="smp-msg">Record a short sound — a note, a clap, your voice — and play it on every key!</div>'}${recBtn2('Record a sound')}`;
+  }
+  if (sampler.phase === 'error' && sampler.sample) body = `<div class="smp-msg warn">${sampler.msg}</div>` + body;
+  gridEl.innerHTML = `<div class="sampler">${body}<div class="smp-note">The microphone listens for ${SAMPLE_LISTEN} seconds and keeps up to ${SAMPLE_MAX}. Your sound stays on this device and is gone when you close the page.</div></div>`;
+  drawWave();
+}
+
+function drawWave() {
+  const cv = $('smpWave');
+  const v = sampler.sample?.view;
+  if (!cv || !v) return;
+  const g = cv.getContext('2d');
+  const { width: w, height: h } = cv;
+  g.clearRect(0, 0, w, h);
+  g.fillStyle = 'rgba(255, 77, 109, .16)'; // the part that was kept
+  g.fillRect(v.from * w, 0, (v.to - v.from) * w, h);
+  const bw = w / v.cols.length;
+  for (let c = 0; c < v.cols.length; c++) {
+    const f = (c + 0.5) / v.cols.length;
+    const bar = Math.max(2, v.cols[c] * (h - 12));
+    g.fillStyle = f >= v.from && f <= v.to ? '#ff4d6d' : '#4a4f69';
+    g.fillRect(c * bw + 0.5, (h - bar) / 2, Math.max(1, bw - 1), bar);
+  }
+  g.fillStyle = '#fff';
+  g.fillRect(v.from * w, 0, 2, h); // where the sound starts when a key goes down
+}
 
 let toastTimer = 0;
 function toast(msg) {

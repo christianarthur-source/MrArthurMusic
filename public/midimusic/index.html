@@ -25,11 +25,15 @@
     <button class="icon" id="fsBtn" type="button" title="Full screen" aria-label="Full screen">⛶</button>
   </header>
 
-  <!-- One row of drop-down menus: Songs, Grooves, Favorites and every instrument family -->
+  <!-- Drop-down menus: every instrument family, plus Songs, Grooves, Sampler and Favorites -->
   <section class="browser" id="browser" aria-label="Songs, grooves and instruments">
-    <div class="tabsrow">
-      <div class="tabs" id="tabs"></div>
-      <input type="search" id="search" class="search" placeholder="🔎 Find a sound" aria-label="Find a sound" autocomplete="off">
+    <div class="tabsrow" id="tabsRow">
+      <!-- left: the instrument families (small chips) · right: search, then Songs / Grooves / Sampler / Favorites -->
+      <div class="tabs" id="tabs" aria-label="Instruments"></div>
+      <div class="side">
+        <input type="search" id="search" class="search" placeholder="🔎 Find a sound" aria-label="Find a sound" autocomplete="off">
+        <div class="acts" id="acts" aria-label="Songs, grooves, sampler and favorites"></div>
+      </div>
     </div>
     <div class="grid" id="grid"></div>
   </section>
