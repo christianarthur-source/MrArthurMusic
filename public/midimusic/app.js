@@ -181,6 +181,29 @@ class Engine {
     this.reverb = value;
     this.synth?.controllerChange(this.ch, 91, value);
   }
+  /** The "Reset the sound" button: like pressing Panic on a hardware keyboard. */
+  reset() {
+    const synth = this.synth;
+    if (synth) {
+      synth.stopAll(true); // cut every voice, even ones still ringing out
+      for (const ch of new Set([this.ch, 0, 9])) {
+        synth.controllerChange(ch, 123, 0); // all notes off
+        synth.controllerChange(ch, 120, 0); // all sound off
+        synth.controllerChange(ch, 121, 0); // reset controllers (pedal, bend, mod, pressure)
+        synth.controllerChange(ch, 64, 0);
+        synth.controllerChange(ch, 1, 0);
+        synth.pitchWheel(ch, 8192);
+        synth.channelPressure(ch, 0);
+      }
+      synth.programChange(this.ch, this.prog); // controller reset must not change the instrument
+      if (this.ch !== 9) synth.programChange(9, 0);
+      synth.controllerChange(this.ch, 91, this.reverb);
+      synth.controllerChange(this.ch, 93, 0);
+    }
+    this.sustain = false;
+    this.held.clear();
+    for (const n of [...this.voices.keys()]) this.starterOff(n, true);
+  }
   panic() {
     this.synth?.stopAll(true);
     for (const n of [...this.voices.keys()]) this.starterOff(n, true);
@@ -515,6 +538,8 @@ const showMod = makeWheel($('modWheel'), { spring: false, onChange: (v) => engin
 
 // ---------------------------------------------------------------- MIDI keyboards
 let midiAccess = null;
+let midiList = []; // friendly names of the keyboards the browser can see right now
+let midiBlocked = false; // the student (or the school) said no to MIDI
 const midiBtn = $('midiBtn');
 let hitTimer = 0;
 
@@ -537,6 +562,7 @@ function onMidiMessage(e) {
   } else if (cmd === 0xd0) engine.pressure(d[1]);
   else if (cmd === 0xc0) { const inst = byId('m' + d[1]); if (inst) selectInstrument(inst, true); }
   else return;
+  if (helpOpen() && !helpHeard) { helpHeard = true; drawHelpMidi(); }
   if (!hitTimer) {
     midiBtn.classList.add('hit');
     hitTimer = setTimeout(() => { midiBtn.classList.remove('hit'); hitTimer = 0; }, 90);
@@ -567,6 +593,8 @@ function refreshMidi() {
     const name = midiName(input);
     if (!names.includes(name)) names.push(name); // some keyboards show up as two ports
   }
+  midiList = names;
+  midiBlocked = false;
   const was = midiBtn.dataset.names || '';
   const now = names.join('|');
   midiBtn.dataset.names = now;
@@ -574,6 +602,7 @@ function refreshMidi() {
   midiBtn.classList.remove('ask');
   $('midiText').textContent = names.length ? names[0] + (names.length > 1 ? ` +${names.length - 1}` : '') : 'Plug in a MIDI keyboard';
   midiBtn.title = names.length ? 'Connected: ' + names.join(', ') : 'No MIDI keyboard found yet. Plug one in with USB — it connects by itself.';
+  if (helpOpen()) drawHelpMidi();
   if (now !== was) {
     if (!names.length && was) { releaseAll('m:'); state.pedalDown = false; updateSustain(); toast('MIDI keyboard unplugged'); }
     else if (names.length && midiBtn.dataset.ready) toast('🎹 ' + names[names.length - 1] + ' connected!');
@@ -585,18 +614,20 @@ async function connectMidi(fromClick) {
   if (!navigator.requestMIDIAccess) {
     $('midiText').textContent = 'On-screen keys';
     midiBtn.title = 'This browser cannot use MIDI keyboards.';
-    if (fromClick) toast('This browser can’t use MIDI keyboards. Try Chrome or Edge on a Chromebook or computer — or play the keys on the screen!');
+    if (fromClick && !helpOpen()) toast('This browser can’t use MIDI keyboards. Try Chrome or Edge on a Chromebook or computer — or play the keys on the screen!');
     return;
   }
-  if (midiAccess) { refreshMidi(); if (fromClick) toast(midiBtn.title); return; }
+  if (midiAccess) { refreshMidi(); if (fromClick && !helpOpen()) toast(midiBtn.title); return; }
   try {
     midiAccess = await navigator.requestMIDIAccess({ sysex: false });
     midiAccess.onstatechange = refreshMidi; // hot-plugging
     refreshMidi();
   } catch {
+    midiBlocked = true;
     midiBtn.classList.add('ask');
     $('midiText').textContent = 'Allow MIDI';
-    if (fromClick) toast('MIDI is blocked. Click the 🔒 next to the web address, allow “MIDI devices”, then reload.');
+    if (helpOpen()) drawHelpMidi();
+    if (fromClick && !helpOpen()) toast('MIDI is blocked. Click the 🔒 next to the web address, allow “MIDI devices”, then reload.');
   }
 }
 midiBtn.addEventListener('click', () => { unlockAudio(); connectMidi(true); });
@@ -1248,6 +1279,160 @@ function drawWave() {
   g.fillRect(v.from * w, 0, 2, h); // where the sound starts when a key goes down
 }
 
+// ---------------------------------------------------------------- help
+// One place for "something is wrong": say plainly whether a MIDI keyboard is seen, offer the fixes, and
+// let a student replay the tour.
+const helpBtn = $('helpBtn');
+const helpPanel = $('helpPanel');
+let helpHeard = false; // a note from the keyboard arrived while Help was open
+const helpOpen = () => !helpPanel.hidden;
+
+function setHelp(open) {
+  helpPanel.hidden = !open;
+  helpBtn.setAttribute('aria-expanded', String(open));
+  if (!open) return;
+  setTools(false);
+  setMenu(false);
+  helpHeard = false;
+  $('helpResetMsg').textContent = 'Stops every note and puts the pedal, bend and mod back to normal.';
+  const r = helpBtn.getBoundingClientRect();
+  helpPanel.style.top = r.bottom + 8 + 'px';
+  helpPanel.style.right = Math.max(8, window.innerWidth - r.right) + 'px';
+  drawHelpMidi();
+}
+
+function drawHelpMidi() {
+  const box = $('helpMidi');
+  const again = '<button class="toggle helpbtn" data-help="check" type="button">🔍 Look for my keyboard</button>';
+  let html;
+  if (!navigator.requestMIDIAccess) {
+    html = `<div class="help-h">🎹 MIDI keyboards</div><div class="help-bad">This browser can’t talk to MIDI keyboards.</div>
+      <ol class="help-steps"><li>Open this page in <b>Google Chrome</b> or <b>Microsoft Edge</b> (Chromebooks and computers).</li><li>iPads and iPhones can’t do MIDI keyboards here, but you can still play the keys on the screen!</li></ol>`;
+  } else if (midiBlocked) {
+    html = `<div class="help-h">🎹 MIDI keyboards</div><div class="help-bad">MIDI is blocked for this page.</div>
+      <ol class="help-steps"><li>Click the <b>🔒</b> (or tune icon) next to the web address.</li><li>Turn on <b>MIDI devices</b>.</li><li>Reload the page, or press the button below.</li></ol>${again}`;
+  } else if (!midiAccess) {
+    html = `<div class="help-h">🎹 MIDI keyboards</div><div class="help-msg">I haven’t looked for a keyboard yet. Plug it in, then press the button. If Chrome asks, choose <b>Allow</b>.</div>${again}`;
+  } else if (midiList.length) {
+    html = `<div class="help-h">🎹 MIDI keyboards</div><div class="help-good">✅ I can see: <b>${midiList.join(', ')}</b></div>
+      <div class="help-msg">${helpHeard ? '🎉 I heard a key! Everything is working.' : 'Press a key on it now — I’ll tell you when I hear it.'}</div>
+      ${helpHeard ? '' : `<ol class="help-steps"><li>If keys make no sound, tap the screen once, then check the volume.</li><li>Still quiet? Try <b>Reset the sound</b> below.</li></ol>`}${again}`;
+  } else {
+    html = `<div class="help-h">🎹 MIDI keyboards</div><div class="help-bad">I can’t see a MIDI keyboard yet.</div>
+      <ol class="help-steps"><li>Plug the <b>USB cable</b> into the Chromebook. Push it in all the way.</li><li>Is the keyboard turned on? (Some have a switch or need a USB port with power.)</li><li>Try <b>another USB port</b> or another cable.</li><li>Use <b>Chrome</b>, and only one tab with MIDI MUSIC open. Another tab or app may be using the keyboard.</li><li>Unplug it, wait 3 seconds, plug it back in, then press the button.</li></ol>${again}
+      <div class="help-sub">You can always play with the on-screen keys or your computer keyboard.</div>`;
+  }
+  box.className = 'help-box ' + (midiList.length && midiAccess ? 'good' : '');
+  box.innerHTML = html;
+}
+
+helpBtn.addEventListener('click', () => setHelp(!helpOpen()));
+$('helpClose').addEventListener('click', () => setHelp(false));
+helpPanel.addEventListener('click', async (e) => {
+  const b = e.target.closest('[data-help="check"]');
+  if (!b) return;
+  unlockAudio();
+  b.textContent = '🔍 Looking…';
+  helpHeard = false;
+  midiBlocked = false;
+  await connectMidi(true); // asks the browser for MIDI if it has not been asked yet, then rescans
+  await new Promise((r) => setTimeout(r, 400)); // give a just-plugged-in keyboard a moment to show up
+  refreshMidi();
+  if (midiAccess) drawHelpMidi();
+  else if (!navigator.requestMIDIAccess || midiBlocked) drawHelpMidi();
+});
+$('helpReset').addEventListener('click', () => {
+  releaseAll();
+  state.latch = state.spaceDown = state.pedalDown = false;
+  stopDemo();
+  engine.reset();
+  updateSustain();
+  showBend(0);
+  showMod(0);
+  midiBtn.classList.remove('hit');
+  $('helpResetMsg').textContent = '✅ Done! All notes are off. Try playing again.';
+  $('helpReset').classList.add('done');
+  setTimeout(() => $('helpReset').classList.remove('done'), 1200);
+});
+$('helpTour').addEventListener('click', () => { setHelp(false); startTour(); });
+document.addEventListener('pointerdown', (e) => { if (helpOpen() && !e.target.closest('#helpPanel, #helpBtn')) setHelp(false); }, true);
+window.addEventListener('resize', () => { setHelp(false); placeTour(); });
+
+// ---------------------------------------------------------------- first-visit tour
+// A few short bubbles that point at the main parts of the page. Shown once; "Help → Show me around" replays it.
+const TOUR = [
+  { at: '#kb', title: 'Play the piano!', text: 'Tap the keys, or press the letters on your computer keyboard. Plug in a MIDI keyboard to play it too.' },
+  { at: '#tabs', title: 'Pick an instrument', text: 'Tap a family like Pianos or Guitars, then choose a sound. Over 130 to try!' },
+  { at: '#acts', title: 'More fun', text: '🎵 Songs show which key to press next. 🥁 Grooves play a beat. 🎙️ Sampler turns your voice into an instrument.' },
+  { at: '#recBtn', title: 'Record yourself', text: 'Press Record, play, then press it again. You can save your song as an MP3.' },
+  { at: '#midiBtn', title: 'MIDI keyboard', text: 'Plug in a USB keyboard and it connects by itself. This shows its name.' },
+  { at: '#helpBtn', title: 'Stuck? Press Help', text: 'Fix a stuck note, check your keyboard, or see this tour again any time.' },
+];
+const tour = { i: 0, on: false };
+const tourEl = $('tour');
+
+function startTour() {
+  if (!startEl.hidden) return;
+  setMenu(false);
+  setTools(false);
+  tour.i = 0;
+  tour.on = true;
+  tourEl.hidden = false;
+  placeTour();
+}
+
+function endTour() {
+  if (!tour.on) return;
+  tour.on = false;
+  tourEl.hidden = true;
+  save({ tourDone: true });
+}
+
+function placeTour() {
+  if (!tour.on) return;
+  const step = TOUR[tour.i];
+  const target = document.querySelector(step.at);
+  if (!target || !target.offsetParent && target.id !== 'kb') { // hidden on this screen size: skip it
+    if (tour.i < TOUR.length - 1) { tour.i++; return placeTour(); }
+    return endTour();
+  }
+  $('tourStep').textContent = `${tour.i + 1} of ${TOUR.length}`;
+  $('tourTitle').textContent = step.title;
+  $('tourText').textContent = step.text;
+  $('tourBack').hidden = tour.i === 0;
+  $('tourNext').textContent = tour.i === TOUR.length - 1 ? 'Got it! ✓' : 'Next →';
+  const r = target.getBoundingClientRect();
+  const pad = 5;
+  const spot = $('tourSpot');
+  spot.style.cssText = `left:${r.left - pad}px;top:${r.top - pad}px;width:${r.width + pad * 2}px;height:${r.height + pad * 2}px`;
+  const bubble = $('tourBubble');
+  bubble.style.visibility = 'hidden';
+  const bw = bubble.offsetWidth;
+  const bh = bubble.offsetHeight;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  let top;
+  if (r.height > vh * 0.4) top = r.top + Math.min(r.height * 0.25, 120); // a big target (the keyboard): bubble sits inside it
+  else if (r.bottom + 14 + bh < vh) top = r.bottom + 14;
+  else top = Math.max(8, r.top - 14 - bh);
+  const left = Math.max(10, Math.min(vw - bw - 10, r.left + r.width / 2 - bw / 2));
+  bubble.style.cssText = `left:${left}px;top:${Math.max(8, Math.min(vh - bh - 8, top))}px;visibility:visible`;
+  // a little arrow that points at the target
+  const arrowX = Math.max(18, Math.min(bw - 18, r.left + r.width / 2 - left));
+  bubble.style.setProperty('--ax', arrowX + 'px');
+  bubble.classList.toggle('above', top < r.top && r.height <= vh * 0.4);
+  bubble.classList.toggle('inside', r.height > vh * 0.4);
+}
+
+$('tourNext').addEventListener('click', () => { if (tour.i >= TOUR.length - 1) return endTour(); tour.i++; placeTour(); });
+$('tourBack').addEventListener('click', () => { if (tour.i > 0) { tour.i--; placeTour(); } });
+$('tourSkip').addEventListener('click', endTour);
+window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { endTour(); setHelp(false); } }, true);
+function maybeStartTour() {
+  if (saved.tourDone || tour.on) return;
+  setTimeout(() => { if (!saved.tourDone && startEl.hidden) startTour(); }, 700);
+}
+
 let toastTimer = 0;
 function toast(msg) {
   const el = $('toast');
@@ -1265,6 +1450,7 @@ function unlockAudio() {
   if (!startEl.hidden) {
     startEl.hidden = true;
     if (!midiAccess) connectMidi(false); // ask for MIDI now that the student has tapped
+    maybeStartTour();
   }
 }
 $('startBtn').addEventListener('click', unlockAudio);
