@@ -52,13 +52,14 @@ function save(patch) {
 // ---------------------------------------------------------------- audio engine
 class Engine {
   constructor() {
-    this.ctx = new AudioContext({ latencyHint: 'interactive' });
+    this.ctx = new AudioContext({ latencyHint: 0 }) // 0 = the smallest output buffer the device allows;
     this.master = this.ctx.createGain();
     this.master.gain.value = 0.8;
     this.master.connect(this.ctx.destination);
     this.synth = null;
     this.ch = 0; // 0 = melodic instrument, 9 = drum kit
     this.prog = 0;
+    this.want = { prog: 0, drum: false };
     this.reverb = 45;
     this.sustain = false;
     this.voices = new Map(); // starter-synth voices, used only until the SoundFont has loaded
@@ -67,56 +68,71 @@ class Engine {
 
   async load(onProgress) {
     const [bank] = await Promise.all([downloadBank(onProgress), this.ctx.audioWorklet.addModule(PROCESSOR_URL)]);
+    this.worker = new Worker(new URL('./bank-worker.js', import.meta.url), { type: 'module' });
+    const kits = await new Promise((resolve, reject) => {
+      this.worker.onerror = () => reject(new Error('The sound worker could not start'));
+      this.worker.onmessage = (e) => (e.data.type === 'loaded' ? resolve(e.data.kits) : reject(new Error(e.data.message)));
+      this.worker.postMessage({ type: 'load', buffer: bank }, [bank]);
+    });
+    this.worker.onmessage = (e) => this.onBuilt(e.data);
+    this.worker.onerror = null;
     const synth = new WorkletSynthesizer(this.ctx);
     const makeup = this.ctx.createGain();
     makeup.gain.value = 2.4; // the SoundFont is mixed quietly
     synth.connect(makeup);
     makeup.connect(this.master);
-    await synth.soundBankManager.addSoundBank(bank, 'main');
-    await synth.isReady;
-    for (const v of this.voices.keys()) this.starterOff(v, true);
-    this.synth = synth;
-    for (const ch of [0, 9]) {
-      synth.controllerChange(ch, 91, this.reverb);
-      synth.controllerChange(ch, 93, 0);
-      synth.controllerChange(ch, 64, this.sustain ? 127 : 0);
-    }
-    synth.programChange(this.ch, this.prog);
-    this.warm();
-    return synth;
+    this.pendingSynth = synth;
+    await this.setInstrument(this.want.prog, this.want.drum);
+    return kits;
   }
 
+  /** Chooses the instrument. The previous one keeps playing until the new one is decoded and ready. */
   setInstrument(prog, drum) {
-    const ch = drum ? 9 : 0;
-    if (this.synth && ch !== this.ch) this.synth.stopAll(false);
-    this.ch = ch;
-    this.prog = prog;
-    if (!this.synth) return;
-    this.synth.programChange(ch, prog);
-    this.synth.controllerChange(ch, 1, 0);
-    this.warm();
+    this.want = { prog, drum };
+    if (!this.worker) return Promise.resolve(false);
+    return new Promise((resolve) => {
+      this.queued?.resolve(false); // a newer choice replaces one that has not started decoding yet
+      this.queued = { prog, drum, resolve };
+      this.pump();
+    });
   }
 
-  /** The SoundFont's samples are compressed and decoded the first time they are used. Touch them silently
-   *  on a spare channel right after choosing an instrument, so the first real notes do not stutter. */
-  warm() {
-    const s = this.synth;
-    if (!s || this.ch === 9) return;
-    const token = (this.warmToken = (this.warmToken || 0) + 1);
-    s.controllerChange(15, 7, 0);
-    s.controllerChange(15, 91, 0);
-    s.programChange(15, this.prog);
-    const jobs = [];
-    for (const vel of [100, 50, 125, 20]) for (let n = 36; n <= 96; n += 3) jobs.push([n, vel]);
-    const step = () => {
-      if (token !== this.warmToken) return;
-      for (const [n, vel] of jobs.splice(0, 7)) {
-        s.noteOn(15, n, vel);
-        s.noteOff(15, n);
+  pump() {
+    if (this.building || !this.queued) return;
+    this.building = this.queued;
+    this.queued = null;
+    this.worker.postMessage({ type: 'build', id: 0, prog: this.building.prog, drum: this.building.drum });
+  }
+
+  async onBuilt(m) {
+    const job = this.building;
+    if (!job) return;
+    let ok = false;
+    try {
+      if (m.type !== 'built') throw new Error(m.message);
+      if (!this.queued) { // skip installing a sound the student has already moved on from
+        const synth = this.synth ?? this.pendingSynth;
+        await synth.soundBankManager.addSoundBank(m.buffer, 'inst');
+        await synth.isReady;
+        const ch = job.drum ? 9 : 0;
+        if (this.synth && ch !== this.ch) synth.stopAll(false);
+        for (const v of [...this.voices.keys()]) this.starterOff(v, true);
+        this.synth = synth;
+        this.ch = ch;
+        this.prog = job.prog;
+        synth.programChange(ch, job.prog);
+        synth.controllerChange(ch, 91, this.reverb);
+        synth.controllerChange(ch, 93, 0);
+        synth.controllerChange(ch, 1, 0);
+        synth.controllerChange(ch, 64, this.sustain ? 127 : 0);
+        ok = true;
       }
-      if (jobs.length) setTimeout(step, 40);
-    };
-    step();
+    } catch (err) {
+      console.error(err);
+    }
+    this.building = null;
+    job.resolve(ok);
+    this.pump();
   }
 
   noteOn(note, vel) {
@@ -142,7 +158,7 @@ class Engine {
   pressure(value) { this.synth?.channelPressure(this.ch, value); }
   setReverb(value) {
     this.reverb = value;
-    for (const ch of [0, 9]) this.synth?.controllerChange(ch, 91, value);
+    this.synth?.controllerChange(this.ch, 91, value);
   }
   panic() {
     this.synth?.stopAll(true);
@@ -562,18 +578,21 @@ function drawGrid() {
 function selectInstrument(inst, quiet) {
   if (inst.drum !== state.inst.drum) releaseAll();
   state.inst = inst;
-  engine.setInstrument(inst.prog, inst.drum);
   $('curName').textContent = inst.name;
   $('curIcon').textContent = inst.drum ? '🥁' : inst.cat.em;
+  $('current').classList.add('busy');
   document.documentElement.style.setProperty('--kc', inst.cat.c);
   save({ inst: inst.id });
   for (const el of gridEl.querySelectorAll('.card')) el.classList.toggle('sel', el.dataset.id === inst.id);
-  if (!quiet) {
+  engine.setInstrument(inst.prog, inst.drum).then((ready) => {
+    if (!ready || state.inst !== inst) return;
+    $('current').classList.remove('busy');
+    if (quiet || noteCount.size) return;
     // a quick preview so students hear what they picked even before touching a key
     const n = inst.drum ? 38 : inst.cat.id === 'bass' ? 36 : 60;
     engine.noteOn(n, 90);
-    setTimeout(() => engine.noteOff(n), 350);
-  }
+    setTimeout(() => { if (!noteCount.has(n)) engine.noteOff(n); }, 350);
+  });
 }
 
 tabsEl.addEventListener('click', (e) => {
@@ -657,13 +676,26 @@ function unlockAudio() {
   }
 }
 $('startBtn').addEventListener('click', unlockAudio);
+// The one delay this page cannot remove is in the speakers: Bluetooth adds 0.1–0.3 s. Tell the student.
+let latencyChecked = false;
+function checkOutputLatency() {
+  if (latencyChecked || engine.ctx.state !== 'running') return;
+  latencyChecked = true;
+  setTimeout(() => {
+    const ms = Math.round(((engine.ctx.outputLatency || 0) + engine.ctx.baseLatency) * 1000);
+    document.querySelector('.vol').title = `Volume — sound output delay about ${ms} ms`;
+    if (ms > 90) toast(`Your speakers or headphones add a delay (about ${ms} ms). Bluetooth does this — plug in wired headphones or use the built-in speakers.`);
+  }, 1500);
+}
+engine.ctx.addEventListener('statechange', checkOutputLatency);
+checkOutputLatency();
 engine.ctx.addEventListener('statechange', () => { if (engine.ctx.state === 'running' && !startEl.hidden) unlockAudio(); });
 // iPads suspend audio when the tab is hidden; wake it up again on return
 document.addEventListener('visibilitychange', () => { if (!document.hidden && startEl.hidden && engine.ctx.state !== 'running') engine.ctx.resume(); });
 
 const KIT_NAMES = { Standard: 'Drum Kit', Room: 'Room Drum Kit', Power: 'Rock Drum Kit', Electronic: 'Electronic Drum Kit', 'TR-808': '808 Beat Kit', Jazz: 'Jazz Drum Kit', Brush: 'Brush Drum Kit', Orchestra: 'Orchestra Percussion', 'Marching Bass': 'Marching Bass Drums', 'Marching Tenor': 'Marching Tenor Drums' };
-function addDrumKits(synth) {
-  const kits = (synth.presetList || []).filter((p) => p.isDrum).sort((a, b) => a.program - b.program);
+function addDrumKits(list) {
+  const kits = [...list].sort((a, b) => a.program - b.program);
   if (!kits.length) return;
   const seen = new Set();
   const cat = CATEGORIES.find((c) => c.id === 'drums');
@@ -686,12 +718,12 @@ async function loadSounds() {
   const pill = $('loadPill');
   pill.hidden = false;
   try {
-    const synth = await engine.load((f) => {
+    const kits = await engine.load((f) => {
       $('loadFill').style.width = Math.round(f * 100) + '%';
       $('loadText').textContent = f < 1 ? `Loading sounds ${Math.round(f * 100)}%` : 'Getting ready…';
     });
-    addDrumKits(synth);
-    engine.setInstrument(state.inst.prog, state.inst.drum);
+    addDrumKits(kits);
+    $('current').classList.remove('busy');
     drawGrid();
     pill.hidden = true;
   } catch (err) {
