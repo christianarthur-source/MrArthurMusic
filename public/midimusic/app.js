@@ -375,6 +375,11 @@ function follow(n) {
   else if (n > state.start + span) setStart(Math.ceil((n - span) / 12) * 12);
 }
 
+/** Tells the stylesheet how wide a white key is, so the labels scale with the keys. */
+function setKeyWidth() {
+  kb.style.setProperty('--kw', (kb.clientWidth || window.innerWidth) / (state.octaves * 7 + 1) + 'px');
+}
+
 function buildKeyboard() {
   releaseAll('p:');
   const center = state.start + 6 * state.octaves; // keep the middle of the view where it was when resizing
@@ -412,6 +417,7 @@ function buildKeyboard() {
     frag.appendChild(el);
   }
   kb.appendChild(frag);
+  setKeyWidth();
   $('octVal').textContent = `${noteName(first)}–${noteName(last)}`;
   showGuide(false);
 }
@@ -507,7 +513,7 @@ function onMidiMessage(e) {
   if (!d || d.length < 2) return;
   const cmd = d[0] & 0xf0;
   const src = 'm:' + (d[0] & 0x0f) + ':' + d[1];
-  if (cmd === 0x90 && d[2] > 0) { press(src, d[1], d[2]); follow(d[1]); }
+  if (cmd === 0x90 && d[2] > 0) { press(src, d[1], d[2]); if (!state.song) follow(d[1]); } // the view stays put during a song
   else if (cmd === 0x80 || cmd === 0x90) release(src);
   else if (cmd === 0xb0) {
     if (d[1] === 64) { state.pedalDown = d[2] >= 64; updateSustain(); }
@@ -682,6 +688,7 @@ $('trVal').addEventListener('dblclick', () => setTranspose(0));
 $('susBtn').addEventListener('click', () => { state.latch = !(state.latch || state.spaceDown || state.pedalDown); state.spaceDown = false; updateSustain(); });
 function setOctaves(n) {
   state.want = Math.max(1, Math.min(7, n));
+  if (state.song) state.beforeSong = null; // the student chose a size during a song: keep it afterwards
   save({ octaves: state.want });
   buildKeyboard();
 }
@@ -709,10 +716,13 @@ function startSong(def) {
   stopDemo();
   const notes = parseNotes(def.notes);
   state.song = { def, notes, i: 0, demo: false };
-  // show the whole tune's range if the screen has room for it
-  const low = Math.floor(Math.min(...notes.map((x) => x.n)) / 12) * 12;
-  const need = Math.max(1, Math.ceil((Math.max(...notes.map((x) => x.n)) - low) / 12));
-  if (need > state.want) state.want = need;
+  // Songs use one steady three-octave view (C3–C6 when the tune fits there), so the keyboard does not
+  // jump around while the student is following the glowing keys.
+  if (!state.beforeSong) state.beforeSong = { want: state.want, start: state.start };
+  const lo = Math.min(...notes.map((x) => x.n));
+  const hi = Math.max(...notes.map((x) => x.n));
+  const low = lo >= 48 && hi <= 84 ? 48 : Math.floor(lo / 12) * 12;
+  state.want = Math.max(3, Math.ceil((hi - low) / 12));
   buildKeyboard();
   setStart(low);
   $('songCtl').hidden = false;
@@ -728,6 +738,13 @@ function stopSong() {
   state.song = null;
   $('songCtl').hidden = true;
   $('curSong').hidden = true;
+  if (state.beforeSong) { // back to the view the student had before the song
+    state.want = state.beforeSong.want;
+    const start = state.beforeSong.start;
+    state.beforeSong = null;
+    buildKeyboard();
+    setStart(start);
+  }
   for (const el of gridEl.querySelectorAll('.card[data-song]')) el.classList.remove('sel');
   showGuide(false);
   queuePlaying();
@@ -962,7 +979,7 @@ selectInstrument(state.inst, true);
 drawGrid();
 drawLabelButtons();
 buildKeyboard();
-new ResizeObserver(() => { if (fitOctaves() !== state.octaves) buildKeyboard(); }).observe(kb);
+new ResizeObserver(() => { if (fitOctaves() !== state.octaves) buildKeyboard(); else setKeyWidth(); }).observe(kb);
 initMidi();
 loadSounds();
 if (engine.ctx.state === 'running') unlockAudio();
