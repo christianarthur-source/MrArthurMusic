@@ -733,8 +733,11 @@ function stopSong() {
   queuePlaying();
 }
 
-/** Makes the next key of the song blink. */
-function showGuide(scroll) {
+/** Makes the next key of the song blink. When the tune repeats a note, the key goes dark for a moment
+ *  after each hit and then asks again, with a badge counting how many more times to play it (×3, ×2…). */
+let guideTimer = 0;
+function showGuide(scroll, afterHit) {
+  clearTimeout(guideTimer);
   for (const el of kb.querySelectorAll('.guide')) el.classList.remove('guide');
   const sg = state.song;
   $('listenBtn').textContent = sg?.demo ? '■ Stop' : '▶ Listen';
@@ -743,8 +746,15 @@ function showGuide(scroll) {
   if (scroll && (n < state.start || n > state.start + state.octaves * 12)) return follow(n); // rebuilding calls showGuide again
   const el = keyEls.get(n);
   if (!el) return;
-  void el.offsetWidth; // restart the blink when the same note comes twice in a row
-  el.classList.add('guide');
+  let run = 1;
+  while (sg.i + run < sg.notes.length && sg.notes[sg.i + run].n === n) run++;
+  el.dataset.rep = run > 1 ? '×' + run : '';
+  const again = afterHit && sg.i > 0 && sg.notes[sg.i - 1].n === n;
+  if (!again) { el.classList.add('guide'); return; }
+  // same note again: a clear "got it" gap, then the glow comes back
+  guideTimer = setTimeout(() => {
+    if (state.song === sg && !sg.demo && sg.notes[sg.i]?.n === n) keyEls.get(n)?.classList.add('guide');
+  }, 170);
 }
 
 function songHit(key) {
@@ -753,7 +763,7 @@ function songHit(key) {
   if ((((key - sg.notes[sg.i].n) % 12) + 12) % 12 !== 0) return; // right note name, any octave
   sg.i++;
   if (sg.i >= sg.notes.length) toast(`🎉 You played “${sg.def.title}”! Great job!`);
-  showGuide(true);
+  showGuide(true, true);
 }
 
 function drawSongStatus(el) {
