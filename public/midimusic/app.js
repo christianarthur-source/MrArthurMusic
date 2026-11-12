@@ -608,7 +608,7 @@ function drawTabs() {
 function drawGrid() {
   const q = searchEl.value.trim().toLowerCase();
   if (!q && state.tab === 'songs') {
-    gridEl.innerHTML = SONGS.map((sg) => `<button class="card${state.song?.def === sg ? ' sel' : ''}" data-song="${sg.id}" style="--c:${LEVELS[sg.level].c}" title="${LEVELS[sg.level].name}"><span class="em">${LEVELS[sg.level].em}</span><span class="nm">${sg.title}</span></button>`).join('');
+    gridEl.innerHTML = SONGS.map((sg) => `<button class="card song${state.song?.def === sg ? ' sel' : ''}" data-song="${sg.id}" style="--c:${LEVELS[sg.level].c}" title="${LEVELS[sg.level].name}"><span class="em">${LEVELS[sg.level].em}</span><span class="nm">${sg.title}</span></button>`).join('');
     return;
   }
   if (!q && state.tab === 'groove') return drawGrooves();

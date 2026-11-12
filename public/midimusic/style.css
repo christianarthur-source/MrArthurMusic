@@ -70,6 +70,7 @@ input[type=range] { accent-color: var(--accent); height: 28px; margin: 0; }
 .card.sel { background: var(--c, var(--accent)); color: #14151d; border-color: #fff; }
 .card.sel .fav { color: rgba(0, 0, 0, .35); }
 .card.sel .fav.on { color: #14151d; }
+.card.song .nm { font-size: 12.5px; line-height: 1.15; white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
 .empty { grid-column: 1 / -1; color: var(--muted); padding: 10px; }
 @media (hover: hover) { .card:hover { border-color: var(--c, var(--accent)); } .tab:hover { border-color: var(--c, var(--accent)); } }
 
