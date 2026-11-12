@@ -115,6 +115,8 @@ input[type=range] { accent-color: var(--accent); height: 28px; margin: 0; }
 
 .key .lb { z-index: 1; }
 .key.guide::after { content: ''; position: absolute; inset: 0; border-radius: inherit; background: #2fe06a; box-shadow: inset 0 0 0 3px #0c8a3a; pointer-events: none; animation: guide .8s ease-in-out infinite; }
+.key.guide::before { content: attr(data-rep); position: absolute; left: 0; right: 0; top: 66%; z-index: 2; text-align: center; font-weight: 900; font-size: clamp(13px, 1.9vw, 26px); color: #06371a; pointer-events: none; }
+.key.b.guide::before { top: 30%; font-size: clamp(10px, 1.2vw, 16px); }
 @keyframes guide { 0%, 100% { opacity: .9; } 50% { opacity: .15; } }
 @media (prefers-reduced-motion: reduce) { .key.guide::after { animation: none; opacity: .75; } }
 .tempo { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; padding: 0 4px; min-width: 0; }
