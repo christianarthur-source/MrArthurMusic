@@ -21,6 +21,7 @@
     </div>
     <button class="pill rec" id="recBtn" type="button" title="Record what you play"><span class="recdot"></span><span id="recText">Record</span></button>
     <button class="pill midi" id="midiBtn" type="button"><span class="dot" id="midiDot"></span><span id="midiText">MIDI keyboard</span></button>
+    <button class="pill help" id="helpBtn" type="button" aria-expanded="false" title="Help: fix a stuck note, connect a keyboard, or take the tour"><span class="help-q">?</span><span id="helpText">Help</span></button>
     <label class="vol" title="Volume"><span>🔊</span><input type="range" id="vol" min="0" max="100" value="80" aria-label="Volume"></label>
     <button class="icon" id="fsBtn" type="button" title="Full screen" aria-label="Full screen">⛶</button>
   </header>
@@ -71,6 +72,30 @@
   <div class="toolrow"><span class="tool-name">↔️ Keyboard size</span><span class="toolset"><button class="step" id="zoomOut" type="button" aria-label="Fewer, bigger keys" title="Fewer, bigger keys">−</button><span class="ctl-val narrow" id="sizeVal">2</span><button class="step" id="zoomIn" type="button" aria-label="More keys" title="More keys">+</button></span></div>
   <div class="toolrow"><span class="tool-name">🎚️ Transpose</span><span class="toolset"><button class="step" id="trDown" type="button" aria-label="Transpose down">−</button><span class="ctl-val narrow" id="trVal">0</span><button class="step" id="trUp" type="button" aria-label="Transpose up">+</button></span></div>
   <label class="toolrow"><span class="tool-name">🏛️ Reverb</span><input type="range" id="reverb" min="0" max="127" value="45" aria-label="Reverb"></label>
+</div>
+
+<div class="helppanel" id="helpPanel" hidden role="dialog" aria-label="Help">
+  <div class="help-head"><span class="help-title">🛟 Need help?</span><button class="icon small" id="helpClose" type="button" aria-label="Close help">✕</button></div>
+  <section class="help-box" id="helpMidi" aria-live="polite"></section>
+  <section class="help-box">
+    <div class="help-h">🔇 A note is stuck or the sound is weird</div>
+    <button class="toggle helpbtn" id="helpReset" type="button">🔄 Reset the sound</button>
+    <div class="help-sub" id="helpResetMsg">Stops every note and puts the pedal, bend and mod back to normal.</div>
+  </section>
+  <section class="help-box">
+    <div class="help-h">👋 First time here?</div>
+    <button class="toggle helpbtn" id="helpTour" type="button">✨ Show me around</button>
+  </section>
+</div>
+
+<div class="tour" id="tour" hidden>
+  <div class="tour-spot" id="tourSpot"></div>
+  <div class="tour-bubble" id="tourBubble" role="dialog" aria-live="polite">
+    <div class="tour-step" id="tourStep"></div>
+    <div class="tour-title" id="tourTitle"></div>
+    <div class="tour-text" id="tourText"></div>
+    <div class="tour-nav"><button class="toggle small" id="tourSkip" type="button">Skip</button><span class="tour-gap"></span><button class="toggle small" id="tourBack" type="button">← Back</button><button class="toggle small tour-next" id="tourNext" type="button">Next →</button></div>
+  </div>
 </div>
 
 <div class="overlay" id="start">
