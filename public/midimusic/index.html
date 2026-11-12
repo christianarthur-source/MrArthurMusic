@@ -16,6 +16,7 @@
     <div class="current" id="current" aria-live="polite">
       <span class="current-icon" id="curIcon">🎹</span>
       <span class="current-name" id="curName">Grand Piano</span>
+      <span class="current-song" id="curSong" hidden></span>
       <span class="loadpill" id="loadPill" hidden><span class="loadbar"><i id="loadFill"></i></span><span id="loadText">Loading sounds…</span></span>
     </div>
     <button class="pill midi" id="midiBtn" type="button"><span class="dot" id="midiDot"></span><span id="midiText">MIDI keyboard</span></button>
@@ -35,7 +36,7 @@
     <div class="ctl">
       <span class="ctl-label">Octave</span>
       <button class="step" id="octDown" type="button" aria-label="Octave down">−</button>
-      <span class="ctl-val" id="octVal">C3–C7</span>
+      <span class="ctl-val" id="octVal">C4–C6</span>
       <button class="step" id="octUp" type="button" aria-label="Octave up">+</button>
     </div>
     <div class="ctl">
@@ -46,11 +47,18 @@
     </div>
     <button class="toggle" id="susBtn" type="button" aria-pressed="false" title="Hold notes (Space bar or a sustain pedal also works)">🦶 Sustain</button>
     <div class="playing" id="playing" aria-live="off"><span class="playing-hint">Play something! 🎶</span></div>
+    <div class="songctl" id="songCtl" hidden>
+      <button class="toggle small" id="listenBtn" type="button" title="Hear the song first">▶ Listen</button>
+      <button class="toggle small" id="againBtn" type="button" title="Start the song again">↺</button>
+      <button class="toggle small" id="songStopBtn" type="button" title="Close the song">✕</button>
+    </div>
+    <button class="toggle small groovestop" id="grooveStopBtn" type="button" hidden></button>
     <label class="ctl slider" title="Reverb (room echo)"><span class="ctl-label">Reverb</span><input type="range" id="reverb" min="0" max="127" value="45" aria-label="Reverb"></label>
-    <button class="toggle small" id="labelBtn" type="button" title="Change the labels on the keys">Labels</button>
+    <button class="toggle small" id="namesBtn" type="button" aria-pressed="true" title="Show the note names on the keys">🔤 Notes</button>
+    <button class="toggle small" id="keysBtn" type="button" aria-pressed="true" title="Show which computer key plays each note">⌨️ Keys</button>
     <div class="ctl">
-      <span class="ctl-label">Keys</span>
-      <button class="step" id="zoomOut" type="button" aria-label="Bigger keys" title="Bigger keys">−</button>
+      <span class="ctl-label">Size</span>
+      <button class="step" id="zoomOut" type="button" aria-label="Fewer, bigger keys" title="Fewer, bigger keys">−</button>
       <button class="step" id="zoomIn" type="button" aria-label="More keys" title="More keys">+</button>
     </div>
   </section>

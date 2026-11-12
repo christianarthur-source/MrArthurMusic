@@ -2,6 +2,7 @@
 // Sound: the MuseScore_General SoundFont (MIT) played by spessasynth (Apache-2.0) inside an AudioWorklet,
 // so notes go straight from the MIDI/pointer/key event to the audio thread with no scheduling delay.
 import { WorkletSynthesizer } from './vendor/spessasynth.js';
+import { SONGS, LEVELS, parseNotes } from './songs.js';
 
 // The SoundFont is shared with the rest of the site (same origin, cached by the browser for 30 days).
 const SF_PARTS = ['/audio/soundfont/MuseScore_General.sf3.partaa', '/audio/soundfont/MuseScore_General.sf3.partab'];
@@ -74,9 +75,15 @@ class Engine {
       this.worker.onmessage = (e) => (e.data.type === 'loaded' ? resolve(e.data.kits) : reject(new Error(e.data.message)));
       this.worker.postMessage({ type: 'load', buffer: bank }, [bank]);
     });
-    this.worker.onmessage = (e) => this.onBuilt(e.data);
     this.worker.onerror = null;
     const synth = new WorkletSynthesizer(this.ctx);
+    // the standard drum kit is always loaded next to the chosen instrument: "Play to a groove" uses it
+    const kit = await new Promise((resolve, reject) => {
+      this.worker.onmessage = (e) => (e.data.type === 'built' ? resolve(e.data.buffer) : reject(new Error(e.data.message)));
+      this.worker.postMessage({ type: 'build', id: 0, prog: 0, drum: true });
+    });
+    await synth.soundBankManager.addSoundBank(kit, 'kit');
+    this.worker.onmessage = (e) => this.onBuilt(e.data);
     const makeup = this.ctx.createGain();
     makeup.gain.value = 2.4; // the SoundFont is mixed quietly
     synth.connect(makeup);
@@ -121,6 +128,7 @@ class Engine {
         this.ch = ch;
         this.prog = job.prog;
         synth.programChange(ch, job.prog);
+        if (ch !== 9) synth.programChange(9, 0); // back to the standard kit for the groove
         synth.controllerChange(ch, 91, this.reverb);
         synth.controllerChange(ch, 93, 0);
         synth.controllerChange(ch, 1, 0);
@@ -151,6 +159,13 @@ class Engine {
     this.sustain = on;
     if (this.synth) this.synth.controllerChange(this.ch, 64, on ? 127 : 0);
     else if (!on) for (const n of [...this.voices.keys()]) if (!this.held.has(n)) this.starterOff(n, true);
+  }
+
+  /** Plays a drum of the kit at an exact audio-clock time (used by the groove). */
+  drum(note, vel, time) {
+    if (!this.synth) return;
+    this.synth.noteOn(9, note, vel, { time });
+    this.synth.noteOff(9, note, { time: time + 0.12 });
   }
 
   cc(controller, value) { this.synth?.controllerChange(this.ch, controller, value); }
@@ -241,11 +256,13 @@ const state = {
   inst: byId(saved.inst) ?? byId('m0'),
   tab: saved.tab ?? 'piano',
   favs: new Set(Array.isArray(saved.favs) ? saved.favs : []),
-  start: 48, // lowest visible key (always a C)
-  octaves: 4,
-  zoom: 0, // extra octaves the student asked to see (+) or hide (−)
+  start: 60, // lowest visible key (always a C); middle C by default
+  octaves: 2,
+  want: Number(saved.octaves) || 2, // how many octaves the student wants to see
   transpose: 0,
-  labels: saved.labels ?? (matchMedia('(pointer: coarse)').matches ? 'notes' : 'keys'), // 'keys' | 'notes' | 'off'
+  showNotes: saved.showNotes ?? true, // note names on the keys
+  showKeys: saved.showKeys ?? !matchMedia('(pointer: coarse)').matches, // which computer key plays each note
+  song: null, // { def, notes, i, demo } while a song guide is running
   latch: false, spaceDown: false, pedalDown: false,
 };
 
@@ -266,6 +283,7 @@ function press(src, key, vel) {
   const c = (keyCount.get(key) || 0) + 1;
   keyCount.set(key, c);
   if (c === 1) keyEls.get(key)?.classList.add('on');
+  if (state.song && src !== 'demo') songHit(key);
   queuePlaying();
 }
 
@@ -306,6 +324,7 @@ function chordName(notes) {
 function drawPlaying() {
   playingQueued = false;
   const el = $('playing');
+  if (state.song) return drawSongStatus(el);
   const notes = [...noteCount.keys()].sort((a, b) => a - b);
   if (!notes.length) {
     el.innerHTML = '<span class="playing-hint">Play something! 🎶</span>';
@@ -335,8 +354,8 @@ function setStart(start) {
   buildKeyboard();
 }
 
-/** The C that the computer keyboard's "A" key plays: the octave in the middle of what is on screen. */
-const typingBase = () => state.start + 12 * Math.floor(state.octaves / 2);
+/** The C that the computer keyboard's "A" key plays: the first key on screen (or near the middle of a wide keyboard). */
+const typingBase = () => (state.octaves <= 2 ? state.start : state.start + 12 * Math.floor((state.octaves - 1) / 2));
 
 // ---------------------------------------------------------------- on-screen keyboard
 const kb = $('kb');
@@ -345,8 +364,15 @@ const KEY_CAPS = ['A', 'W', 'S', 'E', 'D', 'F', 'T', 'G', 'Y', 'H', 'U', 'J', 'K
 
 function fitOctaves() {
   const w = kb.clientWidth || window.innerWidth;
-  const fit = Math.floor(w / (7 * 38)); // about 38 px per white key at the smallest
-  return Math.max(1, Math.min(7, fit + state.zoom));
+  const most = Math.max(1, Math.min(7, Math.floor(w / (7 * 22)))); // never let white keys get thinner than about 22 px
+  return Math.max(1, Math.min(most, state.want));
+}
+
+/** Slides the view by whole octaves so a note that is off-screen (from a MIDI keyboard or a song) can be seen. */
+function follow(n) {
+  const span = state.octaves * 12;
+  if (n < state.start) setStart(Math.floor(n / 12) * 12);
+  else if (n > state.start + span) setStart(Math.ceil((n - span) / 12) * 12);
 }
 
 function buildKeyboard() {
@@ -378,15 +404,16 @@ function buildKeyboard() {
     } else wi++;
     let label = '';
     const k = n - base;
-    if (state.labels === 'keys' && k >= 0 && k < KEY_CAPS.length) label += `<span class="kc">${KEY_CAPS[k]}</span>`;
-    if (state.labels === 'notes' && !black) label += `<span class="cn">${n % 12 === 0 ? noteName(n) : NOTE_NAMES[n % 12]}</span>`;
-    else if (state.labels !== 'off' && n % 12 === 0) label += `<span class="cn">${noteName(n)}</span>`;
+    if (state.showKeys && k >= 0 && k < KEY_CAPS.length) label += `<span class="kc">${KEY_CAPS[k]}</span>`;
+    if (state.showNotes) label += `<span class="cn">${n % 12 === 0 ? noteName(n) : NOTE_NAMES[n % 12]}</span>`;
+    else if (n % 12 === 0) label += `<span class="cn">${noteName(n)}</span>`;
     if (label) el.innerHTML = `<span class="lb">${label}</span>`;
     keyEls.set(n, el);
     frag.appendChild(el);
   }
   kb.appendChild(frag);
   $('octVal').textContent = `${noteName(first)}–${noteName(last)}`;
+  showGuide(false);
 }
 
 // Pointer events: every finger is tracked separately (multitouch), and sliding across keys plays them.
@@ -480,13 +507,13 @@ function onMidiMessage(e) {
   if (!d || d.length < 2) return;
   const cmd = d[0] & 0xf0;
   const src = 'm:' + (d[0] & 0x0f) + ':' + d[1];
-  if (cmd === 0x90 && d[2] > 0) press(src, d[1], d[2]);
+  if (cmd === 0x90 && d[2] > 0) { press(src, d[1], d[2]); follow(d[1]); }
   else if (cmd === 0x80 || cmd === 0x90) release(src);
   else if (cmd === 0xb0) {
     if (d[1] === 64) { state.pedalDown = d[2] >= 64; updateSustain(); }
     else if (d[1] === 1) { engine.cc(1, d[2]); showMod(d[2] / 127); }
     else if (d[1] === 123 || d[1] === 120) { releaseAll('m:'); }
-    else if (d[1] !== 7 && d[1] !== 0 && d[1] !== 32) engine.cc(d[1], d[2]); // volume and bank stay ours
+    // every other knob and slider is ignored on purpose: a bumped knob must never silence a student's keyboard
   } else if (cmd === 0xe0) {
     const v = (d[2] << 7) | d[1];
     engine.bend(v);
@@ -500,13 +527,29 @@ function onMidiMessage(e) {
   }
 }
 
+/** A tidy name for the top-right label. The school's keyboards get their proper names. */
+function midiName(input) {
+  const raw = String(input.name || '').trim();
+  const all = `${input.manufacturer || ''} ${raw}`;
+  if (/irig\s*keys\s*mini/i.test(all)) return 'iRig Keys Mini';
+  if (/irig\s*keys/i.test(all)) return raw.replace(/irig\s*keys/i, 'iRig Keys').replace(/\s+(midi\s*)?(in|out)?\s*\d*$/i, '') || 'iRig Keys';
+  if (/dmk[-\s]?25/i.test(all)) return 'Donner DMK-25';
+  if (/\bn[-\s]?25\b/i.test(all)) return 'Donner N-25';
+  let name = raw.replace(/\s*(midi\s*(in|out)?\s*\d*|port[-\s]?\d+)$/i, '').trim() || raw || 'MIDI keyboard';
+  if (/donner/i.test(all) && !/donner/i.test(name)) name = 'Donner ' + name;
+  return name.replace(/^DONNER\b/, 'Donner');
+}
+
 function refreshMidi() {
   if (!midiAccess) return;
   const names = [];
   for (const input of midiAccess.inputs.values()) {
     if (input.state === 'disconnected') continue;
     input.onmidimessage = onMidiMessage; // assigning again is harmless, and it opens a newly plugged-in device
-    names.push(input.name || 'MIDI keyboard');
+    // Chromebooks list a built-in "Midi Through" port that is not a keyboard
+    if (/midi through|^through/i.test(input.name || '')) continue;
+    const name = midiName(input);
+    if (!names.includes(name)) names.push(name); // some keyboards show up as two ports
   }
   const was = midiBtn.dataset.names || '';
   const now = names.join('|');
@@ -557,13 +600,18 @@ const gridEl = $('grid');
 const searchEl = $('search');
 
 function drawTabs() {
-  const tabs = [{ id: 'fav', name: '⭐ Favorites', c: '#ffb020' }, ...CATEGORIES.map((c) => ({ id: c.id, name: `${c.em} ${c.name}`, c: c.c }))];
+  const tabs = [{ id: 'songs', name: '🎵 Songs', c: '#39e36b' }, { id: 'groove', name: '🥁 Grooves', c: '#ff7a59' }, { id: 'fav', name: '⭐ Favorites', c: '#ffb020' }, ...CATEGORIES.map((c) => ({ id: c.id, name: `${c.em} ${c.name}`, c: c.c }))];
   tabsEl.innerHTML = tabs.map((t) => `<button class="tab" role="tab" data-tab="${t.id}" style="--c:${t.c}" aria-selected="${t.id === state.tab && !searchEl.value}">${t.name}</button>`).join('');
   tabsEl.querySelector('[aria-selected=true]')?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
 }
 
 function drawGrid() {
   const q = searchEl.value.trim().toLowerCase();
+  if (!q && state.tab === 'songs') {
+    gridEl.innerHTML = SONGS.map((sg) => `<button class="card${state.song?.def === sg ? ' sel' : ''}" data-song="${sg.id}" style="--c:${LEVELS[sg.level].c}" title="${LEVELS[sg.level].name}"><span class="em">${LEVELS[sg.level].em}</span><span class="nm">${sg.title}</span></button>`).join('');
+    return;
+  }
+  if (!q && state.tab === 'groove') return drawGrooves();
   let list;
   if (q) list = INSTRUMENTS.filter((i) => i.name.toLowerCase().includes(q) || i.cat.name.toLowerCase().includes(q));
   else if (state.tab === 'fav') list = INSTRUMENTS.filter((i) => state.favs.has(i.id));
@@ -583,7 +631,7 @@ function selectInstrument(inst, quiet) {
   $('current').classList.add('busy');
   document.documentElement.style.setProperty('--kc', inst.cat.c);
   save({ inst: inst.id });
-  for (const el of gridEl.querySelectorAll('.card')) el.classList.toggle('sel', el.dataset.id === inst.id);
+  for (const el of gridEl.querySelectorAll('.card[data-id]')) el.classList.toggle('sel', el.dataset.id === inst.id);
   engine.setInstrument(inst.prog, inst.drum).then((ready) => {
     if (!ready || state.inst !== inst) return;
     $('current').classList.remove('busy');
@@ -616,6 +664,10 @@ gridEl.addEventListener('click', (e) => {
     return;
   }
   const card = e.target.closest('.card');
+  const tempoStep = e.target.closest('[data-tempo]');
+  if (tempoStep) return setTempo(groove.bpm + Number(tempoStep.dataset.tempo));
+  if (card?.dataset.groove) return toggleGroove(GROOVES.find((g) => g.id === card.dataset.groove));
+  if (card?.dataset.song) return startSong(SONGS.find((sg) => sg.id === card.dataset.song));
   const inst = card && byId(card.dataset.id);
   if (inst) selectInstrument(inst);
 });
@@ -628,16 +680,176 @@ $('trDown').addEventListener('click', () => setTranspose(state.transpose - 1));
 $('trUp').addEventListener('click', () => setTranspose(state.transpose + 1));
 $('trVal').addEventListener('dblclick', () => setTranspose(0));
 $('susBtn').addEventListener('click', () => { state.latch = !(state.latch || state.spaceDown || state.pedalDown); state.spaceDown = false; updateSustain(); });
-$('zoomOut').addEventListener('click', () => { if (state.octaves > 1) { state.zoom--; buildKeyboard(); } });
-$('zoomIn').addEventListener('click', () => { if (state.octaves < 7) { state.zoom++; buildKeyboard(); } });
-const LABEL_MODES = { keys: 'Labels: typing keys', notes: 'Labels: note names', off: 'Labels: off' };
-function setLabels(mode) {
-  state.labels = mode in LABEL_MODES ? mode : 'keys';
-  $('labelBtn').textContent = LABEL_MODES[state.labels];
-  save({ labels: state.labels });
+function setOctaves(n) {
+  state.want = Math.max(1, Math.min(7, n));
+  save({ octaves: state.want });
   buildKeyboard();
 }
-$('labelBtn').addEventListener('click', () => { const m = Object.keys(LABEL_MODES); setLabels(m[(m.indexOf(state.labels) + 1) % m.length]); });
+$('zoomOut').addEventListener('click', () => setOctaves(state.octaves - 1));
+$('zoomIn').addEventListener('click', () => setOctaves(state.octaves + 1));
+function drawLabelButtons() {
+  $('namesBtn').setAttribute('aria-pressed', String(state.showNotes));
+  $('keysBtn').setAttribute('aria-pressed', String(state.showKeys));
+}
+$('namesBtn').addEventListener('click', () => { state.showNotes = !state.showNotes; save({ showNotes: state.showNotes }); drawLabelButtons(); buildKeyboard(); });
+$('keysBtn').addEventListener('click', () => { state.showKeys = !state.showKeys; save({ showKeys: state.showKeys }); drawLabelButtons(); buildKeyboard(); });
+
+// ---------------------------------------------------------------- song guide
+// The next key of the tune blinks until the student plays it (in any octave, so a 25-key controller
+// always works). "Listen" plays the tune for them first.
+let demoTimers = [];
+function stopDemo() {
+  for (const t of demoTimers) clearTimeout(t);
+  demoTimers = [];
+  release('demo');
+  if (state.song) state.song.demo = false;
+}
+
+function startSong(def) {
+  stopDemo();
+  const notes = parseNotes(def.notes);
+  state.song = { def, notes, i: 0, demo: false };
+  // show the whole tune's range if the screen has room for it
+  const low = Math.floor(Math.min(...notes.map((x) => x.n)) / 12) * 12;
+  const need = Math.max(1, Math.ceil((Math.max(...notes.map((x) => x.n)) - low) / 12));
+  if (need > state.want) state.want = need;
+  buildKeyboard();
+  setStart(low);
+  $('songCtl').hidden = false;
+  $('curSong').textContent = '🎵 ' + def.title;
+  $('curSong').hidden = false;
+  for (const el of gridEl.querySelectorAll('.card[data-song]')) el.classList.toggle('sel', el.dataset.song === def.id);
+  showGuide(true);
+  queuePlaying();
+}
+
+function stopSong() {
+  stopDemo();
+  state.song = null;
+  $('songCtl').hidden = true;
+  $('curSong').hidden = true;
+  for (const el of gridEl.querySelectorAll('.card[data-song]')) el.classList.remove('sel');
+  showGuide(false);
+  queuePlaying();
+}
+
+/** Makes the next key of the song blink. */
+function showGuide(scroll) {
+  for (const el of kb.querySelectorAll('.guide')) el.classList.remove('guide');
+  const sg = state.song;
+  $('listenBtn').textContent = sg?.demo ? '■ Stop' : '▶ Listen';
+  if (!sg || sg.demo || sg.i >= sg.notes.length) return;
+  const n = sg.notes[sg.i].n;
+  if (scroll && (n < state.start || n > state.start + state.octaves * 12)) return follow(n); // rebuilding calls showGuide again
+  const el = keyEls.get(n);
+  if (!el) return;
+  void el.offsetWidth; // restart the blink when the same note comes twice in a row
+  el.classList.add('guide');
+}
+
+function songHit(key) {
+  const sg = state.song;
+  if (sg.demo || sg.i >= sg.notes.length) return;
+  if ((((key - sg.notes[sg.i].n) % 12) + 12) % 12 !== 0) return; // right note name, any octave
+  sg.i++;
+  if (sg.i >= sg.notes.length) toast(`🎉 You played “${sg.def.title}”! Great job!`);
+  showGuide(true);
+}
+
+function drawSongStatus(el) {
+  const sg = state.song;
+  const done = sg.i >= sg.notes.length;
+  const next = done ? '🎉 Finished!' : sg.demo ? '👂 Listen…' : `Next: <span class="chip">${sg.notes[sg.i].label}</span>`;
+  el.innerHTML = `<span class="song-prog">${Math.min(sg.i, sg.notes.length)}/${sg.notes.length}</span><span class="song-next">${next}</span>`;
+}
+
+function listenToSong() {
+  const sg = state.song;
+  if (!sg) return;
+  if (sg.demo) { stopDemo(); showGuide(true); queuePlaying(); return; }
+  sg.demo = true;
+  showGuide(false);
+  queuePlaying();
+  const beat = 60000 / sg.def.bpm;
+  let t = 250;
+  for (const note of sg.notes) {
+    demoTimers.push(setTimeout(() => { follow(note.n); press('demo', note.n, 92); }, t));
+    demoTimers.push(setTimeout(() => release('demo'), t + note.d * beat * 0.88));
+    t += note.d * beat;
+  }
+  demoTimers.push(setTimeout(() => { stopDemo(); showGuide(true); queuePlaying(); }, t + 200));
+}
+$('listenBtn').addEventListener('click', () => { unlockAudio(); listenToSong(); });
+$('againBtn').addEventListener('click', () => { if (state.song) startSong(state.song.def); });
+$('songStopBtn').addEventListener('click', stopSong);
+
+// ---------------------------------------------------------------- play to a groove
+// Drum patterns on the standard kit. Each row is one drum; x = hit, X = accent, o = soft, - = very soft.
+// "steps" per bar is 16 (sixteenth notes), or 12 for swing and waltz.
+const GROOVES = [
+  { id: 'click', name: 'Metronome', em: '⏱️', bpm: 100, beats: 4, parts: { 76: 'X...............', 77: '....x...x...x...' } },
+  { id: 'rock', name: 'Rock', em: '🤘', bpm: 110, beats: 4, parts: { 36: 'X.......x.x.....', 38: '....X.......X...', 42: 'x.o.x.o.x.o.x.o.' } },
+  { id: 'pop', name: 'Pop', em: '🎤', bpm: 104, beats: 4, parts: { 36: 'X.....x.x.......', 38: '....X.......X...', 42: 'x.o.x.o.x.o.x...', 46: '..............o.' } },
+  { id: 'hiphop', name: 'Hip-Hop', em: '🎧', bpm: 88, beats: 4, parts: { 36: 'X......x..x.....', 38: '....X.......X...', 42: 'x.o.x.o.x.o.x.oo' } },
+  { id: 'dance', name: 'Dance', em: '🪩', bpm: 122, beats: 4, parts: { 36: 'X...X...X...X...', 39: '....x.......x...', 46: '..o...o...o...o.' } },
+  { id: 'funk', name: 'Funk', em: '🕺', bpm: 98, beats: 4, parts: { 36: 'X..x......x..x..', 38: '....X..-.-..X..-', 42: 'xoxoxoxoxoxoxoxo' } },
+  { id: 'latin', name: 'Latin', em: '🪇', bpm: 116, beats: 4, parts: { 36: 'x..x....x..x....', 37: 'x..x..x...x..x..', 42: 'o.o.o.o.o.o.o.o.', 70: '..-...-...-...-.' } },
+  { id: 'reggae', name: 'Reggae', em: '🌴', bpm: 76, beats: 4, parts: { 36: '........X.......', 37: '........x.......', 42: 'o.x.o.x.o.x.o.x.' } },
+  { id: 'swing', name: 'Swing', em: '🎷', bpm: 126, beats: 4, steps: 12, parts: { 51: 'x..x.xx..x.x', 44: '...x.....x..', 36: 'o.....o.....' } },
+  { id: 'waltz', name: 'Waltz', em: '💃', bpm: 116, beats: 3, steps: 12, parts: { 36: 'X...........', 42: '....x...x...', 37: '....o...o...' } },
+];
+const HIT = { X: 102, x: 86, o: 58, '-': 34 };
+const groove = { style: null, bpm: Number(saved.bpm) || 100, step: 0, next: 0, timer: 0 };
+
+function grooveTick() {
+  const st = groove.style;
+  if (!st || !engine.synth) return;
+  const steps = st.steps || 16;
+  const stepDur = (60 / groove.bpm) * st.beats / steps;
+  const now = engine.ctx.currentTime;
+  if (groove.next < now) groove.next = now + 0.03; // after the tab was hidden: pick up from here
+  while (groove.next < now + 0.15) {
+    for (const note in st.parts) {
+      const vel = HIT[st.parts[note][groove.step]];
+      if (vel) engine.drum(Number(note), vel, groove.next);
+    }
+    groove.step = (groove.step + 1) % steps;
+    groove.next += stepDur;
+  }
+}
+
+function toggleGroove(st) {
+  unlockAudio();
+  clearInterval(groove.timer);
+  const stopping = !st || st === groove.style;
+  groove.style = stopping ? null : st;
+  if (!stopping) {
+    if (!engine.synth) { groove.style = null; toast('The drums are still loading — try again in a moment.'); return; }
+    setTempo(st.bpm);
+    groove.step = 0;
+    groove.next = engine.ctx.currentTime + 0.06;
+    groove.timer = setInterval(grooveTick, 25);
+    grooveTick();
+  }
+  $('grooveStopBtn').hidden = stopping;
+  $('grooveStopBtn').textContent = stopping ? '' : `■ Stop ${st.name}`;
+  if (state.tab === 'groove') drawGrid();
+}
+
+function setTempo(bpm) {
+  groove.bpm = Math.max(50, Math.min(200, Math.round(bpm)));
+  save({ bpm: groove.bpm });
+  const val = $('tempoVal');
+  if (val) { val.textContent = groove.bpm; $('tempo').value = groove.bpm; }
+}
+
+function drawGrooves() {
+  gridEl.innerHTML = `<div class="tempo"><span class="ctl-label">Tempo</span><button class="step" data-tempo="-4" type="button" aria-label="Slower">−</button><input type="range" id="tempo" min="50" max="200" value="${groove.bpm}" aria-label="Tempo"><button class="step" data-tempo="4" type="button" aria-label="Faster">+</button><span class="tempo-val"><b id="tempoVal">${groove.bpm}</b> BPM</span><span class="tempo-hint">Pick a beat, then play along!</span></div>`
+    + GROOVES.map((g) => `<button class="card${groove.style === g ? ' sel' : ''}" data-groove="${g.id}" style="--c:#ff7a59"><span class="em">${g.em}</span><span class="nm">${g.name}</span><span class="fav">${groove.style === g ? '■' : '▶'}</span></button>`).join('');
+}
+gridEl.addEventListener('input', (e) => { if (e.target.id === 'tempo') setTempo(Number(e.target.value)); });
+gridEl.addEventListener('change', (e) => { if (e.target.id === 'tempo') e.target.blur(); });
+$('grooveStopBtn').addEventListener('click', () => toggleGroove(null));
 
 const volEl = $('vol');
 const reverbEl = $('reverb');
@@ -738,8 +950,8 @@ setTranspose(0);
 drawTabs();
 selectInstrument(state.inst, true);
 drawGrid();
-setLabels(state.labels);
-setStart(60 - 12 * Math.floor(state.octaves / 2));
+drawLabelButtons();
+buildKeyboard();
 new ResizeObserver(() => { if (fitOctaves() !== state.octaves) buildKeyboard(); }).observe(kb);
 initMidi();
 loadSounds();

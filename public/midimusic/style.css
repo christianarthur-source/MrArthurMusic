@@ -34,6 +34,7 @@ button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid 
 .brand-keys { font-size: 22px; }
 .current { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 8px; justify-content: center; }
 .current-icon { font-size: 24px; }
+.current-song { font-weight: 800; color: #2fe06a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; padding-left: 10px; border-left: 2px solid var(--line); }
 .current.busy .current-name { opacity: .55; }
 .current-name { font-size: clamp(17px, 2.4vw, 26px); font-weight: 900; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .loadpill { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; white-space: nowrap; }
@@ -81,11 +82,11 @@ input[type=range] { accent-color: var(--accent); height: 28px; margin: 0; }
 .ctl-val.narrow { min-width: 30px; }
 .step { width: 36px; height: 36px; border-radius: 9px; background: var(--panel2); font-size: 22px; font-weight: 900; line-height: 1; }
 .step:active { background: var(--accent); color: var(--accent-ink); }
-.ctl.slider input { width: clamp(60px, 9vw, 120px); }
+.ctl.slider input { width: clamp(56px, 6vw, 110px); }
 .toggle { flex: 0 0 auto; height: 46px; padding: 0 14px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); font-weight: 800; white-space: nowrap; }
 .toggle.small { font-size: 13px; padding: 0 10px; }
 .toggle[aria-pressed=true] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
-.playing { flex: 1 1 150px; min-width: 150px; height: 46px; display: flex; align-items: center; justify-content: center; gap: 6px; background: #0b0c12; border: 1px solid var(--line); border-radius: 12px; padding: 0 10px; overflow: hidden; white-space: nowrap; }
+.playing { flex: 1 1 170px; min-width: 170px; height: 46px; display: flex; align-items: center; justify-content: center; gap: 6px; background: #0b0c12; border: 1px solid var(--line); border-radius: 12px; padding: 0 10px; overflow: hidden; white-space: nowrap; }
 .playing-hint { color: var(--muted); font-size: 13px; }
 .chip { background: var(--kc, var(--accent)); color: #14151d; font-weight: 900; border-radius: 8px; padding: 3px 7px; font-size: 14px; }
 .chord { font-weight: 900; font-size: 18px; color: var(--kc, var(--accent)); margin-right: 4px; }
@@ -111,6 +112,23 @@ input[type=range] { accent-color: var(--accent); height: 28px; margin: 0; }
 .key.b .lb .kc { background: #e9eaf2; color: #1c1e2b; }
 .key .lb .cn { display: block; color: #9093a8; font-size: .85em; }
 .key.w.mid .lb .cn { color: #c0392b; }
+
+.key .lb { z-index: 1; }
+.key.guide::after { content: ''; position: absolute; inset: 0; border-radius: inherit; background: #2fe06a; box-shadow: inset 0 0 0 3px #0c8a3a; pointer-events: none; animation: guide .8s ease-in-out infinite; }
+@keyframes guide { 0%, 100% { opacity: .9; } 50% { opacity: .15; } }
+@media (prefers-reduced-motion: reduce) { .key.guide::after { animation: none; opacity: .75; } }
+.tempo { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; padding: 0 4px; min-width: 0; }
+.tempo input { flex: 0 1 260px; min-width: 60px; }
+.tempo-val { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.tempo-val b { font-size: 20px; }
+.tempo-hint { color: var(--muted); margin-left: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.groovestop { border-color: #ff7a59; color: #ff7a59; }
+.songctl { display: flex; gap: 6px; flex: 0 0 auto; }
+.songctl .toggle { border-color: #39e36b; }
+.song-title { font-weight: 900; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.song-prog { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 13px; }
+.song-next { font-weight: 800; flex: 0 0 auto; }
+.song-next .chip { background: #2fe06a; }
 
 /* ---------- overlay / toast ---------- */
 .overlay { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; background: rgba(10, 11, 18, .86); backdrop-filter: blur(6px); }
