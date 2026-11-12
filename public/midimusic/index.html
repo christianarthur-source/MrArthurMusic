@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#12131c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>MIDI MUSIC — Mr. Arthur Music</title>
+<meta name="description" content="Plug in a MIDI keyboard and play over 130 instruments right in your browser.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <header class="top">
+    <a class="brand" href="/" title="Back to the Music Lab"><span class="brand-keys">🎹</span><span class="brand-text">MIDI <b>MUSIC</b></span></a>
+    <div class="current" id="current" aria-live="polite">
+      <span class="current-icon" id="curIcon">🎹</span>
+      <span class="current-name" id="curName">Grand Piano</span>
+      <span class="loadpill" id="loadPill" hidden><span class="loadbar"><i id="loadFill"></i></span><span id="loadText">Loading sounds…</span></span>
+    </div>
+    <button class="pill midi" id="midiBtn" type="button"><span class="dot" id="midiDot"></span><span id="midiText">MIDI keyboard</span></button>
+    <label class="vol" title="Volume"><span>🔊</span><input type="range" id="vol" min="0" max="100" value="80" aria-label="Volume"></label>
+    <button class="icon" id="fsBtn" type="button" title="Full screen" aria-label="Full screen">⛶</button>
+  </header>
+
+  <section class="browser" aria-label="Instruments">
+    <div class="tabsrow">
+      <div class="tabs" id="tabs" role="tablist"></div>
+      <input type="search" id="search" class="search" placeholder="🔎 Find a sound" aria-label="Find a sound" autocomplete="off">
+    </div>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <section class="controls" aria-label="Keyboard controls">
+    <div class="ctl">
+      <span class="ctl-label">Octave</span>
+      <button class="step" id="octDown" type="button" aria-label="Octave down">−</button>
+      <span class="ctl-val" id="octVal">C3–C7</span>
+      <button class="step" id="octUp" type="button" aria-label="Octave up">+</button>
+    </div>
+    <div class="ctl">
+      <span class="ctl-label">Transpose</span>
+      <button class="step" id="trDown" type="button" aria-label="Transpose down">−</button>
+      <span class="ctl-val narrow" id="trVal">0</span>
+      <button class="step" id="trUp" type="button" aria-label="Transpose up">+</button>
+    </div>
+    <button class="toggle" id="susBtn" type="button" aria-pressed="false" title="Hold notes (Space bar or a sustain pedal also works)">🦶 Sustain</button>
+    <div class="playing" id="playing" aria-live="off"><span class="playing-hint">Play something! 🎶</span></div>
+    <label class="ctl slider" title="Reverb (room echo)"><span class="ctl-label">Reverb</span><input type="range" id="reverb" min="0" max="127" value="45" aria-label="Reverb"></label>
+    <button class="toggle small" id="labelBtn" type="button" title="Change the labels on the keys">Labels</button>
+    <div class="ctl">
+      <span class="ctl-label">Keys</span>
+      <button class="step" id="zoomOut" type="button" aria-label="Bigger keys" title="Bigger keys">−</button>
+      <button class="step" id="zoomIn" type="button" aria-label="More keys" title="More keys">+</button>
+    </div>
+  </section>
+
+  <section class="stage">
+    <div class="wheels" id="wheels">
+      <div class="wheelbox"><div class="wheel" id="bendWheel" title="Pitch bend"><div class="thumb"></div></div><span>Bend</span></div>
+      <div class="wheelbox"><div class="wheel mod" id="modWheel" title="Modulation (vibrato)"><div class="thumb"></div></div><span>Mod</span></div>
+    </div>
+    <div class="kb" id="kb" aria-label="Piano keyboard"></div>
+  </section>
+</div>
+
+<div class="overlay" id="start">
+  <button class="startcard" id="startBtn" type="button">
+    <span class="start-emoji">🎹</span>
+    <span class="start-title">MIDI <b>MUSIC</b></span>
+    <span class="start-go">▶ Tap to start</span>
+    <span class="start-tips">Plug in a MIDI keyboard, tap the piano keys,<br>or play with your computer keyboard.</span>
+  </button>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>
