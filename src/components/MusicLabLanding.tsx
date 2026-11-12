@@ -842,6 +842,30 @@ export const MusicLabLanding: React.FC<MusicLabLandingProps> = ({
           </div>
         </section>
 
+        {/* MIDI MUSIC: play instruments with a MIDI keyboard (static app in public/midimusic) */}
+        <a
+          href="/midimusic/"
+          className="group flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-5 rounded-3xl bg-gradient-to-br from-slate-900 to-slate-950 border border-amber-500/30 hover:border-amber-400 hover:shadow-xl hover:shadow-amber-500/10 transition-all duration-200"
+        >
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 shrink-0 rounded-2xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-3xl group-hover:scale-110 transition-transform shadow-inner">
+              🎹
+            </div>
+            <div>
+              <h4 className="text-xl font-black text-white font-['Fredoka',sans-serif] group-hover:text-amber-300 transition-colors">
+                MIDI MUSIC
+              </h4>
+              <p className="text-xs text-amber-300 font-bold mt-0.5">
+                Plug in a MIDI keyboard and play 140+ instruments, learn songs &amp; jam with a beat 🥁
+              </p>
+            </div>
+          </div>
+          <span className="shrink-0 px-4 py-2.5 rounded-xl bg-slate-800 group-hover:bg-amber-400 group-hover:text-slate-950 text-amber-300 font-black text-xs transition-colors flex items-center gap-1.5 font-['Fredoka',sans-serif]">
+            <span>Open MIDI MUSIC</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </span>
+        </a>
+
         {/* More music experiments: Chrome Music Lab EXTRA (static site in public/chromeextra) */}
         <a
           href="/chromeextra/"
