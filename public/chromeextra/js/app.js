@@ -10,6 +10,7 @@ import { SongMakerApp } from './song-maker.js';
 import { KandinskyApp } from './kandinsky.js';
 import { SharedPianoApp } from './shared-piano.js';
 import { RhythmApp } from './rhythm.js';
+import { SketchStudioApp } from './sketch-studio.js';
 
 class ChromeMusicLabExtraApp {
   constructor() {
@@ -18,11 +19,43 @@ class ChromeMusicLabExtraApp {
     this.kandinsky = new KandinskyApp();
     this.sharedPiano = new SharedPianoApp();
     this.rhythm = new RhythmApp();
+    this.sketchStudio = new SketchStudioApp();
 
     this.initNavigation();
     this.initThemePaletteDrawer();
     this.initFooterPianoEasterEgg();
+    this.initAudioUnlock();
     this.handleInitialRoute();
+  }
+
+  initAudioUnlock() {
+    const unlock = () => {
+      try {
+        audioEngine.resumeAudioContext();
+        const banner = document.getElementById('sketch-audio-unlock-overlay');
+        if (banner) banner.style.display = 'none';
+      } catch (e) {}
+    };
+    ['pointerdown', 'mousedown', 'touchstart', 'click', 'keydown'].forEach(evt => {
+      window.addEventListener(evt, unlock, { capture: true, passive: true });
+    });
+
+    const unlockBtn = document.getElementById('sketch-audio-unlock-overlay');
+    if (unlockBtn) {
+      unlockBtn.addEventListener('click', unlock);
+    }
+
+    const updateBanner = () => {
+      const banner = document.getElementById('sketch-audio-unlock-overlay');
+      if (!banner) return;
+      const isSketch = this.activeView === 'sketch-studio';
+      if (isSketch && (!audioEngine.ctx || audioEngine.ctx.state !== 'running')) {
+        banner.style.display = 'inline-flex';
+      } else {
+        banner.style.display = 'none';
+      }
+    };
+    setInterval(updateBanner, 600);
   }
 
   initNavigation() {
@@ -42,7 +75,7 @@ class ChromeMusicLabExtraApp {
 
   handleInitialRoute() {
     const hash = window.location.hash.replace('#', '').trim();
-    const valid = ['hub', 'song-maker', 'kandinsky', 'shared-piano', 'rhythm'];
+    const valid = ['hub', 'song-maker', 'kandinsky', 'shared-piano', 'rhythm', 'sketch-studio'];
     if (valid.includes(hash)) {
       this.switchView(hash, false);
     }
@@ -54,6 +87,7 @@ class ChromeMusicLabExtraApp {
       if (this.songMaker && this.songMaker.isPlaying) this.songMaker.stop();
       if (this.kandinsky && this.kandinsky.isPlaying) this.kandinsky.stop();
       if (this.rhythm && this.rhythm.isPlaying) this.rhythm.stop();
+      if (this.sketchStudio && this.sketchStudio.isPlaying) this.sketchStudio.stop();
     }
 
     this.activeView = viewId;
@@ -75,6 +109,10 @@ class ChromeMusicLabExtraApp {
       if (viewId === 'kandinsky') this.kandinsky.resizeCanvas();
       if (viewId === 'shared-piano') this.sharedPiano.resizeCanvas();
       if (viewId === 'rhythm') this.rhythm.resizeCanvas();
+      if (viewId === 'sketch-studio') {
+        this.sketchStudio.setupCanvasSize();
+        this.sketchStudio.redraw();
+      }
     });
   }
 

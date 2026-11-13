@@ -39,6 +39,14 @@
         <span class="tab-dot" style="background: var(--note-9)"></span>
         <span>Rhythm</span>
       </button>
+      <button class="top-nav-tab" data-nav-target="sketch-studio">
+        <span class="tab-dot" style="background: #ff6ec7"></span>
+        <span>Sketch Studio</span>
+        <span class="extra-badge" style="font-size: 0.6rem; padding: 1px 5px; margin-left: 2px;">NEW</span>
+      </button>
+      <a href="sketch.html" class="top-nav-tab" style="text-decoration: none; color: #00e5ff; border: 1px solid rgba(0, 229, 255, 0.4); background: rgba(0, 229, 255, 0.08); font-weight: 700; display: inline-flex; align-items: center; gap: 4px;" title="Open Standalone Sketch Studio Page">
+        <span>🎨 Full Tool ↗</span>
+      </a>
     </nav>
 
     <div class="header-actions">
@@ -218,6 +226,48 @@
                 <span class="exp-tag">3/4 • 4/4 • 5/4 • 6/4</span>
                 <span class="exp-tag">4 Character Duos</span>
                 <span class="exp-tag">Tempo Control</span>
+              </div>
+            </div>
+          </article>
+
+          <!-- Card 5: Sketch Studio (Reverse-Engineered from Sketch Max) -->
+          <article class="exp-card" data-nav-target="sketch-studio">
+            <div class="exp-card-art" style="background: radial-gradient(circle at center, rgba(0, 229, 255, 0.15), transparent 70%);">
+              <svg viewBox="0 0 240 130" width="210" height="115">
+                <!-- Glowing canvas sketch lines -->
+                <path d="M 25,95 Q 65,25 115,70 T 215,35" fill="none" stroke="#00e5ff" stroke-width="6" stroke-linecap="round" />
+                <path d="M 35,55 Q 85,105 145,55 T 205,85" fill="none" stroke="#ff007f" stroke-width="4" stroke-linecap="round" />
+                <!-- Paint splatter dots -->
+                <circle cx="50" cy="30" r="5" fill="#ffea00" />
+                <circle cx="62" cy="22" r="3" fill="#ffea00" />
+                <circle cx="170" cy="100" r="6" fill="#d500f9" />
+                <circle cx="182" cy="108" r="3.5" fill="#d500f9" />
+                <!-- Playhead scan beam -->
+                <line x1="120" y1="10" x2="120" y2="120" stroke="#00ffff" stroke-width="2" stroke-dasharray="2 2" />
+                <circle cx="120" cy="71" r="7" fill="#ffffff" />
+                <circle cx="120" cy="71" r="14" fill="none" stroke="#00e5ff" stroke-width="2" />
+              </svg>
+            </div>
+            <div class="exp-card-body">
+              <div>
+                <div class="exp-card-title">
+                  <span>Sketch Studio</span>
+                  <span class="extra-badge" style="font-size: 0.65rem; padding: 2px 6px;">NEW</span>
+                  <span style="color: var(--accent); margin-left: auto;">→</span>
+                </div>
+                <p class="exp-card-desc">
+                  Draw music! Reverse-engineered from Cymatics Sketch Max. 8 art mediums (Chalk, Marker, Crayon, Neon, Watercolor, Splatter, Pencil, Spray), thickness-to-velocity, scanhead sweep, and glide contours.
+                </p>
+                <div style="margin-top: 10px; display: flex; gap: 8px;">
+                  <span class="tool-btn" style="background: rgba(0, 229, 255, 0.15); border: 1px solid #00e5ff; color: #00e5ff; font-weight: 700; font-size: 0.78rem; padding: 4px 10px; border-radius: 6px;">Play Inside Hub</span>
+                  <a href="sketch.html" class="tool-btn" style="text-decoration: none; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.25); color: #fff; font-weight: 700; font-size: 0.78rem; padding: 4px 10px; border-radius: 6px;" title="Open Standalone Sketch Studio Page" onclick="event.stopPropagation();">Launch Full Standalone Tool ↗</a>
+                </div>
+              </div>
+              <div class="exp-card-tags">
+                <span class="exp-tag">8 Art Mediums</span>
+                <span class="exp-tag">Thickness = Volume</span>
+                <span class="exp-tag">Glide &amp; Scan</span>
+                <span class="exp-tag">WAV &amp; PNG Export</span>
               </div>
             </div>
           </article>
@@ -495,6 +545,191 @@
           </div>
         </div>
       </div>
+    </section>
+
+    <!-- ==================================================================
+         VIEW 5: Sketch Studio (Reverse-Engineered from Cymatics Sketch Max)
+         ================================================================== -->
+    <section id="view-sketch-studio" class="app-view">
+      <div class="exp-layout">
+        <!-- Top Toolbar -->
+        <div class="sketch-top-toolbar">
+          <!-- Medium Selection -->
+          <div class="sketch-mediums-bar">
+            <span class="sketch-bar-label">Medium:</span>
+            <button class="tool-btn sketch-medium-btn active" data-medium="chalk" title="Chalk: Warm Rhodes tines, powdery textured strokes">
+              <span>🖍 Chalk</span>
+            </button>
+            <button class="tool-btn sketch-medium-btn" data-medium="marker" title="Marker: Punchy electric synth, bold rounded lines">
+              <span>🖊 Marker</span>
+            </button>
+            <button class="tool-btn sketch-medium-btn" data-medium="crayon" title="Crayon: Playful acoustic marimba, textured waxy lines">
+              <span>🖍 Crayon</span>
+            </button>
+            <button class="tool-btn sketch-medium-btn" data-medium="neon" title="Neon: Glowing analog saw lead, luminous laser bloom">
+              <span>✨ Neon</span>
+            </button>
+            <button class="tool-btn sketch-medium-btn" data-medium="watercolor" title="Watercolor: Ambient glass pad, translucent blending washes">
+              <span>🎨 Watercolor</span>
+            </button>
+            <button class="tool-btn sketch-medium-btn" data-medium="splatter" title="Paint Splatter: Kalimba chime bursts, dynamic droplets">
+              <span>💥 Splatter</span>
+            </button>
+            <button class="tool-btn sketch-medium-btn" data-medium="pencil" title="Pencil: Delicate music box bell, crisp graphite grain">
+              <span>✏️ Pencil</span>
+            </button>
+            <button class="tool-btn sketch-medium-btn" data-medium="spray" title="Spray Paint: Shimmering airy synth, diffuse particle mist">
+              <span>💨 Spray</span>
+            </button>
+          </div>
+
+          <!-- Pen Thickness & Drawing Tools -->
+          <div class="sketch-params-bar">
+            <div class="tempo-control" title="Pen thickness: thin to thick. Double-click for medium. Thickness sets loudness (velocity)!">
+              <span>Width (Vol)</span>
+              <input type="range" id="sketch-pen-width" min="2" max="44" value="14" />
+              <span id="sketch-pen-width-val" class="tempo-val">14px</span>
+            </div>
+
+            <div class="tool-btn-group">
+              <button id="sketch-tool-draw" class="tool-btn active" title="Draw tool [D]">✏️ Draw</button>
+              <button id="sketch-tool-eraser" class="tool-btn" title="Eraser [E] (or hold Right-Click)">🧹 Erase</button>
+            </div>
+
+            <div class="tool-btn-group">
+              <button id="sketch-undo-btn" class="tool-btn" title="Undo [Cmd+Z]">↩ Undo</button>
+              <button id="sketch-redo-btn" class="tool-btn" title="Redo [Shift+Cmd+Z]">↪ Redo</button>
+              <button id="sketch-clear-btn" class="tool-btn" title="Clear board [Cmd+Backspace]">🗑 Clear</button>
+              <button id="sketch-test-audio-btn" class="tool-btn" style="background: rgba(56, 189, 248, 0.15); border-color: var(--accent); color: var(--accent); font-weight: 700;" title="Test synth sound & unlock audio">🔊 Test Sound</button>
+              <a href="sketch.html" class="tool-btn" style="text-decoration: none; color: #00e5ff; border-color: rgba(0, 229, 255, 0.4); font-weight: 700;" title="Open Standalone Sketch Studio Page">🎨 Standalone ↗</a>
+            </div>
+
+            <div class="sketch-select-wrap">
+              <span>Theme:</span>
+              <select id="sketch-theme-select" class="tool-btn" style="cursor: pointer;">
+                <option value="chalkboard" selected>Chalkboard</option>
+                <option value="whiteboard">Whiteboard</option>
+                <option value="neon">Neon Dark</option>
+                <option value="notebook">Lined Paper</option>
+                <option value="blueprint">Blueprint</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main Drawing & Synthesis Stage Canvas -->
+        <div class="sketch-stage-container">
+          <canvas id="sketch-canvas"></canvas>
+        </div>
+
+        <!-- Bottom Controls & Synthesis Rack -->
+        <div class="exp-control-bar sketch-bottom-bar">
+          <div class="control-group">
+            <button id="sketch-play-btn" class="play-fab" title="Play / Pause Sketch [Space]">
+              <span>▶</span><span>Play</span>
+            </button>
+
+            <div class="tempo-control">
+              <span>Tempo</span>
+              <input type="range" id="sketch-bpm-slider" min="60" max="180" value="100" />
+              <span id="sketch-bpm-val" class="tempo-val">100 BPM</span>
+            </div>
+
+            <div class="sketch-select-wrap">
+              <span>Artic:</span>
+              <select id="sketch-artic-select" class="tool-btn" title="Glide: continuous portamento slide | Step: retrigger scale notes">
+                <option value="step" selected>Step</option>
+                <option value="glide">Glide</option>
+              </select>
+            </div>
+
+            <div class="sketch-select-wrap">
+              <span>Scale:</span>
+              <select id="sketch-scale-select" class="tool-btn">
+                <option value="pentatonic" selected>Pentatonic</option>
+                <option value="major">Major</option>
+                <option value="minor">Minor</option>
+                <option value="blues">Blues</option>
+                <option value="dorian">Dorian</option>
+                <option value="chromatic">Chromatic</option>
+              </select>
+            </div>
+
+            <div class="sketch-select-wrap">
+              <span>Octaves:</span>
+              <select id="sketch-octaves-select" class="tool-btn">
+                <option value="1">1 Oct</option>
+                <option value="2" selected>2 Oct</option>
+                <option value="3">3 Oct</option>
+                <option value="4">4 Oct</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="control-group">
+            <div class="tempo-control" title="Tone: filter brightness">
+              <span>Tone</span>
+              <input type="range" id="sketch-fx-tone" min="0" max="1" step="0.05" value="0.65" />
+            </div>
+
+            <div class="tempo-control" title="Decay: note sustain time">
+              <span>Decay</span>
+              <input type="range" id="sketch-fx-decay" min="0" max="1" step="0.05" value="0.5" />
+            </div>
+
+            <!-- Add a Beat! Section -->
+            <div class="sketch-select-wrap sketch-beat-group" style="background: rgba(255, 110, 199, 0.12); padding: 3px 8px; border-radius: 8px; border: 1px solid rgba(255, 110, 199, 0.35); display: flex; align-items: center; gap: 6px;">
+              <span style="font-weight: 600; color: #ff6ec7; font-size: 0.82rem;">🥁 Beat:</span>
+              <button id="sketch-beat-toggle" class="tool-btn active" title="Toggle Beat On/Off" style="font-size: 0.74rem; padding: 2px 7px; font-weight: 800; border-radius: 6px; background: rgba(34, 197, 94, 0.2); border: 1px solid #22c55e; color: #22c55e;"><span>ON</span></button>
+              <select id="sketch-beat-select" class="tool-btn" style="padding: 3px 6px; font-size: 0.8rem; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; color: inherit;">
+                <option value="none">Off (No Beat)</option>
+                <option value="lofi" selected>☕️ Lo-Fi Hip Hop</option>
+                <option value="dance">⚡️ Four-on-the-Floor</option>
+                <option value="boombap">🎤 Classic Boom-Bap</option>
+                <option value="trap">🔥 Trap 808</option>
+                <option value="afrobeat">🌴 Afrobeats / Latin</option>
+                <option value="rock">🥁 Driving Rock Kit</option>
+              </select>
+              <div class="tempo-control" title="Beat Volume" style="margin: 0; display: flex; align-items: center; gap: 4px;">
+                <span style="font-size: 0.72rem; opacity: 0.85;">Vol</span>
+                <input type="range" id="sketch-beat-vol" min="0" max="1" step="0.05" value="0.70" style="width: 50px;" />
+              </div>
+            </div>
+
+            <label class="toggle-control" title="Show pitch guide lines on canvas">
+              <input type="checkbox" id="sketch-toggle-guides" checked />
+              <span style="font-size: 0.8rem;">Guides</span>
+            </label>
+
+            <div class="sketch-select-wrap">
+              <span>Preset:</span>
+              <select id="sketch-preset-select" class="tool-btn">
+                <option value="">Load Preset...</option>
+                <option value="wave">Bouncing Wave</option>
+                <option value="skyline">Neon Skyline</option>
+                <option value="constellation">Constellation</option>
+                <option value="rain">Raindrop Splatter</option>
+                <option value="smile">Smiling Face</option>
+              </select>
+            </div>
+
+            <button id="sketch-fullscreen-btn" class="tool-btn" title="Toggle Fullscreen (Canvas &amp; Tools Only)" style="font-weight: 700; border-color: rgba(0, 229, 255, 0.4); color: #00e5ff;">
+              <span>⛶ Fullscreen</span>
+            </button>
+            <button id="sketch-export-png" class="tool-btn" title="Download your artwork as PNG">
+              🖼 PNG
+            </button>
+            <button id="sketch-export-wav" class="tool-btn" title="Render your sketch to WAV audio">
+              💾 WAV
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Audio Unlock Banner for browsers requiring initial user activation -->
+      <button id="sketch-audio-unlock-overlay" style="display: none; position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); z-index: 99999; background: #00e5ff; color: #0f111a; border: none; font-weight: 800; font-size: 0.92rem; padding: 12px 24px; border-radius: 999px; box-shadow: 0 8px 30px rgba(0,229,255,0.45); cursor: pointer; align-items: center; gap: 8px;">
+        <span>🔊 Tap Anywhere or Click Here to Enable Audio</span>
+      </button>
     </section>
 
   </main>
