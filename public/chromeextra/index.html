@@ -43,6 +43,9 @@
         <span class="tab-dot" style="background: var(--note-11)"></span>
         <span>Sketch Studio</span>
       </button>
+      <a href="sketch.html" class="top-nav-tab" style="text-decoration: none; color: #00e5ff; border: 1px solid rgba(0, 229, 255, 0.4); background: rgba(0, 229, 255, 0.08); font-weight: 700; display: inline-flex; align-items: center; gap: 4px;" title="Open Standalone Sketch Studio Page">
+        <span>🎨 Full Tool ↗</span>
+      </a>
     </nav>
 
     <div class="header-actions">
@@ -254,6 +257,10 @@
                 <p class="exp-card-desc">
                   Draw music! Reverse-engineered from Cymatics Sketch Max. 8 art mediums (Chalk, Marker, Crayon, Neon, Watercolor, Splatter, Pencil, Spray), thickness-to-velocity, scanhead sweep, and glide contours.
                 </p>
+                <div style="margin-top: 10px; display: flex; gap: 8px;">
+                  <span class="tool-btn" style="background: rgba(0, 229, 255, 0.15); border: 1px solid #00e5ff; color: #00e5ff; font-weight: 700; font-size: 0.78rem; padding: 4px 10px; border-radius: 6px;">Play Inside Hub</span>
+                  <a href="sketch.html" class="tool-btn" style="text-decoration: none; background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.25); color: #fff; font-weight: 700; font-size: 0.78rem; padding: 4px 10px; border-radius: 6px;" title="Open Standalone Sketch Studio Page" onclick="event.stopPropagation();">Launch Full Standalone Tool ↗</a>
+                </div>
               </div>
               <div class="exp-card-tags">
                 <span class="exp-tag">8 Art Mediums</span>
@@ -593,6 +600,7 @@
               <button id="sketch-redo-btn" class="tool-btn" title="Redo [Shift+Cmd+Z]">↪ Redo</button>
               <button id="sketch-clear-btn" class="tool-btn" title="Clear board [Cmd+Backspace]">🗑 Clear</button>
               <button id="sketch-test-audio-btn" class="tool-btn" style="background: rgba(56, 189, 248, 0.15); border-color: var(--accent); color: var(--accent); font-weight: 700;" title="Test synth sound & unlock audio">🔊 Test Sound</button>
+              <a href="sketch.html" class="tool-btn" style="text-decoration: none; color: #00e5ff; border-color: rgba(0, 229, 255, 0.4); font-weight: 700;" title="Open Standalone Sketch Studio Page">🎨 Standalone ↗</a>
             </div>
 
             <div class="sketch-select-wrap">
@@ -671,6 +679,7 @@
             <!-- Add a Beat! Section -->
             <div class="sketch-select-wrap sketch-beat-group" style="background: rgba(255, 110, 199, 0.12); padding: 3px 8px; border-radius: 8px; border: 1px solid rgba(255, 110, 199, 0.35); display: flex; align-items: center; gap: 6px;">
               <span style="font-weight: 600; color: #ff6ec7; font-size: 0.82rem;">🥁 Beat:</span>
+              <button id="sketch-beat-toggle" class="tool-btn active" title="Toggle Beat On/Off" style="font-size: 0.74rem; padding: 2px 7px; font-weight: 800; border-radius: 6px; background: rgba(34, 197, 94, 0.2); border: 1px solid #22c55e; color: #22c55e;"><span>ON</span></button>
               <select id="sketch-beat-select" class="tool-btn" style="padding: 3px 6px; font-size: 0.8rem; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; color: inherit;">
                 <option value="none">Off (No Beat)</option>
                 <option value="lofi" selected>☕️ Lo-Fi Hip Hop</option>
@@ -682,7 +691,7 @@
               </select>
               <div class="tempo-control" title="Beat Volume" style="margin: 0; display: flex; align-items: center; gap: 4px;">
                 <span style="font-size: 0.72rem; opacity: 0.85;">Vol</span>
-                <input type="range" id="sketch-beat-vol" min="0" max="1" step="0.05" value="0.75" style="width: 50px;" />
+                <input type="range" id="sketch-beat-vol" min="0" max="1" step="0.05" value="0.70" style="width: 50px;" />
               </div>
             </div>
 
@@ -703,6 +712,9 @@
               </select>
             </div>
 
+            <button id="sketch-fullscreen-btn" class="tool-btn" title="Toggle Fullscreen (Canvas &amp; Tools Only)" style="font-weight: 700; border-color: rgba(0, 229, 255, 0.4); color: #00e5ff;">
+              <span>⛶ Fullscreen</span>
+            </button>
             <button id="sketch-export-png" class="tool-btn" title="Download your artwork as PNG">
               🖼 PNG
             </button>

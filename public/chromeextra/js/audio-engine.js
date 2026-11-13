@@ -47,22 +47,21 @@ class AudioEngine {
     if (!this.ctx) {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       this.ctx = new AudioCtx();
+
+      // Master brickwall limiter / gentle compressor to protect against digital clipping distortion
       this.compressor = this.ctx.createDynamicsCompressor();
-      this.compressor.threshold.value = -14;
-      this.compressor.knee.value = 18;
-      this.compressor.ratio.value = 4;
-      this.compressor.attack.value = 0.003;
-      this.compressor.release.value = 0.15;
+      this.compressor.threshold.value = -5;
+      this.compressor.knee.value = 10;
+      this.compressor.ratio.value = 10;
+      this.compressor.attack.value = 0.002;
+      this.compressor.release.value = 0.12;
 
       this.masterGain = this.ctx.createGain();
-      this.masterGain.gain.value = 0.92;
+      this.masterGain.gain.value = 0.68; // Balanced master level for optimal dynamic headroom
 
-      // Connect master gain directly to destination for instantaneous, uncompressed sound
-      this.masterGain.connect(this.ctx.destination);
-      try {
-        this.masterGain.connect(this.compressor);
-        this.compressor.connect(this.ctx.destination);
-      } catch (e) {}
+      // Single clean signal path through compressor limiter to destination
+      this.masterGain.connect(this.compressor);
+      this.compressor.connect(this.ctx.destination);
 
       this.noiseBuffer = this.createWhiteNoiseBuffer(this.ctx, 1.5);
     }
@@ -1302,14 +1301,14 @@ class AudioEngine {
           osc2.frequency.setValueAtTime(freq * 2, now);
 
           const g2 = ctx.createGain();
-          g2.gain.setValueAtTime(0.35, now);
+          g2.gain.setValueAtTime(0.32, now);
           g2.gain.exponentialRampToValueAtTime(0.01, now + 0.18);
           osc2.connect(g2);
           g2.connect(filter);
           osc1.connect(filter);
 
           env.gain.setValueAtTime(0.001, now);
-          env.gain.linearRampToValueAtTime(0.9 * vel, now + 0.01);
+          env.gain.linearRampToValueAtTime(0.55 * vel, now + 0.01);
           env.gain.exponentialRampToValueAtTime(0.0008, now + effectiveDecay);
 
           osc1.start(now);
@@ -1328,14 +1327,15 @@ class AudioEngine {
           osc1.frequency.setValueAtTime(freq, now);
           osc2.frequency.setValueAtTime(freq * 1.005, now);
 
-          filter.frequency.setValueAtTime(cutoff * 1.6, now);
+          filter.Q.setValueAtTime(0.9, now);
+          filter.frequency.setValueAtTime(cutoff * 1.4, now);
           filter.frequency.exponentialRampToValueAtTime(cutoff * 0.7, now + effectiveDecay * 0.8);
 
           osc1.connect(filter);
           osc2.connect(filter);
 
           env.gain.setValueAtTime(0.001, now);
-          env.gain.linearRampToValueAtTime(0.85 * vel, now + 0.008);
+          env.gain.linearRampToValueAtTime(0.52 * vel, now + 0.008);
           env.gain.exponentialRampToValueAtTime(0.0008, now + effectiveDecay);
 
           osc1.start(now);
@@ -1355,14 +1355,14 @@ class AudioEngine {
           osc2.frequency.setValueAtTime(freq * 3.8, now);
 
           const g2 = ctx.createGain();
-          g2.gain.setValueAtTime(0.45, now);
+          g2.gain.setValueAtTime(0.40, now);
           g2.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
           osc2.connect(g2);
           g2.connect(filter);
           osc1.connect(filter);
 
           env.gain.setValueAtTime(0.001, now);
-          env.gain.linearRampToValueAtTime(0.95 * vel, now + 0.005);
+          env.gain.linearRampToValueAtTime(0.56 * vel, now + 0.005);
           env.gain.exponentialRampToValueAtTime(0.0008, now + Math.min(effectiveDecay, 0.65));
 
           osc1.start(now);
@@ -1373,24 +1373,31 @@ class AudioEngine {
         }
 
         case 'neon': {
-          // Glowing analog saw lead
+          // Glowing analog saw lead (tamed resonance and balanced dual saw)
           const osc1 = ctx.createOscillator();
           const osc2 = ctx.createOscillator();
+          const g1 = ctx.createGain();
+          const g2 = ctx.createGain();
+          g1.gain.setValueAtTime(0.45, now);
+          g2.gain.setValueAtTime(0.45, now);
+
           osc1.type = 'sawtooth';
           osc2.type = 'sawtooth';
           osc1.frequency.setValueAtTime(freq * 1.003, now);
           osc2.frequency.setValueAtTime(freq * 0.997, now);
 
-          filter.Q.setValueAtTime(2.2, now);
+          filter.Q.setValueAtTime(1.0, now);
           filter.frequency.setValueAtTime(cutoff * 0.9, now);
-          filter.frequency.exponentialRampToValueAtTime(cutoff * 1.5, now + 0.035);
+          filter.frequency.exponentialRampToValueAtTime(cutoff * 1.3, now + 0.035);
           filter.frequency.exponentialRampToValueAtTime(cutoff * 0.7, now + effectiveDecay);
 
-          osc1.connect(filter);
-          osc2.connect(filter);
+          osc1.connect(g1);
+          osc2.connect(g2);
+          g1.connect(filter);
+          g2.connect(filter);
 
           env.gain.setValueAtTime(0.001, now);
-          env.gain.linearRampToValueAtTime(0.85 * vel, now + 0.015);
+          env.gain.linearRampToValueAtTime(0.52 * vel, now + 0.015);
           env.gain.exponentialRampToValueAtTime(0.0008, now + effectiveDecay * 1.2);
 
           osc1.start(now);
@@ -1410,14 +1417,14 @@ class AudioEngine {
           osc2.frequency.setValueAtTime(freq * 0.5, now);
 
           const subGain = ctx.createGain();
-          subGain.gain.setValueAtTime(0.28, now);
+          subGain.gain.setValueAtTime(0.24, now);
           osc2.connect(subGain);
           subGain.connect(filter);
           osc1.connect(filter);
 
           const attackTime = 0.04;
           env.gain.setValueAtTime(0.001, now);
-          env.gain.linearRampToValueAtTime(0.85 * vel, now + attackTime);
+          env.gain.linearRampToValueAtTime(0.54 * vel, now + attackTime);
           env.gain.exponentialRampToValueAtTime(0.0008, now + effectiveDecay * 1.5);
 
           osc1.start(now);
@@ -1437,14 +1444,14 @@ class AudioEngine {
           osc2.frequency.setValueAtTime(freq * 2.76, now);
 
           const g2 = ctx.createGain();
-          g2.gain.setValueAtTime(0.5, now);
+          g2.gain.setValueAtTime(0.42, now);
           g2.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
           osc2.connect(g2);
           g2.connect(filter);
           osc1.connect(filter);
 
           env.gain.setValueAtTime(0.001, now);
-          env.gain.linearRampToValueAtTime(0.95 * vel, now + 0.003);
+          env.gain.linearRampToValueAtTime(0.55 * vel, now + 0.003);
           env.gain.exponentialRampToValueAtTime(0.0008, now + Math.min(effectiveDecay, 0.45));
 
           osc1.start(now);
@@ -1464,14 +1471,14 @@ class AudioEngine {
           osc2.frequency.setValueAtTime(freq * 3, now);
 
           const bellGain = ctx.createGain();
-          bellGain.gain.setValueAtTime(0.35, now);
+          bellGain.gain.setValueAtTime(0.30, now);
           bellGain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
           osc2.connect(bellGain);
           bellGain.connect(filter);
           osc1.connect(filter);
 
           env.gain.setValueAtTime(0.001, now);
-          env.gain.linearRampToValueAtTime(0.85 * vel, now + 0.004);
+          env.gain.linearRampToValueAtTime(0.50 * vel, now + 0.004);
           env.gain.exponentialRampToValueAtTime(0.0008, now + effectiveDecay * 0.95);
 
           osc1.start(now);
@@ -1494,9 +1501,9 @@ class AudioEngine {
             const nFilter = ctx.createBiquadFilter();
             nFilter.type = 'bandpass';
             nFilter.frequency.setValueAtTime(Math.min(cutoff, 3500), now);
-            nFilter.Q.setValueAtTime(2.0, now);
+            nFilter.Q.setValueAtTime(1.5, now);
             const nGain = ctx.createGain();
-            nGain.gain.setValueAtTime(0.25 * vel, now);
+            nGain.gain.setValueAtTime(0.20 * vel, now);
             nGain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
             noise.connect(nFilter);
             nFilter.connect(nGain);
@@ -1505,7 +1512,7 @@ class AudioEngine {
           }
 
           env.gain.setValueAtTime(0.001, now);
-          env.gain.linearRampToValueAtTime(0.85 * vel, now + 0.02);
+          env.gain.linearRampToValueAtTime(0.48 * vel, now + 0.02);
           env.gain.exponentialRampToValueAtTime(0.0008, now + effectiveDecay);
 
           osc.start(now);
@@ -1540,7 +1547,7 @@ class AudioEngine {
 
     const env = ctx.createGain();
     env.gain.setValueAtTime(0.001, now);
-    env.gain.linearRampToValueAtTime(0.65 * velocity, now + 0.025);
+    env.gain.linearRampToValueAtTime(0.45 * velocity, now + 0.025);
 
     filter.connect(env);
     env.connect(this.masterGain);
