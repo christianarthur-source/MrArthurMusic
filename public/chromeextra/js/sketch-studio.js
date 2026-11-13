@@ -165,8 +165,9 @@ export class SketchStudioApp {
     this.bpm = 100;
 
     // Add a Beat! Drum Groove Engine
+    this.beatEnabled = true;
     this.beatGroove = 'lofi';
-    this.beatVolume = 0.75;
+    this.beatVolume = 0.70;
     this.lastBeatStep = -1;
 
     // FX
@@ -445,7 +446,7 @@ export class SketchStudioApp {
 
   playLivePreviewNote(y, width) {
     const midi = this.yToMidi(y);
-    const velocity = Math.max(0.3, Math.min(1.2, width / 20));
+    const velocity = Math.max(0.25, Math.min(0.85, width / 28));
     audioEngine.resumeAudioContext();
     audioEngine.playSketchNote(this.currentMedium, midi, 0.35, 0, velocity, this.fx);
   }
@@ -579,12 +580,37 @@ export class SketchStudioApp {
       beatSelect.addEventListener('change', (e) => {
         this.beatGroove = e.target.value;
         // Preview a kick when a groove is selected
-        if (this.beatGroove !== 'none') {
+        if (this.beatEnabled && this.beatGroove !== 'none') {
           try {
-            audioEngine.ensureContext();
+            audioEngine.resumeAudioContext();
             const kit = DRUM_GROOVES[this.beatGroove]?.kit || 'electronic';
-            audioEngine.playSongMakerDrum(kit, 'low', 0, 0.9 * this.beatVolume);
+            audioEngine.playSongMakerDrum(kit, 'low', 0, 0.8 * this.beatVolume);
           } catch (err) {}
+        }
+      });
+    }
+
+    // Beat ON/OFF Toggle
+    const beatToggle = document.getElementById('sketch-beat-toggle');
+    if (beatToggle) {
+      beatToggle.addEventListener('click', () => {
+        this.beatEnabled = !this.beatEnabled;
+        beatToggle.classList.toggle('active', this.beatEnabled);
+        beatToggle.setAttribute('aria-pressed', this.beatEnabled);
+        beatToggle.innerHTML = this.beatEnabled ? '<span>ON</span>' : '<span>OFF</span>';
+        if (this.beatEnabled) {
+          beatToggle.style.background = 'rgba(34, 197, 94, 0.2)';
+          beatToggle.style.borderColor = '#22c55e';
+          beatToggle.style.color = '#22c55e';
+          if (this.beatGroove !== 'none') {
+            audioEngine.resumeAudioContext();
+            const kit = DRUM_GROOVES[this.beatGroove]?.kit || 'electronic';
+            audioEngine.playSongMakerDrum(kit, 'low', 0, 0.8 * this.beatVolume);
+          }
+        } else {
+          beatToggle.style.background = 'rgba(239, 68, 68, 0.15)';
+          beatToggle.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+          beatToggle.style.color = '#f87171';
         }
       });
     }
@@ -645,6 +671,61 @@ export class SketchStudioApp {
     const exportWavBtn = document.getElementById('sketch-export-wav');
     if (exportWavBtn) {
       exportWavBtn.addEventListener('click', () => this.exportAudioWav());
+    }
+
+    // Fullscreen Toggle Button (Canvas & Tools Only)
+    const fsBtn = document.getElementById('sketch-fullscreen-btn');
+    if (fsBtn) {
+      fsBtn.addEventListener('click', () => this.toggleFullscreen());
+    }
+
+    const onFsChange = () => {
+      const isFull = !!(document.fullscreenElement || document.webkitFullscreenElement) || document.body.classList.contains('sketch-fullscreen-fallback');
+      if (fsBtn) {
+        fsBtn.classList.toggle('active', isFull);
+        fsBtn.innerHTML = isFull ? '<span>🗗 Exit Full</span>' : '<span>⛶ Fullscreen</span>';
+      }
+      const container = document.getElementById('sketch-standalone-app') || document.getElementById('view-sketch-studio');
+      if (container) {
+        container.classList.toggle('is-sketch-fullscreen', isFull);
+      }
+      setTimeout(() => {
+        this.setupCanvasSize();
+        this.redraw();
+      }, 90);
+    };
+    document.addEventListener('fullscreenchange', onFsChange);
+    document.addEventListener('webkitfullscreenchange', onFsChange);
+  }
+
+  toggleFullscreen() {
+    const isFull = !!(document.fullscreenElement || document.webkitFullscreenElement) || document.body.classList.contains('sketch-fullscreen-fallback');
+    const container = document.getElementById('sketch-standalone-app') || document.getElementById('view-sketch-studio');
+
+    if (!isFull) {
+      const req = container?.requestFullscreen || container?.webkitRequestFullscreen || document.documentElement.requestFullscreen;
+      if (req) {
+        req.call(container || document.documentElement).catch(() => {
+          document.body.classList.add('sketch-fullscreen-fallback');
+          this.setupCanvasSize();
+          this.redraw();
+        });
+      } else {
+        document.body.classList.add('sketch-fullscreen-fallback');
+        this.setupCanvasSize();
+        this.redraw();
+      }
+    } else {
+      const exit = document.exitFullscreen || document.webkitExitFullscreen;
+      if (exit && (document.fullscreenElement || document.webkitFullscreenElement)) {
+        exit.call(document).catch(() => {});
+      }
+      document.body.classList.remove('sketch-fullscreen-fallback');
+      if (container) container.classList.remove('is-sketch-fullscreen');
+      setTimeout(() => {
+        this.setupCanvasSize();
+        this.redraw();
+      }, 90);
     }
   }
 
@@ -860,6 +941,7 @@ export class SketchStudioApp {
   }
 
   triggerBeatStep(step) {
+    if (!this.beatEnabled || this.beatGroove === 'none') return;
     const groove = DRUM_GROOVES[this.beatGroove];
     if (!groove || !groove.pattern) return;
     const kit = groove.kit || 'electronic';
@@ -867,13 +949,13 @@ export class SketchStudioApp {
     try {
       audioEngine.resumeAudioContext();
       if (groove.pattern.low && groove.pattern.low.includes(step)) {
-        audioEngine.playSongMakerDrum(kit, 'low', 0, 0.95 * vol);
+        audioEngine.playSongMakerDrum(kit, 'low', 0, 0.90 * vol);
       }
       if (groove.pattern.mid && groove.pattern.mid.includes(step)) {
-        audioEngine.playSongMakerDrum(kit, 'mid', 0, 0.9 * vol);
+        audioEngine.playSongMakerDrum(kit, 'mid', 0, 0.85 * vol);
       }
       if (groove.pattern.high && groove.pattern.high.includes(step)) {
-        audioEngine.playSongMakerDrum(kit, 'high', 0, 0.7 * vol);
+        audioEngine.playSongMakerDrum(kit, 'high', 0, 0.68 * vol);
       }
     } catch (e) {
       console.warn('triggerBeatStep error:', e);
@@ -882,7 +964,7 @@ export class SketchStudioApp {
 
   triggerStrokeNote(stroke, y, x, width) {
     const midi = this.yToMidi(y);
-    const velocity = Math.max(0.3, Math.min(1.2, width / 20));
+    const velocity = Math.max(0.25, Math.min(0.85, width / 28));
     audioEngine.resumeAudioContext();
 
     if (this.articulation === 'glide') {
@@ -1244,7 +1326,7 @@ export class SketchStudioApp {
       const offlineCtx = new (window.OfflineAudioContext || window.webkitOfflineAudioContext)(2, Math.floor(sampleRate * (secondsPerLoop + 1.5)), sampleRate);
 
       // 1. Render Drum Groove if active
-      if (this.beatGroove && this.beatGroove !== 'none') {
+      if (this.beatEnabled && this.beatGroove && this.beatGroove !== 'none') {
         const groove = DRUM_GROOVES[this.beatGroove];
         if (groove && groove.pattern) {
           const kit = groove.kit || 'electronic';
@@ -1252,13 +1334,13 @@ export class SketchStudioApp {
           for (let step = 0; step < 32; step++) {
             const stepTime = (step / 32) * secondsPerLoop;
             if (groove.pattern.low && groove.pattern.low.includes(step)) {
-              audioEngine.playSongMakerDrum(kit, 'low', stepTime, 0.95 * vol, offlineCtx, offlineCtx.destination);
+              audioEngine.playSongMakerDrum(kit, 'low', stepTime, 0.88 * vol, offlineCtx, offlineCtx.destination);
             }
             if (groove.pattern.mid && groove.pattern.mid.includes(step)) {
-              audioEngine.playSongMakerDrum(kit, 'mid', stepTime, 0.9 * vol, offlineCtx, offlineCtx.destination);
+              audioEngine.playSongMakerDrum(kit, 'mid', stepTime, 0.82 * vol, offlineCtx, offlineCtx.destination);
             }
             if (groove.pattern.high && groove.pattern.high.includes(step)) {
-              audioEngine.playSongMakerDrum(kit, 'high', stepTime, 0.7 * vol, offlineCtx, offlineCtx.destination);
+              audioEngine.playSongMakerDrum(kit, 'high', stepTime, 0.65 * vol, offlineCtx, offlineCtx.destination);
             }
           }
         }
@@ -1279,7 +1361,7 @@ export class SketchStudioApp {
             for (const pt of stroke.points) {
               if (pt.x >= prevX && pt.x <= currX) {
                 const midi = this.yToMidi(pt.y);
-                const vel = Math.max(0.2, Math.min(1.2, (pt.r || stroke.width) / 24));
+                const vel = Math.max(0.25, Math.min(0.85, (pt.r || stroke.width) / 28));
                 audioEngine.playSketchNote(stroke.medium, midi, 0.4, timeOffset, vel, this.fx, offlineCtx, offlineCtx.destination);
               }
             }
@@ -1290,7 +1372,7 @@ export class SketchStudioApp {
             const pt = stroke.points[0];
             if (pt.x >= prevX && pt.x <= currX) {
               const midi = this.yToMidi(pt.y);
-              const vel = Math.max(0.2, Math.min(1.2, stroke.width / 24));
+              const vel = Math.max(0.25, Math.min(0.85, stroke.width / 28));
               audioEngine.playSketchNote(stroke.medium, midi, 0.35, timeOffset, vel, this.fx, offlineCtx, offlineCtx.destination);
             }
             continue;
@@ -1302,7 +1384,7 @@ export class SketchStudioApp {
             if ((p2.x >= prevX && p1.x <= currX) || (p1.x >= prevX && p2.x <= currX)) {
               const hitY = (p1.y + p2.y) / 2;
               const midi = this.yToMidi(hitY);
-              const vel = Math.max(0.2, Math.min(1.2, stroke.width / 24));
+              const vel = Math.max(0.25, Math.min(0.85, stroke.width / 28));
               audioEngine.playSketchNote(stroke.medium, midi, 0.35, timeOffset, vel, this.fx, offlineCtx, offlineCtx.destination);
             }
           }

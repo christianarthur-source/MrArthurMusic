@@ -1553,3 +1553,79 @@ html, body {
   border-radius: 12px;
   padding: 6px 14px;
 }
+
+/* ==========================================================================
+   Sketch Studio Fullscreen Mode (Canvas and Tools Only)
+   ========================================================================== */
+#sketch-standalone-app:fullscreen,
+#sketch-standalone-app:-webkit-full-screen,
+#view-sketch-studio:fullscreen,
+#view-sketch-studio:-webkit-full-screen,
+.is-sketch-fullscreen,
+body.sketch-fullscreen-fallback #sketch-standalone-app,
+body.sketch-fullscreen-fallback #view-sketch-studio {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: 100vw !important;
+  max-height: 100vh !important;
+  z-index: 999999 !important;
+  background: var(--bg-primary, #0f111a) !important;
+  padding: 6px 10px !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+#sketch-standalone-app:fullscreen .sketch-standalone-header,
+#sketch-standalone-app:-webkit-full-screen .sketch-standalone-header,
+.is-sketch-fullscreen .sketch-standalone-header,
+body.sketch-fullscreen-fallback .sketch-standalone-header,
+body.sketch-fullscreen-fallback .top-nav,
+body.sketch-fullscreen-fallback .hub-header {
+  display: none !important;
+}
+
+#sketch-standalone-app:fullscreen main,
+#sketch-standalone-app:-webkit-full-screen main,
+.is-sketch-fullscreen main,
+body.sketch-fullscreen-fallback #sketch-standalone-app main,
+#view-sketch-studio:fullscreen .exp-layout,
+#view-sketch-studio:-webkit-full-screen .exp-layout,
+.is-sketch-fullscreen .exp-layout,
+body.sketch-fullscreen-fallback #view-sketch-studio .exp-layout,
+.sketch-standalone-app {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+#sketch-standalone-app:fullscreen .sketch-stage-container,
+#sketch-standalone-app:-webkit-full-screen .sketch-stage-container,
+.is-sketch-fullscreen .sketch-stage-container,
+body.sketch-fullscreen-fallback .sketch-stage-container {
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
+  height: auto !important;
+}
+
+#sketch-standalone-app:fullscreen .sketch-top-toolbar,
+#sketch-standalone-app:-webkit-full-screen .sketch-top-toolbar,
+.is-sketch-fullscreen .sketch-top-toolbar,
+body.sketch-fullscreen-fallback .sketch-top-toolbar,
+#sketch-standalone-app:fullscreen .sketch-params-bar,
+#sketch-standalone-app:-webkit-full-screen .sketch-params-bar,
+.is-sketch-fullscreen .sketch-params-bar,
+body.sketch-fullscreen-fallback .sketch-params-bar,
+#sketch-standalone-app:fullscreen .sketch-bottom-bar,
+#sketch-standalone-app:-webkit-full-screen .sketch-bottom-bar,
+.is-sketch-fullscreen .sketch-bottom-bar,
+body.sketch-fullscreen-fallback .sketch-bottom-bar {
+  flex-shrink: 0 !important;
+  padding: 4px 8px !important;
+}
+
