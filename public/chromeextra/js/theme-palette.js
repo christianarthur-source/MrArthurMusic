@@ -240,10 +240,14 @@ class ThemeManager {
   }
 
   getNoteColor(semitoneOrMidi, alpha = 1) {
-    const idx = ((semitoneOrMidi % 12) + 12) % 12;
+    const idx = ((Math.round(semitoneOrMidi) % 12) + 12) % 12;
     const hex = this.state.notes[idx] || DEFAULT_CML_NOTES[idx].hex;
     if (alpha >= 1) return hex;
     return this.hexToRgba(hex, alpha);
+  }
+
+  getColorForPitch(semitoneOrMidi) {
+    return this.getNoteColor(semitoneOrMidi);
   }
 
   hexToRgba(hex, alpha = 1) {

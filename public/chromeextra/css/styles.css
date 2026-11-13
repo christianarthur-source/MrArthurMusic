@@ -1451,3 +1451,181 @@ html, body {
 .sp-room-status:empty { display: none; }
 .sp-room-status.error { color: #f87171; }
 .sp-avatar-pill.peer.online { border-color: #34d399; }
+
+/* ==========================================================================
+   Sketch Studio Styles (Reverse-Engineered from Cymatics Sketch Max)
+   ========================================================================== */
+#view-sketch-studio .exp-layout {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 64px);
+  max-height: calc(100vh - 64px);
+  padding: 10px 16px 12px 16px;
+  gap: 8px;
+  box-sizing: border-box;
+}
+
+.sketch-top-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 8px 12px;
+  flex-shrink: 0;
+}
+
+.sketch-mediums-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  white-space: nowrap;
+  padding-bottom: 2px;
+}
+
+.sketch-bar-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-right: 4px;
+  flex-shrink: 0;
+}
+
+.sketch-medium-btn {
+  font-size: 0.8rem;
+  padding: 4px 10px;
+  border-radius: 8px;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.sketch-medium-btn.active {
+  background: rgba(0, 229, 255, 0.18);
+  border-color: #00e5ff;
+  color: #00e5ff;
+  font-weight: 700;
+  box-shadow: 0 0 10px rgba(0, 229, 255, 0.25);
+}
+
+.sketch-params-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.sketch-select-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.sketch-stage-container {
+  flex: 1 1 0;
+  min-height: 220px;
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: inset 0 2px 10px rgba(0,0,0,0.4), 0 4px 20px rgba(0,0,0,0.25);
+  border: 1px solid var(--border-subtle);
+  touch-action: none;
+  cursor: crosshair;
+}
+
+#sketch-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.sketch-bottom-bar {
+  flex-shrink: 0;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 6px 14px;
+}
+
+/* ==========================================================================
+   Sketch Studio Fullscreen Mode (Canvas and Tools Only)
+   ========================================================================== */
+#sketch-standalone-app:fullscreen,
+#sketch-standalone-app:-webkit-full-screen,
+#view-sketch-studio:fullscreen,
+#view-sketch-studio:-webkit-full-screen,
+.is-sketch-fullscreen,
+body.sketch-fullscreen-fallback #sketch-standalone-app,
+body.sketch-fullscreen-fallback #view-sketch-studio {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: 100vw !important;
+  max-height: 100vh !important;
+  z-index: 999999 !important;
+  background: var(--bg-primary, #0f111a) !important;
+  padding: 6px 10px !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+#sketch-standalone-app:fullscreen .sketch-standalone-header,
+#sketch-standalone-app:-webkit-full-screen .sketch-standalone-header,
+.is-sketch-fullscreen .sketch-standalone-header,
+body.sketch-fullscreen-fallback .sketch-standalone-header,
+body.sketch-fullscreen-fallback .top-nav,
+body.sketch-fullscreen-fallback .hub-header {
+  display: none !important;
+}
+
+#sketch-standalone-app:fullscreen main,
+#sketch-standalone-app:-webkit-full-screen main,
+.is-sketch-fullscreen main,
+body.sketch-fullscreen-fallback #sketch-standalone-app main,
+#view-sketch-studio:fullscreen .exp-layout,
+#view-sketch-studio:-webkit-full-screen .exp-layout,
+.is-sketch-fullscreen .exp-layout,
+body.sketch-fullscreen-fallback #view-sketch-studio .exp-layout,
+.sketch-standalone-app {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+#sketch-standalone-app:fullscreen .sketch-stage-container,
+#sketch-standalone-app:-webkit-full-screen .sketch-stage-container,
+.is-sketch-fullscreen .sketch-stage-container,
+body.sketch-fullscreen-fallback .sketch-stage-container {
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
+  height: auto !important;
+}
+
+#sketch-standalone-app:fullscreen .sketch-top-toolbar,
+#sketch-standalone-app:-webkit-full-screen .sketch-top-toolbar,
+.is-sketch-fullscreen .sketch-top-toolbar,
+body.sketch-fullscreen-fallback .sketch-top-toolbar,
+#sketch-standalone-app:fullscreen .sketch-params-bar,
+#sketch-standalone-app:-webkit-full-screen .sketch-params-bar,
+.is-sketch-fullscreen .sketch-params-bar,
+body.sketch-fullscreen-fallback .sketch-params-bar,
+#sketch-standalone-app:fullscreen .sketch-bottom-bar,
+#sketch-standalone-app:-webkit-full-screen .sketch-bottom-bar,
+.is-sketch-fullscreen .sketch-bottom-bar,
+body.sketch-fullscreen-fallback .sketch-bottom-bar {
+  flex-shrink: 0 !important;
+  padding: 4px 8px !important;
+}
+
