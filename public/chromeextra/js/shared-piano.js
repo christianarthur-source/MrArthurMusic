@@ -22,8 +22,20 @@ export const ANIMAL_AVATARS = [
   { emoji: '🦁', name: 'Lion' },
   { emoji: '🐸', name: 'Frog' },
   { emoji: '🦉', name: 'Owl' },
-  { emoji: '🦄', name: 'Unicorn' }
+  { emoji: '🦄', name: 'Unicorn' },
+  { emoji: '🐵', name: 'Monkey' },
+  { emoji: '🐰', name: 'Bunny' },
+  { emoji: '🐻', name: 'Bear' },
+  { emoji: '🐧', name: 'Penguin' },
+  { emoji: '🐙', name: 'Octopus' },
+  { emoji: '🐢', name: 'Turtle' },
+  { emoji: '🦒', name: 'Giraffe' },
+  { emoji: '🐘', name: 'Elephant' },
+  { emoji: '🦋', name: 'Butterfly' },
+  { emoji: '🐬', name: 'Dolphin' }
 ];
+// Keep in sync with AVATARS in the site's cloudflare/pianoRoom.mjs (the room server hands these out
+// so no two players in a room share an animal).
 
 export const SOLFEGE_NAMES = ['Do', 'Di', 'Re', 'Ri', 'Mi', 'Fa', 'Fi', 'Sol', 'Si', 'La', 'Li', 'Ti'];
 
@@ -40,7 +52,7 @@ export const KEYBOARD_MAP = {
 
 export class SharedPianoApp {
   constructor() {
-    this.myAvatar = ANIMAL_AVATARS[Math.floor(Math.random() * 6)];
+    this.myAvatar = ANIMAL_AVATARS[Math.floor(Math.random() * ANIMAL_AVATARS.length)];
     this.aiAvatar = { emoji: '🤖', name: 'AI Duet Bot' };
 
     this.settings = {
@@ -72,6 +84,7 @@ export class SharedPianoApp {
     this.initDOM();
     this.buildKeyboardDOM();
     this.initBroadcastRoom();
+    this.initOnlineRoom();
     this.initWebMIDI();
 
     themeManager.subscribe(() => {
@@ -320,14 +333,9 @@ export class SharedPianoApp {
       this.trailHistory.shift();
     }
 
-    // Broadcast to other open tabs
-    if (owner === 'local' && !fromBroadcast && this.channel) {
-      this.channel.postMessage({
-        type: 'noteOn',
-        midi: rawMidi,
-        emoji: this.myAvatar.emoji,
-        instrument: this.settings.instrument
-      });
+    // Send to other players (online room) or other open tabs
+    if (owner === 'local' && !fromBroadcast) {
+      this.sendNote({ type: 'noteOn', midi: rawMidi, emoji: this.myAvatar.emoji, instrument: this.settings.instrument });
     }
 
     // Trigger AI Duet response if enabled
@@ -351,11 +359,8 @@ export class SharedPianoApp {
       if (badge) badge.remove();
     }
 
-    if (owner === 'local' && !fromBroadcast && this.channel) {
-      this.channel.postMessage({
-        type: 'noteOff',
-        midi: rawMidi
-      });
+    if (owner === 'local' && !fromBroadcast) {
+      this.sendNote({ type: 'noteOff', midi: rawMidi });
     }
   }
 
@@ -429,7 +434,7 @@ export class SharedPianoApp {
     this.channel = new BroadcastChannel('cml_extra_shared_piano_room');
     this.channel.onmessage = (ev) => {
       const msg = ev.data;
-      if (!msg) return;
+      if (!msg || this.room.code) return; // in an online room, notes come from the room instead
       if (msg.type === 'noteOn') {
         this.peers.set(msg.emoji, { emoji: msg.emoji, lastSeen: Date.now() });
         this.updateAvatarBar();
@@ -438,6 +443,239 @@ export class SharedPianoApp {
         this.noteOff(msg.midi, `peer_${msg.emoji}`, true);
       }
     };
+  }
+
+  sendNote(msg) {
+    if (this.room.code) {
+      const ws = this.room.ws;
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify(msg.type === 'noteOn'
+          ? { t: 'on', midi: msg.midi, inst: msg.instrument }
+          : { t: 'off', midi: msg.midi }));
+      }
+      return;
+    }
+    if (this.channel) this.channel.postMessage(msg);
+  }
+
+  // ---------- Play Together: online rooms across devices ----------
+  // Server: /api/piano-room/<CODE> on mrarthurmusic.com (cloudflare/pianoRoom.mjs in the site repo).
+  // Only note numbers, instrument names and the animal emoji are sent; nothing is saved.
+
+  initOnlineRoom() {
+    this.room = { code: null, ws: null, you: null, retries: 0, retryTimer: null };
+    const $ = (id) => document.getElementById(id);
+    this.roomEls = {
+      btn: $('sp-room-btn'), btnLabel: $('sp-room-btn-label'), panel: $('sp-room-panel'),
+      idle: $('sp-room-idle'), live: $('sp-room-live'), code: $('sp-room-code'),
+      input: $('sp-room-input'), status: $('sp-room-status')
+    };
+    const els = this.roomEls;
+    if (!els.btn || !els.panel) return;
+
+    els.btn.addEventListener('click', () => {
+      els.btn.blur();
+      this.toggleRoomPanel();
+    });
+    $('sp-room-close')?.addEventListener('click', () => this.toggleRoomPanel(false));
+    $('sp-room-create')?.addEventListener('click', () => this.joinRoom(this.makeRoomCode()));
+    $('sp-room-join')?.addEventListener('click', () => this.joinFromInput());
+    $('sp-room-leave')?.addEventListener('click', () => this.leaveRoom());
+    $('sp-room-copy')?.addEventListener('click', () => this.copyRoomLink());
+    els.input?.addEventListener('input', () => {
+      els.input.value = els.input.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4);
+    });
+    els.input?.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') this.joinFromInput();
+      e.stopPropagation();
+    });
+
+    // A shared link (…/chromeextra/?room=ABCD) opens Shared Piano and joins right away.
+    const fromLink = new URLSearchParams(location.search).get('room');
+    if (fromLink) {
+      if (location.hash !== '#shared-piano') location.hash = 'shared-piano';
+      this.toggleRoomPanel(true);
+      this.joinRoom(fromLink);
+    }
+  }
+
+  toggleRoomPanel(open) {
+    const panel = this.roomEls.panel;
+    const show = open === undefined ? panel.hidden : open;
+    panel.hidden = !show;
+    if (show && !this.room.code) this.roomEls.input?.focus();
+  }
+
+  makeRoomCode() {
+    const letters = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+    const buf = new Uint32Array(4);
+    crypto.getRandomValues(buf);
+    return Array.from(buf, (n) => letters[n % letters.length]).join('');
+  }
+
+  joinFromInput() {
+    const code = (this.roomEls.input?.value || '').trim().toUpperCase();
+    if (!/^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{4}$/.test(code)) {
+      this.setRoomStatus('Room codes are 4 letters or numbers, like K7QF.', true);
+      return;
+    }
+    this.joinRoom(code);
+  }
+
+  joinRoom(code) {
+    code = String(code || '').toUpperCase();
+    if (!/^[ABCDEFGHJKMNPQRSTUVWXYZ23456789]{4}$/.test(code)) {
+      this.setRoomStatus('That room code doesn\'t look right.', true);
+      return;
+    }
+    if (location.protocol === 'file:') {
+      this.setRoomStatus('Play Together works on mrarthurmusic.com/chromeextra.', true);
+      return;
+    }
+    this.leaveRoom(true);
+    audioEngine.ensureContext?.();
+    this.room.code = code;
+    this.room.retries = 0;
+    this.releasePeerNotes();
+    this.peers.clear();
+    this.updateRoomUI();
+    this.connectRoom();
+  }
+
+  connectRoom() {
+    const code = this.room.code;
+    if (!code) return;
+    this.setRoomStatus(this.room.retries ? 'Reconnecting…' : 'Connecting…');
+    const scheme = location.protocol === 'https:' ? 'wss' : 'ws';
+    let ws;
+    try {
+      ws = new WebSocket(`${scheme}://${location.host}/api/piano-room/${code}`);
+    } catch {
+      this.setRoomStatus('Couldn\'t connect. Check your internet and try again.', true);
+      return;
+    }
+    this.room.ws = ws;
+
+    ws.onopen = () => {
+      ws.send(JSON.stringify({ t: 'hello', emoji: this.myAvatar.emoji }));
+    };
+
+    ws.onmessage = (ev) => {
+      let msg;
+      try { msg = JSON.parse(ev.data); } catch { return; }
+      if (ws !== this.room.ws) return;
+      if (msg.t === 'welcome') {
+        this.room.you = msg.you;
+        // The room picks an animal nobody else in it is using
+        const assigned = ANIMAL_AVATARS.find((a) => a.emoji === msg.emoji);
+        if (assigned) this.myAvatar = assigned;
+        this.room.retries = 0;
+        this.applyRoster(msg.players);
+      } else if (msg.t === 'roster') {
+        this.applyRoster(msg.players);
+      } else if (msg.t === 'on') {
+        const peer = this.peers.get(msg.from);
+        this.noteOn(msg.midi, `peer_${msg.from}`, peer ? peer.emoji : '🎵', msg.inst || 'piano', true);
+      } else if (msg.t === 'off') {
+        this.noteOff(msg.midi, `peer_${msg.from}`, true);
+      } else if (msg.t === 'full') {
+        this.room.full = true;
+      }
+    };
+
+    ws.onclose = () => {
+      if (ws !== this.room.ws) return; // we left or replaced this socket on purpose
+      this.room.ws = null;
+      this.releasePeerNotes();
+      this.peers.clear();
+      this.updateAvatarBar();
+      if (this.room.full) {
+        this.room.full = false;
+        this.room.code = null;
+        this.updateRoomUI();
+        this.setRoomStatus('That room is full (8 players). Try another code.', true);
+        return;
+      }
+      // Keep trying while the player stays in the room (Wi-Fi blips, laptop lid, etc.)
+      const delay = Math.min(10000, 1000 * 2 ** this.room.retries);
+      this.room.retries++;
+      this.setRoomStatus(this.room.retries > 2 ? 'Can\'t reach the room. Still trying…' : 'Reconnecting…', this.room.retries > 2);
+      this.room.retryTimer = setTimeout(() => this.connectRoom(), delay);
+    };
+  }
+
+  leaveRoom(silent = false) {
+    clearTimeout(this.room.retryTimer);
+    const ws = this.room.ws;
+    this.room.ws = null;
+    this.room.code = null;
+    this.room.you = null;
+    if (ws) {
+      try { ws.close(1000, 'leave'); } catch { /* already closed */ }
+    }
+    this.releasePeerNotes();
+    this.peers.clear();
+    this.updateAvatarBar();
+    this.updateRoomUI();
+    if (!silent) this.setRoomStatus('You left the room.');
+  }
+
+  applyRoster(players = []) {
+    const others = new Map();
+    for (const p of players) {
+      if (p.id !== this.room.you) others.set(p.id, { emoji: p.emoji, online: true });
+    }
+    // Let go of notes held by anyone who just left
+    for (const id of this.peers.keys()) {
+      if (!others.has(id)) this.releasePeerNotes(id);
+    }
+    this.peers = others;
+    this.updateAvatarBar();
+    const n = others.size;
+    this.setRoomStatus(n ? `Connected • ${n} friend${n === 1 ? '' : 's'} here` : 'Connected • waiting for friends to join…');
+  }
+
+  releasePeerNotes(peerId = null) {
+    for (const key of [...this.activeNotes.keys()]) {
+      const [owner, midi] = key.split(':');
+      if (!owner.startsWith('peer_')) continue;
+      if (peerId && owner !== `peer_${peerId}`) continue;
+      this.noteOff(Number(midi), owner, true);
+    }
+  }
+
+  updateRoomUI() {
+    const els = this.roomEls;
+    if (!els?.btn) return;
+    const code = this.room.code;
+    if (els.idle) els.idle.hidden = !!code;
+    if (els.live) els.live.hidden = !code;
+    if (els.code) els.code.textContent = code || '----';
+    if (els.btnLabel) els.btnLabel.textContent = code ? `🌐 Room ${code}` : '🌐 Play Together';
+    els.btn.classList.toggle('active', !!code);
+    const url = new URL(location.href);
+    if (code) url.searchParams.set('room', code); else url.searchParams.delete('room');
+    history.replaceState(null, '', url);
+  }
+
+  setRoomStatus(text, isError = false) {
+    const el = this.roomEls?.status;
+    if (!el) return;
+    el.textContent = text;
+    el.classList.toggle('error', isError);
+  }
+
+  async copyRoomLink() {
+    if (!this.room.code) return;
+    const url = new URL(location.href);
+    url.searchParams.set('room', this.room.code);
+    url.hash = 'shared-piano';
+    try {
+      await navigator.clipboard.writeText(url.href);
+      this.setRoomStatus('Link copied! Send it to a friend.');
+    } catch {
+      this.setRoomStatus(`Share this link: ${url.href}`);
+    }
   }
 
   async initWebMIDI() {
@@ -480,9 +718,9 @@ export class SharedPianoApp {
 
     for (const peer of this.peers.values()) {
       pills.push(`
-        <div class="sp-avatar-pill peer">
+        <div class="sp-avatar-pill peer${peer.online ? ' online' : ''}">
           <span class="sp-emoji">${peer.emoji}</span>
-          <span>Room Tab</span>
+          <span>${peer.online ? 'Friend' : 'Room Tab'}</span>
         </div>
       `);
     }

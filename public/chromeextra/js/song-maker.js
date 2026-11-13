@@ -17,6 +17,56 @@
 import { audioEngine, SCALES, NOTE_NAMES_SHARP, midiToNoteName } from './audio-engine.js';
 import { themeManager } from './theme-palette.js';
 
+// ---------- Short share links (same shared_links table as Beat Maker / Staff Composer) ----------
+// On mrarthurmusic.com these become …/chromeextra/?s=abc123. The key is the site's public
+// (publishable) Supabase key, already used by the rest of the site for share links.
+const SHARE_DB_URL = 'https://xnbhxrzzyjbthrobdkwb.supabase.co/rest/v1/shared_links';
+const SHARE_DB_KEY = 'sb_publishable_JipVOkkWnwggeTM6uv7sEQ_rcLwiMmZ';
+const SHARE_APP_TYPE = 'song-maker';
+const SHARE_ALPHABET = '23456789abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ'; // no 0/O/1/l/I
+
+function shareLinkBase() {
+  // Links made on a preview or local copy still point at the real site, which reads the same table.
+  const host = location.hostname;
+  const local = location.protocol === 'file:' || host === 'localhost' || host === '127.0.0.1' || host.endsWith('.workers.dev');
+  const origin = local ? 'https://mrarthurmusic.com' : location.origin;
+  return `${origin}/chromeextra/`;
+}
+
+async function createSongShortLink(payload) {
+  const bytes = new Uint8Array(6);
+  crypto.getRandomValues(bytes);
+  const slug = Array.from(bytes, (b) => SHARE_ALPHABET[b % SHARE_ALPHABET.length]).join('');
+  try {
+    const res = await fetch(SHARE_DB_URL, {
+      method: 'POST',
+      headers: { apikey: SHARE_DB_KEY, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+      body: JSON.stringify({ id: slug, app_type: SHARE_APP_TYPE, title: 'Song Maker song', payload })
+    });
+    if (!res.ok) {
+      console.warn(`[Song Maker] share link save failed: ${res.status}`);
+      return null;
+    }
+    return `${shareLinkBase()}?s=${slug}`;
+  } catch (err) {
+    console.warn('[Song Maker] share link save failed', err);
+    return null;
+  }
+}
+
+async function fetchSharedSong(slug) {
+  try {
+    const res = await fetch(`${SHARE_DB_URL}?id=eq.${encodeURIComponent(slug)}&select=app_type,payload`, {
+      headers: { apikey: SHARE_DB_KEY }
+    });
+    if (!res.ok) return null;
+    const rows = await res.json();
+    return Array.isArray(rows) && rows.length ? rows[0] : null;
+  } catch {
+    return null;
+  }
+}
+
 export const TONAL_INSTRUMENTS = [
   { id: 'marimba',  label: 'Marimba',   icon: 'marimba' },
   { id: 'piano',    label: 'Piano',     icon: 'piano' },
@@ -1270,23 +1320,50 @@ export class SongMakerApp {
     const closeBtn = document.getElementById('sm-save-close');
     const wavBtn = document.getElementById('sm-export-wav');
     const midiBtn = document.getElementById('sm-export-midi');
-    const copyJsonBtn = document.getElementById('sm-copy-json');
-    const jsonTextarea = document.getElementById('sm-json-code');
-    const loadJsonBtn = document.getElementById('sm-load-json');
+    const shareBtn = document.getElementById('sm-share-btn');
+    const shareUrl = document.getElementById('sm-share-url');
+    const shareStatus = document.getElementById('sm-share-status');
+    let sharedFor = null; // song JSON the current share link was made for
 
     if (this.saveBtn && modal) {
       this.saveBtn.addEventListener('click', () => {
-        const payload = {
-          settings: this.settings,
-          tonalGrid: this.tonalGrid,
-          drumGrid: this.drumGrid
-        };
-        if (jsonTextarea) {
-          jsonTextarea.value = JSON.stringify(payload);
+        const json = JSON.stringify(this.getSongData());
+        // A link made earlier still fits only if the song hasn't changed since
+        if (shareUrl && json !== sharedFor) {
+          shareUrl.value = '';
+          if (shareStatus) shareStatus.textContent = '';
         }
         modal.classList.add('open');
       });
     }
+
+    if (shareBtn && shareUrl) {
+      shareBtn.addEventListener('click', async () => {
+        const data = this.getSongData();
+        const json = JSON.stringify(data);
+        shareBtn.disabled = true;
+        if (shareStatus) shareStatus.textContent = 'Making your link…';
+        const url = await createSongShortLink(data);
+        shareBtn.disabled = false;
+        if (!url) {
+          if (shareStatus) shareStatus.textContent = 'Couldn\'t make a link right now. Check your internet and try again.';
+          return;
+        }
+        sharedFor = json;
+        shareUrl.value = url;
+        shareUrl.select();
+        try {
+          await navigator.clipboard.writeText(url);
+          if (shareStatus) shareStatus.textContent = 'Link copied! Paste it anywhere to share your song.';
+        } catch {
+          if (shareStatus) shareStatus.textContent = 'Here\'s your link: copy it to share your song.';
+        }
+      });
+      shareUrl.addEventListener('focus', () => shareUrl.select());
+    }
+
+    // Opening a share link (…/chromeextra/?s=abc123) loads that song into Song Maker.
+    this.openSharedSongFromUrl();
 
     if (closeBtn && modal) {
       closeBtn.addEventListener('click', () => modal.classList.remove('open'));
@@ -1329,35 +1406,38 @@ export class SongMakerApp {
         this.triggerDownload(blob, 'chrome-music-lab-extra-song.mid');
       });
     }
+  }
 
-    if (copyJsonBtn && jsonTextarea) {
-      copyJsonBtn.addEventListener('click', () => {
-        navigator.clipboard.writeText(jsonTextarea.value);
-        copyJsonBtn.textContent = 'Copied to Clipboard!';
-        setTimeout(() => { copyJsonBtn.textContent = 'Copy Song Data'; }, 1600);
-      });
-    }
+  getSongData() {
+    return {
+      settings: this.settings,
+      tonalGrid: this.tonalGrid,
+      drumGrid: this.drumGrid
+    };
+  }
 
-    if (loadJsonBtn && jsonTextarea && modal) {
-      loadJsonBtn.addEventListener('click', () => {
-        try {
-          const parsed = JSON.parse(jsonTextarea.value);
-          if (parsed && parsed.settings && parsed.tonalGrid) {
-            this.saveUndoSnapshot();
-            this.settings = { ...this.settings, ...parsed.settings };
-            this.computeScaleNotes();
-            this.tonalGrid = parsed.tonalGrid;
-            this.drumGrid = parsed.drumGrid || [[], [], []];
-            if (this.tempoSlider) this.tempoSlider.value = this.settings.bpm;
-            if (this.tempoValue) this.tempoValue.textContent = this.settings.bpm;
-            this.updateInstrumentButtons();
-            this.resizeCanvases();
-            modal.classList.remove('open');
-          }
-        } catch (err) {
-          alert('Invalid Song JSON format.');
-        }
-      });
+  /** Load a song saved by getSongData(). Returns false if it isn't a Song Maker song. */
+  applySongData(parsed) {
+    if (!parsed || !parsed.settings || !Array.isArray(parsed.tonalGrid)) return false;
+    this.saveUndoSnapshot();
+    this.settings = { ...this.settings, ...parsed.settings };
+    this.computeScaleNotes();
+    this.tonalGrid = parsed.tonalGrid;
+    this.drumGrid = parsed.drumGrid || [[], [], []];
+    if (this.tempoSlider) this.tempoSlider.value = this.settings.bpm;
+    if (this.tempoValue) this.tempoValue.textContent = this.settings.bpm;
+    this.updateInstrumentButtons();
+    this.resizeCanvases();
+    return true;
+  }
+
+  async openSharedSongFromUrl() {
+    const slug = new URLSearchParams(location.search).get('s');
+    if (!slug || !/^[A-Za-z0-9]{4,12}$/.test(slug)) return;
+    if (location.hash !== '#song-maker') location.hash = 'song-maker';
+    const record = await fetchSharedSong(slug);
+    if (!record || record.app_type !== SHARE_APP_TYPE || !this.applySongData(record.payload)) {
+      alert('Sorry, that song link didn\'t work. It may have been typed wrong.');
     }
   }
 

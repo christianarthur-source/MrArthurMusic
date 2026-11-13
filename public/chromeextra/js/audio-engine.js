@@ -55,17 +55,37 @@ class AudioEngine {
       this.compressor.release.value = 0.15;
 
       this.masterGain = this.ctx.createGain();
-      this.masterGain.gain.value = 0.82;
+      this.masterGain.gain.value = 0.92;
 
-      this.masterGain.connect(this.compressor);
-      this.compressor.connect(this.ctx.destination);
+      // Connect master gain directly to destination for instantaneous, uncompressed sound
+      this.masterGain.connect(this.ctx.destination);
+      try {
+        this.masterGain.connect(this.compressor);
+        this.compressor.connect(this.ctx.destination);
+      } catch (e) {}
 
       this.noiseBuffer = this.createWhiteNoiseBuffer(this.ctx, 1.5);
     }
     if (this.ctx.state === 'suspended') {
-      this.ctx.resume();
+      this.ctx.resume().catch(() => {});
     }
     return this.ctx;
+  }
+
+  resumeAudioContext() {
+    const ctx = this.ensureContext();
+    if (ctx && ctx.state !== 'running') {
+      ctx.resume().catch(() => {});
+    }
+    // Reliable 1-sample buffer playback to wake up OS CoreAudio hardware
+    try {
+      const buf = ctx.createBuffer(1, 1, 22050);
+      const src = ctx.createBufferSource();
+      src.buffer = buf;
+      src.connect(ctx.destination);
+      src.start(0);
+    } catch (e) {}
+    return ctx;
   }
 
   createWhiteNoiseBuffer(context, duration = 1.5) {
@@ -1237,6 +1257,322 @@ class AudioEngine {
 
     const fullMidi = new Uint8Array([...header, ...trackHeader, ...trackBytes]);
     return new Blob([fullMidi], { type: 'audio/midi' });
+  }
+
+  /**
+   * Sketch Studio Synthesis Engine
+   * Implements reverse-engineered art mediums from Cymatics Sketch Max:
+   * chalk, marker, crayon, neon, watercolor, splatter, pencil, spray
+   */
+  playSketchNote(medium, freqOrMidi, duration = 0.38, timeOffset = 0, velocity = 0.8, fx = {}, customCtx = null, customDest = null) {
+    const ctx = customCtx || this.resumeAudioContext();
+
+    // Lookahead ensures audio parameters are never scheduled in the past
+    const now = Math.max(ctx.currentTime + Math.max(customCtx ? 0 : 0.005, timeOffset), 0.002);
+    const freq = typeof freqOrMidi === 'number' && freqOrMidi < 128 ? midiToFreq(freqOrMidi) : (freqOrMidi || 440);
+    const vel = Math.max(0.2, Math.min(1.2, velocity));
+    const dur = Math.max(duration, 0.18);
+
+    const toneVal = fx.tone !== undefined ? fx.tone : 0.7;
+    const decayVal = fx.decay !== undefined ? fx.decay : 0.5;
+    const effectiveDecay = Math.max(0.18, dur * (0.75 + decayVal * 1.6));
+
+    // Master envelope for note
+    const env = ctx.createGain();
+    const dest = customDest || this.masterGain;
+    env.connect(dest);
+
+    // Filter node for Tone (minimum 850Hz to ensure full clarity & brightness)
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    const cutoff = Math.max(850, 400 + Math.pow(toneVal, 2) * 16000);
+    filter.frequency.setValueAtTime(cutoff, now);
+    filter.Q.setValueAtTime(1.0, now);
+    filter.connect(env);
+
+    try {
+      switch (medium) {
+        case 'chalk': {
+          // Warm Rhodes electric piano / FM tines
+          const osc1 = ctx.createOscillator();
+          const osc2 = ctx.createOscillator();
+          osc1.type = 'sine';
+          osc2.type = 'triangle';
+          osc1.frequency.setValueAtTime(freq, now);
+          osc2.frequency.setValueAtTime(freq * 2, now);
+
+          const g2 = ctx.createGain();
+          g2.gain.setValueAtTime(0.35, now);
+          g2.gain.exponentialRampToValueAtTime(0.01, now + 0.18);
+          osc2.connect(g2);
+          g2.connect(filter);
+          osc1.connect(filter);
+
+          env.gain.setValueAtTime(0.001, now);
+          env.gain.linearRampToValueAtTime(0.9 * vel, now + 0.01);
+          env.gain.exponentialRampToValueAtTime(0.0008, now + effectiveDecay);
+
+          osc1.start(now);
+          osc2.start(now);
+          osc1.stop(now + effectiveDecay + 0.06);
+          osc2.stop(now + effectiveDecay + 0.06);
+          break;
+        }
+
+        case 'marker': {
+          // Punchy resonant synth keys
+          const osc1 = ctx.createOscillator();
+          const osc2 = ctx.createOscillator();
+          osc1.type = 'sawtooth';
+          osc2.type = 'triangle';
+          osc1.frequency.setValueAtTime(freq, now);
+          osc2.frequency.setValueAtTime(freq * 1.005, now);
+
+          filter.frequency.setValueAtTime(cutoff * 1.6, now);
+          filter.frequency.exponentialRampToValueAtTime(cutoff * 0.7, now + effectiveDecay * 0.8);
+
+          osc1.connect(filter);
+          osc2.connect(filter);
+
+          env.gain.setValueAtTime(0.001, now);
+          env.gain.linearRampToValueAtTime(0.85 * vel, now + 0.008);
+          env.gain.exponentialRampToValueAtTime(0.0008, now + effectiveDecay);
+
+          osc1.start(now);
+          osc2.start(now);
+          osc1.stop(now + effectiveDecay + 0.06);
+          osc2.stop(now + effectiveDecay + 0.06);
+          break;
+        }
+
+        case 'crayon': {
+          // Playful wooden marimba / acoustic mallet
+          const osc1 = ctx.createOscillator();
+          const osc2 = ctx.createOscillator();
+          osc1.type = 'sine';
+          osc2.type = 'sine';
+          osc1.frequency.setValueAtTime(freq, now);
+          osc2.frequency.setValueAtTime(freq * 3.8, now);
+
+          const g2 = ctx.createGain();
+          g2.gain.setValueAtTime(0.45, now);
+          g2.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+          osc2.connect(g2);
+          g2.connect(filter);
+          osc1.connect(filter);
+
+          env.gain.setValueAtTime(0.001, now);
+          env.gain.linearRampToValueAtTime(0.95 * vel, now + 0.005);
+          env.gain.exponentialRampToValueAtTime(0.0008, now + Math.min(effectiveDecay, 0.65));
+
+          osc1.start(now);
+          osc2.start(now);
+          osc1.stop(now + effectiveDecay + 0.06);
+          osc2.stop(now + effectiveDecay + 0.06);
+          break;
+        }
+
+        case 'neon': {
+          // Glowing analog saw lead
+          const osc1 = ctx.createOscillator();
+          const osc2 = ctx.createOscillator();
+          osc1.type = 'sawtooth';
+          osc2.type = 'sawtooth';
+          osc1.frequency.setValueAtTime(freq * 1.003, now);
+          osc2.frequency.setValueAtTime(freq * 0.997, now);
+
+          filter.Q.setValueAtTime(2.2, now);
+          filter.frequency.setValueAtTime(cutoff * 0.9, now);
+          filter.frequency.exponentialRampToValueAtTime(cutoff * 1.5, now + 0.035);
+          filter.frequency.exponentialRampToValueAtTime(cutoff * 0.7, now + effectiveDecay);
+
+          osc1.connect(filter);
+          osc2.connect(filter);
+
+          env.gain.setValueAtTime(0.001, now);
+          env.gain.linearRampToValueAtTime(0.85 * vel, now + 0.015);
+          env.gain.exponentialRampToValueAtTime(0.0008, now + effectiveDecay * 1.2);
+
+          osc1.start(now);
+          osc2.start(now);
+          osc1.stop(now + effectiveDecay * 1.2 + 0.06);
+          osc2.stop(now + effectiveDecay * 1.2 + 0.06);
+          break;
+        }
+
+        case 'watercolor': {
+          // Ambient celestial glass pad
+          const osc1 = ctx.createOscillator();
+          const osc2 = ctx.createOscillator();
+          osc1.type = 'sine';
+          osc2.type = 'triangle';
+          osc1.frequency.setValueAtTime(freq, now);
+          osc2.frequency.setValueAtTime(freq * 0.5, now);
+
+          const subGain = ctx.createGain();
+          subGain.gain.setValueAtTime(0.28, now);
+          osc2.connect(subGain);
+          subGain.connect(filter);
+          osc1.connect(filter);
+
+          const attackTime = 0.04;
+          env.gain.setValueAtTime(0.001, now);
+          env.gain.linearRampToValueAtTime(0.85 * vel, now + attackTime);
+          env.gain.exponentialRampToValueAtTime(0.0008, now + effectiveDecay * 1.5);
+
+          osc1.start(now);
+          osc2.start(now);
+          osc1.stop(now + effectiveDecay * 1.5 + 0.06);
+          osc2.stop(now + effectiveDecay * 1.5 + 0.06);
+          break;
+        }
+
+        case 'splatter': {
+          // Crisp kalimba / chime droplet burst
+          const osc1 = ctx.createOscillator();
+          const osc2 = ctx.createOscillator();
+          osc1.type = 'triangle';
+          osc2.type = 'sine';
+          osc1.frequency.setValueAtTime(freq, now);
+          osc2.frequency.setValueAtTime(freq * 2.76, now);
+
+          const g2 = ctx.createGain();
+          g2.gain.setValueAtTime(0.5, now);
+          g2.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
+          osc2.connect(g2);
+          g2.connect(filter);
+          osc1.connect(filter);
+
+          env.gain.setValueAtTime(0.001, now);
+          env.gain.linearRampToValueAtTime(0.95 * vel, now + 0.003);
+          env.gain.exponentialRampToValueAtTime(0.0008, now + Math.min(effectiveDecay, 0.45));
+
+          osc1.start(now);
+          osc2.start(now);
+          osc1.stop(now + effectiveDecay + 0.06);
+          osc2.stop(now + effectiveDecay + 0.06);
+          break;
+        }
+
+        case 'pencil': {
+          // Music box / crystalline bells
+          const osc1 = ctx.createOscillator();
+          const osc2 = ctx.createOscillator();
+          osc1.type = 'sine';
+          osc2.type = 'sine';
+          osc1.frequency.setValueAtTime(freq, now);
+          osc2.frequency.setValueAtTime(freq * 3, now);
+
+          const bellGain = ctx.createGain();
+          bellGain.gain.setValueAtTime(0.35, now);
+          bellGain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+          osc2.connect(bellGain);
+          bellGain.connect(filter);
+          osc1.connect(filter);
+
+          env.gain.setValueAtTime(0.001, now);
+          env.gain.linearRampToValueAtTime(0.85 * vel, now + 0.004);
+          env.gain.exponentialRampToValueAtTime(0.0008, now + effectiveDecay * 0.95);
+
+          osc1.start(now);
+          osc2.start(now);
+          osc1.stop(now + effectiveDecay + 0.06);
+          osc2.stop(now + effectiveDecay + 0.06);
+          break;
+        }
+
+        case 'spray': {
+          // Airy shimmer synth with noise burst
+          const osc = ctx.createOscillator();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(freq, now);
+          osc.connect(filter);
+
+          if (this.noiseBuffer) {
+            const noise = ctx.createBufferSource();
+            noise.buffer = this.noiseBuffer;
+            const nFilter = ctx.createBiquadFilter();
+            nFilter.type = 'bandpass';
+            nFilter.frequency.setValueAtTime(Math.min(cutoff, 3500), now);
+            nFilter.Q.setValueAtTime(2.0, now);
+            const nGain = ctx.createGain();
+            nGain.gain.setValueAtTime(0.25 * vel, now);
+            nGain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+            noise.connect(nFilter);
+            nFilter.connect(nGain);
+            nGain.connect(filter);
+            noise.start(now);
+          }
+
+          env.gain.setValueAtTime(0.001, now);
+          env.gain.linearRampToValueAtTime(0.85 * vel, now + 0.02);
+          env.gain.exponentialRampToValueAtTime(0.0008, now + effectiveDecay);
+
+          osc.start(now);
+          osc.stop(now + effectiveDecay + 0.06);
+          break;
+        }
+
+        default:
+          this.playTonalNote('piano', typeof freqOrMidi === 'number' && freqOrMidi < 128 ? freqOrMidi : 60, duration, timeOffset, velocity, customCtx, customDest);
+      }
+    } catch (synthErr) {
+      console.warn('Sketch synth fallback triggered:', synthErr);
+      this.playTonalNote('piano', typeof freqOrMidi === 'number' && freqOrMidi < 128 ? freqOrMidi : 60, duration, timeOffset, velocity, customCtx, customDest);
+    }
+  }
+
+  /**
+   * Continuous Glide Voice: Portamento glide across drawn stroke contours
+   */
+  startGlideVoice(medium, freq, velocity = 0.8, fx = {}) {
+    const ctx = this.ensureContext();
+    if (ctx.state === 'suspended') {
+      try { ctx.resume(); } catch (e) {}
+    }
+    const now = ctx.currentTime + 0.01;
+    const toneVal = fx.tone !== undefined ? fx.tone : 0.7;
+    const cutoff = 300 + Math.pow(toneVal, 2) * 12500;
+
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(cutoff, now);
+
+    const env = ctx.createGain();
+    env.gain.setValueAtTime(0.001, now);
+    env.gain.linearRampToValueAtTime(0.65 * velocity, now + 0.025);
+
+    filter.connect(env);
+    env.connect(this.masterGain);
+
+    const osc = ctx.createOscillator();
+    osc.type = medium === 'neon' ? 'sawtooth' : (medium === 'marker' ? 'triangle' : 'sine');
+    osc.frequency.setValueAtTime(freq, now);
+    osc.connect(filter);
+    osc.start(now);
+
+    return { osc, env, filter, ctx };
+  }
+
+  updateGlideVoice(voice, newFreq) {
+    if (!voice || !voice.osc) return;
+    const now = voice.ctx.currentTime + 0.01;
+    voice.osc.frequency.cancelScheduledValues(now);
+    voice.osc.frequency.linearRampToValueAtTime(newFreq, now + 0.05);
+  }
+
+  stopGlideVoice(voice, release = 0.15) {
+    if (!voice || !voice.env) return;
+    const now = voice.ctx.currentTime + 0.01;
+    voice.env.gain.cancelScheduledValues(now);
+    voice.env.gain.setValueAtTime(voice.env.gain.value, now);
+    voice.env.gain.exponentialRampToValueAtTime(0.0008, now + release);
+    setTimeout(() => {
+      try {
+        voice.osc.stop();
+        voice.osc.disconnect();
+      } catch (e) {}
+    }, release * 1000 + 60);
   }
 }
 
