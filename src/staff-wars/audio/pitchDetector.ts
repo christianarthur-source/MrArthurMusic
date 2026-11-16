@@ -31,6 +31,11 @@ export class LivePitchDetector {
   private sourceNode: MediaStreamAudioSourceNode | null = null;
   private animId: number | null = null;
   private isRunning: boolean = false;
+  // Bumped by every stop(); a start() that finds it changed after an await was
+  // cancelled while the permission prompt was open and must release the mic.
+  private startToken: number = 0;
+  /** DOMException name of the last failed start (e.g. NotAllowedError), or ''. */
+  public lastErrorName: string = '';
   private transposition: InstrumentTransposition = 'C';
   private onPitchCallback: ((res: PitchDetectionResult | null) => void) | null = null;
 
@@ -59,6 +64,8 @@ export class LivePitchDetector {
   ): Promise<boolean> {
     this.transposition = transposition;
     this.onPitchCallback = onPitch;
+    this.lastErrorName = '';
+    const token = ++this.startToken;
 
     // If already running with an active media stream, update callback and resume
     if (this.isRunning && this.audioCtx && this.analyser && this.mediaStream) {
@@ -91,6 +98,11 @@ export class LivePitchDetector {
         stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       }
 
+      if (token !== this.startToken) {
+        // stop() was called (tool closed / game ended) during the permission prompt
+        stream.getTracks().forEach((track) => track.stop());
+        return false;
+      }
       this.mediaStream = stream;
 
       // 2. Initialize and resume AudioContext
@@ -101,6 +113,9 @@ export class LivePitchDetector {
 
       if (this.audioCtx.state === 'suspended') {
         await this.audioCtx.resume();
+      }
+      if (token !== this.startToken) {
+        return false; // stop() already released the stream and context
       }
 
       // 3. Connect Analyser Node
@@ -127,12 +142,14 @@ export class LivePitchDetector {
       return true;
     } catch (err) {
       console.error('Failed to start Live Pitch Detector:', err);
-      this.stop();
+      this.lastErrorName = (err as any)?.name || 'Error';
+      if (token === this.startToken) this.stop();
       return false;
     }
   }
 
   public stop() {
+    this.startToken++;
     this.isRunning = false;
     if (this.animId) {
       cancelAnimationFrame(this.animId);

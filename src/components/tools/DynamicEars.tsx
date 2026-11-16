@@ -119,11 +119,15 @@ export const DynamicEars: React.FC = () => {
   const analyserRef = useRef<AnalyserNode | null>(null);
   const micStreamRef = useRef<MediaStream | null>(null);
   const animFrameRef = useRef<number | null>(null);
+  const micRequestRef = useRef<number>(0); // bumped by stopMic / unmount to cancel a pending permission prompt
+  const levelRef = useRef<number>(level);
+  levelRef.current = level;
 
   const currentTier = getDynamicTier(level);
 
   // Clean up mic audio nodes
   const stopMic = useCallback(() => {
+    micRequestRef.current++;
     if (animFrameRef.current !== null) {
       cancelAnimationFrame(animFrameRef.current);
       animFrameRef.current = null;
@@ -134,16 +138,23 @@ export const DynamicEars: React.FC = () => {
     }
     if (audioCtxRef.current && audioCtxRef.current.state !== 'closed') {
       audioCtxRef.current.close().catch(() => {});
-      audioCtxRef.current = null;
     }
+    audioCtxRef.current = null;
+    analyserRef.current = null;
     setIsMicListening(false);
   }, []);
 
   // Start listening to microphone
   const startMic = async () => {
     setMicError(null);
+    const requestId = ++micRequestRef.current;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      if (requestId !== micRequestRef.current) {
+        // Closed (or switched off) while the browser permission prompt was open
+        stream.getTracks().forEach((t) => t.stop());
+        return;
+      }
       micStreamRef.current = stream;
 
       const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
@@ -174,16 +185,30 @@ export const DynamicEars: React.FC = () => {
         // Scale 0..128 to 0..100
         const calculated = Math.min(100, Math.round((avg / 90) * 100));
 
-        setLevel(calculated);
-        setPeakLevel((p) => Math.max(p, calculated));
+        // The analyser smooths the signal already; update React at ~15 Hz, not every frame
+        const nowMs = performance.now();
+        if (nowMs - lastMeterUpdate >= 66) {
+          lastMeterUpdate = nowMs;
+          setLevel(calculated);
+          setPeakLevel((p) => (calculated > p ? calculated : p));
+        }
 
         animFrameRef.current = requestAnimationFrame(updateMeter);
       };
+      let lastMeterUpdate = 0;
 
       updateMeter();
     } catch (err) {
       console.error('Mic access error:', err);
-      setMicError('Microphone access was not granted. You can still test with the dynamic buttons below!');
+      if (requestId !== micRequestRef.current) return;
+      const name = (err as { name?: string } | null)?.name;
+      setMicError(
+        name === 'NotFoundError'
+          ? 'No microphone was found. You can still test with the dynamic buttons below!'
+          : name === 'NotReadableError'
+          ? 'The microphone is busy in another app. You can still test with the dynamic buttons below!'
+          : 'Microphone access was not granted. You can still test with the dynamic buttons below!'
+      );
       setIsMicListening(false);
     }
   };
@@ -217,20 +242,17 @@ export const DynamicEars: React.FC = () => {
     }
   };
 
-  // Classroom Challenge Timer
+  // Classroom Challenge Timer. `level` changes many times a second while the mic
+  // is live, so it is read from a ref: the interval is created once per
+  // challenge and never restarted (restarting it stalled the countdown).
   useEffect(() => {
     if (!challengeActive) return;
 
-    if (challengeSeconds <= 0) {
-      setChallengeActive(false);
-      return;
-    }
-
     const timer = window.setInterval(() => {
-      setChallengeSeconds((s) => s - 1);
+      setChallengeSeconds((s) => Math.max(0, s - 1));
 
       // Check if current level is too loud (Forte or Fortissimo)
-      if (level >= 75) {
+      if (levelRef.current >= 75) {
         setChallengeWarning(true);
         setChallengeStars((st) => Math.max(1, st - 1));
       } else {
@@ -239,7 +261,13 @@ export const DynamicEars: React.FC = () => {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [challengeActive, challengeSeconds, level]);
+  }, [challengeActive]);
+
+  useEffect(() => {
+    if (challengeActive && challengeSeconds <= 0) {
+      setChallengeActive(false);
+    }
+  }, [challengeActive, challengeSeconds]);
 
   const handleStartChallenge = () => {
     setChallengeSeconds(60);

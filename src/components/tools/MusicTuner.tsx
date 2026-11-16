@@ -263,7 +263,9 @@ export const MusicTuner: React.FC = () => {
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const animFrameIdRef = useRef<number | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const inTuneDurationRef = useRef<number>(0);
+  const inTuneDurationRef = useRef<number>(0); // milliseconds held in tune
+  const micRequestRef = useRef<number>(0);
+  const unmountedRef = useRef<boolean>(false);
 
   // Dynamic presets based on A4 calibration
   const presets = useMemo(() => getInstrumentPresets(a4Calibration), [a4Calibration]);
@@ -283,27 +285,42 @@ export const MusicTuner: React.FC = () => {
     return null;
   }, [currentPreset, targetStringId, closestStringId]);
 
-  // Stop tone generator
+  // Stop tone generator. The oscillator and gain are captured now, so a tone
+  // started straight after (playTone calls stopTone first) is never touched by
+  // this fade-out timer, and every oscillator that was started does get stopped.
   const stopTone = useCallback(() => {
-    if (activeToneGainRef.current && audioContextRef.current) {
+    const osc = activeToneOscRef.current;
+    const gain = activeToneGainRef.current;
+    activeToneOscRef.current = null;
+    activeToneGainRef.current = null;
+    setPlayingToneNote(null);
+    if (!osc) return;
+    const ctx = audioContextRef.current;
+    let stopAt = 0;
+    if (gain && ctx) {
       try {
-        const now = audioContextRef.current.currentTime;
-        activeToneGainRef.current.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
+        const now = ctx.currentTime;
+        gain.gain.cancelScheduledValues(now);
+        gain.gain.setValueAtTime(Math.max(gain.gain.value, 0.0001), now);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
+        stopAt = now + 0.1;
       } catch {
         // ignore
       }
     }
-    setTimeout(() => {
+    try {
+      osc.stop(stopAt);
+    } catch {
+      // already stopped
+    }
+    osc.onended = () => {
       try {
-        activeToneOscRef.current?.stop();
-        activeToneOscRef.current?.disconnect();
+        osc.disconnect();
+        gain?.disconnect();
       } catch {
         // ignore
       }
-      activeToneOscRef.current = null;
-      activeToneGainRef.current = null;
-      setPlayingToneNote(null);
-    }, 90);
+    };
   }, []);
 
   // Play reference pitch for a string
@@ -348,8 +365,10 @@ export const MusicTuner: React.FC = () => {
   // Start microphone listening
   const startListening = async () => {
     setMicError(null);
+    const requestId = ++micRequestRef.current;
+    let stream: MediaStream | null = null;
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
+      stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: false,
           noiseSuppression: false,
@@ -357,8 +376,19 @@ export const MusicTuner: React.FC = () => {
         },
       });
 
+      // The tool was closed (or listening was cancelled) while the browser's
+      // permission prompt was open: release the microphone straight away.
+      if (unmountedRef.current || requestId !== micRequestRef.current) {
+        stream.getTracks().forEach((track) => track.stop());
+        return;
+      }
+
       const ctx = await getToolboxAudioContext();
       if (!ctx) throw new Error('Audio Context unavailable');
+      if (unmountedRef.current || requestId !== micRequestRef.current) {
+        stream.getTracks().forEach((track) => track.stop());
+        return;
+      }
       audioContextRef.current = ctx;
 
       const source = ctx.createMediaStreamSource(stream);
@@ -372,17 +402,25 @@ export const MusicTuner: React.FC = () => {
 
       setIsListening(true);
     } catch (err: any) {
-      setMicError(
-        err?.message?.includes('Permission')
-          ? 'Microphone access was denied. Please allow microphone permissions in your browser bar.'
-          : 'Could not access microphone. Please check your audio input settings.'
-      );
+      stream?.getTracks().forEach((track) => track.stop());
+      if (unmountedRef.current) return;
+      const name: string = err?.name || '';
+      if (name === 'NotAllowedError' || name === 'SecurityError' || name === 'PermissionDeniedError') {
+        setMicError('Microphone access was denied. Please allow microphone permissions in your browser bar.');
+      } else if (name === 'NotFoundError' || name === 'DevicesNotFoundError' || name === 'OverconstrainedError') {
+        setMicError('No microphone was found. Plug one in or check your audio input settings.');
+      } else if (name === 'NotReadableError' || name === 'TrackStartError' || name === 'AbortError') {
+        setMicError('The microphone is busy or unavailable. Close other apps using it and try again.');
+      } else {
+        setMicError('Could not access microphone. Please check your audio input settings.');
+      }
       setIsListening(false);
     }
   };
 
   // Stop microphone listening
   const stopListening = useCallback(() => {
+    micRequestRef.current++; // cancels a permission prompt that is still pending
     if (animFrameIdRef.current) {
       cancelAnimationFrame(animFrameIdRef.current);
       animFrameIdRef.current = null;
@@ -414,6 +452,12 @@ export const MusicTuner: React.FC = () => {
 
     const tolerance = isKidsMode ? 7.5 : 3.0; // In-tune tolerance in cents
 
+    // Detection runs at ~20 Hz (it is an O(n * periods) autocorrelation and
+    // drives several state updates); only the waveform is drawn every frame.
+    const DETECT_INTERVAL_MS = 50;
+    const HOLD_IN_TUNE_MS = 600;
+    let lastDetectAt = 0;
+
     const updatePitchLoop = () => {
       analyser.getFloatTimeDomainData(buffer);
 
@@ -434,6 +478,14 @@ export const MusicTuner: React.FC = () => {
         }
         canvasCtx.stroke();
       }
+
+      const nowMs = performance.now();
+      if (nowMs - lastDetectAt < DETECT_INTERVAL_MS) {
+        animFrameIdRef.current = requestAnimationFrame(updatePitchLoop);
+        return;
+      }
+      const dtMs = lastDetectAt === 0 ? DETECT_INTERVAL_MS : Math.min(nowMs - lastDetectAt, 250);
+      lastDetectAt = nowMs;
 
       // Detect Pitch
       const result = detectPitch(buffer, ctx.sampleRate);
@@ -493,8 +545,8 @@ export const MusicTuner: React.FC = () => {
 
         // Fun reward: Hold in tune for 0.6 seconds to mark string as tuned
         if (inTune && targetStrMatch) {
-          inTuneDurationRef.current += 1;
-          if (inTuneDurationRef.current > 18) {
+          inTuneDurationRef.current += dtMs;
+          if (inTuneDurationRef.current > HOLD_IN_TUNE_MS) {
             const sid = targetStrMatch.id;
             setTunedStrings((prev) => {
               if (prev[sid]) return prev;
@@ -511,7 +563,7 @@ export const MusicTuner: React.FC = () => {
             });
           }
         } else {
-          inTuneDurationRef.current = Math.max(0, inTuneDurationRef.current - 1);
+          inTuneDurationRef.current = Math.max(0, inTuneDurationRef.current - dtMs);
         }
       } else {
         // Silence or low confidence
@@ -532,7 +584,9 @@ export const MusicTuner: React.FC = () => {
 
   // Clean up mic and tone on unmount
   useEffect(() => {
+    unmountedRef.current = false;
     return () => {
+      unmountedRef.current = true;
       stopListening();
       stopTone();
     };

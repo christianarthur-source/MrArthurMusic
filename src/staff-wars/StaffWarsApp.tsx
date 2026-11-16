@@ -417,6 +417,9 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
   const noteListRef = useRef<NoteDefinition[]>([]);
   const activeNoteRef = useRef<ActiveNote | null>(null);
   activeNoteRef.current = activeNote;
+  const [isPaused, setIsPaused] = useState<boolean>(false);
+  const statusRef = useRef<GameStatus>('menu');
+  statusRef.current = status;
 
   // Initialize or update notes pool
   useEffect(() => {
@@ -558,7 +561,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
         return 0;
       } else {
         setTimeout(() => {
-          spawnNote(levelRef.current);
+          if (statusRef.current === 'playing') spawnNote(levelRef.current);
         }, 450);
         return remaining;
       }
@@ -567,15 +570,18 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
 
   // Main Game Loop (Updates note position across staff)
   useEffect(() => {
-    if (status !== 'playing') return;
+    if (status !== 'playing' || isPaused) return;
 
     let animId: number;
+    let lastPruneAt = 0;
+    lastTimeRef.current = 0; // first frame after (re)start has dt = 0
 
     const loop = (time: number) => {
       if (lastTimeRef.current === 0) {
         lastTimeRef.current = time;
       }
-      const dt = (time - lastTimeRef.current) / 1000;
+      // Clamp dt so a stalled frame (tab switch, slow device) can never skip a note past the clef
+      const dt = Math.min(0.1, Math.max(0, (time - lastTimeRef.current) / 1000));
       lastTimeRef.current = time;
 
       if (activeNoteRef.current && !activeNoteRef.current.isHit) {
@@ -586,8 +592,19 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
           activeNoteRef.current.isHit = true; // Guard immediately
           handleNoteMissed();
         } else {
-          setActiveNote((prev) => (prev ? { ...prev, xPercent: nextX } : null));
+          // Position lives on the ref (the canvas reads it every frame), so the
+          // whole React tree is not re-rendered 60 times a second.
+          activeNoteRef.current.xPercent = nextX;
         }
+      }
+
+      // Drop finished lasers / explosions / popups so the arrays do not grow all game
+      if (time - lastPruneAt > 1000) {
+        lastPruneAt = time;
+        const cutoff = Date.now() - 2000;
+        setLasers((prev) => (prev.some((l) => l.createdAt < cutoff) ? prev.filter((l) => l.createdAt >= cutoff) : prev));
+        setExplosions((prev) => (prev.some((e) => e.createdAt < cutoff) ? prev.filter((e) => e.createdAt >= cutoff) : prev));
+        setScorePopups((prev) => (prev.some((p) => p.createdAt < cutoff) ? prev.filter((p) => p.createdAt >= cutoff) : prev));
       }
 
       animId = requestAnimationFrame(loop);
@@ -595,12 +612,28 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
 
     animId = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(animId);
-  }, [status, handleNoteMissed]);
+  }, [status, isPaused, handleNoteMissed]);
+
+  // Auto-pause when the tab is hidden or the window loses focus, so coming back never costs a life
+  useEffect(() => {
+    const pauseIfPlaying = () => {
+      if (statusRef.current === 'playing') setIsPaused(true);
+    };
+    const onVisibility = () => {
+      if (document.hidden) pauseIfPlaying();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    window.addEventListener('blur', pauseIfPlaying);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibility);
+      window.removeEventListener('blur', pauseIfPlaying);
+    };
+  }, []);
 
   // Handle Player Note Answer (from Buttons, Keyboard, or Live Mic)
   const handleAnswer = useCallback(
     (letter: 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G') => {
-      if (status !== 'playing' || !activeNote || activeNote.isHit) return;
+      if (status !== 'playing' || isPaused || !activeNote || activeNote.isHit) return;
 
       const targetStep = activeNote.def.step;
       const isCorrect = letter === targetStep;
@@ -651,14 +684,8 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
           } catch {}
         }
 
-        let prevClefBest = 0;
-        try {
-          const clefKey = getClefHighScoreKey(studentSession, clef);
-          prevClefBest = parseInt(localStorage.getItem(clefKey) || '0', 10) || 0;
-        } catch {}
-        if (newScore > highScore || newScore > prevClefBest) {
-          submitHighScore(newScore, level, clef);
-        }
+        // The best score is kept locally on every hit (above); it is posted to
+        // the server once, when the game ends or the player leaves.
 
         const newStreak = streak + 1;
         setStreak(newStreak);
@@ -690,7 +717,6 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
         if (totalHit % 10 === 0) {
           const nextLvl = level + 1;
           setLevel(nextLvl);
-          submitHighScore(newScore, nextLvl, clef);
           staffWarsAudio.playLevelUp();
           try {
             confetti({ particleCount: 65, spread: 75, origin: { y: 0.5 } });
@@ -702,9 +728,11 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
         }
 
         // Spawn next note (faster delay on higher levels)
-        const spawnDelay = Math.max(180, 320 - (level - 1) * 25);
+        // After a level-up the next note must already use the new level's speed.
+        const spawnLevel = totalHit % 10 === 0 ? level + 1 : level;
+        const spawnDelay = Math.max(180, 320 - (spawnLevel - 1) * 25);
         setTimeout(() => {
-          spawnNote(level);
+          if (statusRef.current === 'playing') spawnNote(spawnLevel);
         }, spawnDelay);
       } else {
         // Wrong note!
@@ -758,7 +786,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
         }
       }
     },
-    [status, activeNote, streak, score, highScore, notesHit, level, clef, triggerExplosion, spawnNote, submitHighScore, inputMode, wrongPressCount, studentSession]
+    [status, isPaused, activeNote, streak, score, highScore, notesHit, level, clef, triggerExplosion, spawnNote, submitHighScore, inputMode, wrongPressCount, studentSession]
   );
 
 
@@ -766,9 +794,11 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
   handleAnswerRef.current = handleAnswer;
   const lastMicTriggerRef = useRef<number>(0);
   const lastUiUpdateRef = useRef<number>(0);
+  const micBlockedRef = useRef<boolean>(false);
 
   // Robust Live Mic Starter with graceful error and permission handling
   const startLiveMic = useCallback(async (): Promise<boolean> => {
+    micBlockedRef.current = false; // an explicit (re)try always goes through
     setIsRequestingMic(true);
     setMicError(null);
     try {
@@ -793,11 +823,21 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
 
       setMicActive(success);
       if (!success) {
-        setMicError('Microphone permission blocked or not available in this browser.');
+        // Do not let the effect below re-ask on its own: a denied prompt would loop forever
+        micBlockedRef.current = true;
+        const errName = livePitchDetector.lastErrorName;
+        setMicError(
+          errName === 'NotFoundError'
+            ? 'No microphone was found. Plug one in, then press the button to try again.'
+            : errName === 'NotReadableError'
+            ? 'The microphone is busy. Close other apps using it, then press the button to try again.'
+            : 'Microphone permission blocked or not available in this browser. Allow it in the address bar, then press the button to try again.'
+        );
       }
       return success;
     } catch (err: any) {
       console.error('Failed to start live mic:', err);
+      micBlockedRef.current = true;
       setMicActive(false);
       setMicError(err?.message || 'Microphone access failed');
       return false;
@@ -817,7 +857,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
       return;
     }
 
-    if (!micActive && !isRequestingMic) {
+    if (!micActive && !isRequestingMic && !micBlockedRef.current) {
       startLiveMic();
     }
   }, [status, inputMode, micActive, isRequestingMic, startLiveMic]);
@@ -828,6 +868,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
     if (inputMode === 'mic' && !micActive) {
       await startLiveMic();
     }
+    setIsPaused(false);
     setScore(0);
     setLives(3);
     setWrongPressCount(0);
@@ -861,7 +902,10 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
         e.preventDefault();
         startGame();
       } else if (status === 'playing') {
-        if (NOTE_LETTERS.includes(key as any)) {
+        if (key === 'P' || e.key === 'Escape') {
+          e.preventDefault();
+          setIsPaused((p) => !p);
+        } else if (NOTE_LETTERS.includes(key as any)) {
           e.preventDefault();
           handleAnswer(key as any);
         }
@@ -885,6 +929,9 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
           <button
             type="button"
             onClick={() => {
+              if (statusRef.current === 'playing' && scoreRef.current > 0) {
+                submitHighScore(scoreRef.current, levelRef.current, clefRef.current);
+              }
               staffWarsAudio.stopMusic();
               livePitchDetector.stop();
               onBackToHub();
@@ -1351,15 +1398,46 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
             </div>
 
             {/* Space Canvas with Extended Staff, Crisp Clef, Spaceship & Lasers */}
-            <SpaceCanvas
-              clef={clef}
-              activeNote={activeNote}
-              lasers={lasers}
-              explosions={explosions}
-              scorePopups={scorePopups}
-              isShieldShaking={isShieldShaking}
-              lives={lives}
-            />
+            <div className="relative">
+              <SpaceCanvas
+                clef={clef}
+                activeNote={activeNote}
+                lasers={lasers}
+                explosions={explosions}
+                scorePopups={scorePopups}
+                isShieldShaking={isShieldShaking}
+                lives={lives}
+              />
+              {!isPaused && (
+                <button
+                  type="button"
+                  onClick={() => setIsPaused(true)}
+                  aria-label="Pause game"
+                  title="Pause (P)"
+                  className="absolute top-3 right-3 px-3 py-2 min-h-[44px] rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-slate-600 text-slate-200 text-xs font-black cursor-pointer"
+                >
+                  ⏸ Pause
+                </button>
+              )}
+              {isPaused && (
+                <div
+                  role="dialog"
+                  aria-label="Game paused"
+                  className="absolute inset-0 rounded-3xl bg-slate-950/80 backdrop-blur-sm flex flex-col items-center justify-center gap-3 text-center p-4"
+                >
+                  <p className="text-2xl font-black text-amber-400">Paused</p>
+                  <p className="text-sm text-slate-300">The notes are waiting for you.</p>
+                  <button
+                    type="button"
+                    autoFocus
+                    onClick={() => setIsPaused(false)}
+                    className="px-6 py-3 min-h-[44px] rounded-xl bg-gradient-to-r from-amber-400 to-orange-400 text-slate-950 font-black cursor-pointer"
+                  >
+                    ▶ Resume
+                  </button>
+                </div>
+              )}
+            </div>
 
             {/* LIVE MICROPHONE HUD TUNER (When in Mic Mode) */}
             {inputMode === 'mic' && (
