@@ -92,6 +92,19 @@ import {
 } from './utils/classroomApi';
 import { containsProfanity } from './utils/profanityFilter';
 import { createShortLink, fetchShortLink } from './utils/shortLinkService';
+import { recordRecentTool } from './labCatalog';
+import {
+  RouteState,
+  goHomeInHistory,
+  hasShareParams,
+  isBigStaffLocation,
+  pageTitle,
+  pushRoute,
+  readUrlParam,
+  replaceRoute,
+  routeFromLocation,
+  titleForRoute,
+} from './routes';
 
 // True when a loaded value has the minimum shape the editor needs (at least one staff with measures).
 function isScoreShape(raw: unknown): raw is Score {
@@ -185,108 +198,25 @@ function sanitizeLoadedScore(raw: Score): Score {
 }
 
 export function checkIsBigStaffUrl(): boolean {
-  try {
-    const params = new URLSearchParams(window.location.search);
-    const hashContent = (window.location.hash || '').replace(/^#/, '');
-    const hashParams = new URLSearchParams(hashContent);
-    const pathname = (window.location.pathname || '').toLowerCase();
-
-    const appParam = (params.get('app') || hashParams.get('app') || '').toLowerCase();
-    if (appParam === 'big-staff' || appParam === 'bigstaff' || appParam === 'kids') {
-      return true;
-    }
-    if (
-      params.has('bigstaff') ||
-      params.has('big-staff') ||
-      hashParams.has('bigstaff') ||
-      hashParams.has('big-staff') ||
-      params.has('kids') ||
-      hashParams.has('kids')
-    ) {
-      return true;
-    }
-    const modeParam = (params.get('mode') || hashParams.get('mode') || '').toLowerCase();
-    if (
-      (modeParam === 'easy' || modeParam === 'simple') &&
-      (params.get('bigStaff') === '1' ||
-        params.get('bigStaff') === 'true' ||
-        params.has('bigStaff') ||
-        params.has('big-staff'))
-    ) {
-      return true;
-    }
-    if (pathname.endsWith('/big-staff') || pathname.endsWith('/bigstaff') || pathname.endsWith('/kids')) {
-      return true;
-    }
-  } catch {
-    // ignore
-  }
-  return false;
+  return isBigStaffLocation();
 }
 
 const UNDO_HISTORY_LIMIT = 100;
 
 export default function App() {
   // Current active sub-application in Mr. Arthur's Music Lab
-  const [currentApp, setCurrentApp] = useState<MusicLabAppId>(() => {
+  const [currentApp, setCurrentApp] = useState<MusicLabAppId>(() => routeFromLocation().app);
+  // A shared link (?s=abc) is fetched from the server on page load: say so while waiting, and say so if it fails.
+  const [shareStatus, setShareStatus] = useState<'loading' | 'missing' | null>(() => {
     try {
-      if (checkIsBigStaffUrl()) {
-        return 'staff-composer';
-      }
-      const params = new URLSearchParams(window.location.search);
-      const appParam = params.get('app');
-      if (
-        appParam === 'staff-composer' ||
-        appParam === 'rhythm-rockstars' ||
-        appParam === 'beat-machine' ||
-        appParam === 'daw' ||
-        appParam === 'staff-wars'
-      ) {
-        return appParam;
-      }
-      // If a shared beat link is opened (?song=... or legacy long ?s=...)
-      const sParam = params.get('s');
-      if (params.get('song') || (sParam && sParam.length > 16)) {
-        return 'beat-machine';
-      }
-      // If a shared DAW project link is opened (?project=... or ?daw=...)
-      if (params.get('project') || params.get('daw')) {
-        return 'daw';
-      }
-      // If a shared Staff Composer score link is opened (?share=... or ?score=...)
-      if (params.get('share') || params.get('score')) {
-        return 'staff-composer';
-      }
-      // Check hash fragment (#app=... or #song=... or #share=...)
-      if (window.location.hash) {
-        const hashContent = window.location.hash.replace(/^#/, '');
-        const hashParams = new URLSearchParams(hashContent);
-        const hashApp = hashParams.get('app');
-        if (
-          hashApp === 'staff-composer' ||
-          hashApp === 'rhythm-rockstars' ||
-          hashApp === 'beat-machine' ||
-          hashApp === 'daw' ||
-          hashApp === 'staff-wars'
-        ) {
-          return hashApp;
-        }
-        const hashS = hashParams.get('s');
-        if (hashParams.get('song') || (hashS && hashS.length > 16)) {
-          return 'beat-machine';
-        }
-        if (hashParams.get('project') || hashParams.get('daw')) {
-          return 'daw';
-        }
-        if (hashParams.get('share') || hashParams.get('score')) {
-          return 'staff-composer';
-        }
-      }
+      const slug = readUrlParam(window.location, 's', 'link') ?? readUrlParam(window.location, 'share', 'score');
+      return slug && slug.trim().length > 0 && slug.trim().length <= 16 ? 'loading' : null;
     } catch {
-      // ignore in SSR / restricted iframe
+      return null;
     }
-    return 'hub';
   });
+  // A Tool Box tool open on the landing page (its address is /?app=metronome and so on).
+  const [landingTool, setLandingTool] = useState<ToolId | null>(() => routeFromLocation().tool);
 
   // Score state (ALWAYS default to just a single treble clef staff with NO NOTES)
   // (or the score left on this device before a refresh)
@@ -473,48 +403,107 @@ export default function App() {
     }
   }, []);
 
+  // Which part of the Music Lab is showing, kept in a ref so the navigation helpers below stay stable.
+  const appRef = useRef<MusicLabAppId>(currentApp);
+  appRef.current = currentApp;
+
+  const enterBigStaff = useCallback(() => {
+    setUiMode('simple');
+    setBoomwhackerColors(true);
+    setNoteLabelMode('letters');
+    setIsSelectMode(false);
+    setIsBigStaff(true);
+    setBigStaffMeasureIndex(0);
+    setCurrentApp('staff-composer');
+  }, []);
+
   const handleSelectApp = useCallback((app: MusicLabAppId) => {
     soundEngine.playWelcomeChime();
+    // Each tool gets its own history entry, so the browser Back button returns to where the student was.
+    const route: RouteState = { app: app === 'big-staff' ? 'staff-composer' : app, bigStaff: app === 'big-staff', tool: null };
+    pushRoute(route, appRef.current === 'hub');
+    setLandingTool(null);
     if (app === 'big-staff') {
+      enterBigStaff();
+      return;
+    }
+    setCurrentApp(app);
+  }, [enterBigStaff]);
+
+  const handleBackToHub = useCallback(() => {
+    setIsBigStaff(false);
+    setLandingTool(null);
+    // Steps back in history when the student came from the landing page, so the button and Back agree.
+    // In that case the popstate handler below does the switch.
+    if (!goHomeInHistory()) setCurrentApp('hub');
+  }, []);
+
+  // Opening or closing a Tool Box tool on the landing page (/?app=metronome and so on).
+  const handleLandingTool = useCallback((tool: ToolId | null) => {
+    if (tool) {
+      pushRoute({ app: 'hub', bigStaff: false, tool }, true);
+      setLandingTool(tool);
+    } else {
+      setLandingTool(null);
+      goHomeInHistory();
+    }
+  }, []);
+  const handleLandingToolSwitch = useCallback((tool: ToolId) => {
+    replaceRoute({ app: 'hub', bigStaff: false, tool });
+    setLandingTool(tool);
+  }, []);
+
+  // Browser Back / Forward: show whatever the address now says. Share links load their own song on page
+  // load, so for those the page is simply reloaded.
+  useEffect(() => {
+    const onPop = () => {
+      if (hasShareParams()) {
+        window.location.reload();
+        return;
+      }
+      const route = routeFromLocation();
+      setLandingTool(route.tool);
+      if (route.bigStaff) {
+        enterBigStaff();
+        return;
+      }
+      setIsBigStaff(false);
+      setCurrentApp(route.app);
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, [enterBigStaff]);
+
+  // "Continue where you left off" on the landing page: remember the last tools a signed-in student opened.
+  useEffect(() => {
+    if (landingTool) recordRecentTool(studentSession, landingTool);
+    else if (currentApp !== 'hub') recordRecentTool(studentSession, currentApp);
+  }, [currentApp, landingTool, studentSession]);
+
+  // Every page title reads "Tool Name · Mr. Arthur's Music Lab".
+  useEffect(() => {
+    document.title = titleForRoute({ app: currentApp, bigStaff: isBigStaff, tool: landingTool });
+  }, [currentApp, isBigStaff, landingTool]);
+
+  // Leaving a tool stops its sound: a Staff Composer song must not keep playing behind the landing page.
+  const lastAppRef = useRef<MusicLabAppId>(currentApp);
+  useEffect(() => {
+    if (lastAppRef.current === currentApp) return;
+    lastAppRef.current = currentApp;
+    soundEngine.stopPlayback();
+    setIsPlaying(false);
+    setPlayheadPosition(null);
+    setCountInStatus(null);
+    setActivePlayingNoteIds(new Set());
+    if (currentApp !== 'staff-composer') {
+      setIsFullScreen(false);
       try {
-        if (typeof window !== 'undefined' && window.history && window.history.replaceState) {
-          window.history.replaceState({}, '', `${window.location.pathname}?app=big-staff`);
-        }
+        if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(() => {});
       } catch {
         // ignore
       }
-      setUiMode('simple');
-      setBoomwhackerColors(true);
-      setNoteLabelMode('letters');
-      setIsSelectMode(false);
-      setIsBigStaff(true);
-      setBigStaffMeasureIndex(0);
-      setCurrentApp('staff-composer');
-      return;
     }
-
-    try {
-      if (typeof window !== 'undefined' && window.history && window.history.replaceState) {
-        const nextUrl = app === 'hub' ? window.location.pathname : `${window.location.pathname}?app=${app}`;
-        window.history.replaceState({}, '', nextUrl);
-      }
-    } catch {
-      // ignore
-    }
-    setCurrentApp(app);
-  }, []);
-
-  const handleBackToHub = useCallback(() => {
-    try {
-      if (typeof window !== 'undefined' && window.history && window.history.replaceState) {
-        window.history.replaceState({}, '', window.location.pathname);
-      }
-    } catch {
-      // ignore
-    }
-    setIsBigStaff(false);
-    setCurrentApp('hub');
-  }, []);
+  }, [currentApp]);
 
   // Load shared score/song from URL query params or hash on mount
   useEffect(() => {
@@ -540,7 +529,11 @@ export default function App() {
     // 1. If short slug is detected (<= 16 characters), fetch from Supabase
     if (shortSlug && shortSlug.trim().length <= 16) {
       fetchShortLink(shortSlug.trim()).then((record) => {
-        if (!record || !record.payload) return;
+        if (!record || !record.payload) {
+          setShareStatus('missing');
+          return;
+        }
+        setShareStatus(null);
         const app = record.app_type;
         if (app === 'beat-machine') {
           setBeatProjectId(null);
@@ -583,6 +576,7 @@ export default function App() {
         }
       }).catch((e) => {
         console.error('Failed to load short link', e);
+        setShareStatus('missing');
       });
       return;
     }
@@ -599,13 +593,17 @@ export default function App() {
             setHistory([JSON.parse(JSON.stringify(cleanScore))]);
             setHistoryIndex(0);
             setCurrentApp('staff-composer');
+            setShareStatus(null);
+          } else {
+            setShareStatus('missing');
           }
-        }).catch(() => {});
+        }).catch(() => setShareStatus('missing'));
         return;
       }
 
       try {
-        const jsonStr = decodeURIComponent(escape(atob(shareParam)));
+        // A "+" in an old long link may have been read as a space by the browser: put it back.
+        const jsonStr = decodeURIComponent(escape(atob(shareParam.replace(/ /g, '+'))));
         const data = JSON.parse(jsonStr);
         if (data.score) {
           const cleanScore = sanitizeLoadedScore(data.score);
@@ -629,6 +627,7 @@ export default function App() {
         if (data.metronome !== undefined) setMetronome(data.metronome);
       } catch (e) {
         console.error('Failed to load shared score', e);
+        setShareStatus('missing');
       }
     }
   }, []);
@@ -651,7 +650,7 @@ export default function App() {
     try {
       const jsonStr = JSON.stringify(shareData);
       const encoded = btoa(unescape(encodeURIComponent(jsonStr)));
-      fallbackUrl = `${window.location.origin}${window.location.pathname}?app=staff-composer&share=${encoded}`;
+      fallbackUrl = `${window.location.origin}${window.location.pathname}?app=staff-composer&share=${encodeURIComponent(encoded)}`;
     } catch (e) {
       console.error('Failed to generate fallback share link', e);
     }
@@ -2422,6 +2421,51 @@ export default function App() {
 
   const renderSharedAuthAndModals = () => (
     <>
+      {shareStatus && (
+        <div
+          role={shareStatus === 'missing' ? 'alertdialog' : 'status'}
+          aria-live="polite"
+          className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-[#0B0F19] text-slate-100 font-['Fredoka',sans-serif]"
+        >
+          {shareStatus === 'loading' ? (
+            <div className="flex items-center gap-3 text-lg">
+              <span className="h-5 w-5 rounded-full border-2 border-slate-500 border-t-amber-400 animate-spin" />
+              Loading shared song…
+            </div>
+          ) : (
+            <div className="max-w-md w-full rounded-3xl border-2 border-amber-400/60 bg-slate-900 p-6 text-center shadow-2xl">
+              <div className="text-4xl mb-2" aria-hidden="true">🔗</div>
+              <h2 className="text-xl font-black text-white">We could not open that shared link</h2>
+              <p className="mt-2 text-sm text-slate-300">
+                The link may have been copied wrong, or it may have been removed, or the internet may be down. Ask for the link again, or try once more.
+              </p>
+              <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => window.location.reload()}
+                  className="rounded-xl bg-slate-800 border border-slate-600 px-4 py-2 text-sm font-bold text-slate-100 hover:bg-slate-700 cursor-pointer"
+                >
+                  Try again
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShareStatus(null);
+                    try {
+                      window.history.replaceState(null, '', window.location.pathname);
+                    } catch {
+                      // ignore
+                    }
+                  }}
+                  className="rounded-xl bg-amber-400 px-4 py-2 text-sm font-black text-slate-900 hover:bg-amber-300 cursor-pointer"
+                >
+                  Continue without it
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
       <HelpModal isOpen={isHelpModalOpen} onClose={() => setIsHelpModalOpen(false)} />
       <EdLawPrivacyModal isOpen={isEdLawModalOpen} onClose={() => setIsEdLawModalOpen(false)} />
 
@@ -2615,6 +2659,9 @@ export default function App() {
       <>
         <MusicLabLanding
           onSelectApp={handleSelectApp}
+          openTool={landingTool}
+          onOpenTool={handleLandingTool}
+          onSwitchTool={handleLandingToolSwitch}
           studentSession={studentSession}
           onOpenClassroom={() => {
             setOpenInTeacherMode(false);

@@ -24,6 +24,8 @@ interface ClassroomToolBoxModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialTool?: ToolId;
+  /** Called when the student picks another tool tab (the landing page keeps the address in step). */
+  onToolChange?: (tool: ToolId) => void;
 }
 
 interface ToolTabMeta {
@@ -106,6 +108,7 @@ export const ClassroomToolBoxModal: React.FC<ClassroomToolBoxModalProps> = ({
   isOpen,
   onClose,
   initialTool = 'tempo-tapper',
+  onToolChange,
 }) => {
   const validInitial = TOOL_TABS.some((t) => t.id === initialTool) ? initialTool : 'tempo-tapper';
   const [activeTool, setActiveTool] = useState<ToolId>(validInitial);
@@ -160,7 +163,10 @@ export const ClassroomToolBoxModal: React.FC<ClassroomToolBoxModalProps> = ({
               <button
                 key={tab.id}
                 type="button"
-                onClick={() => setActiveTool(tab.id)}
+                onClick={() => {
+                  setActiveTool(tab.id);
+                  onToolChange?.(tab.id);
+                }}
                 className={`flex items-center gap-2 px-3.5 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer whitespace-nowrap font-['Fredoka',sans-serif] ${
                   isActive
                     ? 'bg-gradient-to-r ' + tab.accentColor + ' text-slate-950 shadow-lg scale-102'
