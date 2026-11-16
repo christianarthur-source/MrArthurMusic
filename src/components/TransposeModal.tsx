@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, ArrowUp, ArrowDown, Music2, RefreshCw, Layers } from 'lucide-react';
-import { KeySignature, Score } from '../types/music';
+import { Score } from '../types/music';
 import { transposePitch, transposeKeySignature } from '../utils/musicMath';
 import { useDialogBehavior } from './Modal';
 

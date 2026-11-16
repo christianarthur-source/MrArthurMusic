@@ -1,25 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import {
-  Play,
-  RotateCcw,
-  Volume2,
-  VolumeX,
-  Music,
-  ArrowLeft,
-  Trophy,
-  Zap,
-  Sparkles,
-  Flame,
-  Shield,
-  Mic,
-  MicOff,
-  Radio,
-  Sliders,
-  CheckCircle2,
-  X,
-  Medal,
-  User,
-} from 'lucide-react';
+import { Play, RotateCcw, Volume2, VolumeX, Music, ArrowLeft, Trophy, Flame, Mic, Radio, Sliders, CheckCircle2, X, User } from 'lucide-react';
 import confetti from '../utils/confetti';
 import { StudentSession, fetchStaffWarsLeaderboard, submitStaffWarsScore } from '../utils/classroomApi';
 import { staffWarsMinLevelFor } from '../server/leaderboardRules';

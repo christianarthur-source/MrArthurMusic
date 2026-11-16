@@ -1,4 +1,3 @@
-import React from 'react';
 
 /**
  * Wolfi's mark: a quarter note whose stem crosses a staff line, framed by an open circle.

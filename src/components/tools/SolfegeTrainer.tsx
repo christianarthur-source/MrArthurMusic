@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Sparkles, Volume2, Trophy, RotateCcw, Play, CheckCircle2, XCircle } from 'lucide-react';
+import { Sparkles, Volume2, Trophy, CheckCircle2, XCircle } from 'lucide-react';
 import { soundEngine } from '../../audio/soundEngine';
 import { InstrumentId, Pitch } from '../../types/music';
 import { shouldIgnoreShortcut } from '../../utils/keyGuard';

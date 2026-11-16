@@ -39,39 +39,7 @@ import {
 import { EdLawPrivacyModal } from './EdLawPrivacyModal';
 import { LeaderboardManager } from './LeaderboardManager';
 import { Score } from '../types/music';
-import {
-  PublicStudentInfo,
-  SavedProjectRecord,
-  StudentRecord,
-  StudentSession,
-  MusicLabAppType,
-  ClassroomRecord,
-  TeacherRecord,
-  STANDARD_GRADES,
-  deleteStudentProject,
-  fetchPublicRoster,
-  fetchStudentProjects,
-  loginStudent,
-  loginTeacher,
-  fetchPublicTeachers,
-  setMyClasses,
-  PublicTeacher,
-  saveStudentProject,
-  teacherBulkAddStudents,
-  teacherDeleteStudent,
-  teacherRenameProject,
-  teacherSaveStudent,
-  teacherUpdateSettings,
-  teacherSaveClassroom,
-  teacherDeleteClassroom,
-  teacherSaveTeacher,
-  teacherDeleteTeacher,
-  teacherAssignProject,
-  normalizeStudentName,
-  formatStudentDisplayName,
-  changeStudentPin,
-  saveStudentSession,
-} from '../utils/classroomApi';
+import { PublicStudentInfo, SavedProjectRecord, StudentRecord, StudentSession, MusicLabAppType, ClassroomRecord, TeacherRecord, STANDARD_GRADES, deleteStudentProject, fetchPublicRoster, fetchStudentProjects, loginStudent, loginTeacher, fetchPublicTeachers, setMyClasses, PublicTeacher, teacherBulkAddStudents, teacherDeleteStudent, teacherRenameProject, teacherSaveStudent, teacherUpdateSettings, teacherSaveClassroom, teacherDeleteClassroom, teacherSaveTeacher, teacherDeleteTeacher, teacherAssignProject, normalizeStudentName, formatStudentDisplayName, changeStudentPin, saveStudentSession } from '../utils/classroomApi';
 import { createShortLink } from '../utils/shortLinkService';
 import { containsProfanity } from '../utils/profanityFilter';
 import { DialogBehavior, useDialogBehavior } from './Modal';

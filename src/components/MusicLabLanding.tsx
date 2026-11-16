@@ -1,29 +1,9 @@
 import React, { useState } from 'react';
-import {
-  Sparkles,
-  Play,
-  ArrowRight,
-  ShieldCheck,
-  UserCheck,
-  Drum,
-  Music,
-  Flame,
-  Volume2,
-} from 'lucide-react';
+import { Sparkles, Play, ArrowRight, ShieldCheck, UserCheck, Drum, Music, Flame } from 'lucide-react';
 import { StudentSession } from '../utils/classroomApi';
 import { LazyClassroomToolBoxModal } from './tools/LazyClassroomToolBoxModal';
 import type { ToolId } from './tools/ClassroomToolBoxModal';
-import {
-  GRADE_BANDS,
-  GradeFilter,
-  LAB_ENTRIES,
-  LabEntry,
-  LabGroup,
-  entryById,
-  hrefForEntry,
-  matchesGrade,
-  readRecentTools,
-} from '../labCatalog';
+import { GRADE_BANDS, GradeFilter, LabEntry, LabGroup, entryById, hrefForEntry, matchesGrade, readRecentTools } from '../labCatalog';
 import { isToolId, urlForRoute } from '../routes';
 
 export type MusicLabAppId = 'hub' | 'staff-composer' | 'rhythm-rockstars' | 'beat-machine' | 'daw' | 'staff-wars' | 'big-staff';

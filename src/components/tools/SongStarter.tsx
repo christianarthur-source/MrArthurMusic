@@ -1,21 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import {
-  Play,
-  Pause,
-  RotateCcw,
-  Sparkles,
-  Dices,
-  Volume2,
-  Trash2,
-  Plus,
-} from 'lucide-react';
-import {
-  playMusicNote,
-  getToolboxAudioContext,
-  noteToFreq,
-  playMatchChime,
-  playCardFlipSound,
-} from './toolboxAudio';
+import { Play, Pause, Dices, Plus } from 'lucide-react';
+import { playMusicNote, getToolboxAudioContext, playMatchChime, playCardFlipSound } from './toolboxAudio';
 
 // ----------------------------------------------------
 // ACCOMPANYING BEAT PRESETS ("BEATS!")

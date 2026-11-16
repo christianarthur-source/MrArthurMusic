@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { X, Users, Search, Music, Sparkles, ChevronRight, Check } from 'lucide-react';
+import { X, Users, Search, ChevronRight } from 'lucide-react';
 import { Score } from '../types/music';
 import {
   ENSEMBLE_TEMPLATES,

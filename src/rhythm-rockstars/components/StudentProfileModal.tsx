@@ -3,7 +3,7 @@ import { StudentProfile } from '../types/game';
 import { apiClient } from '../services/apiClient';
 import { ALL_BADGES } from '../data/rhythmCatalog';
 import { containsInappropriateLanguage, PROFANITY_WARNING_MESSAGE } from '../utils/profanityFilter';
-import { User, KeyRound, Award, Flame, Star, LogOut, Check, X, ShieldAlert, Edit3 } from 'lucide-react';
+import { User, KeyRound, Award, LogOut, Check, X, ShieldAlert, Edit3 } from 'lucide-react';
 import { useDialogBehavior } from '../../components/Modal';
 
 interface StudentProfileModalProps {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StudentProfile, LeaderboardEntry } from '../types/game';
+import { LeaderboardEntry } from '../types/game';
 import { apiClient } from '../services/apiClient';
 import { loginTeacher } from '../../utils/classroomApi';
 import { useDialogBehavior } from '../../components/Modal';

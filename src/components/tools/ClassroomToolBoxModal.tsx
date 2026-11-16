@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Sparkles, SlidersHorizontal, Volume2 } from 'lucide-react';
+import { X } from 'lucide-react';
 import { MetronomeTool } from './MetronomeTool';
 import { TempoTapper } from './TempoTapper';
 import { SolfegeTrainer } from './SolfegeTrainer';
@@ -16,7 +16,6 @@ export type ToolId =
   | 'solfege-trainer'
   | 'instrument-zoo'
   | 'dynamic-ears'
-  | 'sound-painter'
   | 'song-starter'
   | 'music-symbol-match'
   | 'tuner';

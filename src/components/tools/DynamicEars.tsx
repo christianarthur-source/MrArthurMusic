@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Mic, MicOff, Volume2, Sparkles, AlertCircle, Trophy, Play, Pause, RotateCcw } from 'lucide-react';
+import { Mic, MicOff, Sparkles, AlertCircle, Trophy, Play, RotateCcw } from 'lucide-react';
 import { soundEngine } from '../../audio/soundEngine';
 
 interface DynamicTier {

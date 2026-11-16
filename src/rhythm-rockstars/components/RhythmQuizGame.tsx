@@ -5,7 +5,7 @@ import { TheoryQuestion, getTheoryQuestionsForLevel } from '../data/theoryQuesti
 import { QuizNotationRenderer } from './QuizNotationRenderer';
 import { audioEngine } from '../services/audioEngine';
 import confetti from '../../utils/confetti';
-import { HelpCircle, CheckCircle2, XCircle, ArrowRight, Trophy, Sparkles, Volume2, RotateCcw, Award } from 'lucide-react';
+import { CheckCircle2, XCircle, ArrowRight, Sparkles, Volume2, RotateCcw } from 'lucide-react';
 
 interface RhythmQuizGameProps {
   levelConfig: LevelConfig;

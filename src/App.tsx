@@ -22,19 +22,9 @@ import {
   THEME_TRACK_FX_MELODIC,
   THEME_TRACK_FX_DRUMS,
 } from './types/music';
-import { DrumSound } from './data/drumGrooves';
 import { DrumKitType, SAMPLE_CDN_UNAVAILABLE_EVENT } from './audio/acousticSamples';
 import { DEFAULT_BLANK_SCORE, createEmptyMeasure } from './data/templates';
-import {
-  getItemDuration,
-  getMeasureCapacity,
-  getSelectedMeasureIndices,
-  insertNoteAtBeat,
-  cleanMeasureRests,
-  shiftPitchByDiatonicSteps,
-  DIATONIC_STEP_ORDER,
-  STEP_DIATONIC_OFFSET,
-} from './utils/musicMath';
+import { getItemDuration, getMeasureCapacity, getSelectedMeasureIndices, insertNoteAtBeat, cleanMeasureRests, shiftPitchByDiatonicSteps } from './utils/musicMath';
 import { soundEngine, armAudioWarmUp } from './audio/soundEngine';
 import {
   webMidiService,
@@ -86,28 +76,11 @@ const ToolLoading = () => (
 );
 import { ShieldCheck, Plus, Play, Square } from 'lucide-react';
 import { EighthNoteUIIcon, RestUIIcon } from './components/NotationSymbols';
-import {
-  SavedProjectRecord,
-  StudentSession,
-  getSavedStudentSession,
-  saveStudentProject,
-  saveStudentSession,
-} from './utils/classroomApi';
+import { StudentSession, getSavedStudentSession, saveStudentProject, saveStudentSession } from './utils/classroomApi';
 import { containsProfanity } from './utils/profanityFilter';
 import { createShortLink, fetchShortLink } from './utils/shortLinkService';
 import { recordRecentTool } from './labCatalog';
-import {
-  RouteState,
-  goHomeInHistory,
-  hasShareParams,
-  isBigStaffLocation,
-  pageTitle,
-  pushRoute,
-  readUrlParam,
-  replaceRoute,
-  routeFromLocation,
-  titleForRoute,
-} from './routes';
+import { RouteState, goHomeInHistory, hasShareParams, isBigStaffLocation, pushRoute, readUrlParam, replaceRoute, routeFromLocation, titleForRoute } from './routes';
 
 // True when a loaded value has the minimum shape the editor needs (at least one staff with measures).
 function isScoreShape(raw: unknown): raw is Score {

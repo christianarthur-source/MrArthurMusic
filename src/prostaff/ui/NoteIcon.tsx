@@ -1,4 +1,3 @@
-import React from 'react';
 
 /** Duration icons drawn the same way for every note value (fonts draw ♩ and ♪ at a different size). */
 export function NoteIcon({ dur, size = 22 }: { dur: string; size?: number }) {

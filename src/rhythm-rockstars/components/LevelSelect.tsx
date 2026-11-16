@@ -1,7 +1,7 @@
 import React from 'react';
 import { LevelConfig } from '../types/rhythm';
 import { StudentProfile } from '../types/game';
-import { Lock, Star, ChevronRight, Award } from 'lucide-react';
+import { Lock, Star } from 'lucide-react';
 
 interface LevelSelectProps {
   levels: LevelConfig[];

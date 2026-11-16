@@ -1,6 +1,6 @@
 import React from 'react';
 import { GameMode } from '../types/game';
-import { Trophy, Music, Zap, Flame, Settings, UserCheck, ArrowLeft, Star } from 'lucide-react';
+import { Trophy, Flame, Settings, UserCheck, ArrowLeft, Star } from 'lucide-react';
 import { StudentSession } from '../../utils/classroomApi';
 import { soundEngine } from '../../audio/soundEngine';
 

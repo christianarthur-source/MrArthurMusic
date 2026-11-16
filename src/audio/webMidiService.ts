@@ -1,5 +1,5 @@
 import { KeySignature, Pitch, NoteStep, AccidentalType } from '../types/music';
-import { DrumSound, DRUM_SOUND_PITCH_MAP, getDrumPitchForSound, getDrumSoundForPitch } from '../data/drumGrooves';
+import { DrumSound, getDrumPitchForSound, getDrumSoundForPitch } from '../data/drumGrooves';
 
 export { getDrumPitchForSound, getDrumSoundForPitch };
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Sparkles, Trophy, X, RotateCcw, Volume2 } from 'lucide-react';
+import { Trophy, X, RotateCcw } from 'lucide-react';
 import confetti from '../../utils/confetti';
 import { soundEngine } from '../audio/soundEngine';
 import { SoundType } from '../types';

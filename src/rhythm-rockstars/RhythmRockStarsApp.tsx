@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { GameMode, StudentProfile, SoundSettingsConfig } from './types/game';
 import { LEVELS_CONFIG } from './data/rhythmCatalog';
 import { apiClient } from './services/apiClient';
@@ -18,7 +18,7 @@ import { RhythmQuizGame } from './components/RhythmQuizGame';
 import { LeaderboardModal } from './components/LeaderboardModal';
 import confetti from '../utils/confetti';
 import { SoundSettings } from './components/SoundSettings';
-import { Trophy, Music, Zap, Flame, Award, Sparkles, Volume2 } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { StudentSession } from '../utils/classroomApi';
 
 export interface RhythmRockStarsAppProps {

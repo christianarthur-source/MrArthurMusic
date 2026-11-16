@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Keyboard, Sparkles, Lightbulb } from 'lucide-react';
+import { X, Keyboard, Lightbulb } from 'lucide-react';
 import { useDialogBehavior } from './Modal';
 
 interface HelpModalProps {

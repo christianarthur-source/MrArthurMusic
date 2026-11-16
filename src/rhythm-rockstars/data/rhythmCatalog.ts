@@ -1,4 +1,4 @@
-import { NoteType, RhythmUnit, RhythmPattern, LevelConfig } from '../types/rhythm';
+import { RhythmUnit, LevelConfig } from '../types/rhythm';
 import { Badge } from '../types/game';
 
 // Factory helpers for RhythmUnits (duration in beats = 4/4 measure)

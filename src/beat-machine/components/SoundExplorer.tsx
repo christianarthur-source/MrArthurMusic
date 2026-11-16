@@ -1,19 +1,8 @@
 import React, { useState } from 'react';
 import { ALL_AVAILABLE_SAMPLES } from '../data/soundPacks';
-import { SoundSample, SoundType } from '../types';
+import { SoundSample } from '../types';
 import { soundEngine } from '../audio/soundEngine';
-import {
-  Volume2,
-  Sparkles,
-  Search,
-  PlusCircle,
-  Play,
-  Square,
-  Check,
-  Disc3,
-  SlidersHorizontal,
-  AlertTriangle,
-} from 'lucide-react';
+import { Search, PlusCircle, Play, Square, Check } from 'lucide-react';
 import { containsProfanity } from '../utils/profanityFilter';
 import { DialogBehavior } from '../../components/Modal';
 

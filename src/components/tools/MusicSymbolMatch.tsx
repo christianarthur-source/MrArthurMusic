@@ -1,18 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import {
-  Trophy,
-  RotateCcw,
-  Sparkles,
-  Flame,
-  Volume2,
-  Clock,
-  CheckCircle2,
-  XCircle,
-  HelpCircle,
-  BookOpen,
-  ArrowRight,
-  Shuffle,
-} from 'lucide-react';
+import { RotateCcw, Flame, Clock, BookOpen } from 'lucide-react';
 import {
   playCardFlipSound,
   playMatchChime,

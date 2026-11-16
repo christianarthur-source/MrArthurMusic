@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { LeaderboardEntry, StudentProfile } from '../types/game';
 import { apiClient } from '../services/apiClient';
-import { Trophy, Flame, Star, RefreshCw, X, Award } from 'lucide-react';
+import { Trophy, Flame, Star, RefreshCw, X } from 'lucide-react';
 import { useDialogBehavior } from '../../components/Modal';
 
 interface LeaderboardModalProps {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, Radio, Play, Square } from 'lucide-react';
+import { Radio, Play, Square } from 'lucide-react';
 import { soundEngine } from '../audio/soundEngine';
 import { ALL_AVAILABLE_SAMPLES } from '../data/soundPacks';
 import { SoundType } from '../types';

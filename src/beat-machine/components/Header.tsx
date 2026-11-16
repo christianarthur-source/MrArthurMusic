@@ -1,21 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import {
-  Play,
-  Square,
-  Sparkles,
-  Mic,
-  Gamepad2,
-  RotateCcw,
-  CircleDot,
-  Share2,
-  ChevronDown,
-  Check,
-  Music,
-  ArrowLeft,
-  UserCheck,
-  Save,
-  Cloud,
-} from 'lucide-react';
+import { Play, Square, Sparkles, Mic, Gamepad2, RotateCcw, CircleDot, Share2, ChevronDown, Check, Music, ArrowLeft, UserCheck, Save } from 'lucide-react';
 import { StudentSession } from '../../utils/classroomApi';
 import { soundEngine as globalSoundEngine } from '../../audio/soundEngine';
 
@@ -74,8 +58,6 @@ export const getTempoDescription = (bpm: number): { term: string; translation: s
   if (bpm < 150) return { term: 'Allegro', translation: 'Fast' };
   return { term: 'Presto', translation: 'Very Fast' };
 };
-
-const DEFAULT_ARTHUR_AVATAR_SVG = `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200"><defs><linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="%230f172a"/><stop offset="50%" stop-color="%231e1b4b"/><stop offset="100%" stop-color="%23312e81"/></linearGradient><linearGradient id="skin" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="%23fed7aa"/><stop offset="100%" stop-color="%23fdba74"/></linearGradient><linearGradient id="hair" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="%2378350f"/><stop offset="100%" stop-color="%23451a03"/></linearGradient><linearGradient id="shirt" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="%231e40af"/><stop offset="100%" stop-color="%231e3a8a"/></linearGradient><linearGradient id="guitar" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="%23f59e0b"/><stop offset="100%" stop-color="%23b45309"/></linearGradient></defs><rect width="200" height="200" rx="30" fill="url(%23bg)"/><path d="M 40 200 C 40 145 65 130 100 130 C 135 130 160 145 160 200 Z" fill="url(%23shirt)"/><path d="M 75 95 Q 100 110 125 95 L 125 140 Q 100 150 75 140 Z" fill="url(%23skin)"/><path d="M 68 75 Q 68 115 100 115 Q 132 115 132 75 Q 132 40 100 40 Q 68 40 68 75 Z" fill="url(%23skin)"/><path d="M 60 65 C 58 35 85 20 100 20 C 120 20 142 35 140 65 C 130 45 115 35 100 35 C 85 35 70 45 60 65 Z" fill="url(%23hair)"/><circle cx="86" cy="68" r="5" fill="%231e293b"/><circle cx="114" cy="68" r="5" fill="%231e293b"/><circle cx="88" cy="66" r="1.5" fill="%23ffffff"/><circle cx="116" cy="66" r="1.5" fill="%23ffffff"/><path d="M 85 88 Q 100 102 115 88" fill="none" stroke="%23ffffff" stroke-width="4" stroke-linecap="round"/><ellipse cx="125" cy="155" rx="35" ry="24" fill="url(%23guitar)" transform="rotate(-15 125 155)"/><circle cx="120" cy="153" r="8" fill="%23451a03" transform="rotate(-15 125 155)"/><path d="M 125 155 L 185 125" stroke="%23fef08a" stroke-width="6" stroke-linecap="round"/><text x="100" y="190" text-anchor="middle" font-family="sans-serif" font-weight="900" font-size="11" fill="%23fbbf24" letter-spacing="1">MR. ARTHUR</text></svg>`;
 
 export const Header: React.FC<HeaderProps> = ({
   onBackToHub,

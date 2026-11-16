@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { RhythmPattern, RhythmUnit, NoteType } from '../types/rhythm';
+import { RhythmPattern, NoteType } from '../types/rhythm';
 import { SyllableStyle } from '../types/game';
 import { getUnitsWithMeasureCounting } from '../utils/rhythmCounting';
 

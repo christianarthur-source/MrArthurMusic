@@ -1,17 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import {
-  Play,
-  Square,
-  Volume2,
-  VolumeX,
-  Zap,
-  Sparkles,
-  Plus,
-  Minus,
-  Maximize2,
-  Minimize2,
-  Sliders,
-} from 'lucide-react';
+import { Play, Square, Volume2, VolumeX, Zap, Plus, Minus } from 'lucide-react';
 import { shouldIgnoreShortcut } from '../../utils/keyGuard';
 
 export type MetronomeSound = 'woodblock' | 'beep' | 'drumstick' | 'cowbell' | 'silent';

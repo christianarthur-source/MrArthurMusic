@@ -1,7 +1,7 @@
 import React from 'react';
 import { TEMPLATES } from '../data/templates';
 import { Score } from '../types/music';
-import { X, BookOpen, Star, Music, Award } from 'lucide-react';
+import { X, BookOpen, Music, Award } from 'lucide-react';
 import { useDialogBehavior } from './Modal';
 
 interface TemplatesModalProps {

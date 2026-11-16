@@ -1,17 +1,4 @@
-import {
-  AccidentalType,
-  ClefType,
-  CountingMode,
-  KeySignature,
-  NoteDuration,
-  NoteItem,
-  NoteLabelMode,
-  NoteStep,
-  Pitch,
-  Score,
-  SelectionState,
-  VoltaEnding,
-} from '../types/music';
+import { AccidentalType, ClefType, CountingMode, KeySignature, NoteDuration, NoteItem, NoteLabelMode, NoteStep, Pitch, SelectionState, VoltaEnding } from '../types/music';
 
 export const LINE_SPACING = 18;
 export const STAFF_TOP_Y = 32; // Y position of top staff line inside a staff block

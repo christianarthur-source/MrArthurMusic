@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, ShieldCheck, Printer, Lock, CheckCircle2, FileText, UserCheck, Server, AlertCircle } from 'lucide-react';
+import { X, ShieldCheck, Printer, Lock, CheckCircle2, FileText, Server } from 'lucide-react';
 import { useDialogBehavior } from './Modal';
 
 interface EdLawPrivacyModalProps {

@@ -1,17 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import {
-  Mic,
-  MicOff,
-  Volume2,
-  VolumeX,
-  Sparkles,
-  CheckCircle2,
-  RotateCcw,
-  Settings2,
-  Music,
-  Check,
-  ChevronDown,
-} from 'lucide-react';
+import { Mic, MicOff, Volume2, VolumeX, Sparkles, CheckCircle2, RotateCcw, Settings2, Check, ChevronDown } from 'lucide-react';
 import { getToolboxAudioContext } from './toolboxAudio';
 
 // ---------------------------------------------------------------------------

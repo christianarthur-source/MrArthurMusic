@@ -1,12 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import {
-  Copy,
-  Check,
-  X,
-  Share2,
-  Sparkles,
-  Loader2,
-} from 'lucide-react';
+import { Copy, Check, X, Sparkles, Loader2 } from 'lucide-react';
 import confetti from '../../utils/confetti';
 import { SharedSongData } from '../types';
 import { createShareableSongUrl } from '../utils/songSharing';

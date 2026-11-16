@@ -3,11 +3,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Header } from './components/Header';
 import { BeatGrid } from './components/BeatGrid';
-import { MelodyGrid, PENTATONIC_NOTES, FULL_MAJOR_NOTES, getMelodyNotes } from './components/MelodyGrid';
-import { BassGrid, PENTATONIC_BASS_NOTES, FULL_MAJOR_BASS_NOTES, getBassNotes } from './components/BassGrid';
+import { MelodyGrid, getMelodyNotes } from './components/MelodyGrid';
+import { BassGrid, getBassNotes } from './components/BassGrid';
 import { SoundExplorer } from './components/SoundExplorer';
 import { LivePads } from './components/LivePads';
 import { MelodyXylophone } from './components/MelodyXylophone';

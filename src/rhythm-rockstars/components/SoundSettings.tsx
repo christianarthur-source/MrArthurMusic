@@ -1,6 +1,6 @@
-import { SoundSettingsConfig, SoundKit, SyllableStyle } from '../types/game';
+import { SoundSettingsConfig, SoundKit } from '../types/game';
 import { audioEngine } from '../services/audioEngine';
-import { Volume2, Sliders, Music, Check, X, Volume1 } from 'lucide-react';
+import { Sliders, Check, X } from 'lucide-react';
 import { useDialogBehavior } from '../../components/Modal';
 
 interface SoundSettingsProps {

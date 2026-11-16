@@ -1,20 +1,5 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
-import {
-  ClefType,
-  CountingMode,
-  InstrumentCategory,
-  InstrumentDefinition,
-  Measure,
-  NoteDuration,
-  NoteItem,
-  NoteLabelMode,
-  Pitch,
-  Score,
-  SelectionState,
-  Track,
-  UiMode,
-  ViewLayout,
-} from '../types/music';
+import { ClefType, CountingMode, InstrumentCategory, Measure, NoteDuration, NoteItem, NoteLabelMode, Pitch, Score, SelectionState, Track, UiMode, ViewLayout } from '../types/music';
 import { INSTRUMENTS } from '../data/instruments';
 import { soundEngine } from '../audio/soundEngine';
 import { Search, X, Volume2, Check, Music, ChevronLeft, ChevronRight } from 'lucide-react';

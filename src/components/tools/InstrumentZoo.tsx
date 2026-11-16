@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Volume2, Search, Sparkles, Filter, Music, Loader2 } from 'lucide-react';
+import { Volume2, Search, Sparkles, Loader2 } from 'lucide-react';
 import { soundEngine } from '../../audio/soundEngine';
 import { InstrumentId, Pitch } from '../../types/music';
 

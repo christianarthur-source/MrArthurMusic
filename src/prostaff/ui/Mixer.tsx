@@ -1,4 +1,3 @@
-import React from 'react';
 import { X, RotateCcw } from 'lucide-react';
 import { DEFAULT_MASTER_MIX, DEFAULT_STAFF_MIX, type MasterMix, type StaffMix } from '../audio/player';
 
