@@ -44,6 +44,8 @@
 }
 .suite-helpbox[hidden] { display: none; }
 @media (max-width: 520px) {
-  .suite-home .suite-text-long, .suite-chip .suite-text-long { display: none; }
   .suite-header { gap: 8px; }
+  .suite-home { padding: 0 10px; }
+  .suite-chip { max-width: 104px; padding: 0 10px; overflow: hidden; }
+  .suite-chip span { overflow: hidden; text-overflow: ellipsis; }
 }
