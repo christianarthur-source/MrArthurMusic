@@ -357,31 +357,28 @@ export const InstrumentZoo: React.FC = () => {
   const [loadingInstrumentId, setLoadingInstrumentId] = useState<string | null>(null);
 
   const previewTimerRef = useRef<number | null>(null);
+  // Bumped by every new preview / note so an older one that is still loading its
+  // samples cannot start playing on top of the newer one.
+  const previewTokenRef = useRef<number>(0);
+  const noteResetTimerRef = useRef<number | null>(null);
 
-  // Background preload acoustic samples for all instruments on mount
+  // Samples are loaded on demand when a card is played (not all 17 instruments
+  // up front, which downloaded every sample set on a Chromebook's first visit).
   useEffect(() => {
-    let isCancelled = false;
-    const preloadAll = async () => {
-      for (const inst of INSTRUMENT_ZOO_DATA) {
-        if (isCancelled) break;
-        try {
-          await soundEngine.preloadInstrument(inst.id, inst.previewNotes);
-        } catch {
-          // background fail-safe
-        }
-      }
-    };
-    preloadAll();
     return () => {
-      isCancelled = true;
+      previewTokenRef.current++;
       if (previewTimerRef.current !== null) {
         clearInterval(previewTimerRef.current);
+      }
+      if (noteResetTimerRef.current !== null) {
+        clearTimeout(noteResetTimerRef.current);
       }
     };
   }, []);
 
   // Play full instrument preview arpeggio with guaranteed real acoustic samples
   const playInstrumentPreview = async (inst: InstrumentCardInfo) => {
+    const token = ++previewTokenRef.current;
     if (previewTimerRef.current !== null) {
       clearInterval(previewTimerRef.current);
       previewTimerRef.current = null;
@@ -399,6 +396,7 @@ export const InstrumentZoo: React.FC = () => {
     } finally {
       setLoadingInstrumentId((curr) => (curr === inst.id ? null : curr));
     }
+    if (token !== previewTokenRef.current) return; // a newer preview took over
 
     let noteIdx = 0;
     const playNext = () => {
@@ -433,6 +431,7 @@ export const InstrumentZoo: React.FC = () => {
     pitch: Pitch,
     noteIndex: number
   ) => {
+    previewTokenRef.current++;
     if (previewTimerRef.current !== null) {
       clearInterval(previewTimerRef.current);
       previewTimerRef.current = null;
@@ -446,7 +445,9 @@ export const InstrumentZoo: React.FC = () => {
       soundEngine.playNotePreview(pitch, inst.id, 0.85, 'C');
     }
 
-    setTimeout(() => {
+    if (noteResetTimerRef.current !== null) clearTimeout(noteResetTimerRef.current);
+    noteResetTimerRef.current = window.setTimeout(() => {
+      noteResetTimerRef.current = null;
       setActiveArpeggioIdx((curr) => (curr === noteIndex ? null : curr));
       setCurrentlyPlayingId((curr) => (curr === inst.id ? null : curr));
     }, 450);

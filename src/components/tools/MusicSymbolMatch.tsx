@@ -280,6 +280,18 @@ interface MemoryCard {
   isMatched: boolean;
 }
 
+// Unbiased Fisher-Yates shuffle (sort(() => 0.5 - Math.random()) is biased)
+function shuffleInPlace<T>(arr: T[]): T[] {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+function shuffled<T>(arr: readonly T[]): T[] {
+  return shuffleInPlace([...arr]);
+}
+
 export const MusicSymbolMatch: React.FC = () => {
   const [activeMode, setActiveMode] = useState<SymbolMatchMode>('memory');
   const [categoryFilter, setCategoryFilter] = useState<SymbolCategory>('all');
@@ -314,15 +326,28 @@ export const MusicSymbolMatch: React.FC = () => {
   const [memoryMatches, setMemoryMatches] = useState<number>(0);
   const [memoryWon, setMemoryWon] = useState<boolean>(false);
 
+  // Delayed card flips / next-question timers. They are all cleared on reset,
+  // mode change and unmount so a stale one can never act on a new game.
+  const gameTimersRef = useRef<number[]>([]);
+  const clearGameTimers = useCallback(() => {
+    gameTimersRef.current.forEach((id) => clearTimeout(id));
+    gameTimersRef.current = [];
+  }, []);
+  const later = (fn: () => void, ms: number) => {
+    gameTimersRef.current.push(window.setTimeout(fn, ms));
+  };
+  useEffect(() => clearGameTimers, [clearGameTimers]);
+
   // Initialize Memory Deck
   const initMemoryGame = useCallback(() => {
+    clearGameTimers();
     const pool =
       categoryFilter === 'all'
         ? SYMBOL_DATABASE
         : SYMBOL_DATABASE.filter((s) => s.category === categoryFilter);
 
     // Pick 6 random symbols (12 cards)
-    const shuffledPool = [...pool].sort(() => 0.5 - Math.random());
+    const shuffledPool = shuffled(pool);
     const selected = shuffledPool.slice(0, Math.min(6, shuffledPool.length));
 
     const cards: MemoryCard[] = [];
@@ -348,20 +373,21 @@ export const MusicSymbolMatch: React.FC = () => {
     });
 
     // Shuffle the 12 cards
-    cards.sort(() => 0.5 - Math.random());
+    shuffleInPlace(cards);
 
     setMemoryCards(cards);
     setFlippedIndices([]);
     setMemoryMoves(0);
     setMemoryMatches(0);
     setMemoryWon(false);
-  }, [categoryFilter]);
+  }, [categoryFilter, clearGameTimers]);
 
   useEffect(() => {
+    clearGameTimers();
     if (activeMode === 'memory') {
       initMemoryGame();
     }
-  }, [activeMode, categoryFilter, initMemoryGame]);
+  }, [activeMode, categoryFilter, initMemoryGame, clearGameTimers]);
 
   const handleFlipCard = (idx: number) => {
     if (flippedIndices.length >= 2) return;
@@ -384,7 +410,7 @@ export const MusicSymbolMatch: React.FC = () => {
 
       if (firstCard.pairId === secondCard.pairId) {
         // MATCH!
-        setTimeout(() => {
+        later(() => {
           playMatchChime();
           playSymbolAudio(firstCard.symbolItem);
 
@@ -405,7 +431,7 @@ export const MusicSymbolMatch: React.FC = () => {
         }, 500);
       } else {
         // MISMATCH
-        setTimeout(() => {
+        later(() => {
           playWrongBuzzer();
           setMemoryCards((prev) =>
             prev.map((c, i) =>
@@ -440,15 +466,16 @@ export const MusicSymbolMatch: React.FC = () => {
 
     // Pick 3 distractors from the full database for diverse choices
     const otherPool = SYMBOL_DATABASE.filter((s) => s.id !== target.id);
-    const shuffledOthers = [...otherPool].sort(() => 0.5 - Math.random());
+    const shuffledOthers = shuffled(otherPool);
     const distractors = shuffledOthers.slice(0, 3).map((s) => s.name);
 
-    const opts = [target.name, ...distractors].sort(() => 0.5 - Math.random());
+    const opts = shuffled([target.name, ...distractors]);
     setSpeedOptions(opts);
     setFeedbackState(null);
   }, [categoryFilter]);
 
   const startSpeedGame = () => {
+    clearGameTimers();
     setSpeedScore(0);
     setSpeedStreak(0);
     setSpeedTimeLeft(45);
@@ -462,6 +489,7 @@ export const MusicSymbolMatch: React.FC = () => {
     if (!speedActive) return;
 
     if (speedTimeLeft <= 0) {
+      clearGameTimers(); // a pending next-question timer must not revive the finished round
       setSpeedActive(false);
       return;
     }
@@ -485,7 +513,7 @@ export const MusicSymbolMatch: React.FC = () => {
       setSpeedScore((s) => s + 100 * streakBonus);
       setSpeedStreak((str) => str + 1);
 
-      setTimeout(() => {
+      later(() => {
         nextSpeedQuestion();
       }, 500);
     } else {
@@ -494,7 +522,7 @@ export const MusicSymbolMatch: React.FC = () => {
       playWrongBuzzer();
       setSpeedStreak(0);
 
-      setTimeout(() => {
+      later(() => {
         nextSpeedQuestion();
       }, 750);
     }

@@ -163,6 +163,17 @@ export const SolfegeTrainer: React.FC = () => {
 
   const seqTimerRef = useRef<number | null>(null);
 
+  // One-shot timers (note flash, quiz next-note, feedback reset). Cleared on
+  // unmount and when leaving the quiz so nothing fires into a different mode.
+  const timersRef = useRef<number[]>([]);
+  const later = (fn: () => void, ms: number) => {
+    timersRef.current.push(window.setTimeout(fn, ms));
+  };
+  const clearTimers = () => {
+    timersRef.current.forEach((id) => clearTimeout(id));
+    timersRef.current = [];
+  };
+
   // Play pitch with high-quality real acoustic sound
   const playPitch = useCallback((note: SolfegeNote, idx: number) => {
     const pitch: Pitch = { step: note.step, octave: note.octave };
@@ -172,7 +183,7 @@ export const SolfegeTrainer: React.FC = () => {
       // Audio fallback
     }
     setActiveNoteIdx(idx);
-    setTimeout(() => {
+    later(() => {
       setActiveNoteIdx((curr) => (curr === idx ? null : curr));
     }, 320);
   }, [selectedInstrument]);
@@ -196,7 +207,7 @@ export const SolfegeTrainer: React.FC = () => {
     setQuizFeedback(null);
 
     // Play note immediately after picking
-    setTimeout(() => {
+    later(() => {
       const note = SOLFEGE_SCALE[randomIdx];
       const pitch: Pitch = { step: note.step, octave: note.octave };
       try {
@@ -209,6 +220,7 @@ export const SolfegeTrainer: React.FC = () => {
 
   // Start mystery quiz
   const handleStartQuiz = () => {
+    clearTimers();
     setMode('mystery-quiz');
     setQuizScore(0);
     setQuizStreak(0);
@@ -239,7 +251,7 @@ export const SolfegeTrainer: React.FC = () => {
         guessedIdx: idx,
         message: `Super ear! That was ${guessedNote.syllable}! 🎉`,
       });
-      setTimeout(() => {
+      later(() => {
         pickNewMysteryNote();
       }, 1300);
     } else {
@@ -250,7 +262,7 @@ export const SolfegeTrainer: React.FC = () => {
         guessedIdx: idx,
         message: `Nice try! That was ${guessedNote.syllable}. Listen closely!`,
       });
-      setTimeout(() => {
+      later(() => {
         setQuizFeedback(null);
       }, 1500);
     }
@@ -295,8 +307,23 @@ export const SolfegeTrainer: React.FC = () => {
     }, speedMs);
   };
 
+  // New mystery note when the difficulty changes inside the quiz. Done in an effect
+  // so it uses the NEW difficulty (the old setTimeout kept the previous one).
+  const difficultyMountedRef = useRef(false);
+  useEffect(() => {
+    if (!difficultyMountedRef.current) {
+      difficultyMountedRef.current = true;
+      return;
+    }
+    if (mode === 'mystery-quiz') {
+      clearTimers();
+      pickNewMysteryNote();
+    }
+  }, [difficulty]);
+
   useEffect(() => {
     return () => {
+      clearTimers();
       if (seqTimerRef.current) clearInterval(seqTimerRef.current);
     };
   }, []);
@@ -308,7 +335,11 @@ export const SolfegeTrainer: React.FC = () => {
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={() => setMode('free-play')}
+            onClick={() => {
+              clearTimers();
+              setQuizFeedback(null);
+              setMode('free-play');
+            }}
             className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer font-['Fredoka',sans-serif] ${
               mode === 'free-play'
                 ? 'bg-amber-400 text-slate-950 shadow-md'
@@ -341,7 +372,6 @@ export const SolfegeTrainer: React.FC = () => {
                   type="button"
                   onClick={() => {
                     setDifficulty(diff);
-                    setTimeout(pickNewMysteryNote, 100);
                   }}
                   className={`px-2.5 py-1 rounded-lg font-bold capitalize transition-all cursor-pointer ${
                     difficulty === diff
