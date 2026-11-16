@@ -155,7 +155,7 @@ export const Header: React.FC<HeaderProps> = ({
               className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-slate-950 overflow-hidden flex items-center justify-center shadow-lg ring-2 ring-amber-300/50 hover:ring-amber-300 hover:scale-105 active:scale-95 transition-all select-none shrink-0 cursor-pointer"
             >
               <img
-                src="/mr-arthur-avatar.jpg"
+                src="/mr-arthur-avatar-96.webp"
                 alt="Mr. Arthur"
                 className="w-full h-full object-cover object-top"
               />

@@ -215,7 +215,7 @@ export const TransportBar: React.FC<TransportBarProps> = ({
             className="w-11 h-11 rounded-2xl bg-slate-950 overflow-hidden flex items-center justify-center shadow-lg ring-2 ring-amber-300/50 hover:ring-amber-300 hover:scale-110 active:scale-95 transition-all select-none shrink-0 cursor-pointer"
           >
             <img
-              src="/mr-arthur-avatar.jpg"
+              src="/mr-arthur-avatar-96.webp"
               alt="Mr. Arthur"
               className="w-full h-full object-cover object-top"
             />

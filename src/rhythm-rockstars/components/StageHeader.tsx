@@ -1,7 +1,7 @@
 import React from 'react';
 import { Volume2, VolumeX, Play, Square, FastForward, Music } from 'lucide-react';
 import { GameMode, SoundKit } from '../types/game';
-import rockstarBanner from '../assets/images/rockstar_stage_banner_1791818144423.jpg';
+import rockstarBanner from '../assets/images/rockstar_stage_banner_1791818144423.webp';
 
 interface StageHeaderProps {
   stageName: string;

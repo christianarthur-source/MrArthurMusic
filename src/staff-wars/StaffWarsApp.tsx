@@ -895,7 +895,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
 
           <div className="flex items-center gap-2.5">
             <img
-              src="/staff-wars/logo.png"
+              src="/staff-wars/logo-64.webp"
               alt="Staff Wars"
               className="w-8 h-8 rounded-lg object-cover border border-amber-400/50 shadow-[0_0_12px_rgba(251,191,36,0.4)]"
             />
@@ -969,7 +969,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
               title="Click to enlarge Mr. Arthur's avatar"
             >
               <img
-                src="/mr-arthur-avatar.jpg"
+                src="/mr-arthur-avatar-96.webp"
                 alt="Mr. Arthur"
                 className="w-full h-full object-cover"
               />
@@ -986,7 +986,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
             {/* Title Logo Image */}
             <div className="flex flex-col items-center">
               <img
-                src="/staff-wars/logo.png"
+                src="/staff-wars/logo.webp"
                 alt="Staff Wars"
                 className="w-full max-w-[340px] sm:max-w-[400px] rounded-2xl shadow-[0_0_40px_rgba(251,191,36,0.3)] border border-amber-400/40 object-contain hover:scale-102 transition-transform duration-300"
               />
