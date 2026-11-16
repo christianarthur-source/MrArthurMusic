@@ -2,7 +2,7 @@
 // mrarthurmusic.com. Pages are network-first (fresh when online, cached copy offline); built
 // assets under assets/ are cache-first (their filenames change on every build). /api/ calls are never
 // cached. Registered only in production builds (see index.html).
-const CACHE_NAME = 'music-teacher-hub-v2';
+const CACHE_NAME = 'music-teacher-hub-v3'; // v3 drops any page that was stored under a script/style URL
 const SCOPE = new URL(self.registration.scope);
 const INDEX_URL = new URL('index.html', SCOPE).toString();
 const STATIC_ASSETS = [SCOPE.toString(), INDEX_URL, new URL('manifest.json', SCOPE).toString()];
@@ -23,6 +23,10 @@ self.addEventListener('activate', (event) => {
 
 const putInCache = (request, response) => {
   if (response && response.status === 200 && response.type === 'basic') {
+    // A missing /assets/x.js can come back as the app's index.html (200, text/html). Caching that
+    // under the script's URL would break the app offline, so never store HTML for a non-page request.
+    const type = response.headers.get('content-type') || '';
+    if (request.mode !== 'navigate' && request.destination !== 'document' && type.includes('text/html')) return response;
     const copy = response.clone();
     caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
   }

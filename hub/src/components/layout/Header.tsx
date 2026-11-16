@@ -10,8 +10,10 @@ import {
   Timer,
   Settings,
   Sparkles,
-  Music
+  Music,
+  Lock
 } from 'lucide-react';
+import { cloudSync } from '../../services/cloudSync';
 
 export const Header: React.FC = () => {
   const {
@@ -115,6 +117,19 @@ export const Header: React.FC = () => {
           title={preferences.darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
         >
           {preferences.darkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}
+        </button>
+
+        {/* Lock: signs this device out (same as Settings > Cloud sync > Lock), one click from anywhere */}
+        <button
+          onClick={async () => {
+            if (!confirm('Lock the Hub on this device? You will need your PIN to open it again.')) return;
+            await cloudSync.lock();
+          }}
+          className="p-2 rounded-xl text-stone-600 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors"
+          title="Lock the Hub on this device"
+          aria-label="Lock the Hub on this device"
+        >
+          <Lock className="w-4 h-4" />
         </button>
 
         {/* Settings */}

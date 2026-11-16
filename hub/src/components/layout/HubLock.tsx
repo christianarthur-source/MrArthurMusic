@@ -4,6 +4,24 @@ import { cloudSync } from '../../services/cloudSync';
 import { startCalendarAutoRefresh } from '../../services/calendarFeeds';
 import logoTrimmed from '../../assets/logo-trimmed.png';
 
+/** Rejects if the request has not finished in `ms`, so a slow network can never leave "Opening your Hub…" on screen forever. */
+const withTimeout = <T,>(promise: Promise<T>, ms: number): Promise<T> =>
+  new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('timeout')), ms);
+    promise.then(
+      (v) => {
+        clearTimeout(timer);
+        resolve(v);
+      },
+      (e) => {
+        clearTimeout(timer);
+        reject(e);
+      },
+    );
+  });
+
+const OPEN_TIMEOUT_MS = 8000;
+
 type Gate = 'checking' | 'setup' | 'locked' | 'offline' | 'ready';
 
 /**
@@ -20,9 +38,9 @@ export const HubLock: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
   const openApp = async () => {
     try {
-      await cloudSync.pull();
+      await withTimeout(cloudSync.pull(), OPEN_TIMEOUT_MS);
     } catch {
-      // Offline or the server is unreachable: open with this device's copy and sync later.
+      // Offline, slow, or the server is unreachable: open with this device's copy and sync later.
     }
     if (cloudSync.hasToken()) {
       cloudSync.start();
@@ -33,7 +51,7 @@ export const HubLock: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
   const checkPinSetup = async () => {
     try {
-      setGate((await cloudSync.isPinSet()) ? 'locked' : 'setup');
+      setGate((await withTimeout(cloudSync.isPinSet(), OPEN_TIMEOUT_MS)) ? 'locked' : 'setup');
     } catch {
       setGate('offline');
     }
