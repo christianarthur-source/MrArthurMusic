@@ -94,6 +94,8 @@ export interface TeacherPortalData {
   currentTeacher?: TeacherRecord;
   /** Classes this teacher marked as theirs ("My Classes"). */
   myClassIds: string[];
+  /** True when the real class server answered (it cannot change the admin PIN or restore backups). */
+  cloud?: boolean;
 }
 
 /** A teacher's name for the sign-in picker (no PIN). */
@@ -1119,6 +1121,7 @@ async function callClassroomBackend(payload: Record<string, any>): Promise<any> 
   for (const endpoint of endpoints) {
     let data: any;
     let ok = false;
+    let status = 0;
     try {
       const res = await fetch(endpoint, {
         method: 'POST',
@@ -1129,11 +1132,16 @@ async function callClassroomBackend(payload: Record<string, any>): Promise<any> 
       if (!contentType.includes('application/json')) continue;
       data = await res.json();
       ok = res.ok;
+      status = res.status;
     } catch {
       continue; // offline or not available: try the next option
     }
     if (!ok || data?.error) {
-      throw new Error(data?.error || 'Server request failed');
+      // Same message as before; the extra fields let the sign-in form tell a wrong PIN from a "wait a minute".
+      throw Object.assign(new Error(data?.error || 'Server request failed'), {
+        status,
+        ...(data?.retryAfterSeconds ? { retryAfterSeconds: Number(data.retryAfterSeconds) } : {}),
+      });
     }
     // Keep a local copy updated in localStorage as an offline cache
     try {
@@ -1337,6 +1345,7 @@ export async function loginTeacher(teacherPin: string, teacherId?: string): Prom
     allowStudentSelfCreate: res.allowStudentSelfCreate ?? true,
     myClassIds: res.myClassIds || [],
     teacherPin: res.teacherPin || teacherPin,
+    cloud: res.cloud === true,
   };
 }
 
@@ -1466,6 +1475,7 @@ export async function teacherUpdateSettings(params: {
     allowStudentSelfCreate: res.allowStudentSelfCreate ?? true,
     myClassIds: res.myClassIds || [],
     teacherPin: res.teacherPin || params.newTeacherPin || params.teacherPin,
+    cloud: res.cloud === true,
   };
 }
 
