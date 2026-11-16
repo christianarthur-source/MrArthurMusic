@@ -53,6 +53,36 @@ const BeatMachineArt = () => {
   );
 };
 
+/** Type Beat: a strip of coloured beat blocks above a few drum-coloured keys, one of them pressed. */
+const TypeBeatArt = () => {
+  const blocks = [P.rose, P.amber, P.orange, P.amber, P.rose, P.sky];
+  const keys: [number, number, string][] = [
+    [18, 66, P.rose],
+    [48, 66, P.orange],
+    [78, 66, P.amber],
+    [33, 90, P.emerald],
+    [63, 90, P.sky],
+  ];
+  return (
+    <Svg>
+      <rect x="8" y="12" width="104" height="40" rx="10" fill={P.slateMid} stroke={P.slateLine} strokeWidth="2" />
+      {blocks.map((c, i) => (
+        <g key={i}>
+          {i === 3 && <rect x={14 + i * 16 - 3} y="17" width="20" height="30" rx="7" fill={c} opacity="0.3" />}
+          <rect x={14 + i * 16} y={i === 3 ? 20 : 24} width="14" height={i === 3 ? 24 : 16} rx="4" fill={c} />
+        </g>
+      ))}
+      {keys.map(([x, y, c], i) => (
+        <g key={i} transform={i === 1 ? 'translate(0 2)' : undefined}>
+          <rect x={x} y={y + (i === 1 ? 0 : 3)} width="24" height="20" rx="6" fill="#0b1220" />
+          <rect x={x} y={y} width="24" height={i === 1 ? 20 : 18} rx="6" fill={c} />
+          <rect x={x + 4} y={y + 3} width="16" height="4" rx="2" fill="#fff" opacity="0.35" />
+        </g>
+      ))}
+    </Svg>
+  );
+};
+
 /** Staff Wars: a spaceship firing a laser at an enemy note. */
 const StaffWarsArt = () => (
   <Svg>
@@ -265,6 +295,7 @@ const TunerArt = () => {
 
 export const LAB_TOOL_ART: Record<string, React.FC> = {
   'beat-machine': BeatMachineArt,
+  typebeat: TypeBeatArt,
   'staff-wars': StaffWarsArt,
   'song-starter': SongStarterArt,
   'solfege-trainer': SolfegeArt,

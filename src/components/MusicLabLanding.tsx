@@ -143,10 +143,16 @@ interface ToolCardDef {
 }
 
 /** The additional classroom tools: one grid of picture tiles (see LabToolArt.tsx), every tile the same size. */
-const TOOL_ORDER = ['beat-machine', 'staff-wars', 'song-starter', 'solfege-trainer', 'music-symbol-match', 'dynamic-ears', 'instrument-zoo', 'metronome', 'tempo-tapper', 'tuner'];
+const TOOL_GROUPS: { heading: string; note: string; ids: string[] }[] = [
+  { heading: 'Make and play', note: 'Beats, songs and games', ids: ['beat-machine', 'typebeat', 'song-starter', 'staff-wars'] },
+  { heading: 'Practice', note: 'Ears, symbols and instruments', ids: ['solfege-trainer', 'music-symbol-match', 'dynamic-ears', 'instrument-zoo'] },
+  { heading: 'Teacher helpers', note: 'Smartboard ready', ids: ['metronome', 'tempo-tapper', 'tuner'] },
+];
+const TOOL_ORDER = TOOL_GROUPS.flatMap((g) => g.ids);
 
 const TOOL_CARDS: Record<string, ToolCardDef> = {
   'beat-machine': { title: 'Beat Machine', accent: 'amber' },
+  typebeat: { title: 'Type Beat', accent: 'rose' },
   'staff-wars': { title: 'Staff Wars', accent: 'sky' },
   'song-starter': { title: 'Song Starter', accent: 'orange' },
   'solfege-trainer': { title: 'Do-Re-Mi Trainer', accent: 'rose' },
@@ -559,9 +565,15 @@ export const MusicLabLanding: React.FC<MusicLabLandingProps> = ({
               </h2>
               <span className="text-xs sm:text-sm text-slate-400 font-semibold">Drums, games, practice and teacher helpers · smartboard ready</span>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-              {TOOL_ORDER.filter(visible).map((id) => toolCard(id))}
-            </div>
+            {TOOL_GROUPS.filter((g) => g.ids.some(visible)).map((g) => (
+              <div key={g.heading} className="space-y-3">
+                <h3 className="flex items-baseline gap-2 text-sm sm:text-base font-black uppercase tracking-wider text-slate-300 font-['Fredoka',sans-serif]">
+                  {g.heading}
+                  <span className="text-xs font-semibold normal-case tracking-normal text-slate-500">{g.note}</span>
+                </h3>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">{g.ids.filter(visible).map((id) => toolCard(id))}</div>
+              </div>
+            ))}
           </section>
         )}
 
