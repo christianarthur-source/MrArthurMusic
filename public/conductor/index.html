@@ -13,8 +13,8 @@
   <link rel="stylesheet" href="/fonts.css">
   
   <!-- MediaPipe Pose for high-performance in-browser vision -->
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1675466862/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/pose.js" crossorigin="anonymous"></script>
 
   <style>
     :root {
@@ -614,10 +614,10 @@
           <span>📹</span>
           <span id="mode-label">Webcam Mode</span>
         </button>
-        <button id="song-btn" class="btn btn-dark" title="Piece: Mozart - Eine Kleine Nachtmusik">
+        <span class="btn btn-dark" title="Piece: Mozart - Eine Kleine Nachtmusik" style="cursor: default;">
           <span>🎼</span>
           <span>Mozart</span>
-        </button>
+        </span>
         <a href="/" class="btn btn-dark" title="Back to Music Lab">
           <span>🏠</span>
           <span>Music Lab</span>
@@ -695,6 +695,7 @@
           <div class="stage-curtain" id="stage-curtain">
             <h2>Take the Podium</h2>
             <p>Conduct Mozart's masterpiece! Move your hands up and down to set the tempo. Lift high for <em>forte</em>, low for <em>piano</em>, and cue sections left or right.</p>
+            <p id="curtain-error" role="alert" style="color: #FCA5A5; display: none; margin-top: 0;"></p>
             <div style="display: flex; gap: 0.75rem;">
               <button class="btn btn-gold" id="start-cam-btn">
                 <span>📹</span>
@@ -869,12 +870,16 @@
       // 2. Score Loading & Scheduling Engine
       // -------------------------------------------------------------
       async function loadScore() {
+        if (scoreData) return true;
         try {
           const res = await fetch('/conductor/eine-kleine-nachtmusik.json');
+          if (!res.ok) throw new Error('HTTP ' + res.status);
           scoreData = await res.json();
           console.log('Score loaded:', scoreData.header.name);
+          return true;
         } catch (err) {
           console.error('Failed to load score:', err);
+          return false;
         }
       }
 
@@ -952,9 +957,25 @@
       let lastWristY = 0;
       let wristVelocity = 0;
 
+      // Stops the camera (and its green light) and forgets the pose model.
+      function stopCamera() {
+        try { if (mediaCamera) mediaCamera.stop(); } catch (e) {}
+        const stream = videoEl.srcObject;
+        if (stream && stream.getTracks) stream.getTracks().forEach((t) => t.stop());
+        videoEl.srcObject = null;
+        try { if (mediaPose) mediaPose.close(); } catch (e) {}
+        mediaCamera = null;
+        mediaPose = null;
+      }
+      window.addEventListener('pagehide', stopCamera);
+
       async function setupMediaPipe() {
+        // The vision scripts come from a CDN: if they did not load (offline, filtered network) use the mouse.
+        if (typeof Pose === 'undefined' || typeof Camera === 'undefined') {
+          throw new Error('The camera tracking library could not be loaded');
+        }
         mediaPose = new Pose({
-          locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
+          locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/${file}`
         });
 
         mediaPose.setOptions({
@@ -976,7 +997,12 @@
           height: 480
         });
 
-        await mediaCamera.start();
+        try {
+          await mediaCamera.start();
+        } catch (err) {
+          stopCamera();
+          throw err;
+        }
       }
 
       function onPoseResults(results) {
@@ -1190,7 +1216,14 @@
 
       async function beginPerformance(webcam) {
         await initAudio();
-        await loadScore();
+        const curtainError = document.getElementById('curtain-error');
+        if (!(await loadScore())) {
+          // Stay on the start screen and say why (before, the stage just sat there silent)
+          curtainError.textContent = 'The music could not be loaded. Check your internet connection, then press a button to try again.';
+          curtainError.style.display = 'block';
+          return;
+        }
+        curtainError.style.display = 'none';
         stageCurtain.style.display = 'none';
         isPlaying = true;
 
@@ -1204,6 +1237,7 @@
           } catch (err) {
             console.warn('Webcam permission denied or error:', err);
             enableMouseMode();
+            stageStatusPill.textContent = 'No camera, so you are using the mouse baton. Move the mouse up & down to beat time';
           }
         } else {
           enableMouseMode();
@@ -1213,6 +1247,7 @@
       }
 
       function enableMouseMode() {
+        stopCamera();
         isWebcamMode = false;
         mousePad.style.display = 'flex';
         modeLabel.textContent = 'Mouse Baton';
@@ -1230,7 +1265,13 @@
           mousePad.style.display = 'none';
           modeLabel.textContent = 'Webcam Mode';
           stageStatusPill.textContent = 'Move hands rhythmically to conduct';
-          if (!mediaCamera) setupMediaPipe();
+          if (!mediaCamera) {
+            setupMediaPipe().catch((err) => {
+              console.warn('Webcam permission denied or error:', err);
+              enableMouseMode();
+              stageStatusPill.textContent = 'No camera, so you are using the mouse baton. Move the mouse up & down to beat time';
+            });
+          }
         }
       });
 

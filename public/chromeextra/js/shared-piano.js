@@ -250,13 +250,39 @@ export class SharedPianoApp {
       this.noteOn(midi, 'local', this.myAvatar.emoji, this.settings.instrument);
     }, { passive: false });
 
-    keyEl.addEventListener('touchend', (e) => {
+    const touchRelease = (e) => {
       e.preventDefault();
       this.noteOff(midi, 'local');
-    });
+    };
+    keyEl.addEventListener('touchend', touchRelease);
+    // The browser can take a touch over (scroll, system gesture, call): without this the note stuck on
+    keyEl.addEventListener('touchcancel', touchRelease);
+  }
+
+  /** Let go of every note this player is holding (window lost focus, tab hidden, view left). */
+  releaseLocalNotes() {
+    for (const code of [...this.heldComputerKeys]) {
+      this.heldComputerKeys.delete(code);
+      const m = KEYBOARD_MAP[code];
+      if (m !== undefined) this.noteOff(m, 'local');
+    }
+    if (this.lastMouseMidi !== null) {
+      this.noteOff(this.lastMouseMidi, 'local');
+      this.lastMouseMidi = null;
+    }
+    this.isMouseDown = false;
+    if (this.settings.sustain) {
+      this.settings.sustain = false;
+      if (this.sustainBtn) this.sustainBtn.classList.remove('active');
+    }
   }
 
   bindComputerKeyboard() {
+    // keyup never arrives if the window loses focus while a key is down (Alt+Tab, clicking the address bar)
+    window.addEventListener('blur', () => this.releaseLocalNotes());
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) this.releaseLocalNotes();
+    });
     window.addEventListener('keydown', (e) => {
       const view = document.getElementById('view-shared-piano');
       if (!view || !view.classList.contains('active')) return;
@@ -415,6 +441,17 @@ export class SharedPianoApp {
     }, 480);
   }
 
+  /** Switch the metronome off (used when leaving the Shared Piano view). */
+  stopMetronome() {
+    if (!this.settings.metronomeOn && !this.metronomeTimer) return;
+    this.settings.metronomeOn = false;
+    if (this.metroBtn) this.metroBtn.classList.remove('active');
+    if (this.metronomeTimer) {
+      clearInterval(this.metronomeTimer);
+      this.metronomeTimer = null;
+    }
+  }
+
   toggleMetronome() {
     this.settings.metronomeOn = !this.settings.metronomeOn;
     if (this.metroBtn) {
@@ -557,7 +594,12 @@ export class SharedPianoApp {
     try {
       ws = new WebSocket(`${scheme}://${location.host}/api/piano-room/${code}`);
     } catch {
-      this.setRoomStatus('Couldn\'t connect. Check your internet and try again.', true);
+      // The constructor itself threw (blocked or bad URL): keep trying while the player stays in the room
+      const delay = Math.min(10000, 1000 * 2 ** this.room.retries);
+      this.room.retries++;
+      this.setRoomStatus('Can\'t reach the room. Still trying…', true);
+      clearTimeout(this.room.retryTimer);
+      this.room.retryTimer = setTimeout(() => this.connectRoom(), delay);
       return;
     }
     this.room.ws = ws;
@@ -629,7 +671,7 @@ export class SharedPianoApp {
   applyRoster(players = []) {
     const others = new Map();
     for (const p of players) {
-      if (p.id !== this.room.you) others.set(p.id, { emoji: p.emoji, online: true });
+      if (p.id !== this.room.you) others.set(p.id, { emoji: String(p.emoji ?? '🎵').slice(0, 8), online: true });
     }
     // Let go of notes held by anyone who just left
     for (const id of this.peers.keys()) {
@@ -715,17 +757,22 @@ export class SharedPianoApp {
     }
     try {
       const midiAccess = await navigator.requestMIDIAccess();
-      for (const input of midiAccess.inputs.values()) {
-        input.onmidimessage = (event) => {
-          const [status, data1, data2] = event.data;
-          const cmd = status & 0xf0;
-          if (cmd === 0x90 && data2 > 0) {
-            this.noteOn(data1, 'local', this.myAvatar.emoji, this.settings.instrument);
-          } else if (cmd === 0x80 || (cmd === 0x90 && data2 === 0)) {
-            this.noteOff(data1, 'local');
-          }
-        };
-      }
+      const bindInputs = () => {
+        for (const input of midiAccess.inputs.values()) {
+          input.onmidimessage = (event) => {
+            const [status, data1, data2] = event.data;
+            const cmd = status & 0xf0;
+            if (cmd === 0x90 && data2 > 0) {
+              this.noteOn(data1, 'local', this.myAvatar.emoji, this.settings.instrument);
+            } else if (cmd === 0x80 || (cmd === 0x90 && data2 === 0)) {
+              this.noteOff(data1, 'local');
+            }
+          };
+        }
+      };
+      bindInputs();
+      // A keyboard plugged in (or re-plugged) after this point gets its handler too
+      midiAccess.onstatechange = bindInputs;
       this.midiReady = true;
       const label = document.querySelector('#sp-midi-btn span');
       if (label) label.textContent = 'MIDI on';
@@ -738,32 +785,30 @@ export class SharedPianoApp {
 
   updateAvatarBar() {
     if (!this.avatarBar) return;
-    const pills = [
-      `<div class="sp-avatar-pill you" title="You (${this.myAvatar.name})">
-        <span class="sp-emoji">${this.myAvatar.emoji}</span>
-        <span>You</span>
-      </div>`
-    ];
+    // Built with textContent: peer emoji arrive over the network and must never be parsed as HTML.
+    const pill = (cls, title, emoji, label) => {
+      const el = document.createElement('div');
+      el.className = `sp-avatar-pill ${cls}`;
+      if (title) el.title = title;
+      const e = document.createElement('span');
+      e.className = 'sp-emoji';
+      e.textContent = emoji;
+      const l = document.createElement('span');
+      l.textContent = label;
+      el.append(e, l);
+      return el;
+    };
+    const pills = [pill('you', `You (${this.myAvatar.name})`, this.myAvatar.emoji, 'You')];
 
     if (this.settings.aiDuetMode !== 'off') {
-      pills.push(`
-        <div class="sp-avatar-pill ai" title="AI Jam Partner active">
-          <span class="sp-emoji">${this.aiAvatar.emoji}</span>
-          <span>AI Partner (${this.settings.aiDuetMode})</span>
-        </div>
-      `);
+      pills.push(pill('ai', 'AI Jam Partner active', this.aiAvatar.emoji, `AI Partner (${this.settings.aiDuetMode})`));
     }
 
     for (const peer of this.peers.values()) {
-      pills.push(`
-        <div class="sp-avatar-pill peer${peer.online ? ' online' : ''}">
-          <span class="sp-emoji">${peer.emoji}</span>
-          <span>${peer.online ? 'Friend' : 'Room Tab'}</span>
-        </div>
-      `);
+      pills.push(pill(`peer${peer.online ? ' online' : ''}`, '', peer.emoji, peer.online ? 'Friend' : 'Room Tab'));
     }
 
-    this.avatarBar.innerHTML = pills.join('');
+    this.avatarBar.replaceChildren(...pills);
   }
 
   updateKeyColors() {

@@ -88,6 +88,11 @@ class ChromeMusicLabExtraApp {
       if (this.kandinsky && this.kandinsky.isPlaying) this.kandinsky.stop();
       if (this.rhythm && this.rhythm.isPlaying) this.rhythm.stop();
       if (this.sketchStudio && this.sketchStudio.isPlaying) this.sketchStudio.stop();
+      // Leaving the Shared Piano: stop its metronome and let go of any held notes
+      if (this.sharedPiano) {
+        this.sharedPiano.stopMetronome?.();
+        this.sharedPiano.releaseLocalNotes?.();
+      }
     }
 
     this.activeView = viewId;

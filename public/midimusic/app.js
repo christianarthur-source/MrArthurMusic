@@ -78,7 +78,9 @@ class Engine {
       this.worker.onmessage = (e) => (e.data.type === 'loaded' ? resolve(e.data.kits) : reject(new Error(e.data.message)));
       this.worker.postMessage({ type: 'load', buffer: bank }, [bank]);
     });
-    this.worker.onerror = null;
+    // After loading, a crash of the sound worker must not leave an instrument change waiting forever
+    this.worker.onerror = () => this.onWorkerError();
+    this.worker.onmessageerror = () => this.onWorkerError();
     const synth = new WorkletSynthesizer(this.ctx);
     // the standard drum kit is always loaded next to the chosen instrument: "Play to a groove" uses it
     const kit = await new Promise((resolve, reject) => {
@@ -94,6 +96,20 @@ class Engine {
     this.pendingSynth = synth;
     await this.setInstrument(this.want.prog, this.want.drum, this.want.sample);
     return kits;
+  }
+
+  /** The worker died: finish any waiting instrument change as "not changed". The sound that is playing keeps playing. */
+  onWorkerError() {
+    console.error('The sound worker stopped unexpectedly.');
+    try {
+      this.worker?.terminate();
+    } catch {}
+    this.worker = null;
+    const job = this.building;
+    this.building = null;
+    job?.resolve(false);
+    this.queued?.resolve(false);
+    this.queued = null;
   }
 
   /** Chooses the instrument. The previous one keeps playing until the new one is decoded and ready. */
@@ -1301,6 +1317,11 @@ function setHelp(open) {
   drawHelpMidi();
 }
 
+/** Device names come from the keyboard's firmware: never put them into HTML as they are. */
+function escapeHtml(t) {
+  return String(t).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+}
+
 function drawHelpMidi() {
   const box = $('helpMidi');
   const again = '<button class="toggle helpbtn" data-help="check" type="button">🔍 Look for my keyboard</button>';
@@ -1314,7 +1335,7 @@ function drawHelpMidi() {
   } else if (!midiAccess) {
     html = `<div class="help-h">🎹 MIDI keyboards</div><div class="help-msg">I haven’t looked for a keyboard yet. Plug it in, then press the button. If Chrome asks, choose <b>Allow</b>.</div>${again}`;
   } else if (midiList.length) {
-    html = `<div class="help-h">🎹 MIDI keyboards</div><div class="help-good">✅ I can see: <b>${midiList.join(', ')}</b></div>
+    html = `<div class="help-h">🎹 MIDI keyboards</div><div class="help-good">✅ I can see: <b>${midiList.map(escapeHtml).join(', ')}</b></div>
       <div class="help-msg">${helpHeard ? '🎉 I heard a key! Everything is working.' : 'Press a key on it now — I’ll tell you when I hear it.'}</div>
       ${helpHeard ? '' : `<ol class="help-steps"><li>If keys make no sound, tap the screen once, then check the volume.</li><li>Still quiet? Try <b>Reset the sound</b> below.</li></ol>`}${again}`;
   } else {
