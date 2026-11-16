@@ -293,13 +293,13 @@
     <section id="view-song-maker" class="app-view">
       <div class="exp-workspace">
         <div class="sm-canvases-wrap">
-          <canvas id="sm-tonal-canvas"></canvas>
-          <canvas id="sm-perc-canvas"></canvas>
+          <canvas id="sm-tonal-canvas" role="img" aria-label="Song Maker melody grid. Press the squares to add notes, or use the arrow keys and Enter."></canvas>
+          <canvas id="sm-perc-canvas" role="img" aria-label="Song Maker rhythm grid. Press the squares to add drum hits."></canvas>
         </div>
 
         <div class="exp-control-bar">
           <div class="control-group">
-            <button id="sm-play-btn" class="play-fab" title="Play / Pause (Space)">
+            <button id="sm-play-btn" class="play-fab" title="Play / Pause (Space)" aria-label="Play / Pause (Space)">
               <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor">
                 <path d="M8 5.14v14l11-7-11-7z"/>
               </svg>
@@ -382,12 +382,12 @@
             <span>•</span>
             <span id="kand-scheme-label">Teal / Green / Blue</span>
           </div>
-          <canvas id="kandinsky-canvas"></canvas>
+          <canvas id="kandinsky-canvas" role="img" aria-label="Drawing area. Draw shapes and lines; each one makes a sound when the playhead reaches it."></canvas>
         </div>
 
         <div class="exp-control-bar">
           <div class="control-group">
-            <button id="kand-play-btn" class="play-fab" title="Play / Pause Artwork">
+            <button id="kand-play-btn" class="play-fab" title="Play / Pause Artwork" aria-label="Play / Pause Artwork">
               <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor">
                 <path d="M8 5.14v14l11-7-11-7z"/>
               </svg>
@@ -451,7 +451,7 @@
             </div>
             <div id="sp-room-status" class="sp-room-status" aria-live="polite"></div>
           </div>
-          <canvas id="sp-roll-canvas"></canvas>
+          <canvas id="sp-roll-canvas" role="img" aria-label="Piano roll showing the notes played in the shared piano room."></canvas>
           <div class="sp-trigger-line"></div>
           <div id="sp-keyboard" class="sp-keyboard"></div>
         </div>
@@ -516,14 +516,14 @@
             <div id="rhythm-scene-dots" class="rhythm-meter-dots"></div>
           </div>
 
-          <button id="rhythm-prev-btn" class="rhythm-carousel-arrow prev" title="Previous Meter Scene">
+          <button id="rhythm-prev-btn" class="rhythm-carousel-arrow prev" title="Previous Meter Scene" aria-label="Previous Meter Scene">
             <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
           </button>
-          <button id="rhythm-next-btn" class="rhythm-carousel-arrow next" title="Next Meter Scene">
+          <button id="rhythm-next-btn" class="rhythm-carousel-arrow next" title="Next Meter Scene" aria-label="Next Meter Scene">
             <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
           </button>
 
-          <canvas id="rhythm-stage-canvas"></canvas>
+          <canvas id="rhythm-stage-canvas" role="img" aria-label="Rhythm stage showing the beat as it plays."></canvas>
 
           <div class="rhythm-seq-panel">
             <div id="rhythm-seq-grid"></div>
@@ -532,7 +532,7 @@
 
         <div class="exp-control-bar">
           <div class="control-group">
-            <button id="rhythm-play-btn" class="play-fab" title="Play / Pause Rhythm">
+            <button id="rhythm-play-btn" class="play-fab" title="Play / Pause Rhythm" aria-label="Play / Pause Rhythm">
               <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor">
                 <path d="M8 5.14v14l11-7-11-7z"/>
               </svg>
@@ -629,7 +629,7 @@
 
         <!-- Main Drawing & Synthesis Stage Canvas -->
         <div class="sketch-stage-container">
-          <canvas id="sketch-canvas"></canvas>
+          <canvas id="sketch-canvas" role="img" aria-label="Drawing area. Draw with the mouse or your finger."></canvas>
         </div>
 
         <!-- Bottom Controls & Synthesis Rack -->
@@ -751,7 +751,7 @@
   <aside id="palette-drawer" class="palette-drawer" aria-label="Color Palette and Theme Studio">
     <div class="drawer-header">
       <h2>🎨 Color Palette &amp; Theme Studio</h2>
-      <button id="close-palette-btn" class="tool-btn" style="height: 34px; padding: 0 10px;">✕</button>
+      <button id="close-palette-btn" class="tool-btn" style="height: 34px; padding: 0 10px;" aria-label="Close">✕</button>
     </div>
 
     <div class="drawer-body">
@@ -805,7 +805,7 @@
     <div class="modal-card">
       <div class="modal-header">
         <h3>✨ Song Maker EXTRA Magic Tools</h3>
-        <button id="sm-magic-close" class="tool-btn" style="height: 32px;">✕</button>
+        <button id="sm-magic-close" class="tool-btn" style="height: 32px;" aria-label="Close">✕</button>
       </div>
       <p style="color: var(--text-secondary); font-size: 0.85rem; line-height: 1.45; margin-bottom: 18px;">
         Spark your creativity! Instantly generate melodies, add drum grooves, transpose pitch, or transform your song.
@@ -841,7 +841,7 @@
     <div class="modal-card">
       <div class="modal-header">
         <h3>Song Maker Settings</h3>
-        <button id="sm-settings-close" class="tool-btn" style="height: 32px;">✕</button>
+        <button id="sm-settings-close" class="tool-btn" style="height: 32px;" aria-label="Close">✕</button>
       </div>
       <div class="form-grid">
         <div class="form-field">
@@ -921,7 +921,7 @@
     <div class="modal-card">
       <div class="modal-header">
         <h3>Save &amp; Export Song</h3>
-        <button id="sm-save-close" class="tool-btn" style="height: 32px;">✕</button>
+        <button id="sm-save-close" class="tool-btn" style="height: 32px;" aria-label="Close">✕</button>
       </div>
       <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 18px;">
         <button id="sm-export-wav" class="btn-primary">Download WAV Audio (.wav)</button>
@@ -945,7 +945,7 @@
     <div class="modal-card">
       <div class="modal-header">
         <h3>Shared Piano Settings</h3>
-        <button id="sp-settings-close" class="tool-btn" style="height: 32px;">✕</button>
+        <button id="sp-settings-close" class="tool-btn" style="height: 32px;" aria-label="Close">✕</button>
       </div>
       <div class="form-grid">
         <div class="form-field">

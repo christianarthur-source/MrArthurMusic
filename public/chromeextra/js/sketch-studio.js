@@ -758,6 +758,8 @@ export class SketchStudioApp {
       if (view && !view.classList.contains('active')) return;
 
       if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+      // Space/Enter on a focused button, link or inside a dialog belongs to that control (audit WP-6.2).
+      if ((e.code === 'Space' || e.code === 'Enter') && (e.repeat || (e.target.closest && e.target.closest('button, a[href], summary, [role="button"], [role="dialog"], [aria-modal="true"]')))) return;
 
       if (e.code === 'Space') {
         e.preventDefault();

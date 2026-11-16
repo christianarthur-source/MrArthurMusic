@@ -14,6 +14,8 @@
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 [hidden] { display: none !important; }
 html, body { height: 100%; margin: 0; overflow: hidden; overscroll-behavior: none; }
+/* Pinch-zoom is allowed (page zoom for low vision); double-tap-to-zoom is off so quick taps on buttons stay taps. The keyboard and wheel keep touch-action: none. */
+html { touch-action: manipulation; }
 body {
   background: var(--bg); color: var(--text); font-family: var(--font); font-size: 15px;
   -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
