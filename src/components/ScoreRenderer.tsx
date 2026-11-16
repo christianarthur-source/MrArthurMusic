@@ -323,7 +323,8 @@ function finalizeBeamGroup(
   }
 
   beamGroups.push({
-    id: 'bg_' + Math.random().toString(36).substring(2, 9),
+    // Stable id (index inside the measure): a random id remounted every beam on each render, i.e. 60x/s during playback
+    id: `bg_${beamGroups.length}`,
     isStemDown,
     notes: updatedNotes,
     beamY1,

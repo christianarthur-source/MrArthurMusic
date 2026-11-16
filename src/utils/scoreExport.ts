@@ -1,5 +1,5 @@
 import { InstrumentId, Score } from '../types/music';
-import { expandPlaybackMeasures, getItemDuration, getMidiNoteNumber } from './musicMath';
+import { expandPlaybackMeasures, getEffectiveAccidental, getItemDuration, getMidiNoteNumber } from './musicMath';
 
 const GM_PROGRAM_MAP: Record<InstrumentId, number> = {
   // Keyboards
@@ -162,7 +162,10 @@ export function exportScoreToMidi(score: Score): void {
     ])
   );
 
-  // Instrument Tracks
+  // Instrument Tracks. Melodic tracks take channels 0-8 then 10-15 in order (channel 9 is drums),
+  // so no two tracks share a channel (a shared channel made one track's program change win).
+  const MELODIC_CHANNELS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15];
+  let melodicSlot = 0;
   score.tracks.forEach((track, tIdx) => {
     if (track.muted) return;
     const isDrum =
@@ -170,7 +173,7 @@ export function exportScoreToMidi(score: Score): void {
       track.instrumentId === 'drum_808' ||
       track.instrumentId === 'drum_jazz' ||
       track.instrumentId === 'drum_latin';
-    const channel = isDrum ? 9 : tIdx % 9; // Channel 10 (index 9) reserved for drums
+    const channel = isDrum ? 9 : MELODIC_CHANNELS[melodicSlot++ % MELODIC_CHANNELS.length]; // Channel 10 (index 9) reserved for drums
     const program = GM_PROGRAM_MAP[track.instrumentId] ?? 0;
 
     interface MidiEvt {
@@ -393,7 +396,10 @@ export function exportScoreToMusicXml(score: Score): void {
               : [];
 
           pitches.forEach((p, pIdx) => {
-            const alter = p.accidental === 'sharp' ? 1 : p.accidental === 'flat' ? -1 : 0;
+            // MusicXML <alter> is the SOUNDING alteration, so the key signature must be applied
+            // (an F in G major is written F#), same rule the player and MIDI export use.
+            const effAccidental = getEffectiveAccidental(p, score.keySignature);
+            const alter = effAccidental === 'sharp' ? 1 : effAccidental === 'flat' ? -1 : 0;
             xml += `      <note>\n`;
             if (pIdx > 0) xml += `        <chord/>\n`;
             xml += `        <pitch>\n`;

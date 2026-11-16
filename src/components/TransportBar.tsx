@@ -429,13 +429,15 @@ export const TransportBar: React.FC<TransportBarProps> = ({
             title="Time Signature (Meter)"
             className="font-bold text-white bg-transparent focus:outline-hidden cursor-pointer"
           >
-            <option value="4/4" className="bg-slate-900 text-white">4/4</option>
-            <option value="3/4" className="bg-slate-900 text-white">3/4</option>
-            <option value="2/4" className="bg-slate-900 text-white">2/4</option>
-            <option value="5/4" className="bg-slate-900 text-white">5/4</option>
-            <option value="6/8" className="bg-slate-900 text-white">6/8</option>
-            <option value="7/8" className="bg-slate-900 text-white">7/8</option>
-            <option value="6/4" className="bg-slate-900 text-white">6/4</option>
+            {/* The current meter is always listed, so a score that arrives with another one (template or import) never shows a mismatched value. */}
+            {(() => {
+              const common = ['4/4', '3/4', '2/4', '5/4', '6/8', '7/8', '6/4'];
+              const current = `${timeSignature[0]}/${timeSignature[1]}`;
+              const all = common.includes(current) ? common : [...common, current];
+              return all.map((ts) => (
+                <option key={ts} value={ts} className="bg-slate-900 text-white">{ts}</option>
+              ));
+            })()}
           </select>
           <span className="text-slate-600">|</span>
           <select
