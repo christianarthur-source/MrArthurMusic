@@ -102,7 +102,8 @@ export const TempoTapper: React.FC = () => {
   const [tapTimes, setTapTimes] = useState<number[]>([]);
   const [isMetronomeActive, setIsMetronomeActive] = useState<boolean>(false);
   const [beatPulse, setBeatPulse] = useState<boolean>(false);
-  const [runnerPosition, setRunnerPosition] = useState<number>(10);
+  const runnerRef = useRef<HTMLDivElement | null>(null);
+  const runnerPosRef = useRef<number>(10);
   const [mode, setMode] = useState<'free' | 'challenge'>('free');
 
   const metronomeTimerRef = useRef<number | null>(null);
@@ -164,49 +165,73 @@ export const TempoTapper: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleTap, mode]);
 
-  // Animated animal runner movement
+  // Animated animal runner movement. The position is written straight to the
+  // element (not React state), so an idle tapper does not re-render 25 times a second.
   useEffect(() => {
-    // Runner moves across the track based on BPM
-    const speedMultiplier = bpm / 100;
-    const interval = window.setInterval(() => {
-      setRunnerPosition((prev) => (prev >= 88 ? 5 : prev + 1.2 * speedMultiplier));
-    }, 40);
-    return () => clearInterval(interval);
+    let raf = 0;
+    let last = performance.now();
+    const loop = (t: number) => {
+      const dt = Math.min(0.1, (t - last) / 1000);
+      last = t;
+      const speedMultiplier = bpm / 100;
+      // 1.2% per 40 ms at 100 BPM = 30% per second
+      runnerPosRef.current = runnerPosRef.current >= 88 ? 5 : runnerPosRef.current + 30 * speedMultiplier * dt;
+      if (runnerRef.current) runnerRef.current.style.left = `${runnerPosRef.current}%`;
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
   }, [bpm]);
 
-  // Metronome audio ticker
+  // Metronome audio: scheduled on the audio clock (look-ahead), not a drifting setInterval.
   useEffect(() => {
-    if (!isMetronomeActive) {
-      if (metronomeTimerRef.current !== null) {
-        clearInterval(metronomeTimerRef.current);
-        metronomeTimerRef.current = null;
-      }
+    if (!isMetronomeActive) return;
+
+    let ctx: AudioContext;
+    try {
+      ctx = soundEngine.ensureContext();
+      if (ctx.state === 'suspended') void ctx.resume().catch(() => {});
+    } catch {
       return;
     }
 
-    const intervalMs = (60 / bpm) * 1000;
+    const secondsPerBeat = 60 / bpm;
     let step = 0;
+    let nextTime = ctx.currentTime + 0.05;
+    const timeouts: number[] = [];
 
-    metronomeTimerRef.current = window.setInterval(() => {
-      try {
-        if (step % 4 === 0) {
-          soundEngine.playDrumHit('cowbell', 0, 0.9);
-        } else {
-          soundEngine.playDrumHit('rimshot', 0, 0.5);
+    const schedule = () => {
+      while (nextTime < ctx.currentTime + 0.15) {
+        const stale = nextTime < ctx.currentTime - 0.05; // timers were throttled: skip, do not burst
+        if (!stale) {
+          try {
+            if (step % 4 === 0) {
+              soundEngine.playDrumHit('cowbell', nextTime, 0.9);
+            } else {
+              soundEngine.playDrumHit('rimshot', nextTime, 0.5);
+            }
+          } catch {
+            // audio fail-safe
+          }
+          const delayMs = Math.max(0, (nextTime - ctx.currentTime) * 1000);
+          timeouts.push(
+            window.setTimeout(() => {
+              setBeatPulse(true);
+              timeouts.push(window.setTimeout(() => setBeatPulse(false), 90));
+            }, delayMs)
+          );
         }
-      } catch {
-        // audio fail-safe
+        step++;
+        nextTime += secondsPerBeat;
       }
-      setBeatPulse(true);
-      setTimeout(() => setBeatPulse(false), 90);
-      step++;
-    }, intervalMs);
+    };
+
+    schedule();
+    const timer = window.setInterval(schedule, 40);
 
     return () => {
-      if (metronomeTimerRef.current !== null) {
-        clearInterval(metronomeTimerRef.current);
-        metronomeTimerRef.current = null;
-      }
+      clearInterval(timer);
+      timeouts.forEach((t) => clearTimeout(t));
     };
   }, [bpm, isMetronomeActive]);
 
@@ -353,9 +378,10 @@ export const TempoTapper: React.FC = () => {
 
           {/* Running Animal Sprite */}
           <div
+            ref={runnerRef}
             className="absolute transition-transform duration-75 text-3xl select-none"
             style={{
-              left: `${runnerPosition}%`,
+              left: `${runnerPosRef.current}%`,
               transform: beatPulse ? 'translateY(-6px) scale(1.2)' : 'translateY(0px)',
             }}
           >
@@ -368,7 +394,14 @@ export const TempoTapper: React.FC = () => {
       <div className="flex flex-col items-center justify-center gap-3 py-4">
         <button
           type="button"
-          onClick={handleTap}
+          onPointerDown={(e) => {
+            // Register the tap on press, not release; keyboard activation arrives via onClick (detail 0)
+            if (e.pointerType === 'mouse' && e.button !== 0) return;
+            handleTap();
+          }}
+          onClick={(e) => {
+            if (e.detail === 0) handleTap();
+          }}
           className={`w-full max-w-md py-7 px-8 rounded-3xl bg-gradient-to-r from-amber-400 via-rose-500 to-sky-500 hover:from-amber-300 hover:to-sky-400 text-slate-950 font-black text-2xl sm:text-3xl font-['Fredoka',sans-serif] tracking-wide shadow-2xl shadow-rose-500/30 active:scale-95 transition-all cursor-pointer flex flex-col items-center justify-center gap-1 select-none border-2 border-amber-300/60 ${
             beatPulse ? 'scale-102 ring-4 ring-amber-300/80' : ''
           }`}

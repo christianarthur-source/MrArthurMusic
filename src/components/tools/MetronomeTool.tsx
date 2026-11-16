@@ -154,7 +154,7 @@ export const MetronomeTool: React.FC = () => {
 
   // Initialize or get AudioContext
   const getAudioContext = useCallback(() => {
-    if (!audioCtxRef.current) {
+    if (!audioCtxRef.current || audioCtxRef.current.state === 'closed') {
       const AudioCtxClass = window.AudioContext || (window as any).webkitAudioContext;
       audioCtxRef.current = new AudioCtxClass();
     }
@@ -299,11 +299,19 @@ export const MetronomeTool: React.FC = () => {
       const currentBeatIndex = currentBeatRef.current;
       const tickTime = nextNoteTimeRef.current;
 
-      // Play audio precisely at tickTime
-      playClickSound(tickTime, isAccent, isSubTick);
+      // After a hidden tab (timers throttled) or a stalled main thread the
+      // scheduler can be many ticks behind. Skip ticks that are already in the
+      // past instead of firing them all at once as a burst; the beat counters
+      // still advance so the downbeat stays in place.
+      const isStale = tickTime < ctx.currentTime - 0.05;
+
+      if (!isStale) {
+        // Play audio precisely at tickTime
+        playClickSound(tickTime, isAccent, isSubTick);
+      }
 
       // Schedule visual update for the downbeat
-      if (!isSubTick) {
+      if (!isSubTick && !isStale) {
         const delayMs = Math.max(0, (tickTime - ctx.currentTime) * 1000);
         setTimeout(() => {
           if (isPlayingRef.current) {
@@ -374,10 +382,15 @@ export const MetronomeTool: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isPlaying]);
 
-  // Clean up on unmount
+  // Clean up on unmount (also closes the AudioContext: browsers cap how many can exist)
   useEffect(() => {
     return () => {
       stopMetronome();
+      const ctx = audioCtxRef.current;
+      audioCtxRef.current = null;
+      if (ctx && ctx.state !== 'closed') {
+        ctx.close().catch(() => {});
+      }
     };
   }, [stopMetronome]);
 
@@ -533,7 +546,14 @@ export const MetronomeTool: React.FC = () => {
             {/* Tap Tempo Button */}
             <button
               type="button"
-              onClick={handleTap}
+              onPointerDown={(e) => {
+                // Register the tap on press, not release; keyboard activation arrives via onClick (detail 0)
+                if (e.pointerType === 'mouse' && e.button !== 0) return;
+                handleTap();
+              }}
+              onClick={(e) => {
+                if (e.detail === 0) handleTap();
+              }}
               className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-black text-xs sm:text-sm active:scale-95 transition-all cursor-pointer shadow-lg shadow-sky-500/20 border border-sky-400/40 flex items-center gap-1.5"
             >
               <span>👆 TAP TEMPO</span>
