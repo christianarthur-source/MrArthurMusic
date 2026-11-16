@@ -225,10 +225,18 @@ async function selfCreateAllowed(db: Db) {
 }
 
 /** Finds a student's project by title (case-insensitive) without PostgREST wildcards. */
-async function findProjectByTitle(db: Db, studentId: string, title: string) {
-  const rows = (await db.fetch(`projects?select=id,title&student_id=${eq(studentId)}`)) || [];
+// Songs made before app_type existed are staff scores.
+const appTypeOf = (row: any) => String(row?.app_type || 'staff-composer');
+
+// With appType given, only a song from the same tool matches: a beat and a staff song may share a title.
+async function findProjectByTitle(db: Db, studentId: string, title: string, appType?: string) {
+  const rows = (await db.fetch(`projects?select=id,title,app_type&student_id=${eq(studentId)}`)) || [];
   const want = title.trim().toLowerCase();
-  return rows.find((p: any) => String(p.title || '').trim().toLowerCase() === want) ?? null;
+  return (
+    rows.find(
+      (p: any) => String(p.title || '').trim().toLowerCase() === want && (!appType || appTypeOf(p) === appType),
+    ) ?? null
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -393,11 +401,12 @@ async function runAction(payload: Record<string, any>, db: Db, env: ClassroomEnv
     }
 
     if (projectId) {
-      // An existing id must belong to the same student; otherwise save as a new song.
-      const owner = (await db.fetch(`projects?select=student_id&id=${eq(projectId)}`)) || [];
-      if (owner[0] && owner[0].student_id !== studentId) projectId = '';
+      // An existing id must belong to the same student and the same tool; otherwise save as a new song.
+      // (A staff score must never replace a beat or a DAW song, or the other way round.)
+      const owner = (await db.fetch(`projects?select=student_id,app_type&id=${eq(projectId)}`)) || [];
+      if (owner[0] && (owner[0].student_id !== studentId || appTypeOf(owner[0]) !== appType)) projectId = '';
     }
-    if (!projectId) projectId = (await findProjectByTitle(db, studentId, title))?.id ?? randomId('proj', 10);
+    if (!projectId) projectId = (await findProjectByTitle(db, studentId, title, appType))?.id ?? randomId('proj', 10);
 
     const now = new Date().toISOString();
     const saved = await db.upsert(
@@ -678,7 +687,7 @@ async function runAction(payload: Record<string, any>, db: Db, env: ClassroomEnv
     const rows: any[] = [];
     for (const studentId of targetStudentIds) {
       if (!studentMap.has(studentId)) continue;
-      const existing = await findProjectByTitle(db, studentId, title);
+      const existing = await findProjectByTitle(db, studentId, title, String(sourceProject.appType || 'staff-composer'));
       const score = sourceProject.score ? structuredClone(sourceProject.score) : null;
       let projectData = sourceProject.projectData ? structuredClone(sourceProject.projectData) : null;
       if (!projectData && (instructions || title)) projectData = {};

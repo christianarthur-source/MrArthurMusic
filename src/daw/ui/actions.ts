@@ -537,11 +537,33 @@ export async function startRecording(s: Studio) {
   s.recorder.start();
   s.engine.play(recordStartTick, { countInBars: p.editor.countInBars });
   s.ui.set({ recording: true });
+  // A take is held in memory until it stops, so cap its length. 5 minutes of 16-bit stereo
+  // also fits under the per-recording storage limit.
+  if (recordLimitTimer) clearTimeout(recordLimitTimer);
+  recordLimitTimer = setTimeout(() => {
+    recordLimitTimer = null;
+    if (!s.ui.get().recording) return;
+    s.ui.toast('info', `Recording stopped at ${MAX_RECORD_MINUTES} minutes, the longest a single take can be. Press Record again to keep going on a new take.`);
+    void stopRecording(s);
+  }, MAX_RECORD_MINUTES * 60_000);
+}
+
+export const MAX_RECORD_MINUTES = 5;
+let recordLimitTimer: ReturnType<typeof setTimeout> | null = null;
+
+/** A mono microphone arrives as two identical channels; keeping one halves the saved size. */
+function isDualMono(channels: Float32Array[]): boolean {
+  if (channels.length !== 2 || channels[0].length !== channels[1].length) return false;
+  const [l, r] = channels;
+  for (let i = 0; i < l.length; i++) if (l[i] !== r[i]) return false;
+  return true;
 }
 
 export async function stopRecording(s: Studio) {
   if (!s.ui.get().recording) return;
   s.ui.set({ recording: false });
+  if (recordLimitTimer) clearTimeout(recordLimitTimer);
+  recordLimitTimer = null;
   if (s.live.recordingMidi) {
     const take = s.live.stopTake();
     s.engine.pause();
@@ -577,17 +599,29 @@ export async function stopRecording(s: Studio) {
       s.ui.toast('warn', 'The recording was too short and was discarded.');
       return;
     }
-    const channels = cap.channels.map((c) => c.slice(startSample, startSample + lenSamples));
-    const wav = encodeWav(channels, cap.sampleRate, 24);
+    let channels = cap.channels.map((c) => c.slice(startSample, startSample + lenSamples));
+    if (isDualMono(channels)) channels = [channels[0]];
     const take = p.regions.filter((r) => r.trackId === track.id).length + 1;
     const name = `${track.name} take ${take}`;
-    const assetId = await saveUserAudio(new Blob([wav], { type: 'audio/wav' }), `${name}.wav`);
+    // If storing the take fails (disk full, private window), keep it in the song for this
+    // session instead of throwing the performance away.
+    let assetId: string;
+    let stored = true;
+    try {
+      const wav = encodeWav(channels, cap.sampleRate, 16);
+      assetId = await saveUserAudio(new Blob([wav], { type: 'audio/wav' }), `${name}.wav`);
+    } catch (err) {
+      console.warn('Could not store the recording', err);
+      assetId = newId('usr');
+      stored = false;
+    }
     const buffer = s.engine.ctx.createBuffer(channels.length, lenSamples, cap.sampleRate);
     channels.forEach((c, i) => buffer.copyToChannel(c as Float32Array<ArrayBuffer>, i));
     const info: AudioAssetInfo = { id: `usr:${assetId}`, ref: { kind: 'user', assetId }, name, durationSec: buffer.duration, sampleRate: cap.sampleRate, channels: channels.length };
     s.engine.assets.put(info.id, buffer);
     placeUserAudio(s, info, recordStartTick, track.id, 'Record');
-    s.ui.toast('success', `Recorded "${name}" (${buffer.duration.toFixed(1)} s). It is saved on this computer.`);
+    if (stored) s.ui.toast('success', `Recorded "${name}" (${buffer.duration.toFixed(1)} s). It is saved on this computer.`);
+    else s.ui.toast('warn', `Recorded "${name}", but it could not be saved on this computer. It will play until you close this page: use File → Export now to keep it.`);
   } catch (err) {
     s.ui.toast('error', err instanceof Error ? err.message : 'Recording failed.');
   }

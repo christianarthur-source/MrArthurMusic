@@ -1136,8 +1136,10 @@ async function callClassroomBackend(payload: Record<string, any>): Promise<any> 
     return data;
   }
 
-  // 3. Local browser localStorage fallback (for offline use)
-  return executeLocalFallback(payload);
+  // 3. Local browser localStorage fallback (for offline use). Marked so callers can say
+  // "saved on this device only" instead of claiming it reached the class account.
+  const local = executeLocalFallback(payload);
+  return local && typeof local === 'object' && !Array.isArray(local) ? { ...local, offline: true } : local;
 }
 
 export function getSavedStudentSession(): StudentSession | null {
@@ -1263,7 +1265,7 @@ export async function saveStudentProject(params: {
   score?: Score;
   appType?: MusicLabAppType;
   projectData?: any;
-}): Promise<{ saved: boolean; project?: SavedProjectRecord }> {
+}): Promise<{ saved: boolean; project?: SavedProjectRecord; offline?: boolean }> {
   const res = await callClassroomBackend({
     action: 'save_project',
     studentId: params.studentId,
@@ -1279,7 +1281,8 @@ export async function saveStudentProject(params: {
   if (res.skipped) {
     return { saved: false };
   }
-  return { saved: Boolean(res.ok), project: res.project };
+  // offline: the server could not be reached, so this copy is only in this browser.
+  return { saved: Boolean(res.ok), project: res.project, offline: Boolean(res.offline) };
 }
 
 export async function deleteStudentProject(params: {

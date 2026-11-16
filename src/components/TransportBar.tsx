@@ -93,7 +93,7 @@ interface TransportBarProps {
   lastSavedTime: string | null;
   studentFirstName?: string | null;
   editingAsTeacherStudentName?: string | null;
-  cloudSaveStatus?: 'idle' | 'saving' | 'saved' | 'untitled';
+  cloudSaveStatus?: 'idle' | 'saving' | 'saved' | 'untitled' | 'device-only';
   onOpenClassroomModal: () => void;
   isAvatarOpen: boolean;
   onOpenAvatar: () => void;
@@ -260,6 +260,13 @@ export const TransportBar: React.FC<TransportBarProps> = ({
                 <span className="text-[10px] text-emerald-400 font-semibold hidden xl:inline">
                   ✓ Auto-Saved
                 </span>
+              ) : cloudSaveStatus === 'device-only' ? (
+                <span
+                  title="The class account could not be reached. This song is saved on this device and will be sent when the connection is back."
+                  className="text-[10px] text-amber-300 font-semibold hidden xl:inline"
+                >
+                  Saved on this device only
+                </span>
               ) : cloudSaveStatus === 'untitled' ? (
                 <span
                   title="Type a song title above to automatically save this song to your account"
@@ -269,8 +276,11 @@ export const TransportBar: React.FC<TransportBarProps> = ({
                 </span>
               ) : (
                 lastSavedTime && (
-                  <span className="text-[10px] text-emerald-400/80 hidden xl:inline">
-                    ✓ Saved
+                  <span
+                    title="Saved on this device. Sign in and give the song a title to save it to your class account."
+                    className="text-[10px] text-emerald-400/80 hidden xl:inline"
+                  >
+                    ✓ Saved on this device
                   </span>
                 )
               )}

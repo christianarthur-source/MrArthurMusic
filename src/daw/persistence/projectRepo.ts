@@ -223,6 +223,19 @@ export class Autosaver {
     }, 1500);
   }
 
+  /**
+   * Save the open project right before another one replaces it. The project is serialised
+   * synchronously, so the caller can load the next one straight away.
+   */
+  saveOutgoing() {
+    if (this.timer) clearTimeout(this.timer);
+    this.timer = null;
+    if (this.getRevision() === this.savedRevision || !this.enabled()) return;
+    void saveProjectLocal(this.getProject()).catch((err) => {
+      this.lastError = err instanceof Error ? err.message : String(err);
+    });
+  }
+
   async flush(): Promise<void> {
     if (this.timer) clearTimeout(this.timer);
     this.timer = null;

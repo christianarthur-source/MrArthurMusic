@@ -3,7 +3,7 @@
  * URL sharing (?daw= / ?project=, and short ?s= links for File → Share), and the profanity filter.
  * The DAW itself is DawCore.tsx (kept identical to the standalone "mrA DAW" project).
  */
-import { useEffect, useMemo, useRef } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { DawApp as DawCore, DawAppProps } from './DawCore';
 import { saveStudentProject, StudentSession } from '../utils/classroomApi';
 import { containsProfanity } from '../utils/profanityFilter';
@@ -45,7 +45,22 @@ function extractLegacyProjectFromLocation(): unknown | null {
 
     const decodedJson = decodeURIComponent(atob(projParam));
     const parsed = JSON.parse(decodedJson);
-    return decompressLegacyDawProject(parsed);
+    const project = decompressLegacyDawProject(parsed);
+    // The link has been read: take the song out of the address bar so a refresh or a later
+    // sign-in can't load it again over whatever the student has made since.
+    try {
+      const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+      for (const k of ['project', 'daw']) {
+        searchParams.delete(k);
+        hashParams.delete(k);
+      }
+      const q = searchParams.toString();
+      const h = hashParams.toString();
+      window.history.replaceState(null, '', window.location.pathname + (q ? `?${q}` : '?app=daw') + (h ? `#${h}` : ''));
+    } catch {
+      // ignore
+    }
+    return project;
   } catch (err) {
     console.warn('Could not parse shared DAW project from URL', err);
     return null;
@@ -76,19 +91,17 @@ export function DawApp(
 
   const currentProjectIdRef = useRef(currentProjectId);
   currentProjectIdRef.current = currentProjectId;
+  const studentSessionRef = useRef(studentSession);
+  studentSessionRef.current = studentSession;
 
-  // Process incoming loadedProjectData or URL query/hash params
-  const effectiveProjectData = useMemo(() => {
-    let raw = loadedProjectData;
+  // Old ?daw= / ?project= links: read once when the DAW opens, never again.
+  const [legacyFromUrl] = useState(() => extractLegacyProjectFromLocation());
+  const [legacyOpened, setLegacyOpened] = useState(false);
 
-    // Fix C: Old ?daw= / ?project= links when loadedProjectData is empty
-    if (!raw) {
-      const fromUrl = extractLegacyProjectFromLocation();
-      if (fromUrl) {
-        raw = fromUrl;
-      }
-    }
-
+  // Turns an incoming song into what the DAW should open. Reads the session through a ref so that
+  // signing in or out never produces a new value (which would reload over the open song).
+  const prepare = (raw: unknown) => {
+    const studentSession = studentSessionRef.current;
     if (!raw) return null;
 
     // Convert old format to v1 schema
@@ -116,12 +129,20 @@ export function DawApp(
     }
 
     return converted;
-  }, [loadedProjectData, studentSession]);
+  };
+
+  const fromHost = useMemo(() => prepare(loadedProjectData), [loadedProjectData]); // eslint-disable-line react-hooks/exhaustive-deps
+  const fromLegacyLink = useMemo(() => prepare(legacyFromUrl), [legacyFromUrl]); // eslint-disable-line react-hooks/exhaustive-deps
+  const effectiveProjectData = fromHost ?? (legacyOpened ? null : fromLegacyLink);
 
   return (
     <DawCore
       {...props}
       loadedProjectData={effectiveProjectData ?? undefined}
+      onClearLoadedProjectData={() => {
+        setLegacyOpened(true);
+        onClearLoadedProjectData?.();
+      }}
       textFilter={(t) => !containsProfanity(t)}
       // Short ?s= links, like Staff Composer and Beat Machine. If Supabase is unreachable the DAW
       // falls back to a long self-contained link. Opening either gives the listener a copy (see above).
@@ -165,6 +186,12 @@ export function DawApp(
           onProjectSaved?.(res.project.id);
         }
 
+        if (res.saved && res.offline) {
+          return {
+            ok: false,
+            message: 'No connection: saved on this computer only. Save again when you are back online.',
+          };
+        }
         return {
           ok: res.saved,
           message: res.saved ? `Saved "${project.title}" to your class account.` : undefined,

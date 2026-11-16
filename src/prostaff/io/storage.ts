@@ -12,25 +12,48 @@ export interface StoredScore {
 const DB = 'mrarthur-prostaff';
 const STORE = 'scores';
 
+// One connection is shared by every read and write (autosave used to open a new one each time).
+let dbPromise: Promise<IDBDatabase> | null = null;
+
 function open(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
+  if (dbPromise) return dbPromise;
+  const p = new Promise<IDBDatabase>((resolve, reject) => {
     const req = indexedDB.open(DB, 1);
     req.onupgradeneeded = () => {
       const db = req.result;
       if (!db.objectStoreNames.contains(STORE)) db.createObjectStore(STORE, { keyPath: 'id' });
     };
-    req.onsuccess = () => resolve(req.result);
+    req.onsuccess = () => {
+      const db = req.result;
+      // If the browser closes the connection, or another tab needs to upgrade, open again next time.
+      db.onclose = () => { dbPromise = null; };
+      db.onversionchange = () => { db.close(); dbPromise = null; };
+      resolve(db);
+    };
     req.onerror = () => reject(req.error);
+    req.onblocked = () => reject(new Error('The score storage is busy in another tab.'));
   });
+  dbPromise = p;
+  p.catch(() => { if (dbPromise === p) dbPromise = null; });
+  return p;
 }
 
 async function tx<T>(mode: IDBTransactionMode, fn: (s: IDBObjectStore) => IDBRequest<T>): Promise<T> {
   const db = await open();
   return new Promise((resolve, reject) => {
-    const t = db.transaction(STORE, mode);
+    let t: IDBTransaction;
+    try {
+      t = db.transaction(STORE, mode);
+    } catch (err) {
+      dbPromise = null; // stale connection: the next call reopens
+      reject(err);
+      return;
+    }
     const req = fn(t.objectStore(STORE));
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
+    // A write only counts once the whole transaction has been committed, not when the request returns.
+    t.oncomplete = () => resolve(req.result);
+    t.onerror = () => reject(t.error || req.error);
+    t.onabort = () => reject(t.error || req.error || new Error('The save was interrupted.'));
   });
 }
 

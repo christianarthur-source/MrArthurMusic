@@ -184,10 +184,18 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
   // Student 3-Step Guided Login: 'grade' -> 'classroom' -> 'login'
   const [studentStep, setStudentStep] = useState<'grade' | 'classroom' | 'login'>('grade');
   const [selectedGrade, setSelectedGrade] = useState<string>(() => {
-    return localStorage.getItem('staff_composer_student_grade') || '';
+    try {
+      return localStorage.getItem('staff_composer_student_grade') || '';
+    } catch {
+      return ''; // storage blocked (private window, school policy)
+    }
   });
   const [selectedClassId, setSelectedClassId] = useState<string>(() => {
-    return localStorage.getItem('staff_composer_student_class_id') || '';
+    try {
+      return localStorage.getItem('staff_composer_student_class_id') || '';
+    } catch {
+      return '';
+    }
   });
 
   // Public roster & classroom hierarchy for student selection
@@ -350,8 +358,14 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
         if (data.classrooms && data.classrooms.length > 0) {
           setClassrooms(data.classrooms);
           // If student already selected a valid classroom, start at login step
-          const savedGrade = localStorage.getItem('staff_composer_student_grade') || '';
-          const savedClassId = localStorage.getItem('staff_composer_student_class_id') || '';
+          let savedGrade = '';
+          let savedClassId = '';
+          try {
+            savedGrade = localStorage.getItem('staff_composer_student_grade') || '';
+            savedClassId = localStorage.getItem('staff_composer_student_class_id') || '';
+          } catch {
+            // storage blocked: start from the grade step
+          }
           const matchedClass = data.classrooms.find((c) => c.id === savedClassId);
           if (matchedClass) {
             setSelectedGrade(matchedClass.grade);
@@ -1266,7 +1280,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                           type="button"
                           onClick={() => {
                             setSelectedGrade(grade);
-                            localStorage.setItem('staff_composer_student_grade', grade);
+                            try { localStorage.setItem('staff_composer_student_grade', grade); } catch { /* storage blocked */ }
                             setStudentStep('classroom');
                           }}
                           className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2 ${
@@ -1324,7 +1338,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                           type="button"
                           onClick={() => {
                             setSelectedClassId(cls.id);
-                            localStorage.setItem('staff_composer_student_class_id', cls.id);
+                            try { localStorage.setItem('staff_composer_student_class_id', cls.id); } catch { /* storage blocked */ }
                             setStudentStep('login');
                           }}
                           className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between gap-2 ${

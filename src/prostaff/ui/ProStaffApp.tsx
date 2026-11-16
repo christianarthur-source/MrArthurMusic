@@ -162,7 +162,8 @@ export default function ProStaffApp() {
   const [toast, setToast] = useState<{ msg: string; err?: boolean } | null>(null);
   const [library, setLibrary] = useState<Omit<StoredScore, 'mei'>[]>([]);
   const [prompt, setPrompt] = useState<{ kind: PromptKind; anchor: string; value: string } | null>(null);
-  const [saveState, setSaveState] = useState<'saved' | 'saving' | 'unsaved'>('saved');
+  const [saveState, setSaveState] = useState<'saved' | 'saving' | 'unsaved' | 'error'>('saved');
+  const saveFailedToastRef = useRef(false);
   const [palette, setPalette] = useState(false); // the full palette; the toolbar tabs cover the everyday marks
   // Write (edit), Play (listen and mix) or Print (layout and export): each shows only what that job needs
   const [appMode, setAppModeRaw] = useState<AppMode>(() => {
@@ -487,19 +488,46 @@ export default function ProStaffApp() {
     const meta = s.getMeta();
     try {
       await saveScore({ id: docId, title: meta.title || 'Untitled', composer: meta.composer, mei: s.toString(), createdAt: createdRef.current, updatedAt: Date.now() });
-      setSaveState('saved');
+      // An edit made while the save was running leaves it "unsaved" so it is saved again.
+      setSaveState((cur) => (cur === 'saving' ? 'saved' : cur));
+      saveFailedToastRef.current = false;
       if (live.current.user && !live.current.readOnly) void saveOnline();
     } catch {
-      setSaveState('unsaved');
-      showToast('Could not save in this browser (storage may be full or blocked).', true);
+      // 'error' (not 'unsaved') so this doesn't retry and show the message every 1.2 seconds.
+      setSaveState('error');
+      if (!saveFailedToastRef.current) {
+        saveFailedToastRef.current = true;
+        showToast('Could not save in this browser (storage may be full or blocked). Use File → Export to keep a copy.', true);
+      }
     }
   }, [docId, showToast, saveOnline]);
 
   useEffect(() => {
-    if (!ready || saveState !== 'unsaved') return;
-    const t = window.setTimeout(() => void saveNow(), 1200);
+    if (!ready || (saveState !== 'unsaved' && saveState !== 'error')) return;
+    // After a failed save, try again on the next edit or every 30 seconds.
+    const t = window.setTimeout(() => void saveNow(), saveState === 'error' ? 30000 : 1200);
     return () => window.clearTimeout(t);
   }, [version, ready, saveState, saveNow]);
+
+  // Save straight away when the tab is hidden or closed, so the last second of work isn't lost.
+  const saveStateRef = useRef(saveState);
+  saveStateRef.current = saveState;
+  useEffect(() => {
+    if (!ready) return;
+    const onHide = () => {
+      if (document.visibilityState !== 'hidden') return;
+      if (saveStateRef.current === 'unsaved' || saveStateRef.current === 'error') void saveNow();
+    };
+    const onPageHide = () => {
+      if (saveStateRef.current === 'unsaved' || saveStateRef.current === 'error') void saveNow();
+    };
+    document.addEventListener('visibilitychange', onHide);
+    window.addEventListener('pagehide', onPageHide);
+    return () => {
+      document.removeEventListener('visibilitychange', onHide);
+      window.removeEventListener('pagehide', onPageHide);
+    };
+  }, [ready, saveNow]);
 
   // ---------- commands ----------
 
@@ -2202,7 +2230,7 @@ export default function ProStaffApp() {
             <span>·</span>
             <InlineEdit value={meta.composer} placeholder="Add composer" onSave={(v) => run((sc) => { sc.setMeta({ composer: v }); return {}; })} />
           </div>
-          <small>{[readOnly ? 'View only' : saveState === 'saving' || cloudState === 'saving' ? 'Saving…' : saveState !== 'saved' ? 'Edited' : user && cloudRef.current.id ? (cloudState === 'error' ? 'Saved in this browser (online save failed)' : 'Saved online') : 'Saved in this browser'].filter(Boolean).join(' · ')}</small>
+          <small>{[readOnly ? 'View only' : saveState === 'saving' || cloudState === 'saving' ? 'Saving…' : saveState === 'error' ? 'Not saved (storage problem)' : saveState !== 'saved' ? 'Edited' : user && cloudRef.current.id ? (cloudState === 'error' ? 'Saved in this browser (online save failed)' : 'Saved online') : 'Saved in this browser'].filter(Boolean).join(' · ')}</small>
         </div>
         <div className="ps-modes" role="tablist" aria-label="Mode">
           {([['write', 'Write', <PenLine key="w" size={14} />], ['play', 'Play', <Headphones key="p" size={14} />], ['print', 'Print', <Printer key="r" size={14} />]] as [AppMode, string, React.ReactNode][]).map(([m, label, icon]) => (

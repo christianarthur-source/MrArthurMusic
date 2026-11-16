@@ -174,7 +174,11 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
   const [leaderboard, setLeaderboard] = useState<StaffWarsLeaderboardEntry[]>(DEFAULT_LEADERBOARD_ENTRIES);
   const [isLeaderboardLoading, setIsLeaderboardLoading] = useState<boolean>(false);
   const [guestPlayerName, setGuestPlayerName] = useState<string>(() => {
-    return localStorage.getItem('staff_wars_player_name') || 'Cadet Guest';
+    try {
+      return localStorage.getItem('staff_wars_player_name') || 'Cadet Guest';
+    } catch {
+      return 'Cadet Guest'; // storage blocked
+    }
   });
 
   // Read and merge all local leaderboard keys (overall + legacy per-level keys)
@@ -1704,7 +1708,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
                   onChange={(e) => {
                     const val = e.target.value;
                     setGuestPlayerName(val);
-                    localStorage.setItem('staff_wars_player_name', val);
+                    try { localStorage.setItem('staff_wars_player_name', val); } catch { /* storage blocked */ }
                   }}
                   placeholder="Enter your name..."
                   className="flex-1 px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-700 text-white font-semibold text-xs focus:outline-hidden focus:border-amber-400"

@@ -1111,9 +1111,14 @@ export default function BeatMachineApp({
         setActiveBeatProjectId(res.project.id);
         setCurrentSongTitle(cleanTitle);
         setIsSaveBeatModalOpen(false);
-        setNotification(`🎉 "${cleanTitle}" saved to your cloud account!`);
-        setTimeout(() => setNotification(null), 4000);
-        confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } });
+        if (res.offline) {
+          setNotification(`⚠️ No connection: "${cleanTitle}" is saved on this device only. Save again when you are back online.`);
+          setTimeout(() => setNotification(null), 7000);
+        } else {
+          setNotification(`🎉 "${cleanTitle}" saved to your cloud account!`);
+          setTimeout(() => setNotification(null), 4000);
+          confetti({ particleCount: 70, spread: 60, origin: { y: 0.6 } });
+        }
         if (onProjectSaved) {
           onProjectSaved(res.project.id);
         }

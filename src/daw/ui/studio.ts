@@ -87,6 +87,8 @@ export class Studio {
   }
 
   loadProject(p: Project) {
+    // Edits made in the last moment before switching songs would otherwise be dropped.
+    this.autosave.saveOutgoing();
     this.engine.stop();
     this.engine.seek(0);
     this.store.load(p);

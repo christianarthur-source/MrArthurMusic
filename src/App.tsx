@@ -60,6 +60,7 @@ import { TransposeModal } from './components/TransposeModal';
 import { MusicLabLanding, MusicLabAppId } from './components/MusicLabLanding';
 import { ClassroomToolBoxModal, ToolId } from './components/tools/ClassroomToolBoxModal';
 import { ThanksgivingThemeOverlay } from './components/ThanksgivingThemeOverlay';
+import { ErrorBoundary } from './components/ErrorBoundary';
 // The other tools load only when opened, so the hub and Staff Composer start faster.
 const RhythmRockStarsApp = React.lazy(() => import('./rhythm-rockstars/RhythmRockStarsApp'));
 const BeatMachineApp = React.lazy(() => import('./beat-machine/App'));
@@ -88,8 +89,74 @@ import { exportScoreToMidi, exportScoreToMusicXml } from './utils/scoreExport';
 import { containsProfanity } from './utils/profanityFilter';
 import { createShortLink, fetchShortLink } from './utils/shortLinkService';
 
-function sanitizeLoadedScore(raw: Score): Score {
+// True when a loaded value has the minimum shape the editor needs (at least one staff with measures).
+function isScoreShape(raw: unknown): raw is Score {
+  const s = raw as Score | null;
+  return (
+    !!s &&
+    typeof s === 'object' &&
+    Array.isArray(s.tracks) &&
+    s.tracks.some((t) => t && typeof t === 'object' && Array.isArray(t.measures) && t.measures.length > 0)
+  );
+}
+
+// Fills in anything missing so a damaged or hand-edited score can't crash the editor.
+function repairScoreShape(raw: Score): Score {
+  if (!isScoreShape(raw)) return JSON.parse(JSON.stringify(DEFAULT_BLANK_SCORE));
+  const blank = DEFAULT_BLANK_SCORE;
   const copy: Score = JSON.parse(JSON.stringify(raw));
+  if (typeof copy.id !== 'string' || !copy.id) copy.id = blank.id;
+  if (typeof copy.title !== 'string') copy.title = blank.title;
+  if (typeof copy.composer !== 'string') copy.composer = blank.composer;
+  if (typeof copy.tempo !== 'number' || !Number.isFinite(copy.tempo)) copy.tempo = blank.tempo;
+  copy.tempo = Math.min(208, Math.max(40, copy.tempo));
+  const ts = copy.timeSignature;
+  if (!Array.isArray(ts) || ts.length !== 2 || !(ts[0] > 0) || !(ts[1] > 0)) copy.timeSignature = [...blank.timeSignature];
+  if (typeof copy.keySignature !== 'string') copy.keySignature = blank.keySignature;
+  const blankTrack = blank.tracks[0];
+  copy.tracks = copy.tracks
+    .filter((t) => t && typeof t === 'object' && Array.isArray(t.measures) && t.measures.length > 0)
+    .map((t, idx) => ({
+      ...t,
+      id: typeof t.id === 'string' && t.id ? t.id : `track-${idx + 1}`,
+      name: typeof t.name === 'string' ? t.name : `Track ${idx + 1}`,
+      instrumentId: t.instrumentId || blankTrack.instrumentId,
+      clef: t.clef || blankTrack.clef,
+      volume: typeof t.volume === 'number' && Number.isFinite(t.volume) ? t.volume : blankTrack.volume,
+      muted: Boolean(t.muted),
+      soloed: Boolean(t.soloed),
+      measures: t.measures.map((m, mi) => ({
+        ...(m && typeof m === 'object' ? m : {}),
+        id: m && typeof m.id === 'string' && m.id ? m.id : `m-${idx + 1}-${mi + 1}`,
+        items: m && Array.isArray(m.items) ? m.items.filter((it) => it && typeof it === 'object') : [],
+      })),
+    }));
+  return copy;
+}
+
+const STAFF_DRAFT_KEY = 'mrarthur_staff_draft_v1';
+const OLD_STAFF_DRAFT_KEY = 'noteflight_jr_score_v3';
+
+// The staff score saved on this device, so a refresh doesn't lose it. Skipped when the page
+// was opened from a share link, which loads its own score.
+function loadStaffDraft(): Score {
+  const blank = (): Score => JSON.parse(JSON.stringify(DEFAULT_BLANK_SCORE));
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const hashParams = new URLSearchParams((window.location.hash || '').replace(/^#/, ''));
+    const fromLink = ['s', 'link', 'share', 'score'].some((k) => params.has(k) || hashParams.has(k));
+    if (fromLink) return blank();
+    const raw = localStorage.getItem(STAFF_DRAFT_KEY) ?? localStorage.getItem(OLD_STAFF_DRAFT_KEY);
+    if (!raw) return blank();
+    const parsed = JSON.parse(raw);
+    return isScoreShape(parsed) ? sanitizeLoadedScore(parsed) : blank();
+  } catch {
+    return blank();
+  }
+}
+
+function sanitizeLoadedScore(raw: Score): Score {
+  const copy: Score = repairScoreShape(raw);
   if (containsProfanity(copy.title || '')) {
     copy.title = 'My Composition';
   }
@@ -216,10 +283,11 @@ export default function App() {
   });
 
   // Score state (ALWAYS default to just a single treble clef staff with NO NOTES)
-  const [score, setScore] = useState<Score>(() => JSON.parse(JSON.stringify(DEFAULT_BLANK_SCORE)));
+  // (or the score left on this device before a refresh)
+  const [score, setScore] = useState<Score>(loadStaffDraft);
 
   // Undo / Redo history
-  const [history, setHistory] = useState<Score[]>([JSON.parse(JSON.stringify(DEFAULT_BLANK_SCORE))]);
+  const [history, setHistory] = useState<Score[]>(() => [JSON.parse(JSON.stringify(score))]);
   const [historyIndex, setHistoryIndex] = useState<number>(0);
 
   // Selection state (itemIndex: -1 means full measure is selected)
@@ -330,7 +398,11 @@ export default function App() {
   const [studentSession, setStudentSession] = useState<StudentSession | null>(() =>
     getSavedStudentSession()
   );
+  // Each tool keeps its own class-account song id, so saving in one tool can never
+  // write over a song that belongs to another. currentProjectId is Staff Composer's.
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null);
+  const [beatProjectId, setBeatProjectId] = useState<string | null>(null);
+  const [dawProjectId, setDawProjectId] = useState<string | null>(null);
   const [beatMachineLoadedSong, setBeatMachineLoadedSong] = useState<any>(null);
   const [dawLoadedProject, setDawLoadedProject] = useState<any>(null);
   const [editingAsTeacher, setEditingAsTeacher] = useState<{
@@ -339,8 +411,10 @@ export default function App() {
     studentId: string;
   } | null>(null);
   const [cloudSaveStatus, setCloudSaveStatus] = useState<
-    'idle' | 'saving' | 'saved' | 'untitled'
+    'idle' | 'saving' | 'saved' | 'untitled' | 'device-only'
   >('idle');
+  // Bumped to try the class-account save again after it could not reach the server.
+  const [staffSaveRetry, setStaffSaveRetry] = useState(0);
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -447,9 +521,11 @@ export default function App() {
         if (!record || !record.payload) return;
         const app = record.app_type;
         if (app === 'beat-machine') {
+          setBeatProjectId(null);
           setBeatMachineLoadedSong(record.payload);
           setCurrentApp('beat-machine');
         } else if (app === 'daw') {
+          setDawProjectId(null);
           setDawLoadedProject(record.payload);
           setCurrentApp('daw');
         } else {
@@ -586,12 +662,20 @@ export default function App() {
   // Auto-save to localStorage
   useEffect(() => {
     try {
-      localStorage.setItem('noteflight_jr_score_v3', JSON.stringify(score));
+      localStorage.setItem(STAFF_DRAFT_KEY, JSON.stringify(score));
+      localStorage.removeItem(OLD_STAFF_DRAFT_KEY);
       setLastSavedTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
     } catch {
-      // ignore storage error
+      setLastSavedTime(null); // storage blocked or full: don't claim it was saved
     }
   }, [score]);
+
+  const currentAppRef = useRef(currentApp);
+  currentAppRef.current = currentApp;
+  const staffSaveTimerRef = useRef<number | undefined>(undefined);
+  const currentProjectIdRef = useRef(currentProjectId);
+  currentProjectIdRef.current = currentProjectId;
+  const inStaffComposer = currentApp === 'staff-composer';
 
   // Title-triggered server auto-save when a student is logged in (or teacher is editing a student project)
   useEffect(() => {
@@ -609,7 +693,12 @@ export default function App() {
         }
       : null;
 
+    // Only Staff Composer (and the landing page in front of it) saves the staff score.
+    // A save already waiting on its timer is left alone so leaving the tool doesn't drop it.
+    if (currentAppRef.current !== 'staff-composer' && currentAppRef.current !== 'hub') return;
+
     if (!activeTarget) {
+      window.clearTimeout(staffSaveTimerRef.current);
       setCloudSaveStatus('idle');
       return;
     }
@@ -621,12 +710,14 @@ export default function App() {
       cleanTitle.toLowerCase() === 'untitled';
 
     if (isDefaultUntitled) {
+      window.clearTimeout(staffSaveTimerRef.current);
       setCloudSaveStatus('untitled');
       return;
     }
 
     setCloudSaveStatus('saving');
-    const timer = window.setTimeout(() => {
+    window.clearTimeout(staffSaveTimerRef.current);
+    staffSaveTimerRef.current = window.setTimeout(() => {
       saveStudentProject({
         studentId: activeTarget.studentId,
         pin: activeTarget.pin,
@@ -639,21 +730,32 @@ export default function App() {
       })
         .then((res) => {
           if (res.saved && res.project) {
-            if (res.project.id !== currentProjectId) {
+            // Ignore the id if the student has moved on to a different song since this save was sent.
+            if (res.project.id !== currentProjectId && currentProjectIdRef.current === currentProjectId) {
               setCurrentProjectId(res.project.id);
             }
-            setCloudSaveStatus('saved');
+            if (res.offline) {
+              // No connection: the song is only in this browser. Say so, and keep trying.
+              setCloudSaveStatus('device-only');
+              window.setTimeout(() => setStaffSaveRetry((n) => n + 1), 20000);
+            } else {
+              setCloudSaveStatus('saved');
+            }
           } else {
             setCloudSaveStatus('untitled');
           }
         })
         .catch(() => {
-          setCloudSaveStatus('idle');
+          setCloudSaveStatus('device-only');
         });
     }, 600);
+  }, [score, studentSession, editingAsTeacher, currentProjectId, inStaffComposer, staffSaveRetry]);
 
-    return () => window.clearTimeout(timer);
-  }, [score, studentSession, editingAsTeacher, currentProjectId]);
+  useEffect(() => {
+    const retry = () => setStaffSaveRetry((n) => n + 1);
+    window.addEventListener('online', retry);
+    return () => window.removeEventListener('online', retry);
+  }, []);
 
   // Floating Tool Palette visibility state (triggers when scrolled down past the standard top palette)
   const [isFloatingPaletteVisible, setIsFloatingPaletteVisible] = useState<boolean>(false);
@@ -1877,6 +1979,9 @@ export default function App() {
     pushScoreState(nextScore);
   }, [pushScoreState, score]);
 
+  const latestScoreRef = useRef(score);
+  latestScoreRef.current = score;
+
   // Web MIDI Controller Keyboard Note Entry for Staff Composer
   const midiChordBufferRef = useRef<{
     pitches: Pitch[];
@@ -1936,61 +2041,58 @@ export default function App() {
           (p, i, arr) => arr.findIndex((x) => x.step === p.step && x.octave === p.octave) === i
         );
 
-        setScore((prevScore) => {
-          const nextScore: Score = JSON.parse(JSON.stringify(prevScore));
-          const tIdx = selection ? selection.trackIndex : 0;
-          const mIdx = selection ? selection.measureIndex : 0;
-          const iIdx = selection ? Math.max(0, selection.itemIndex) : 0;
+        // Build the whole next score here (note plus, if the measure is now full and was the last
+        // one, a new measure) and push it once. Doing this inside a state updater ran it twice in
+        // some cases and let the add-measure step overwrite the note that had just been entered.
+        const nextScore: Score = JSON.parse(JSON.stringify(latestScoreRef.current));
+        const tIdx = selection ? selection.trackIndex : 0;
+        const mIdx = selection ? selection.measureIndex : 0;
+        const iIdx = selection ? Math.max(0, selection.itemIndex) : 0;
 
-          const track = nextScore.tracks[tIdx];
-          if (!track) return prevScore;
-          const measure = track.measures[mIdx];
-          if (!measure) return prevScore;
+        const track = nextScore.tracks[tIdx];
+        if (!track) return;
+        const measure = track.measures[mIdx];
+        if (!measure) return;
 
-          const capacity = getMeasureCapacity(nextScore.timeSignature);
-          let priorBeat = 0;
-          for (let i = 0; i < iIdx && i < measure.items.length; i++) {
-            priorBeat += getItemDuration(measure.items[i]);
+        const capacity = getMeasureCapacity(nextScore.timeSignature);
+        let priorBeat = 0;
+        for (let i = 0; i < iIdx && i < measure.items.length; i++) {
+          priorBeat += getItemDuration(measure.items[i]);
+        }
+
+        const newItem: NoteItem = {
+          id: 'n_' + Math.random().toString(36).substring(2, 9),
+          type: 'note',
+          pitch: uniquePitches[0],
+          pitches: uniquePitches.length > 1 ? uniquePitches : [uniquePitches[0]],
+          duration: activeDuration,
+          isDotted,
+          isTied,
+          isTriplet,
+          articulation: activeArticulation,
+          dynamic: activeDynamic,
+        };
+
+        measure.items = insertNoteAtBeat(measure.items, newItem, priorBeat, capacity);
+
+        // Next cursor position for step-time entry
+        const newlyAddedIdx = measure.items.findIndex((it) => it.id === newItem.id);
+        const nextItemIdx = newlyAddedIdx + 1;
+        let nextSelection = { trackIndex: tIdx, measureIndex: mIdx, itemIndex: nextItemIdx };
+        if (nextItemIdx >= measure.items.length) {
+          // Measure filled: advance to the next measure, creating it across all tracks if needed
+          const nextMIdx = mIdx + 1;
+          if (nextMIdx >= track.measures.length) {
+            nextScore.tracks.forEach((t) => {
+              t.measures.push(createEmptyMeasure(nextScore.timeSignature));
+            });
           }
+          nextSelection = { trackIndex: tIdx, measureIndex: nextMIdx, itemIndex: 0 };
+        }
 
-          const newItem: NoteItem = {
-            id: 'n_' + Math.random().toString(36).substring(2, 9),
-            type: 'note',
-            pitch: uniquePitches[0],
-            pitches: uniquePitches.length > 1 ? uniquePitches : [uniquePitches[0]],
-            duration: activeDuration,
-            isDotted,
-            isTied,
-            isTriplet,
-            articulation: activeArticulation,
-            dynamic: activeDynamic,
-          };
-
-          measure.items = insertNoteAtBeat(measure.items, newItem, priorBeat, capacity);
-
-          // Calculate next cursor position for step-time entry
-          const newlyAddedIdx = measure.items.findIndex((it) => it.id === newItem.id);
-          const nextItemIdx = newlyAddedIdx + 1;
-
-          setTimeout(() => {
-            if (nextItemIdx < measure.items.length) {
-              setSelection({ trackIndex: tIdx, measureIndex: mIdx, itemIndex: nextItemIdx });
-              if (isBigStaff) setBigStaffMeasureIndex(mIdx);
-            } else {
-              // Measure filled: advance to next measure
-              const nextMIdx = mIdx + 1;
-              if (nextMIdx >= track.measures.length) {
-                // Auto-create next measure across tracks
-                handleAddMeasure();
-              }
-              setSelection({ trackIndex: tIdx, measureIndex: nextMIdx, itemIndex: 0 });
-              if (isBigStaff) setBigStaffMeasureIndex(nextMIdx);
-            }
-          }, 0);
-
-          pushScoreState(nextScore);
-          return nextScore;
-        });
+        pushScoreState(nextScore);
+        setSelection(nextSelection);
+        if (isBigStaff) setBigStaffMeasureIndex(nextSelection.measureIndex);
       }, 35);
     });
 
@@ -2006,7 +2108,6 @@ export default function App() {
     activeDuration,
     activeDynamic,
     currentApp,
-    handleAddMeasure,
     isBigStaff,
     isDotted,
     isPlaying,
@@ -2247,7 +2348,9 @@ export default function App() {
     reader.onload = (event) => {
       try {
         const loadedScore = JSON.parse(event.target?.result as string);
-        if (loadedScore.tracks && Array.isArray(loadedScore.tracks)) {
+        if (!isScoreShape(loadedScore)) {
+          alert('That file is not a Staff Composer song. Please choose a song file saved from this site.');
+        } else {
           const cleanScore = sanitizeLoadedScore(loadedScore);
           setCurrentProjectId(null);
           setEditingAsTeacher(null);
@@ -2353,6 +2456,8 @@ export default function App() {
           setStudentSession(null);
           saveStudentSession(null);
           setCurrentProjectId(null);
+          setBeatProjectId(null);
+          setDawProjectId(null);
           setEditingAsTeacher(null);
           setCloudSaveStatus('idle');
         }}
@@ -2360,9 +2465,10 @@ export default function App() {
           setStudentSession(updatedSession);
         }}
         currentScore={score}
-        currentProjectId={currentProjectId}
+        currentProjectId={
+          currentApp === 'beat-machine' ? beatProjectId : currentApp === 'daw' ? dawProjectId : currentProjectId
+        }
         onLoadProject={(proj, asTeacher) => {
-          setCurrentProjectId(proj.id);
           if (asTeacher) {
             setEditingAsTeacher(asTeacher);
           } else {
@@ -2371,6 +2477,7 @@ export default function App() {
 
           // If the song belongs to Beat Machine, load song and switch directly to Beat Machine!
           if (proj.appType === 'beat-machine') {
+            setBeatProjectId(proj.id);
             if (proj.projectData) {
               setBeatMachineLoadedSong(proj.projectData);
             }
@@ -2386,6 +2493,7 @@ export default function App() {
 
           // If the song belongs to Studio DAW, load project and switch directly to DAW!
           if (proj.appType === 'daw') {
+            setDawProjectId(proj.id);
             if (proj.projectData) {
               setDawLoadedProject(proj.projectData);
             }
@@ -2394,6 +2502,7 @@ export default function App() {
           }
 
           // Default: Staff Composer
+          setCurrentProjectId(proj.id);
           const clean = sanitizeLoadedScore(proj.score || DEFAULT_BLANK_SCORE);
           clean.title = proj.title;
           setScore(clean);
@@ -2497,6 +2606,7 @@ export default function App() {
   if (currentApp === 'rhythm-rockstars') {
     return (
       <>
+        <ErrorBoundary toolName="Rhythm Rock Stars" onBackToHub={handleBackToHub}>
         <React.Suspense fallback={<ToolLoading />}>
           <RhythmRockStarsApp
             onBackToHub={handleBackToHub}
@@ -2511,6 +2621,7 @@ export default function App() {
             }}
           />
         </React.Suspense>
+        </ErrorBoundary>
         {renderSharedAuthAndModals()}
       </>
     );
@@ -2519,14 +2630,15 @@ export default function App() {
   if (currentApp === 'beat-machine') {
     return (
       <>
+        <ErrorBoundary toolName="Beat Machine" onBackToHub={handleBackToHub}>
         <React.Suspense fallback={<ToolLoading />}>
           <BeatMachineApp
             onBackToHub={handleBackToHub}
             studentSession={studentSession}
             loadedSongData={beatMachineLoadedSong}
             onClearLoadedSongData={() => setBeatMachineLoadedSong(null)}
-            currentProjectId={currentProjectId}
-            onProjectSaved={(newId) => setCurrentProjectId(newId)}
+            currentProjectId={beatProjectId}
+            onProjectSaved={(newId) => setBeatProjectId(newId)}
             onOpenClassroomModal={() => {
               setOpenInTeacherMode(false);
               setIsClassroomModalOpen(true);
@@ -2537,6 +2649,7 @@ export default function App() {
             }}
           />
         </React.Suspense>
+        </ErrorBoundary>
         {renderSharedAuthAndModals()}
       </>
     );
@@ -2545,14 +2658,15 @@ export default function App() {
   if (currentApp === 'daw') {
     return (
       <>
+        <ErrorBoundary toolName="Studio DAW" onBackToHub={handleBackToHub}>
         <React.Suspense fallback={<ToolLoading />}>
           <DawApp
             onBackToHub={handleBackToHub}
             studentSession={studentSession}
             loadedProjectData={dawLoadedProject}
             onClearLoadedProjectData={() => setDawLoadedProject(null)}
-            currentProjectId={currentProjectId}
-            onProjectSaved={(newId) => setCurrentProjectId(newId)}
+            currentProjectId={dawProjectId}
+            onProjectSaved={(newId) => setDawProjectId(newId)}
             onOpenClassroomModal={() => {
               setOpenInTeacherMode(false);
               setIsClassroomModalOpen(true);
@@ -2563,6 +2677,7 @@ export default function App() {
             }}
           />
         </React.Suspense>
+        </ErrorBoundary>
         {renderSharedAuthAndModals()}
       </>
     );
@@ -2571,6 +2686,7 @@ export default function App() {
   if (currentApp === 'staff-wars') {
     return (
       <>
+        <ErrorBoundary toolName="Staff Wars" onBackToHub={handleBackToHub}>
         <React.Suspense fallback={<ToolLoading />}>
           <StaffWarsApp
             onBackToHub={handleBackToHub}
@@ -2581,6 +2697,7 @@ export default function App() {
             }}
           />
         </React.Suspense>
+        </ErrorBoundary>
         {renderSharedAuthAndModals()}
       </>
     );

@@ -93,6 +93,20 @@ r = await call({ action: 'save_project', studentId: 'stu_a', pin: '4321', title:
 expect('same title updates the same song', mine('stu_a').length === 1, T.projects);
 r = await call({ action: 'save_project', studentId: 'stu_a', pin: '4321', title: '%' });
 expect('wildcard title is just a title', mine('stu_a').length === 2, T.projects);
+// One tool must never write over another tool's song (staff autosave once replaced beats and DAW songs).
+r = await call({ action: 'save_project', studentId: 'stu_a', pin: '4321', title: 'Groove', appType: 'beat-machine', projectData: { steps: 1 } });
+const beatId = r[1].project.id;
+r = await call({ action: 'save_project', studentId: 'stu_a', pin: '4321', title: 'Staff Tune', projectId: beatId, score: { tracks: [] } });
+const beatRow = () => T.projects.find((p) => p.id === beatId);
+expect(
+  "staff save can't replace a beat (saved as a new song)",
+  r[0] === 200 && r[1].project.id !== beatId && beatRow().app_type === 'beat-machine' && beatRow().project_data?.steps === 1 && beatRow().title === 'Groove',
+  r,
+);
+r = await call({ action: 'save_project', studentId: 'stu_a', pin: '4321', title: 'Groove', score: { tracks: [] } });
+expect('same title in another tool is a separate song', r[1].project.id !== beatId && beatRow().app_type === 'beat-machine', r);
+r = await call({ action: 'save_project', studentId: 'stu_a', pin: '4321', title: 'Groove 2', projectId: beatId, appType: 'beat-machine', projectData: { steps: 2 } });
+expect('same tool still updates its own song', r[1].project.id === beatId && beatRow().project_data?.steps === 2, r);
 r = await call({ action: 'delete_project', projectId: 'p_b', studentId: 'stu_a', pin: '4321' });
 expect("can't delete another student's song", T.projects.some((p) => p.id === 'p_b'), r);
 r = await call({ action: 'student_projects', studentId: 'stu_b&id=neq.x', pin: '9999' });
