@@ -511,55 +511,78 @@ export const SongStarter: React.FC = () => {
 
       // 4. Hi-Hat tick
       if (beat.hihatBeats.includes(stepIndex)) {
-        const hatOsc = ctx.createOscillator();
+        // Hi-hat = short burst of white noise through a high-pass filter
+        // ('highpass' is not a valid oscillator type: it fell back to a sine beep)
+        const hatLen = Math.max(1, Math.floor(ctx.sampleRate * 0.05));
+        const hatBuf = ctx.createBuffer(1, hatLen, ctx.sampleRate);
+        const hatData = hatBuf.getChannelData(0);
+        for (let i = 0; i < hatLen; i++) hatData[i] = Math.random() * 2 - 1;
+        const hatSrc = ctx.createBufferSource();
+        hatSrc.buffer = hatBuf;
+        const hatFilter = ctx.createBiquadFilter();
+        hatFilter.type = 'highpass';
+        hatFilter.frequency.setValueAtTime(6000, now);
         const hatGain = ctx.createGain();
-        hatOsc.type = 'highpass' as any;
-        hatOsc.frequency.setValueAtTime(4500, now);
-        hatGain.gain.setValueAtTime(0.06, now);
-        hatGain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
-        hatOsc.connect(hatGain);
+        hatGain.gain.setValueAtTime(0.12, now);
+        hatGain.gain.exponentialRampToValueAtTime(0.001, now + 0.045);
+        hatSrc.connect(hatFilter);
+        hatFilter.connect(hatGain);
         hatGain.connect(ctx.destination);
-        hatOsc.start(now);
-        hatOsc.stop(now + 0.05);
+        hatSrc.start(now);
+        hatSrc.stop(now + 0.05);
       }
     },
     []
   );
 
-  // Playback Loop: advances all 3 tracks simultaneously
+  // Playback Loop: advances all 3 tracks simultaneously.
+  // Latest tracks / beat / audio callbacks are read from refs so that editing a
+  // block while playing does not restart the interval (which reset the beat
+  // phase and delayed the next step); the first step plays immediately on Play.
+  const tracksRef = useRef(tracks);
+  tracksRef.current = tracks;
+  const selectedBeatIdRef = useRef(selectedBeatId);
+  selectedBeatIdRef.current = selectedBeatId;
+  const playBlockAudioRef = useRef(playBlockAudio);
+  playBlockAudioRef.current = playBlockAudio;
+  const playBeatStepRef = useRef(playAccompanyingBeatStep);
+  playBeatStepRef.current = playAccompanyingBeatStep;
+
   useEffect(() => {
     if (!isPlaying) {
-      if (timerRef.current) clearInterval(timerRef.current);
       setActivePlaySlot(-1);
       return;
     }
 
     const intervalMs = 600; // Kid-friendly comfortable tempo (~100 BPM)
-    const activeBeatDef = ACCOMPANYING_BEATS.find((b) => b.id === selectedBeatId) || ACCOMPANYING_BEATS[1];
+    let slot = -1;
 
-    timerRef.current = window.setInterval(() => {
-      setActivePlaySlot((prev) => {
-        const next = (prev + 1) % 6;
+    const tick = () => {
+      const next = (slot + 1) % 6;
+      slot = next;
+      setActivePlaySlot(next);
 
-        // 1. Play the accompanying beat
-        playAccompanyingBeatStep(next, activeBeatDef);
+      // 1. Play the accompanying beat
+      const activeBeatDef = ACCOMPANYING_BEATS.find((b) => b.id === selectedBeatIdRef.current) || ACCOMPANYING_BEATS[1];
+      playBeatStepRef.current(next, activeBeatDef);
 
-        // 2. Play all blocks in this column across Track 1, 2, and 3
-        tracks.forEach((lane) => {
-          const blockId = lane[next];
-          if (blockId) {
-            playBlockAudio(blockId, next);
-          }
-        });
-
-        return next;
+      // 2. Play all blocks in this column across Track 1, 2, and 3
+      tracksRef.current.forEach((lane) => {
+        const blockId = lane[next];
+        if (blockId) {
+          playBlockAudioRef.current(blockId, next);
+        }
       });
-    }, intervalMs);
+    };
+
+    tick();
+    timerRef.current = window.setInterval(tick, intervalMs);
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
+      timerRef.current = null;
     };
-  }, [isPlaying, tracks, selectedBeatId, playBlockAudio, playAccompanyingBeatStep]);
+  }, [isPlaying]);
 
   // Click on a sound block: places into first empty slot in Track 1, 2, or 3
   const handleTapBlock = (blockId: string) => {

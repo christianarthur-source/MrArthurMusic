@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { RhythmPattern, LevelConfig } from '../types/rhythm';
 import { LEVEL_QUESTION_COUNTS } from '../data/rhythmCatalog';
 import { RhythmNotation } from './RhythmNotation';
@@ -52,9 +52,15 @@ export const QuizGame: React.FC<QuizGameProps> = ({
 
   const totalQuestions = LEVEL_QUESTION_COUNTS[levelConfig.levelNumber] || 10;
 
+  const autoplayTimerRef = useRef<number | null>(null);
+
   // Set up question with choices
   const setupQuestion = (qIdx: number) => {
     audioEngine.stopAll();
+    if (autoplayTimerRef.current !== null) {
+      clearTimeout(autoplayTimerRef.current);
+      autoplayTimerRef.current = null;
+    }
     const target = levelConfig.patterns[qIdx % levelConfig.patterns.length];
     setTargetPattern(target);
     setSelectedChoiceId(null);
@@ -68,7 +74,8 @@ export const QuizGame: React.FC<QuizGameProps> = ({
     setChoices(combined);
 
     // Auto play target with gentle count-in on new question
-    setTimeout(() => {
+    autoplayTimerRef.current = window.setTimeout(() => {
+      autoplayTimerRef.current = null;
       handlePlayTarget(target);
     }, 400);
   };
@@ -78,6 +85,10 @@ export const QuizGame: React.FC<QuizGameProps> = ({
     setupQuestion(questionIndex);
     return () => {
       audioEngine.stopAll();
+      if (autoplayTimerRef.current !== null) {
+        clearTimeout(autoplayTimerRef.current);
+        autoplayTimerRef.current = null;
+      }
     };
   }, [questionIndex, levelConfig.levelNumber]);
 
@@ -184,7 +195,10 @@ export const QuizGame: React.FC<QuizGameProps> = ({
     setQuestionIndex(0);
     setCorrectAnswersCount(0);
     setTotalQuestionsAnswered(0);
-    setupQuestion(0);
+    // When the index changes, the effect above sets question 0 up; doing it here as
+    // well cancelled the first call's autoplay. Only set it up directly if the
+    // index is already 0 (no effect will run).
+    if (questionIndex === 0) setupQuestion(0);
   };
 
   if (showLevelSummary) {
