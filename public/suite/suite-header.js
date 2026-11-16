@@ -87,5 +87,12 @@
 
   document.body.insertBefore(bar, document.body.firstChild);
   // Pages that fill the whole window subtract this from their height so the strip does not push them off screen.
-  document.documentElement.style.setProperty('--suite-header-h', '40px');
+  // Same condition as the stylesheet's touch rules: on a touch screen that is not a short landscape phone the strip is 48 px.
+  var touchQuery = null;
+  try { touchQuery = window.matchMedia && window.matchMedia('(pointer: coarse) and (min-height: 481px)'); } catch (e) { /* older browser: mouse sizes */ }
+  function setHeight() {
+    document.documentElement.style.setProperty('--suite-header-h', touchQuery && touchQuery.matches ? '48px' : '40px');
+  }
+  setHeight();
+  if (touchQuery && touchQuery.addEventListener) touchQuery.addEventListener('change', setHeight);
 })();

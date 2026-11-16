@@ -6,7 +6,7 @@
 .suite-header {
   position: relative; z-index: 1000; flex: 0 0 auto; box-sizing: border-box;
   display: flex; align-items: center; gap: var(--suite-space-3);
-  height: 40px; padding: 0 max(12px, env(safe-area-inset-right)) 0 max(12px, env(safe-area-inset-left));
+  height: var(--suite-header-h, 40px); padding: 0 max(12px, env(safe-area-inset-right)) 0 max(12px, env(safe-area-inset-left));
   background: var(--suite-panel); color: var(--suite-text);
   border-bottom: 1px solid var(--suite-panel-2);
   font: 700 var(--suite-text-sm)/1 var(--suite-font);
@@ -36,6 +36,18 @@
 }
 .suite-help:hover { background: var(--suite-line); color: #fff; }
 .suite-header a:focus-visible, .suite-header button:focus-visible { outline: var(--suite-focus-ring); outline-offset: var(--suite-focus-offset); }
+/* One visible keyboard focus ring for every control on every plain-HTML sub-site (audit WP-6.5). */
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible,
+summary:focus-visible, [role="button"]:focus-visible, [tabindex]:focus-visible {
+  outline: var(--suite-focus-ring); outline-offset: var(--suite-focus-offset);
+}
+/* Touch screens (not short landscape phones, where height is precious): the strip's buttons grow to a finger-sized
+   44 px target and the strip to 48 px (suite-header.js sets --suite-header-h to match). */
+@media (pointer: coarse) and (min-height: 481px) {
+  .suite-home, .suite-chip { min-height: 44px; }
+  .suite-help { width: 44px; height: 44px; }
+  .suite-helpbox { top: 52px; }
+}
 .suite-helpbox {
   position: absolute; right: 12px; top: 44px; width: min(340px, calc(100vw - 24px)); padding: 12px 14px;
   background: var(--suite-panel); color: var(--suite-text); border: 1px solid var(--suite-line);
@@ -48,4 +60,14 @@
   .suite-home { padding: 0 10px; }
   .suite-chip { max-width: 104px; padding: 0 10px; overflow: hidden; }
   .suite-chip span { overflow: hidden; text-overflow: ellipsis; }
+}
+
+/* Honour "reduce motion" on every plain-HTML sub-site: no bounces, slides or endless animation (audit WP-6.6). */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

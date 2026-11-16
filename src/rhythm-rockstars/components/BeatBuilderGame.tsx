@@ -6,7 +6,7 @@ import { audioEngine } from '../services/audioEngine';
 import { SoundSettingsConfig } from '../types/game';
 import { formatCountingSyllable } from '../utils/rhythmCounting';
 import { Play, Check, Trash2, ArrowRight, Volume2, Sparkles, RotateCcw } from 'lucide-react';
-import confetti from 'canvas-confetti';
+import confetti from '../../utils/confetti';
 import { alertDialog } from '../../components/AppDialogs';
 
 interface BeatBuilderGameProps {

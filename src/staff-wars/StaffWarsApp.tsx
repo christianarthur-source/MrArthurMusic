@@ -20,7 +20,7 @@ import {
   Medal,
   User,
 } from 'lucide-react';
-import confetti from 'canvas-confetti';
+import confetti from '../utils/confetti';
 import { StudentSession, fetchStaffWarsLeaderboard, submitStaffWarsScore } from '../utils/classroomApi';
 import { staffWarsMinLevelFor } from '../server/leaderboardRules';
 import {

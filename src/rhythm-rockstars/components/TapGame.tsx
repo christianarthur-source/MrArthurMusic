@@ -4,7 +4,7 @@ import { RhythmNotation } from './RhythmNotation';
 import { audioEngine } from '../services/audioEngine';
 import { SoundSettingsConfig } from '../types/game';
 import { Play, RotateCcw, Zap, Sparkles, Volume2, VolumeX } from 'lucide-react';
-import confetti from 'canvas-confetti';
+import confetti from '../../utils/confetti';
 import { shouldIgnoreShortcut } from '../../utils/keyGuard';
 
 interface TapGameProps {

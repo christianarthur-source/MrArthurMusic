@@ -15,7 +15,7 @@ import {
   Play,
   Square,
 } from 'lucide-react';
-import confetti from 'canvas-confetti';
+import confetti from '../../utils/confetti';
 
 interface MelodyGridProps {
   melodyTracks: MelodyTrack[];

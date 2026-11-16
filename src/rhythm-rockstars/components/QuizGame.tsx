@@ -4,7 +4,7 @@ import { LEVEL_QUESTION_COUNTS } from '../data/rhythmCatalog';
 import { RhythmNotation } from './RhythmNotation';
 import { audioEngine } from '../services/audioEngine';
 import { SoundSettingsConfig, SoundKit } from '../types/game';
-import confetti from 'canvas-confetti';
+import confetti from '../../utils/confetti';
 import { Play, RotateCcw, CheckCircle, XCircle, ArrowRight, Trophy, Sparkles, Volume2 } from 'lucide-react';
 
 const kitLabels: Record<SoundKit, { name: string; icon: string }> = {

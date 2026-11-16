@@ -29,7 +29,7 @@ import {
   ScaleMode,
   SharedSongData,
 } from './types';
-import confetti from 'canvas-confetti';
+import confetti from '../utils/confetti';
 import { Sparkles, Grid3X3, Compass, Radio, Music2, Layers, Activity, Save, X } from 'lucide-react';
 import { extractSongFromLocation } from './utils/songSharing';
 import { cleanProfanity, containsProfanity } from './utils/profanityFilter';

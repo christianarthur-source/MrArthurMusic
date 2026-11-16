@@ -13,7 +13,7 @@ import {
   BassInstrument,
 } from '../types';
 import { getTempoDescription } from './Header';
-import confetti from 'canvas-confetti';
+import confetti from '../../utils/confetti';
 import { containsProfanity } from '../utils/profanityFilter';
 import { useDialogBehavior } from '../../components/Modal';
 

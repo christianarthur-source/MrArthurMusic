@@ -7,7 +7,7 @@ import {
   Sparkles,
   Loader2,
 } from 'lucide-react';
-import confetti from 'canvas-confetti';
+import confetti from '../../utils/confetti';
 import { SharedSongData } from '../types';
 import { createShareableSongUrl } from '../utils/songSharing';
 import { createShortLink } from '../../utils/shortLinkService';

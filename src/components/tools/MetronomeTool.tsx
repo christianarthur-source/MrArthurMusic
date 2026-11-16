@@ -115,9 +115,9 @@ export const MetronomeTool: React.FC = () => {
   const [volume, setVolume] = useState<number>(0.8);
   const [isMuted, setIsMuted] = useState<boolean>(false);
   
-  // Flashy feature (VirtualSheetMusic model)
-  const [isFlashEnabled, setIsFlashEnabled] = useState<boolean>(true);
-  const [flashIntensity, setFlashIntensity] = useState<'normal' | 'super'>('super');
+  // Flashy feature (VirtualSheetMusic model). Off by default: a full-screen flash on every beat is a seizure/comfort risk (audit WP-6.6).
+  const [isFlashEnabled, setIsFlashEnabled] = useState<boolean>(false);
+  const [flashIntensity, setFlashIntensity] = useState<'normal' | 'super'>('normal');
   const [activeBeat, setActiveBeat] = useState<number>(0);
   const [isFlashing, setIsFlashing] = useState<'accent' | 'regular' | null>(null);
 

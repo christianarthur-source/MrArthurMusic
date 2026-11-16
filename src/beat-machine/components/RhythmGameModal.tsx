@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Sparkles, Trophy, X, RotateCcw, Volume2 } from 'lucide-react';
-import confetti from 'canvas-confetti';
+import confetti from '../../utils/confetti';
 import { soundEngine } from '../audio/soundEngine';
 import { SoundType } from '../types';
 import { useDialogBehavior } from '../../components/Modal';

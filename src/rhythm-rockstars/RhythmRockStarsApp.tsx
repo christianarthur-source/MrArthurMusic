@@ -16,7 +16,7 @@ import { TapGame } from './components/TapGame';
 import { BeatBuilderGame } from './components/BeatBuilderGame';
 import { RhythmQuizGame } from './components/RhythmQuizGame';
 import { LeaderboardModal } from './components/LeaderboardModal';
-import confetti from 'canvas-confetti';
+import confetti from '../utils/confetti';
 import { SoundSettings } from './components/SoundSettings';
 import { Trophy, Music, Zap, Flame, Award, Sparkles, Volume2 } from 'lucide-react';
 import { StudentSession } from '../utils/classroomApi';

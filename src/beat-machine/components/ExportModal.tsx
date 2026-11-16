@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Download, Play, Pause, Sparkles, X, Music, CheckCircle } from 'lucide-react';
-import confetti from 'canvas-confetti';
+import confetti from '../../utils/confetti';
 import { useDialogBehavior } from '../../components/Modal';
 
 interface ExportModalProps {

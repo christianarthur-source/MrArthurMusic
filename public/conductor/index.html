@@ -1074,7 +1074,8 @@
       let lastMouseY = 0;
       let lastMouseT = performance.now();
 
-      mousePad.addEventListener('mousemove', (e) => {
+      mousePad.style.touchAction = 'none'; // a finger drag conducts instead of scrolling the page
+      mousePad.addEventListener('pointermove', (e) => {
         if (isWebcamMode) return;
         const rect = mousePad.getBoundingClientRect();
         const mx = e.clientX - rect.left;

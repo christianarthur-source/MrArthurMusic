@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Copy, Check, Share2, Globe, Loader2, Sparkles, FileAudio } from 'lucide-react';
-import confetti from 'canvas-confetti';
+import confetti from '../utils/confetti';
 import { useDialogBehavior } from './Modal';
 
 interface ShareModalProps {

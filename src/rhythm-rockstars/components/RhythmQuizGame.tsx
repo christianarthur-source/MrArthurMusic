@@ -4,7 +4,7 @@ import { SoundSettingsConfig } from '../types/game';
 import { TheoryQuestion, getTheoryQuestionsForLevel } from '../data/theoryQuestions';
 import { QuizNotationRenderer } from './QuizNotationRenderer';
 import { audioEngine } from '../services/audioEngine';
-import confetti from 'canvas-confetti';
+import confetti from '../../utils/confetti';
 import { HelpCircle, CheckCircle2, XCircle, ArrowRight, Trophy, Sparkles, Volume2, RotateCcw, Award } from 'lucide-react';
 
 interface RhythmQuizGameProps {

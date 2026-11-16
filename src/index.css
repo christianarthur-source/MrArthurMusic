@@ -43,6 +43,24 @@
 }
 
 
+/* One visible keyboard focus ring everywhere, from the shared tokens (audit WP-6.5).
+   Unlayered on purpose, so it wins over the many "focus:outline-none" utilities that left controls with no ring. */
+:where(a, button, input, select, textarea, summary, [role="button"], [role="tab"], [role="menuitem"], [role="slider"], [tabindex]):focus-visible {
+  outline: var(--suite-focus-ring, 3px solid #fcd34d) !important;
+  outline-offset: var(--suite-focus-offset, 2px) !important;
+}
+
+/* Honour "reduce motion": no bounces, slides, flashes or endless animation (audit WP-6.6). Spinners keep turning
+   so a student can still tell something is loading. */
+@media (prefers-reduced-motion: reduce) {
+  *:not(.animate-spin), *:not(.animate-spin)::before, *:not(.animate-spin)::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 @layer base {
   body {
     font-family: var(--suite-font, 'Fredoka'), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;

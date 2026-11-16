@@ -15,7 +15,7 @@ import {
   Square,
   Activity,
 } from 'lucide-react';
-import confetti from 'canvas-confetti';
+import confetti from '../../utils/confetti';
 
 interface BassGridProps {
   bassTracks: MelodyTrack[];
