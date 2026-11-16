@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Mic, MicOff, Volume2, VolumeX, Settings2, Check, ChevronDown, RotateCcw } from 'lucide-react';
-import { getToolboxAudioContext } from '../toolboxAudio';
+import { getToolboxAudioContext } from '../../../audio/sharedContext.ts';
 import { useTunerEngine } from '../../../audio/tuner/useTunerEngine.ts';
 import { midiToHz, noteLabel } from '../../../audio/tuner/noteMath.ts';
 import { getInstrumentPresets } from './presets.ts';

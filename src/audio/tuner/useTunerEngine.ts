@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { getToolboxAudioContext } from '../../components/tools/toolboxAudio';
+import { getToolboxAudioContext } from '../sharedContext.ts';
 import { detectPitch } from './mpm.ts';
 import { Stabilizer, type StableOutput } from './stabilize.ts';
 

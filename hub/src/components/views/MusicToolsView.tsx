@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useRememberedState } from '../../hooks/useRememberedState';
 import { useApp } from '../../context/AppContext';
-import { tunerEngine, TUNER_PRESETS, PitchData } from '../../services/tunerAudio';
+import { TunerTool } from '@main/components/tools/tuner/TunerTool';
 import { audioEngine } from '../../services/audioEngine';
 import { SongMakerSequencer } from './SongMakerSequencer';
 import {
   Mic,
-  MicOff,
   Play,
   Pause,
-  Sliders,
   Sparkles,
   Music2,
   Clock
@@ -18,41 +16,6 @@ import {
 export const MusicToolsView: React.FC = () => {
   const { preferences, showToast } = useApp();
   const [activeTab, setActiveTab] = useRememberedState<'song-maker' | 'tuner' | 'metronome'>('tools.tab', 'song-maker');
-
-  // --- TUNER STATE ---
-  const [isTunerListening, setIsTunerListening] = useState(false);
-  const [pitchData, setPitchData] = useState<PitchData | null>(null);
-  const [selectedPresetIndex, setSelectedPresetIndex] = useRememberedState('tools.tunerPreset', 0);
-  const [refA4, setRefA4] = useState(preferences.tunerRefA4 || 440);
-  const [noiseGate, setNoiseGate] = useRememberedState('tools.noiseGate', 0.015);
-  const [micError, setMicError] = useState<string | null>(null);
-
-  const toggleTuner = async () => {
-    if (isTunerListening) {
-      tunerEngine.stop();
-      setIsTunerListening(false);
-      setPitchData(null);
-    } else {
-      setMicError(null);
-      tunerEngine.setRefA4(refA4);
-      tunerEngine.setNoiseGate(noiseGate);
-      const success = await tunerEngine.start((data) => {
-        setPitchData(data);
-      });
-      if (success) {
-        setIsTunerListening(true);
-        showToast('Microphone active for tuning', 'info');
-      } else {
-        setMicError('Could not access microphone. Please grant mic permissions in your browser.');
-      }
-    }
-  };
-
-  useEffect(() => {
-    return () => {
-      if (tunerEngine.isRunning()) tunerEngine.stop();
-    };
-  }, []);
 
   // --- METRONOME STATE ---
   const [bpm, setBpm] = useRememberedState('tools.bpm', 108);
@@ -116,8 +79,6 @@ export const MusicToolsView: React.FC = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [activeTab, isMetronomePlaying]);
 
-  const preset = TUNER_PRESETS[selectedPresetIndex];
-
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto space-y-6 animate-in fade-in duration-200">
       {/* Top Header & Tab Navigation */}
@@ -139,8 +100,6 @@ export const MusicToolsView: React.FC = () => {
           <button
             onClick={() => {
               setActiveTab('song-maker');
-              if (tunerEngine.isRunning()) tunerEngine.stop();
-              setIsTunerListening(false);
               if (isMetronomePlaying) audioEngine.stopMetronome();
               setIsMetronomePlaying(false);
             }}
@@ -173,8 +132,6 @@ export const MusicToolsView: React.FC = () => {
           <button
             onClick={() => {
               setActiveTab('metronome');
-              if (tunerEngine.isRunning()) tunerEngine.stop();
-              setIsTunerListening(false);
             }}
             className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${
               activeTab === 'metronome'
@@ -191,149 +148,8 @@ export const MusicToolsView: React.FC = () => {
       {/* 1. SONG MAKER SEQUENCER TAB */}
       {activeTab === 'song-maker' && <SongMakerSequencer />}
 
-      {/* 2. CHROMATIC TUNER TAB */}
-      {activeTab === 'tuner' && (
-        <div className="space-y-6">
-          <div className="bg-white dark:bg-stone-900 rounded-3xl p-6 sm:p-10 shadow-card border border-stone-200/80 dark:border-stone-800 flex flex-col items-center text-center space-y-6">
-            {/* Presets and Ref A4 Bar */}
-            <div className="w-full flex flex-wrap items-center justify-between gap-4 max-w-xl pb-4 border-b border-stone-100 dark:border-stone-800">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-stone-500">Preset:</span>
-                <select
-                  value={selectedPresetIndex}
-                  onChange={(e) => setSelectedPresetIndex(Number(e.target.value))}
-                  className="bg-stone-100 dark:bg-stone-800 text-stone-800 dark:text-stone-200 text-xs font-medium px-3 py-1.5 rounded-xl border border-stone-200 dark:border-stone-700"
-                >
-                  {TUNER_PRESETS.map((p, idx) => (
-                    <option key={idx} value={idx}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-stone-500">Reference:</span>
-                <button
-                  onClick={() => {
-                    const newA = refA4 === 440 ? 442 : 440;
-                    setRefA4(newA);
-                    tunerEngine.setRefA4(newA);
-                  }}
-                  className="text-xs font-mono font-bold px-2.5 py-1 rounded-lg bg-stone-100 dark:bg-stone-800 text-stone-800 dark:text-stone-200"
-                >
-                  A4 = {refA4} Hz
-                </button>
-              </div>
-            </div>
-
-            {/* Target Instrument Notes (if preset has specific notes like Ukulele/Guitar) */}
-            {preset.notes.length > 0 && (
-              <div className="flex flex-wrap items-center justify-center gap-2">
-                {preset.notes.map((n, i) => {
-                  const isCurrentNote = pitchData?.noteName === n.note && pitchData?.octave === n.octave;
-                  return (
-                    <div
-                      key={i}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition-all ${
-                        isCurrentNote
-                          ? 'bg-emerald-500 text-white ring-4 ring-emerald-500/20 scale-105 shadow-md'
-                          : 'bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300'
-                      }`}
-                    >
-                      {n.note}
-                      {n.octave} ({n.freq} Hz)
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* Giant Pitch Display & Needle Gauge */}
-            <div className="py-6 flex flex-col items-center justify-center space-y-4">
-              {pitchData ? (
-                <>
-                  <div className="relative">
-                    <span
-                      className={`font-mono text-8xl sm:text-9xl font-black tracking-tight transition-colors duration-100 ${
-                        pitchData.inTune
-                          ? 'text-emerald-500 animate-pulse'
-                          : Math.abs(pitchData.cents) < 15
-                          ? 'text-amber-500'
-                          : 'text-stone-800 dark:text-white'
-                      }`}
-                    >
-                      {pitchData.noteName}
-                    </span>
-                    <span className="text-3xl font-mono font-bold text-stone-400 absolute -bottom-1 -right-6">
-                      {pitchData.octave}
-                    </span>
-                  </div>
-
-                  <div className="text-sm font-mono text-stone-500">
-                    {pitchData.frequency} Hz • {pitchData.cents > 0 ? `+${pitchData.cents}` : pitchData.cents} cents
-                  </div>
-
-                  {/* Cent Gauge Visual Needle */}
-                  <div className="w-72 sm:w-96 space-y-2">
-                    <div className="relative h-4 bg-stone-100 dark:bg-stone-800 rounded-full overflow-hidden border border-stone-200 dark:border-stone-700">
-                      {/* Center In-Tune marker */}
-                      <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-1.5 bg-emerald-500 z-10" />
-                      {/* Needle indicator */}
-                      <div
-                        className={`absolute top-0 bottom-0 w-3 rounded-full transition-all duration-75 ${
-                          pitchData.inTune ? 'bg-emerald-500 ring-4 ring-emerald-500/30' : 'bg-brand-600'
-                        }`}
-                        style={{
-                          left: `calc(50% + ${(pitchData.cents / 50) * 45}%)`,
-                          transform: 'translateX(-50%)'
-                        }}
-                      />
-                    </div>
-
-                    <div className="flex justify-between text-[10px] font-mono text-stone-400 px-1">
-                      <span>-50 Flat</span>
-                      <span className="text-emerald-500 font-bold">Perfect In-Tune</span>
-                      <span>+50 Sharp</span>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <div className="py-12 text-stone-400 space-y-2">
-                  <p className="text-xl font-bold">
-                    {isTunerListening ? 'Sing or play a note...' : 'Tuner is off'}
-                  </p>
-                  <p className="text-xs">
-                    {isTunerListening
-                      ? 'Room noise filtered by noise gate. Play clearly near microphone.'
-                      : 'Click "Start Listening" to activate the microphone.'}
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Error banner if microphone blocked */}
-            {micError && (
-              <div className="p-3 bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900 rounded-2xl text-xs text-rose-700 dark:text-rose-300 max-w-md">
-                {micError}
-              </div>
-            )}
-
-            {/* Start / Stop Button */}
-            <button
-              onClick={toggleTuner}
-              className={`px-8 py-4 rounded-2xl font-bold text-sm flex items-center gap-3 shadow-elevated transition-all active:scale-95 ${
-                isTunerListening
-                  ? 'bg-rose-600 hover:bg-rose-700 text-white'
-                  : 'bg-brand-600 hover:bg-brand-700 text-white'
-              }`}
-            >
-              {isTunerListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-              <span>{isTunerListening ? 'Stop Listening' : 'Start Microphone Listening'}</span>
-            </button>
-          </div>
-        </div>
-      )}
+      {/* 2. CHROMATIC TUNER TAB (same tuner as the main site's Tool Box; it releases the mic when the tab changes) */}
+      {activeTab === 'tuner' && <TunerTool />}
 
       {/* 3. PRECISION METRONOME TAB */}
       {activeTab === 'metronome' && (

@@ -7,6 +7,8 @@ export default {
     "../src/components/ScoreRenderer.tsx",
     "../src/components/RhythmicPalette.tsx",
     "../src/components/NotationSymbols.tsx",
+    // Main-site tuner (shared with the Tool Box)
+    "../src/components/tools/tuner/*.tsx",
   ],
   darkMode: 'class',
   theme: {
