@@ -571,13 +571,15 @@ export function deleteSelection(score: Score, sel: Selection): CommandResult {
       if (!m) continue;
       for (const s of children(m, 'staff')) {
         if (sel.staves.length && !sel.staves.includes(s.getAttribute('n') || '')) continue;
-        for (const l of children(s, 'layer')) {
+        // Voice 1 is the staff's FIRST layer whatever its number (imports often use n="5"), so keep
+        // that one and reset it to a rest; only the extra voices are removed (see voiceLayer).
+        children(s, 'layer').forEach((l, layerIdx) => {
           const removed = children(l);
           for (const r of removed) r.remove();
           fixRefs(score, removed, null);
-          if (l.getAttribute('n') !== '1') l.remove();
+          if (layerIdx !== 0) l.remove();
           else l.appendChild(el(score.doc, m.getAttribute('metcon') === 'false' ? 'rest' : 'mRest', m.getAttribute('metcon') === 'false' ? { dur: '4' } : {}));
-        }
+        });
       }
     }
     score.invalidate();
@@ -655,19 +657,26 @@ export function transposeNotes(score: Score, sel: Selection, amount: number, uni
   const notes = selectedNotes(score, sel);
   if (!notes.length) throw new EditError('Select one or more notes.');
   const layers = new Set<Element>();
+  let moved = 0;
   for (const n of notes) {
     const fifths = keyAt(score, n);
     const p = notePitch(n, fifths);
-    if (unit === 'octave') setPitch(n, { pname: p.pname, oct: p.oct + amount, alter: p.alter });
+    let next: { pname: string; oct: number; alter: number };
+    if (unit === 'octave') next = { pname: p.pname, oct: p.oct + amount, alter: p.alter };
     else if (unit === 'step') {
       const s = fromStep(stepOf(p.pname, p.oct) + amount);
-      setPitch(n, { ...s, alter: keyAlter(fifths, s.pname) });
+      next = { ...s, alter: keyAlter(fifths, s.pname) };
     } else {
-      const sp = spellInKey(p.midi + amount, fifths, amount > 0);
-      setPitch(n, sp);
+      next = spellInKey(p.midi + amount, fifths, amount > 0);
     }
+    // Stay inside the MIDI range (0-127): a note pushed past it cannot be played or exported
+    const midi = midiOf(next.pname, next.oct, next.alter);
+    if (midi < 0 || midi > 127) continue;
+    setPitch(n, next);
+    moved++;
     layers.add(locate(n).layer);
   }
+  if (!moved) throw new EditError(amount > 0 ? 'That is already as high as it can go.' : 'That is already as low as it can go.');
   for (const l of layers) afterEdit(score, l);
   return { selection: sel };
 }
@@ -1004,6 +1013,10 @@ export function insertMeasures(score: Score, ref: Element | null, count: number,
   const out: Element[] = [];
   const ms = score.measures();
   let anchor = where === 'end' || !ref ? ms[ms.length - 1] : ref;
+  // A score that ends inside a volta ending: new bars go AFTER the ending, not inside it
+  if (where !== 'before' && anchor?.parentElement?.localName === 'ending' && !anchor.nextElementSibling) {
+    anchor = anchor.parentElement;
+  }
   const parent = anchor ? anchor.parentElement! : score.section;
   for (let i = 0; i < count; i++) {
     const m = el(score.doc, 'measure', { n: 0 });
