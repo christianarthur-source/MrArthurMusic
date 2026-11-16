@@ -1,12 +1,16 @@
 import { InstrumentId, Pitch, Score } from '../types/music';
 
 const SOUNDFONT_CDN_BASE = 'https://gleitz.github.io/midi-js-soundfonts/MusyngKite';
+// Same files, served from this site (see public/samples/musyngkite/LICENSE.txt). Tried first; the CDN is the fallback.
+const SOUNDFONT_LOCAL_BASE = '/samples/musyngkite';
 
 /*
- * The instrument samples come from gleitz.github.io (MusyngKite, Creative Commons BY-SA 3.0, roughly 20 MB for
- * the instruments that are not bundled). Many schools filter that host, so a failed or very slow download must
- * never stall playback: after a few failures we stop asking for a minute (notes play with the built-in synthesised
- * sound straight away) and tell the page once, so it can show a short explanation.
+ * The instrument samples are the MusyngKite soundfont (gleitz/midi-js-soundfonts, Creative Commons BY-SA 3.0,
+ * roughly 20 MB for the instruments that are not bundled as studio samples). They are copied into
+ * public/samples/musyngkite and loaded from this site first. Only if a file is missing there do we ask
+ * gleitz.github.io, which many schools filter, so a failed or very slow CDN download must never stall playback:
+ * after a few failures we stop asking for a minute (notes play with the built-in synthesised sound straight away)
+ * and tell the page once, so it can show a short explanation.
  */
 export const SAMPLE_CDN_UNAVAILABLE_EVENT = 'mrmusic:sample-cdn-unavailable';
 const CDN_TIMEOUT_MS = 6000;
@@ -364,11 +368,22 @@ export async function loadSoundfontSampleAnchor(
   const pending = pendingFetchCache.get(key);
   if (pending) return pending;
 
-  // While the host is being skipped, answer at once (the caller falls back to the built-in sound).
-  if (Date.now() < cdnPausedUntil) return null;
-
   const noteName = midiToSoundfontNoteName(anchorMidi);
   const promise = (async () => {
+    // 1. This site's own copy: no third-party host involved, so it never counts as a CDN failure.
+    try {
+      const local = await fetch(`${SOUNDFONT_LOCAL_BASE}/${sfName}-mp3/${noteName}.mp3`);
+      const type = local.headers.get('content-type') || '';
+      if (local.ok && !type.includes('text/html')) {
+        const audioBuffer = await ctx.decodeAudioData(await local.arrayBuffer());
+        sampleBufferCache.set(key, audioBuffer);
+        return audioBuffer;
+      }
+    } catch {
+      // Missing or undecodable local copy: fall through to the CDN.
+    }
+    // While the CDN is being skipped, answer at once (the caller falls back to the built-in sound).
+    if (Date.now() < cdnPausedUntil) return null;
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), CDN_TIMEOUT_MS);
     try {

@@ -38,3 +38,8 @@
 # The SoundFont for Wolfi (/prostaff) is large and rarely changes: let browsers keep it for 30 days.
 /audio/soundfont/*
   Cache-Control: public, max-age=2592000
+
+# MusyngKite instrument samples (CC BY-SA 3.0, see LICENSE.txt in the folder). File names are not content-hashed,
+# so a 30-day cache rather than immutable.
+/samples/musyngkite/*
+  Cache-Control: public, max-age=2592000

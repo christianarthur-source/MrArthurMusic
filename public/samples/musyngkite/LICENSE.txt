@@ -1,0 +1,20 @@
+MusyngKite instrument samples
+=============================
+
+The MP3 files in this folder are a subset of the "MusyngKite" General MIDI soundfont,
+as published by Benjamin Gleitzman in the project gleitz/midi-js-soundfonts:
+
+  https://github.com/gleitz/midi-js-soundfonts
+  https://gleitz.github.io/midi-js-soundfonts/MusyngKite/
+
+Only the instruments and notes used by Mr. Arthur's Staff Composer are included
+(33 instruments, one sample every three semitones from A0 to C8). The files are
+byte-for-byte copies of the originals, downloaded on 2026-11-16, not modified.
+
+Licence: Creative Commons Attribution-ShareAlike 3.0 Unported (CC BY-SA 3.0)
+  https://creativecommons.org/licenses/by-sa/3.0/
+
+You may copy, redistribute and adapt these files, including commercially, provided you
+credit the MusyngKite soundfont (via gleitz/midi-js-soundfonts) and share any adapted
+version under the same licence. The licence applies to these sound files only, not to
+the rest of this website's code.

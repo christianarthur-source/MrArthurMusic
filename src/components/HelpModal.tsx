@@ -62,6 +62,19 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
           ))}
         </div>
 
+        <p className="mt-4 text-[11px] leading-snug text-slate-500">
+          Credits: many instrument sounds are from the MusyngKite soundfont (gleitz/midi-js-soundfonts), used under the{' '}
+          <a
+            href="https://creativecommons.org/licenses/by-sa/3.0/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline hover:text-slate-700"
+          >
+            CC BY-SA 3.0
+          </a>{' '}
+          license.
+        </p>
+
         <div className="mt-5 pt-3 border-t border-slate-200 flex items-center justify-between">
           <span className="text-[12px] text-slate-500 font-medium">
             🔒 NY Ed Law § 2-d Compliant • No Ads or Tracking

@@ -3395,6 +3395,18 @@ export default function App() {
                 <span className="font-bold text-slate-300">Mr. Arthur&apos;s Staff Composer</span>
                 <span className="opacity-40">•</span>
                 <span>Elementary &amp; Middle School Music</span>
+                <span className="opacity-40">•</span>
+                <span>
+                  Instrument sounds: MusyngKite soundfont,{' '}
+                  <a
+                    href="https://creativecommons.org/licenses/by-sa/3.0/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline hover:text-sky-300"
+                  >
+                    CC BY-SA 3.0
+                  </a>
+                </span>
               </div>
 
               <div className="flex flex-wrap items-center gap-2 sm:gap-3">
