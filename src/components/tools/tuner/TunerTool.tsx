@@ -24,7 +24,7 @@ export const TunerTool: React.FC = () => {
   const [lastMidi, setLastMidi] = useState<number | null>(null);
 
   const presets = useMemo(() => getInstrumentPresets(settings.a4), [settings.a4]);
-  const preset = presets.find((p) => p.id === settings.presetId) ?? presets[1];
+  const preset = presets.find((p) => p.id === settings.presetId) ?? presets[0];
   const targetString = preset.strings.find((s) => s.id === targetStringId) ?? null;
   const tol = TOLERANCES[settings.tolerance].cents;
 

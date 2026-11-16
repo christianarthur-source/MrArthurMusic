@@ -28,7 +28,7 @@ const DEFAULTS: TunerSettingsState = {
   transposition: 'C',
   showHistory: true,
   showStrobe: false,
-  presetId: 'guitar-standard',
+  presetId: 'chromatic',
   deviceId: null,
 };
 
