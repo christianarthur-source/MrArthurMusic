@@ -1,3 +1,40 @@
+# Cloudflare static-asset headers for mrarthurmusic.com (copied to dist/_headers by Vite).
+# A path pattern, then indented "Name: value" lines. Headers from every matching rule are combined.
+#
+# The Content-Security-Policy is Report-Only: nothing is blocked, the browser console just lists what an
+# enforced policy would block. The sub-sites still use inline scripts/styles, so 'unsafe-inline' stays for now.
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: SAMEORIGIN
+  Strict-Transport-Security: max-age=31536000
+  Permissions-Policy: microphone=(self), camera=(self), midi=(self), geolocation=(), payment=(), usb=()
+  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' blob: data: https://*.supabase.co https://cdn.jsdelivr.net https://drive.google.com https://drive.usercontent.google.com https://api.unsplash.com https://img.youtube.com wss://mrarthurmusic.com; frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://drive.google.com https://calendar.google.com https://docs.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'
+
+# Vite output: every file name contains a content hash, so a changed file always gets a new URL.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+/Hub/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# DAW loop library. Checked 2026-11-16: every file in audio/, preview/ and shards/ is named
+# <name>.<first 8 hex of its SHA-256>.<ext>, so a URL never changes content.
+/daw-library/audio/*
+  Cache-Control: public, max-age=31536000, immutable
+/daw-library/preview/*
+  Cache-Control: public, max-age=31536000, immutable
+/daw-library/shards/*
+  Cache-Control: public, max-age=31536000, immutable
+# The catalog index files keep fixed names and point at the hashed files above, so they get a short life.
+/daw-library/manifest.json
+  Cache-Control: public, max-age=300
+/daw-library/instruments.json
+  Cache-Control: public, max-age=300
+
+# Self-hosted fonts: file names carry a content hash (fonts.css itself is not cached long).
+/fonts/*
+  Cache-Control: public, max-age=31536000, immutable
+
 # The SoundFont for Wolfi (/prostaff) is large and rarely changes: let browsers keep it for 30 days.
 /audio/soundfont/*
   Cache-Control: public, max-age=2592000
