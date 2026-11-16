@@ -1,7 +1,7 @@
 import { newId } from '../model/factory';
 import { Project } from '../model/types';
 import { validateProject, ValidationResult } from '../model/validate';
-import { idbAll, idbDelete, idbGet, idbPut, StoredAsset, StoredProject } from './idb';
+import { idbAll, idbDelete, idbGet, idbPut, kvGet, kvSet, StoredAsset, StoredProject } from './idb';
 import { readZip, writeZip, ZipEntry } from './zip';
 
 /**
@@ -87,11 +87,41 @@ export async function userAudioExists(id: string): Promise<boolean> {
   return !!(await idbGet<StoredAsset>('assets', id));
 }
 
-/** Remove user audio not referenced by any saved project. Returns bytes freed. */
-export async function collectUnusedAudio(): Promise<number> {
-  const [projects, assets] = await Promise.all([idbAll<StoredProject>('projects'), idbAll<StoredAsset>('assets')]);
-  const used = new Set<string>();
-  for (const p of projects) for (const m of p.json.matchAll(/"assetId":"(usr_[A-Za-z0-9]+)"/g)) used.add(m[1]);
+const USER_AUDIO_RE = /"assetId":"(usr_[A-Za-z0-9]+)"/g;
+const CLOUD_AUDIO_KEY = 'cloudSavedAudio';
+
+function userAudioIds(json: string): string[] {
+  return [...json.matchAll(USER_AUDIO_RE)].map((m) => m[1]);
+}
+
+/**
+ * Songs saved to the class account keep their recordings only on this computer. Remember which ones,
+ * so "Remove unused recordings" never deletes audio that a class-account song still needs.
+ */
+export async function rememberCloudAudio(p: Project): Promise<void> {
+  try {
+    const ids = userAudioIds(JSON.stringify(p));
+    if (!ids.length) return;
+    const known = await kvGet<string[]>(CLOUD_AUDIO_KEY, []);
+    const merged = [...new Set([...known, ...ids])];
+    if (merged.length !== known.length) await kvSet(CLOUD_AUDIO_KEY, merged);
+  } catch {
+    /* best effort */
+  }
+}
+
+/**
+ * Remove user audio not referenced by any saved project. Returns bytes freed.
+ * `alsoInUse` = projects that exist only in memory: the open song and everything in its undo / redo
+ * history (Undo can bring back a clip that was deleted a minute ago, together with its recording).
+ */
+export async function collectUnusedAudio(alsoInUse: Project[] = []): Promise<number> {
+  const [projects, assets, cloudSaved] = await Promise.all([idbAll<StoredProject>('projects'), idbAll<StoredAsset>('assets'), kvGet<string[]>(CLOUD_AUDIO_KEY, [])]);
+  const used = new Set<string>(cloudSaved);
+  for (const p of projects) for (const id of userAudioIds(p.json)) used.add(id);
+  for (const p of alsoInUse) {
+    for (const id of userAudioIds(JSON.stringify(p))) used.add(id);
+  }
   let freed = 0;
   const cutoff = Date.now() - 24 * 3600 * 1000; // keep fresh, unsaved recordings for a day
   for (const a of assets) {

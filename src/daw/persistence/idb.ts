@@ -44,14 +44,25 @@ export function openDb(): Promise<IDBDatabase> {
     };
     req.onsuccess = () => {
       const db = req.result;
-      db.onversionchange = () => db.close();
+      // Another tab upgraded the database, or the browser closed the connection: drop the cached
+      // handle so the next call opens a fresh one (a closed handle throws on every transaction).
+      db.onversionchange = () => {
+        db.close();
+        dbPromise = null;
+      };
+      db.onclose = () => {
+        dbPromise = null;
+      };
       resolve(db);
     };
     req.onerror = () => {
       dbPromise = null;
       reject(req.error ?? new Error('Could not open local storage.'));
     };
-    req.onblocked = () => reject(new Error('Local storage is blocked by another open tab of the studio.'));
+    req.onblocked = () => {
+      dbPromise = null; // do not cache the failure: a later call can try again
+      reject(new Error('Local storage is blocked by another open tab of the studio.'));
+    };
   });
   return dbPromise;
 }
@@ -65,7 +76,15 @@ function wrap<T>(req: IDBRequest<T>): Promise<T> {
 
 async function store(name: string, mode: IDBTransactionMode) {
   const db = await openDb();
-  return db.transaction(name, mode).objectStore(name);
+  try {
+    return db.transaction(name, mode).objectStore(name);
+  } catch (err) {
+    // InvalidStateError: the connection was closed behind our back. Reopen once and retry.
+    if ((err as DOMException)?.name !== 'InvalidStateError') throw err;
+    dbPromise = null;
+    const fresh = await openDb();
+    return fresh.transaction(name, mode).objectStore(name);
+  }
 }
 
 export async function idbGet<T>(storeName: string, key: string): Promise<T | undefined> {

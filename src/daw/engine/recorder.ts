@@ -63,6 +63,8 @@ export class InputRecorder {
     this.monitorGain.gain.value = 0;
   }
 
+  private openToken = 0;
+
   get isOpen() {
     return !!this.stream;
   }
@@ -74,8 +76,10 @@ export class InputRecorder {
     }
     if (!this.ctx.audioWorklet) throw new RecorderError('Recording needs a newer browser (AudioWorklet).', 'unsupported');
     this.close();
+    const token = ++this.openToken;
+    let stream: MediaStream;
     try {
-      this.stream = await navigator.mediaDevices.getUserMedia({
+      stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           deviceId: deviceId ? { exact: deviceId } : undefined,
           // Music recording: keep the signal natural.
@@ -94,21 +98,37 @@ export class InputRecorder {
       }
       throw new RecorderError(`Could not start the microphone (${name || 'unknown error'}).`, 'failed');
     }
-    this.deviceId = deviceId ?? null;
-    const track = this.stream.getAudioTracks()[0];
-    track.onended = () => this.onDisconnect?.();
-    if (!this.workletLoaded) {
-      await this.ctx.audioWorklet.addModule(new URL('./recorder.worklet.js', import.meta.url));
-      this.workletLoaded = true;
+    // close() was called (studio closed, or another open() started) while the permission prompt was up:
+    // release this microphone now instead of leaving it live with nobody to stop it.
+    if (token !== this.openToken) {
+      stream.getTracks().forEach((t) => t.stop());
+      throw new RecorderError('Microphone setup was cancelled.', 'failed');
     }
-    this.source = this.ctx.createMediaStreamSource(this.stream);
-    this.node = new AudioWorkletNode(this.ctx, 'daw-capture', { numberOfInputs: 1, numberOfOutputs: 1, channelCount: 2, channelCountMode: 'explicit' });
-    this.sink = this.ctx.createGain();
-    this.sink.gain.value = 0; // keeps the worklet pulled by the graph without making sound
-    this.source.connect(this.node).connect(this.sink).connect(this.ctx.destination);
-    this.source.connect(this.analyser);
-    this.source.connect(this.monitorGain);
-    this.node.port.onmessage = (e) => this.onWorklet(e.data);
+    this.stream = stream;
+    this.deviceId = deviceId ?? null;
+    try {
+      const track = stream.getAudioTracks()[0];
+      track.onended = () => this.onDisconnect?.();
+      if (!this.workletLoaded) {
+        await this.ctx.audioWorklet.addModule(new URL('./recorder.worklet.js', import.meta.url));
+        this.workletLoaded = true;
+      }
+      if (token !== this.openToken) throw new RecorderError('Microphone setup was cancelled.', 'failed');
+      this.source = this.ctx.createMediaStreamSource(stream);
+      this.node = new AudioWorkletNode(this.ctx, 'daw-capture', { numberOfInputs: 1, numberOfOutputs: 1, channelCount: 2, channelCountMode: 'explicit' });
+      this.sink = this.ctx.createGain();
+      this.sink.gain.value = 0; // keeps the worklet pulled by the graph without making sound
+      this.source.connect(this.node).connect(this.sink).connect(this.ctx.destination);
+      this.source.connect(this.analyser);
+      this.source.connect(this.monitorGain);
+      this.node.port.onmessage = (e) => this.onWorklet(e.data);
+    } catch (err) {
+      // The recording engine failed to start: do not leave the microphone switched on.
+      if (token === this.openToken) this.close();
+      else stream.getTracks().forEach((t) => t.stop());
+      if (err instanceof RecorderError) throw err;
+      throw new RecorderError('Could not start the recording engine. Reload the page and try again.', 'failed');
+    }
   }
 
   /** Route input to a track for monitoring (off by default: feedback risk without headphones). */
@@ -179,6 +199,7 @@ export class InputRecorder {
   }
 
   close() {
+    this.openToken++;
     this.stream?.getTracks().forEach((t) => t.stop());
     this.stream = null;
     this.source?.disconnect();

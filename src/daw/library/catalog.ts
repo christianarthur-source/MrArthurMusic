@@ -14,7 +14,7 @@ export class LibraryCatalog {
   manifest: CatalogManifest | null = null;
   loaded = 0;
   error: string | null = null;
-  private worker: Worker;
+  private worker!: Worker;
   private reqId = 0;
   private pending = new Map<number, { resolve: (v: unknown) => void; reject: (e: Error) => void }>();
   private cache = new Map<string, CatalogEntry>();
@@ -22,13 +22,43 @@ export class LibraryCatalog {
 
   constructor(root = '/daw-library/') {
     this.root = new URL(root, location.href).href;
-    this.worker = new Worker(new URL('./search.worker.ts', import.meta.url), { type: 'module' });
-    this.worker.onmessage = (ev) => this.onMessage(ev.data);
-    this.worker.onerror = (ev) => {
-      this.error = ev.message || 'Loop library failed to start.';
-      this.emit();
-    };
-    this.worker.postMessage({ type: 'init', root: this.root });
+    this.startWorker();
+  }
+
+  private startWorker() {
+    let worker: Worker;
+    try {
+      worker = new Worker(new URL('./search.worker.ts', import.meta.url), { type: 'module' });
+    } catch (e) {
+      this.fail((e as Error)?.message || 'Loop library failed to start.');
+      return;
+    }
+    this.worker = worker;
+    worker.onmessage = (ev) => this.onMessage(ev.data);
+    worker.onerror = (ev) => this.fail(ev.message || 'Loop library failed to start.');
+    worker.postMessage({ type: 'init', root: this.root });
+  }
+
+  /** The worker died or never started: remember why and reject everything waiting on it (they used to wait forever). */
+  private fail(message: string) {
+    this.error = message;
+    for (const p of this.pending.values()) p.reject(new Error(message));
+    this.pending.clear();
+    this.emit();
+  }
+
+  /** Start over after a failure (the Retry button). Cached entries are kept. */
+  retry() {
+    try {
+      this.worker?.terminate();
+    } catch {
+      /* already gone */
+    }
+    this.error = null;
+    this.loaded = 0;
+    this.manifest = null;
+    this.emit();
+    this.startWorker();
   }
 
   subscribe(fn: Listener) {
@@ -47,10 +77,7 @@ export class LibraryCatalog {
       this.loaded = m.loaded as number;
       this.emit();
     } else if (m.type === 'error') {
-      this.error = m.message as string;
-      for (const p of this.pending.values()) p.reject(new Error(this.error));
-      this.pending.clear();
-      this.emit();
+      this.fail(m.message as string);
     } else if (m.type === 'result' || m.type === 'reqError') {
       const p = this.pending.get(m.reqId as number);
       if (!p) return;

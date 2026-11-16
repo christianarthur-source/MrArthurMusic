@@ -179,6 +179,7 @@ class Reverb extends Base {
   private wetMix = this.track(this.ctx.createGain());
   private dryMix = this.track(this.ctx.createGain());
   private decay = -1;
+  private decayTimer: ReturnType<typeof setTimeout> | undefined;
   constructor(ctx: BaseAudioContext) {
     super(ctx);
     this.tone.type = 'lowpass';
@@ -187,13 +188,29 @@ class Reverb extends Base {
   }
   protected apply(p: Record<string, number>) {
     if (Math.abs(p.decay - this.decay) > 0.05) {
-      this.decay = p.decay;
-      this.conv.buffer = makeImpulse(this.ctx, p.decay);
+      const rebuild = () => {
+        this.decayTimer = undefined;
+        this.decay = p.decay;
+        this.conv.buffer = makeImpulse(this.ctx, p.decay);
+      };
+      if (this.decayTimer !== undefined) clearTimeout(this.decayTimer);
+      this.decayTimer = undefined;
+      // Building the impulse response allocates up to 7 s of stereo noise, so while a knob is being
+      // dragged only the value it settles on is built (the first one, and offline export, build at once).
+      if (this.decay < 0 || this.ctx.currentTime === 0 || (typeof OfflineAudioContext !== 'undefined' && this.ctx instanceof OfflineAudioContext)) {
+        rebuild();
+      } else {
+        this.decayTimer = setTimeout(rebuild, 150);
+      }
     }
     this.set(this.wetMix.gain, p.mix * 0.9);
     this.set(this.dryMix.gain, 1 - p.mix * 0.5);
     this.set(this.tone.frequency, p.tone);
     this.set(this.pre.delayTime, p.predelay);
+  }
+  override dispose() {
+    if (this.decayTimer !== undefined) clearTimeout(this.decayTimer);
+    super.dispose();
   }
   override automation(key: string) {
     if (key === 'mix') return { param: this.wetMix.gain, map: (v: number) => v * 0.9 };

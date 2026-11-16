@@ -309,7 +309,12 @@ export function LibraryPanel() {
       </div>
       {error && !s.catalog.error && <div className="mx-3 mt-2 rounded-lg bg-rose-500/10 p-2 text-xs text-rose-200">Search failed: {error}</div>}
       {s.catalog.error ? (
-        <div className="m-3 rounded-lg bg-rose-500/10 p-3 text-sm text-rose-200">The loop library could not load: {s.catalog.error}</div>
+        <div className="m-3 rounded-lg bg-rose-500/10 p-3 text-sm text-rose-200">
+          <div>The loop library could not load: {s.catalog.error}</div>
+          <button type="button" className="mt-2 rounded-md bg-rose-500/30 px-3 py-1.5 text-xs font-semibold text-rose-50 hover:bg-rose-500/50" onClick={() => s.catalog.retry()}>
+            Try again
+          </button>
+        </div>
       ) : (
         <VirtualList
           rows={rows}

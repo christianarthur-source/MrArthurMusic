@@ -127,7 +127,7 @@ export function TransportBar() {
             <select
               className="h-8 rounded-lg bg-slate-800 px-1 text-sm text-slate-100"
               value={countIn}
-              onChange={(e) => s.store.exec('Count-in', (p) => ({ ...p, editor: { ...p.editor, countInBars: Number(e.target.value) } }))}
+              onChange={(e) => s.store.setEditor({ countInBars: Number(e.target.value) })}
             >
               <option value={0}>Off</option>
               <option value={1}>1 bar</option>
@@ -153,7 +153,7 @@ export function TransportBar() {
           label={snapOn ? 'Snap to grid: on' : 'Snap to grid: off'}
           shortcut="G"
           active={snapOn}
-          onClick={() => s.store.exec('Snap', (p) => ({ ...p, editor: { ...p.editor, snap: !p.editor.snap } }))}
+          onClick={() => s.store.setEditor({ snap: !s.store.get().editor.snap })}
         >
           <Magnet size={15} />
         </IconButton>
@@ -162,7 +162,7 @@ export function TransportBar() {
           title="Grid size: where clips and notes snap to"
           className="h-8 rounded-lg bg-slate-800 px-1 text-xs text-slate-100"
           value={grid}
-          onChange={(e) => s.store.exec('Grid', (p) => ({ ...p, editor: { ...p.editor, grid: e.target.value as GridDivision } }))}
+          onChange={(e) => s.store.setEditor({ grid: e.target.value as GridDivision })}
         >
           {GRID_DIVISIONS.map((g) => (
             <option key={g} value={g}>

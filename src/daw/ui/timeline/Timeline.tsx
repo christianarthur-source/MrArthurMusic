@@ -14,7 +14,7 @@ export const LOOP_DRAG_MIME = 'application/x-mrdaw-loop';
 const EDGE = 7;
 
 type Drag =
-  | { kind: 'move'; ids: string[]; startX: number; startY: number; origin: Region; rowIndex: number; copy: boolean; moved: boolean }
+  | { kind: 'move'; ids: string[]; startX: number; startY: number; origin: Region; rowIndex: number; copy: boolean; moved: boolean; clones?: Region[] }
   | { kind: 'resize'; id: string; edge: 'start' | 'end' }
   | { kind: 'fade'; id: string; which: 'in' | 'out' }
   | { kind: 'marquee'; x0: number; y0: number; x1: number; y1: number; additive: boolean }
@@ -306,7 +306,8 @@ export function Timeline() {
       setCursor('grabbing');
       s.store.preview((base) => {
         if (!d.copy) return ops.moveRegions(base, d.ids, delta, dTrack);
-        const clones = base.regions.filter((r) => d.ids.includes(r.id)).map((r) => ops.cloneRegion(r));
+        // Clone once per drag (not on every pointer move): same new ids for the whole gesture
+        const clones = (d.clones ??= base.regions.filter((r) => d.ids.includes(r.id)).map((r) => ops.cloneRegion(r)));
         const withClones = { ...base, regions: [...base.regions, ...clones] };
         return ops.moveRegions(withClones, clones.map((c) => c.id), delta, dTrack);
       });

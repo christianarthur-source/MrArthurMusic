@@ -1,4 +1,5 @@
 import { LibraryCatalog } from '../library/catalog';
+import { projectEndTick } from '../model/ops';
 import { secondsToTicks, ticksPerBar, ticksToSeconds } from '../model/time';
 import { Project, Region } from '../model/types';
 import { AssetManager } from './assets';
@@ -23,6 +24,8 @@ import { audioPlayback, RegionScheduler, segmentTimeMap, TimeMap } from './sched
 export const LOOKAHEAD = 0.2; // s
 const TICK_MS = 25;
 const START_DELAY = 0.06; // s between pressing play and the first scheduled sound
+/** Playback stops by itself this long after the last region ends (lets reverb and echo tails ring out). */
+export const END_TAIL_SEC = 3;
 
 export type TransportState = 'stopped' | 'playing';
 export type EngineStatus = 'ok' | 'suspended' | 'interrupted' | 'closed' | 'error';
@@ -73,6 +76,8 @@ export class AudioEngine {
   private joinNext = true;
   private anchorAutomation = true;
   private countInUntil = -Infinity;
+  /** Stop at the end of the song (off while recording, so a take can run past the last region). */
+  private autoStopAtEnd = true;
   private listeners = new Set<Listener>();
   private lastWake = 0;
   private wakeGaps = { n: 0, sum: 0, max: 0 };
@@ -238,7 +243,7 @@ export class AudioEngine {
 
   // ---------------------------------------------------------------- transport
 
-  play(from?: number, opts: { countInBars?: number } = {}) {
+  play(from?: number, opts: { countInBars?: number; keepGoing?: boolean } = {}) {
     if (this.ctx.state !== 'running') {
       // resume() is allowed here because play() is always called from a user gesture
       void this.ctx.resume();
@@ -247,6 +252,7 @@ export class AudioEngine {
     this.playStartTick = start;
     const countIn = (opts.countInBars ?? 0) * ticksPerBar(this.project.timeSigMap[0].sig);
     this.countInUntil = countIn > 0 ? start : -Infinity;
+    this.autoStopAtEnd = !opts.keepGoing;
     this.state = 'playing';
     this.scheduler.diag = { scheduled: 0, late: 0, minLeadMs: Infinity, missingAssets: 0, fallbackStretch: 0 };
     this.wakeGaps = { n: 0, sum: 0, max: 0 };
@@ -368,6 +374,21 @@ export class AudioEngine {
       this.lastPrune = nowPerf;
       this.scheduler.prune(this.ctx.currentTime);
     }
+    this.stopIfPastEnd();
+  }
+
+  /** Without a loop, playback used to run on forever (silent) after the last region; now it stops and returns to the start. */
+  private stopIfPastEnd() {
+    if (!this.autoStopAtEnd || this.state !== 'playing') return;
+    const p = this.project;
+    if (p.loop.enabled && p.loop.end > p.loop.start) return;
+    const end = projectEndTick(p);
+    if (end <= 0) return;
+    const stopTick = secondsToTicks(p.tempoMap, ticksToSeconds(p.tempoMap, end) + END_TAIL_SEC);
+    if (this.currentTick() < stopTick) return;
+    this.halt();
+    this.position = this.playStartTick;
+    this.emit();
   }
 
   /** Re-schedule specific regions from "now" up to what has already been scheduled. */

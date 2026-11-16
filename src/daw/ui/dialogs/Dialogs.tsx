@@ -69,7 +69,14 @@ export function RecordDialog({ onClose }: { onClose: () => void }) {
   useEffect(() => {
     void listInputs().then(setDevices);
   }, []);
-  useEffect(() => () => s.recorder.setMonitor(null), [s]);
+  useEffect(
+    () => () => {
+      s.recorder.setMonitor(null);
+      // Closing the setup window switches the microphone off again (unless a take is being recorded)
+      if (!s.ui.get().recording) s.recorder.close();
+    },
+    [s],
+  );
 
   return (
     <Modal title="Recording setup" onClose={onClose}>
@@ -190,8 +197,12 @@ export function StorageDialog({ onClose }: { onClose: () => void }) {
             type="button"
             className="rounded-lg bg-slate-800 px-3 py-1.5 hover:bg-slate-700"
             onClick={async () => {
-              const freed = await collectUnusedAudio();
-              setMsg(`Removed ${mb(freed)} of recordings not used by any saved song.`);
+              try {
+                const freed = await collectUnusedAudio(s.store.allProjects());
+                setMsg(`Removed ${mb(freed)} of recordings not used by any saved song.`);
+              } catch (err) {
+                setMsg(`Could not clean up: ${err instanceof Error ? err.message : String(err)}`);
+              }
               refresh();
             }}
           >

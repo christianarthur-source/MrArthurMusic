@@ -55,10 +55,14 @@ export function TopBar({ onHome, onSave, cloudLabel }: { onHome: () => void; onS
             {item('New song…', onHome)}
             {item('Save', onSave, 'Ctrl+S')}
             {item('Save a copy (remix it)', async () => {
-              const copy = duplicateProject(s.store.get());
-              await saveProjectLocal(copy);
-              s.loadProject(copy);
-              s.ui.toast('success', `Saved a copy: "${copy.title}". You are now editing the copy.`);
+              try {
+                const copy = duplicateProject(s.store.get());
+                await saveProjectLocal(copy);
+                s.loadProject(copy);
+                s.ui.toast('success', `Saved a copy: "${copy.title}". You are now editing the copy.`);
+              } catch (err) {
+                s.ui.toast('error', `Could not save a copy: ${err instanceof Error ? err.message : String(err)}`);
+              }
             })}
             {item('Import audio or MIDI file…', () => fileInput.current?.click())}
             {item(s.store.get().video ? 'Replace video…' : 'Add video…', () => s.ui.set({ dialog: 'video' }))}

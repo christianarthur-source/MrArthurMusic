@@ -62,7 +62,7 @@ export function toggleLoop(s: Studio) {
 }
 
 export function toggleMetronome(s: Studio) {
-  s.store.exec('Metronome', (p) => ({ ...p, editor: { ...p.editor, metronome: !p.editor.metronome } }));
+  s.store.setEditor({ metronome: !s.store.get().editor.metronome });
 }
 
 export function setTempo(s: Studio, bpm: number) {
@@ -217,8 +217,7 @@ export function zoom(s: Studio, factor: number, anchorPx?: number) {
   const anchor = anchorPx ?? ui.timelineWidth / 2;
   const beatAtAnchor = (ui.scrollX + anchor) / old;
   // Zoom is a view setting: saved with the project but not an undo step.
-  s.store.preview((x) => ({ ...x, editor: { ...x.editor, pxPerBeat: next } }));
-  s.store.commitGesture('Zoom');
+  s.store.setEditor({ pxPerBeat: next });
   s.ui.set({ scrollX: Math.max(0, beatAtAnchor * next - anchor) });
 }
 
@@ -227,8 +226,7 @@ export function fitProject(s: Studio) {
   const end = Math.max(ops.projectEndTick(p), bar(p) * 8);
   const width = s.ui.get().timelineWidth - 40;
   const ppb = Math.min(400, Math.max(4, (width / end) * PPQ));
-  s.store.preview((x) => ({ ...x, editor: { ...x.editor, pxPerBeat: ppb } }));
-  s.store.commitGesture('Fit');
+  s.store.setEditor({ pxPerBeat: ppb });
   s.ui.set({ scrollX: 0 });
 }
 
@@ -506,7 +504,20 @@ let recordStartTick = 0;
  * armed, records the notes played live (MIDI keyboard, computer keys, on-screen piano).
  * Otherwise the microphone records into the armed (or a new) audio track.
  */
+let recordStarting = false;
+
 export async function startRecording(s: Studio) {
+  // Double-click / Record pressed again while the microphone prompt is open: one take only.
+  if (recordStarting || s.ui.get().recording) return;
+  recordStarting = true;
+  try {
+    await startRecordingInner(s);
+  } finally {
+    recordStarting = false;
+  }
+}
+
+async function startRecordingInner(s: Studio) {
   const p = s.store.get();
   const armedAudio = p.tracks.find((t) => t.arm && t.kind === 'audio');
   const sel = p.tracks.find((t) => t.id === s.ui.get().selectedTrack);
@@ -518,7 +529,7 @@ export async function startRecording(s: Studio) {
     recordStartTick = snap(s, s.engine.currentTick(), 'floor');
     s.ui.set({ selectedTrack: midiTrack.id });
     s.live.startTake(midiTrack.id, recordStartTick);
-    s.engine.play(recordStartTick, { countInBars: p.editor.countInBars });
+    s.engine.play(recordStartTick, { countInBars: p.editor.countInBars, keepGoing: true });
     s.ui.set({ recording: true });
     s.ui.toast('info', `Recording notes into "${midiTrack.name}". Play your MIDI keyboard, computer keys or the on-screen piano.`);
     return;
@@ -535,7 +546,7 @@ export async function startRecording(s: Studio) {
   if (s.engine.state === 'playing') s.engine.pause();
   recordStartTick = snap(s, s.engine.currentTick(), 'floor');
   s.recorder.start();
-  s.engine.play(recordStartTick, { countInBars: p.editor.countInBars });
+  s.engine.play(recordStartTick, { countInBars: p.editor.countInBars, keepGoing: true });
   s.ui.set({ recording: true });
   // A take is held in memory until it stops, so cap its length. 5 minutes of 16-bit stereo
   // also fits under the per-recording storage limit.
@@ -624,6 +635,10 @@ export async function stopRecording(s: Studio) {
     else s.ui.toast('warn', `Recorded "${name}", but it could not be saved on this computer. It will play until you close this page: use File → Export now to keep it.`);
   } catch (err) {
     s.ui.toast('error', err instanceof Error ? err.message : 'Recording failed.');
+  } finally {
+    // The microphone is only live while it is needed (not for the rest of the session).
+    // The Recording setup window keeps it open for its level meter and closes it itself.
+    if (s.ui.get().dialog !== 'record') s.recorder.close();
   }
 }
 

@@ -73,7 +73,8 @@ const color = (v: unknown, fallback: string) => (typeof v === 'string' && COLOR_
 function effect(v: unknown, seen: Set<string>, warnings: string[]): EffectInstance | null {
   if (!isObj(v)) return null;
   const type = v.type as EffectType;
-  const def = EFFECT_DEFS[type];
+  // hasOwn: a type such as "constructor" or "__proto__" must not resolve to an inherited property
+  const def = typeof type === 'string' && Object.hasOwn(EFFECT_DEFS, type) ? EFFECT_DEFS[type] : undefined;
   if (!def) {
     warnings.push(`Removed an unknown effect type "${String(v.type).slice(0, 20)}".`);
     return null;
@@ -150,7 +151,7 @@ function region(v: unknown, trackIds: Set<string>, assets: Record<string, AudioA
     muted: bool(v.muted, false),
   };
   if (v.kind === 'audio') {
-    if (typeof v.assetId !== 'string' || !assets[v.assetId]) return null;
+    if (typeof v.assetId !== 'string' || !Object.hasOwn(assets, v.assetId)) return null;
     const r: AudioRegion = {
       ...base,
       kind: 'audio',
@@ -197,7 +198,7 @@ function region(v: unknown, trackIds: Set<string>, assets: Record<string, AudioA
 }
 
 function asset(key: string, v: unknown): AudioAssetInfo | null {
-  if (!isObj(v) || !ID_RE.test(key) || !isObj(v.ref)) return null;
+  if (!isObj(v) || !ID_RE.test(key) || key === '__proto__' || !isObj(v.ref)) return null;
   const ref = v.ref;
   let r: AudioAssetInfo['ref'];
   if (ref.kind === 'library' && typeof ref.assetId === 'string' && ID_RE.test(ref.assetId)) {

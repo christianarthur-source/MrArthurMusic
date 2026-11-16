@@ -161,7 +161,7 @@ export function useKeyboard(s: Studio, enabled: boolean, onSave: () => void) {
           s.ui.set({ tool: 'draw' });
           break;
         case 'g':
-          s.store.exec('Snap', (p) => ({ ...p, editor: { ...p.editor, snap: !p.editor.snap } }));
+          s.store.setEditor({ snap: !s.store.get().editor.snap });
           break;
         case 'f':
           A.fitProject(s);

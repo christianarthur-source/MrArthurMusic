@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createProject } from './model/factory';
 import { Project } from './model/types';
 import { validateProject, ValidationResult } from './model/validate';
-import { asRemix, saveProjectLocal } from './persistence/projectRepo';
+import { asRemix, rememberCloudAudio, saveProjectLocal } from './persistence/projectRepo';
 import { readShareFromLocation } from './persistence/shareLink';
 import { cx, Modal } from './ui/controls';
 import { ExportDialog } from './ui/dialogs/ExportDialog';
@@ -195,6 +195,7 @@ function StudioView({ onHome, currentProjectId, onProjectSaved, onNeedLogin }: {
     }
     try {
       const r = await cloud(s.store.get());
+      if (r.ok) void rememberCloudAudio(s.store.get());
       if (r.ok) s.ui.toast('success', r.message ?? `Saved to ${s.host.cloudLabel ?? 'your account'}.`);
       else {
         s.ui.toast('warn', r.message ?? 'Saved on this computer. Log in to save to your class account.');

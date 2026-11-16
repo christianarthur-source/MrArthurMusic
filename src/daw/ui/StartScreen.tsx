@@ -146,9 +146,13 @@ export function StartScreen({
                   aria-label={`Copy ${r.title}`}
                   className="rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-white"
                   onClick={async () => {
-                    const { project } = await loadProjectLocal(r.id);
-                    await saveProjectLocal(duplicateProject(project));
-                    void refresh();
+                    try {
+                      const { project } = await loadProjectLocal(r.id);
+                      await saveProjectLocal(duplicateProject(project));
+                      void refresh();
+                    } catch (err) {
+                      setError(`Could not copy the song: ${err instanceof Error ? err.message : String(err)}`);
+                    }
                   }}
                 >
                   <Copy size={15} />
@@ -160,8 +164,12 @@ export function StartScreen({
                   className="rounded-lg p-2 text-slate-400 hover:bg-rose-500/20 hover:text-rose-300"
                   onClick={async () => {
                     if (!(await askConfirm(`Delete "${r.title}" from this computer? This cannot be undone.`, { title: 'Delete song', confirmLabel: 'Delete', danger: true }))) return;
-                    await deleteProjectLocal(r.id);
-                    void refresh();
+                    try {
+                      await deleteProjectLocal(r.id);
+                      void refresh();
+                    } catch (err) {
+                      setError(`Could not delete the song: ${err instanceof Error ? err.message : String(err)}`);
+                    }
                   }}
                 >
                   <Trash2 size={15} />

@@ -14,7 +14,34 @@ async function pipe(bytes: Uint8Array, stream: CompressionStream | Decompression
   return new Uint8Array(await new Response(out).arrayBuffer());
 }
 
-function toBase64Url(bytes: Uint8Array): string {
+/** Largest project JSON a share link may expand to. Real songs are well under 2 MB; a "zip bomb" link is not. */
+export const MAX_SHARE_JSON_BYTES = 16 * 1024 * 1024;
+
+/** Inflate, but stop and fail as soon as the output passes `maxBytes` (instead of filling memory first). */
+export async function inflateLimited(bytes: Uint8Array, maxBytes = MAX_SHARE_JSON_BYTES): Promise<Uint8Array> {
+  const reader = new Blob([bytes as Uint8Array<ArrayBuffer>]).stream().pipeThrough(new DecompressionStream('deflate-raw')).getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.length;
+    if (total > maxBytes) {
+      await reader.cancel().catch(() => undefined);
+      throw new Error('This share link expands to far more data than a song can hold, so it was not opened.');
+    }
+    chunks.push(value);
+  }
+  const out = new Uint8Array(total);
+  let at = 0;
+  for (const c of chunks) {
+    out.set(c, at);
+    at += c.length;
+  }
+  return out;
+}
+
+export function toBase64Url(bytes: Uint8Array): string {
   let bin = '';
   for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
   return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
@@ -38,6 +65,6 @@ export async function readShareFromLocation(): Promise<unknown | null> {
   const m = new RegExp(`[#&]${HASH_KEY}=([A-Za-z0-9_-]+)`).exec(window.location.hash);
   if (!m) return null;
   history.replaceState(null, '', window.location.pathname + window.location.search);
-  const json = await pipe(fromBase64Url(m[1]), new DecompressionStream('deflate-raw'));
+  const json = await inflateLimited(fromBase64Url(m[1]));
   return JSON.parse(new TextDecoder().decode(json));
 }
