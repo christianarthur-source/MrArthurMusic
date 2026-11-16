@@ -165,6 +165,7 @@ class SoundEngine {
   private isDrumPreviewPlaying: boolean = false;
   private drumPreviewSources: { stop: () => void }[] = [];
   private keepAliveNode: AudioBufferSourceNode | null = null;
+  private playRequestId = 0;
   private noiseBuffer: AudioBuffer | null = null;
   private masterBusCache = new WeakMap<
     BaseAudioContext,
@@ -448,9 +449,10 @@ class SoundEngine {
         (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       this.ctx = new AudioCtx();
     }
-    if (this.ctx.state === 'suspended') {
+    // 'interrupted' is what iOS Safari reports after a call or alarm; it needs resume() just like 'suspended'.
+    if ((this.ctx.state as string) !== 'running' && (this.ctx.state as string) !== 'closed') {
       try {
-        this.ctx.resume();
+        void this.ctx.resume()?.catch(() => {});
       } catch {
         // ignore
       }
@@ -461,7 +463,7 @@ class SoundEngine {
 
   public async initContext(): Promise<AudioContext | null> {
     const ctx = this.ensureContext();
-    if (ctx.state === 'suspended') {
+    if ((ctx.state as string) !== 'running' && (ctx.state as string) !== 'closed') {
       try {
         await ctx.resume();
       } catch {
@@ -521,6 +523,17 @@ class SoundEngine {
   public preloadScore(score: Score) {
     const ctx = this.ensureContext();
     void preloadScoreSamples(ctx, score);
+  }
+
+  /** Stops the silent keep-alive loop (used when Staff Composer is left). The next sound starts it again. */
+  public stopKeepAlive() {
+    if (!this.keepAliveNode) return;
+    try {
+      this.keepAliveNode.stop();
+    } catch {
+      // already stopped
+    }
+    this.keepAliveNode = null;
   }
 
   private ensureKeepAlive(ctx: AudioContext) {
@@ -2145,8 +2158,41 @@ class SoundEngine {
     };
   }
 
-  // Play full score directly on Web Audio graph starting instantly at Measure 0 Beat 0
+  /**
+   * Play the score from the start. If the audio context is not running yet (first click, tab that was in the
+   * background, iOS 'interrupted'), wait for resume() to finish before scheduling any notes: scheduling on a
+   * context whose clock is still stopped made the first notes late or silent.
+   */
   public playScore(
+    score: Score,
+    onProgress: (measureIndex: number, beatFraction: number, countInInfo?: { isCountIn: boolean; beat: number }) => void,
+    onNoteTrigger: (noteId: string) => void,
+    onFinished: () => void,
+    loopMeasureIndex?: number | null,
+    enableCountIn?: boolean
+  ) {
+    this.stopPlayback();
+    const requestId = this.playRequestId;
+    const ctx = this.ensureContext();
+    const start = () => {
+      if (requestId !== this.playRequestId) return; // stopped or replaced while waiting
+      this.playScoreNow(score, onProgress, onNoteTrigger, onFinished, loopMeasureIndex, enableCountIn);
+    };
+    if (ctx.state === 'running') {
+      start();
+      return;
+    }
+    let resumed: Promise<void>;
+    try {
+      resumed = ctx.resume();
+    } catch {
+      resumed = Promise.resolve();
+    }
+    void resumed.then(start, start);
+  }
+
+  // Play full score directly on Web Audio graph starting instantly at Measure 0 Beat 0
+  private playScoreNow(
     score: Score,
     onProgress: (measureIndex: number, beatFraction: number, countInInfo?: { isCountIn: boolean; beat: number }) => void,
     onNoteTrigger: (noteId: string) => void,
@@ -2404,6 +2450,21 @@ class SoundEngine {
 
     let lastScrolledSystem = -1;
 
+    // The playhead line is moved directly in the DOM every frame (below). The React-facing onProgress is only
+    // called when something the screen shows actually changes (new measure, a 1/32-measure step, a new
+    // count-in beat), so the whole editor no longer re-renders 60 times a second during playback.
+    let lastProgressKey = '';
+    const reportProgress = (
+      m: number,
+      frac: number,
+      info: { isCountIn: boolean; beat: number }
+    ) => {
+      const key = info.isCountIn ? `c:${info.beat}` : `p:${m}:${Math.floor(frac * 32)}`;
+      if (key === lastProgressKey) return;
+      lastProgressKey = key;
+      onProgress(m, frac, info);
+    };
+
     const step = () => {
       if (!this.isPlaying || !this.ctx) {
         if (typeof window !== 'undefined') {
@@ -2430,7 +2491,7 @@ class SoundEngine {
           const countInElapsedSec = elapsedSec + countInDurationSec;
           const beatSec = (1 / beatValue) * secondsPerWhole;
           const currentBeat = Math.max(1, Math.min(beatsPerMeasure, Math.floor(countInElapsedSec / beatSec) + 1));
-          onProgress(playbackSequence[0] ?? 0, 0, { isCountIn: true, beat: currentBeat });
+          reportProgress(playbackSequence[0] ?? 0, 0, { isCountIn: true, beat: currentBeat });
         }
         const firstM = playbackSequence[0] ?? 0;
         if (lineEl && layoutData && layoutData.layoutMap) {
@@ -2457,7 +2518,7 @@ class SoundEngine {
         const currentM = playbackSequence[stepIdx] ?? 0;
         const beatFraction = Math.max(0, Math.min(0.999, relativeStep - Math.floor(relativeStep)));
 
-        onProgress(currentM, beatFraction, { isCountIn: false, beat: 0 });
+        reportProgress(currentM, beatFraction, { isCountIn: false, beat: 0 });
 
         if (lineEl && layoutData && layoutData.layoutMap) {
           const mLayout = layoutData.layoutMap.get(currentM);
@@ -2664,6 +2725,7 @@ class SoundEngine {
   }
 
   public stopPlayback() {
+    this.playRequestId += 1;
     this.isPlaying = false;
     if (this.playheadTimer !== null) {
       cancelAnimationFrame(this.playheadTimer);
@@ -2731,17 +2793,23 @@ function encodeAudioBufferToWav(buffer: AudioBuffer): Uint8Array {
 export const soundEngine = new SoundEngine();
 export const warmUpAudio = () => soundEngine.initContext();
 
-// Eagerly unlock and activate Web Audio on first user interaction anywhere
-if (typeof window !== 'undefined') {
-  const warmUp = () => {
-    soundEngine.initContext();
-    window.removeEventListener('pointerdown', warmUp);
-    window.removeEventListener('keydown', warmUp);
-    window.removeEventListener('touchstart', warmUp);
-    window.removeEventListener('mousedown', warmUp);
-  };
-  window.addEventListener('pointerdown', warmUp, { passive: true });
-  window.addEventListener('keydown', warmUp, { passive: true });
-  window.addEventListener('touchstart', warmUp, { passive: true });
-  window.addEventListener('mousedown', warmUp, { passive: true });
+/**
+ * Unlocks Web Audio on the first tap or key press. Staff Composer arms this when it is opened (see App.tsx),
+ * so visiting the landing page or another tool no longer creates an audio context, starts the keep-alive loop
+ * and downloads piano samples. Returns a function that removes the listeners again.
+ */
+export function armAudioWarmUp(): () => void {
+  if (typeof window === 'undefined') return () => {};
+  const events = ['pointerdown', 'keydown', 'touchstart', 'mousedown'] as const;
+  const disarm = () => events.forEach((e) => window.removeEventListener(e, onGesture));
+  function onGesture() {
+    disarm();
+    void soundEngine.initContext();
+  }
+  events.forEach((e) => window.addEventListener(e, onGesture, { passive: true }));
+  // Opening the editor was itself a click, so the browser may already allow audio right now.
+  if ((navigator as Navigator & { userActivation?: { isActive: boolean } }).userActivation?.isActive) {
+    onGesture();
+  }
+  return disarm;
 }

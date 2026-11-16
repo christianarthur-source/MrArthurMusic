@@ -32,7 +32,7 @@ import {
   DIATONIC_STEP_ORDER,
   STEP_DIATONIC_OFFSET,
 } from './utils/musicMath';
-import { soundEngine } from './audio/soundEngine';
+import { soundEngine, armAudioWarmUp } from './audio/soundEngine';
 import {
   webMidiService,
   MidiDeviceInfo,
@@ -224,6 +224,8 @@ export function checkIsBigStaffUrl(): boolean {
   return false;
 }
 
+const UNDO_HISTORY_LIMIT = 100;
+
 export default function App() {
   // Current active sub-application in Mr. Arthur's Music Lab
   const [currentApp, setCurrentApp] = useState<MusicLabAppId>(() => {
@@ -324,6 +326,15 @@ export default function App() {
   const [profanityAlert, setProfanityAlert] = useState<string | null>(null);
   // Shown once if the instrument sound files cannot be downloaded (some school networks block them).
   const [soundNotice, setSoundNotice] = useState(false);
+  // Audio is warmed up (and the keep-alive loop runs) only while the Staff Composer editor is open.
+  useEffect(() => {
+    if (currentApp !== 'staff-composer') return;
+    const disarm = armAudioWarmUp();
+    return () => {
+      disarm();
+      soundEngine.stopKeepAlive();
+    };
+  }, [currentApp]);
   useEffect(() => {
     const show = () => setSoundNotice(true);
     window.addEventListener(SAMPLE_CDN_UNAVAILABLE_EVENT, show);
@@ -818,9 +829,11 @@ export default function App() {
     (newScore: Score) => {
       setHistory((prev) => {
         const next = prev.slice(0, historyIndex + 1);
-        return [...next, JSON.parse(JSON.stringify(newScore))];
+        const withNew = [...next, JSON.parse(JSON.stringify(newScore))];
+        // Keep the most recent ~100 undo steps so a long session does not grow without limit.
+        return withNew.length > UNDO_HISTORY_LIMIT ? withNew.slice(withNew.length - UNDO_HISTORY_LIMIT) : withNew;
       });
-      setHistoryIndex((prev) => prev + 1);
+      setHistoryIndex((prev) => Math.min(prev + 1, UNDO_HISTORY_LIMIT - 1));
       setScore(newScore);
     },
     [historyIndex]
