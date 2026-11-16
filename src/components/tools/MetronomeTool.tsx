@@ -5,7 +5,7 @@ import { shouldIgnoreShortcut } from '../../utils/keyGuard';
 export type MetronomeSound = 'woodblock' | 'beep' | 'drumstick' | 'cowbell' | 'silent';
 export type Subdivision = 1 | 2 | 3 | 4; // 1 = Quarter, 2 = Eighth, 3 = Triplet, 4 = 16th
 
-interface AnimalTempo {
+export interface AnimalTempo {
   name: string;
   emoji: string;
   term: string;
@@ -17,7 +17,7 @@ interface AnimalTempo {
   badgeBg: string;
 }
 
-const ANIMAL_TEMPOS: AnimalTempo[] = [
+export const ANIMAL_TEMPOS: AnimalTempo[] = [
   {
     name: 'Sleepy Turtle',
     emoji: '🐢',

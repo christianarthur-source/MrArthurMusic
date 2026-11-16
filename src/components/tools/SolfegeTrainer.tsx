@@ -4,7 +4,7 @@ import { soundEngine } from '../../audio/soundEngine';
 import { InstrumentId, Pitch } from '../../types/music';
 import { shouldIgnoreShortcut } from '../../utils/keyGuard';
 
-interface SolfegeNote {
+export interface SolfegeNote {
   syllable: string;
   handSignName: string;
   handEmoji: string;
@@ -17,7 +17,7 @@ interface SolfegeNote {
   description: string;
 }
 
-const SOLFEGE_SCALE: SolfegeNote[] = [
+export const SOLFEGE_SCALE: SolfegeNote[] = [
   {
     syllable: 'Do',
     handSignName: 'Fist at Waist',
