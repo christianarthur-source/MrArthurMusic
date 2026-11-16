@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Mic, MicOff, Sparkles, AlertCircle, Trophy, Play, RotateCcw } from 'lucide-react';
 import { soundEngine } from '../../audio/soundEngine';
 
-interface DynamicTier {
+export interface DynamicTier {
   symbol: string;
   name: string;
   italian: string;
@@ -15,7 +15,7 @@ interface DynamicTier {
   emoji: string;
 }
 
-const DYNAMIC_TIERS: DynamicTier[] = [
+export const DYNAMIC_TIERS: DynamicTier[] = [
   {
     symbol: 'pp',
     name: 'Pianissimo',
