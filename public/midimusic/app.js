@@ -81,6 +81,9 @@ class Engine {
     // After loading, a crash of the sound worker must not leave an instrument change waiting forever
     this.worker.onerror = () => this.onWorkerError();
     this.worker.onmessageerror = () => this.onWorkerError();
+    this.tokenSeq = 0; // numbers each Sampler build, so a late same-speed version is only used if it is still the current one
+    this.installedToken = 0;
+    this.sentTake = 0;
     const synth = new WorkletSynthesizer(this.ctx);
     // the standard drum kit is always loaded next to the chosen instrument: "Play to a groove" uses it
     const kit = await new Promise((resolve, reject) => {
@@ -88,7 +91,7 @@ class Engine {
       this.worker.postMessage({ type: 'build', id: 0, prog: 0, drum: true });
     });
     await synth.soundBankManager.addSoundBank(kit, 'kit');
-    this.worker.onmessage = (e) => this.onBuilt(e.data);
+    this.worker.onmessage = (e) => (e.data.type === 'sample-full' ? this.onSampleFull(e.data) : this.onBuilt(e.data));
     const makeup = this.ctx.createGain();
     makeup.gain.value = 2.4; // the SoundFont is mixed quietly
     synth.connect(makeup);
@@ -129,7 +132,15 @@ class Engine {
     this.building = this.queued;
     this.queued = null;
     const job = this.building;
-    if (job.sample) this.worker.postMessage({ type: 'sample', id: 0, pcm: job.sample.pcm, rate: job.sample.rate, root: job.sample.root, attenuation: SAMPLE_ATTENUATION });
+    if (job.sample) {
+      const smp = job.sample;
+      job.token = ++this.tokenSeq;
+      if (this.sentTake !== smp.take.id) { // the whole recording goes over once; the worker prepares a copy for every key from it
+        this.worker.postMessage({ type: 'take', id: smp.take.id, x: smp.take.x, rate: smp.rate });
+        this.sentTake = smp.take.id;
+      }
+      this.worker.postMessage({ type: 'sample', id: 0, pcm: smp.pcm, rate: smp.rate, root: smp.root, attenuation: SAMPLE_ATTENUATION, token: job.token, takeId: smp.take.id, from: smp.a, to: smp.b, gain: smp.gain });
+    }
     else this.worker.postMessage({ type: 'build', id: 0, prog: job.prog, drum: job.drum });
   }
 
@@ -155,6 +166,7 @@ class Engine {
         synth.controllerChange(ch, 93, 0);
         synth.controllerChange(ch, 1, 0);
         synth.controllerChange(ch, 64, this.sustain ? 127 : 0);
+        this.installedToken = job.sample ? job.token : 0;
         ok = true;
       }
     } catch (err) {
@@ -163,6 +175,28 @@ class Engine {
     this.building = null;
     job.resolve(ok);
     this.pump();
+    this.applyFull();
+  }
+
+  /** The Sampler's same-speed version of the sound is ready: swap it in once the plain version is in place, if that is still the sound in use. */
+  onSampleFull(m) {
+    this.fullWaiting = m; // it can arrive while the plain version is still being installed: applyFull runs again when that is done
+    this.applyFull();
+  }
+
+  async applyFull() {
+    const m = this.fullWaiting;
+    if (!m || this.building || this.queued) return;
+    if (m.token !== this.installedToken || !this.synth) { this.fullWaiting = null; return; } // the student moved on
+    this.fullWaiting = null;
+    try {
+      await this.synth.soundBankManager.addSoundBank(m.buffer, 'inst');
+      await this.synth.isReady;
+      if (m.token !== this.installedToken) return; // changed while it was decoding
+      this.synth.programChange(this.ch, this.prog);
+    } catch (err) {
+      console.error(err);
+    }
   }
 
   noteOn(note, vel) {
@@ -1079,12 +1113,13 @@ $('recClose').addEventListener('click', () => { $('recAudio').pause(); $('recDon
 
 // ---------------------------------------------------------------- sampler
 // The student records a short sound with the microphone; it is trimmed so it starts the instant a key
-// goes down, and then becomes an instrument: the key it "lives" on plays it as recorded, higher keys
-// play it faster and higher, lower keys slower and lower. The sound never leaves this device and is
-// not stored: it is gone when the page closes.
+// goes down (the student can drag that start point), and then becomes an instrument: the key it "lives" on
+// plays it as recorded, higher keys play it higher and lower keys lower, all at the same speed (see
+// bank-worker.js). The sound never leaves this device and is not stored: it is gone when the page closes.
 const SAMPLE_LISTEN = 3; // seconds the microphone listens
 const SAMPLE_MAX = 2; // seconds of sound kept after trimming
 const sampler = { phase: 'idle', count: 0, sample: null, msg: '', pickRoot: false, run: 0, timers: [], chunks: [], got: 0, stream: null, src: null, node: null, moduleReady: false };
+let takeSeq = 0;
 const capturing = () => sampler.phase === 'asking' || sampler.phase === 'count' || sampler.phase === 'rec';
 
 function stopMic() {
@@ -1174,7 +1209,8 @@ function finishCapture() {
   stopMic();
   const cut = trimSample(raw, rate);
   if (!cut) return samplerError('I did not hear anything. Get close to the microphone and try again!');
-  sampler.sample = { pcm: cut.pcm, rate, root: sampler.sample?.root ?? 60, seconds: cut.pcm.length / rate, view: cut.view };
+  const seg = cutTake(cut.x, rate, cut.a, cut.b);
+  sampler.sample = { take: { id: ++takeSeq, x: cut.x }, a: cut.a, b: cut.b, autoA: cut.a, autoB: cut.b, pcm: seg.pcm, gain: seg.gain, rate, root: sampler.sample?.root ?? 60, seconds: seg.pcm.length / rate, cols: cut.cols };
   sampler.phase = 'idle';
   drawSampler();
   if (!engine.synth) toast('Your sound will be ready as soon as the sounds finish loading.');
@@ -1217,16 +1253,6 @@ function trimSample(raw, rate) {
   let end = Math.min(n, (last + 1) * win + Math.round(rate * 0.08));
   end = Math.min(end, start + SAMPLE_MAX * rate);
   end = Math.max(end, Math.min(n, start + Math.round(rate * 0.05)));
-  const pcm = x.slice(start, end);
-  const len = pcm.length;
-  const fadeIn = Math.min(len, Math.round(rate * 0.002));
-  const fadeOut = Math.min(Math.floor(len / 4), Math.round(rate * 0.04));
-  for (let i = 0; i < fadeIn; i++) pcm[i] *= i / fadeIn;
-  for (let i = 0; i < fadeOut; i++) pcm[len - 1 - i] *= i / fadeOut;
-  let top = 0;
-  for (let i = 0; i < len; i++) { const a = Math.abs(pcm[i]); if (a > top) top = a; }
-  const gain = 0.9 / (top || 1);
-  for (let i = 0; i < len; i++) pcm[i] *= gain;
   // a small picture of the whole take, so the student can see what was kept
   const cols = new Float32Array(240);
   for (let c = 0; c < cols.length; c++) {
@@ -1234,7 +1260,46 @@ function trimSample(raw, rate) {
     for (let i = Math.floor((c * n) / cols.length), e2 = Math.floor(((c + 1) * n) / cols.length); i < e2; i++) { const a = Math.abs(x[i]); if (a > p) p = a; }
     cols[c] = p / peak;
   }
-  return { pcm, view: { cols, from: start / n, to: end / n } };
+  return { x, a: start, b: end, cols };
+}
+
+/** Cuts the kept part [a, b) out of the whole take: soft start and end, brought up to full volume. */
+function cutTake(x, rate, a, b) {
+  const pcm = x.slice(a, b);
+  const len = pcm.length;
+  const fadeIn = Math.min(len, Math.round(rate * 0.002));
+  const fadeOut = Math.min(Math.floor(len / 4), Math.round(rate * 0.04));
+  for (let i = 0; i < fadeIn; i++) pcm[i] *= i / fadeIn;
+  for (let i = 0; i < fadeOut; i++) pcm[len - 1 - i] *= i / fadeOut;
+  let top = 0;
+  for (let i = 0; i < len; i++) { const v = Math.abs(pcm[i]); if (v > top) top = v; }
+  const gain = 0.9 / (top || 1);
+  for (let i = 0; i < len; i++) pcm[i] *= gain;
+  return { pcm, gain };
+}
+
+/**
+ * The student moves where the sound starts (drag on the picture or use the slider). While dragging only the
+ * picture changes; when they let go, the sound is cut again and rebuilt, and plays once so they can hear it.
+ */
+function setSampleStart(frac, commit) {
+  const s = sampler.sample;
+  if (!s) return;
+  const n = s.take.x.length;
+  const minLen = Math.round(s.rate * 0.05);
+  s.a = Math.max(0, Math.min(Math.round(frac * n), s.autoB - minLen));
+  s.b = Math.min(s.autoB, s.a + SAMPLE_MAX * s.rate);
+  const slider = $('smpStart');
+  if (slider) slider.value = String(Math.round((s.a / n) * 1000));
+  drawWave();
+  if (!commit) return;
+  const seg = cutTake(s.take.x, s.rate, s.a, s.b);
+  s.pcm = seg.pcm;
+  s.gain = seg.gain;
+  s.seconds = seg.pcm.length / s.rate;
+  const secs = $('smpSecs');
+  if (secs) secs.textContent = s.seconds.toFixed(1);
+  selectInstrument(SAMPLE_INST);
 }
 
 function setSampleRoot(note) {
@@ -1280,8 +1345,11 @@ function drawSampler() {
     body = `<div class="smp-count go">GO!</div><div class="smp-msg">Make your sound now 🎤</div>${meter}<div class="smp-meter time"><i id="smpProg"></i></div><button class="toggle small" data-smp="done" type="button">■ Done</button>`;
   } else if (sampler.sample) {
     const s = sampler.sample;
-    body = `<canvas class="smp-wave" id="smpWave" width="720" height="110" aria-label="Picture of your sound"></canvas>
-      <div class="smp-msg">${s.seconds.toFixed(1)} seconds · lives on <b>${noteName(s.root)}</b>${s.root === 60 ? ' (middle C)' : ''}. Higher keys play it higher, lower keys play it lower.</div>
+    const n = s.take.x.length;
+    const maxStart = Math.floor(((s.autoB - Math.round(s.rate * 0.05)) / n) * 1000);
+    body = `<canvas class="smp-wave" id="smpWave" width="720" height="110" aria-label="Picture of your sound. Drag the white line to change where the sound starts."></canvas>
+      <label class="smp-start">Where the sound starts <input type="range" id="smpStart" min="0" max="${maxStart}" step="1" value="${Math.round((s.a / n) * 1000)}" aria-label="Where the sound starts"><span class="smp-hint">Drag the white line, or this slider. Starts later = skips the quiet bit before the sound.</span></label>
+      <div class="smp-msg"><span id="smpSecs">${s.seconds.toFixed(1)}</span> seconds · lives on <b>${noteName(s.root)}</b>${s.root === 60 ? ' (middle C)' : ''}. Higher keys play it higher, lower keys play it lower, all at the same speed.</div>
       <div class="smp-row"><button class="toggle" data-smp="hear" type="button">▶ Hear it</button><button class="toggle smp-use" data-smp="use" type="button">🎹 Play it!</button><button class="toggle" data-smp="move" type="button" title="Choose which key plays the sound as you recorded it">🎯 Move it to another key</button><button class="toggle" data-smp="rec" type="button">● Record again</button></div>`;
   } else {
     body = `${sampler.phase === 'error' ? `<div class="smp-msg warn">${sampler.msg}</div>` : '<div class="smp-msg">Record a short sound — a note, a clap, your voice — and play it on every key!</div>'}${recBtn2('Record a sound')}`;
@@ -1293,23 +1361,51 @@ function drawSampler() {
 
 function drawWave() {
   const cv = $('smpWave');
-  const v = sampler.sample?.view;
-  if (!cv || !v) return;
+  const smp = sampler.sample;
+  if (!cv || !smp) return;
+  const n = smp.take.x.length;
+  const from = smp.a / n;
+  const to = smp.b / n;
+  const cols = smp.cols;
   const g = cv.getContext('2d');
   const { width: w, height: h } = cv;
   g.clearRect(0, 0, w, h);
-  g.fillStyle = 'rgba(255, 77, 109, .16)'; // the part that was kept
-  g.fillRect(v.from * w, 0, (v.to - v.from) * w, h);
-  const bw = w / v.cols.length;
-  for (let c = 0; c < v.cols.length; c++) {
-    const f = (c + 0.5) / v.cols.length;
-    const bar = Math.max(2, v.cols[c] * (h - 12));
-    g.fillStyle = f >= v.from && f <= v.to ? '#ff4d6d' : '#4a4f69';
+  g.fillStyle = 'rgba(255, 77, 109, .16)'; // the part that is kept
+  g.fillRect(from * w, 0, (to - from) * w, h);
+  const bw = w / cols.length;
+  for (let c = 0; c < cols.length; c++) {
+    const f = (c + 0.5) / cols.length;
+    const bar = Math.max(2, cols[c] * (h - 12));
+    g.fillStyle = f >= from && f <= to ? '#ff4d6d' : '#4a4f69';
     g.fillRect(c * bw + 0.5, (h - bar) / 2, Math.max(1, bw - 1), bar);
   }
   g.fillStyle = '#fff';
-  g.fillRect(v.from * w, 0, 2, h); // where the sound starts when a key goes down
+  g.fillRect(Math.max(0, from * w - 1), 0, 3, h); // where the sound starts when a key goes down
+  g.beginPath(); // a handle to grab
+  g.arc(from * w + 0.5, 12, 8, 0, Math.PI * 2);
+  g.fill();
 }
+
+// Dragging the white line (the picture is redrawn on every move; the sound is rebuilt when the finger lifts).
+let dragStart = null;
+const waveFrac = (e) => { const r = $('smpWave').getBoundingClientRect(); return Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)); };
+gridEl.addEventListener('pointerdown', (e) => {
+  if (e.target.id !== 'smpWave' || !sampler.sample) return;
+  e.preventDefault();
+  dragStart = e.pointerId;
+  e.target.setPointerCapture(e.pointerId);
+  setSampleStart(waveFrac(e), false);
+});
+gridEl.addEventListener('pointermove', (e) => { if (dragStart === e.pointerId) setSampleStart(waveFrac(e), false); });
+for (const type of ['pointerup', 'pointercancel']) {
+  gridEl.addEventListener(type, (e) => {
+    if (dragStart !== e.pointerId) return;
+    dragStart = null;
+    if (type === 'pointerup') setSampleStart(waveFrac(e), true);
+  });
+}
+gridEl.addEventListener('input', (e) => { if (e.target.id === 'smpStart') setSampleStart(Number(e.target.value) / 1000, false); });
+gridEl.addEventListener('change', (e) => { if (e.target.id === 'smpStart') setSampleStart(Number(e.target.value) / 1000, true); });
 
 // ---------------------------------------------------------------- help
 // One place for "something is wrong": say plainly whether a MIDI keyboard is seen, offer the fixes, and
