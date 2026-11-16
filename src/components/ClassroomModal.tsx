@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   X,
   UserCheck,
@@ -44,6 +44,23 @@ import { createShortLink } from '../utils/shortLinkService';
 import { containsProfanity } from '../utils/profanityFilter';
 import { DialogBehavior, useDialogBehavior } from './Modal';
 import { confirmDialog, promptDialog } from './AppDialogs';
+import {
+  anyPinPauseActive,
+  clearWrongPins,
+  noteServerPause,
+  noteWrongPin,
+  pinPauseSecondsLeft,
+  studentPauseMessage,
+  studentPinKey,
+  teacherPauseMessage,
+  teacherPinKey,
+} from '../utils/pinPause';
+
+/** A teacher who has not touched the portal for this long is signed out (students are never affected). */
+const TEACHER_IDLE_MS = 20 * 60 * 1000;
+
+const escapeHtml = (v: unknown) =>
+  String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string);
 
 function safeFormatDate(dateVal: any, opts: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' }): string {
   if (!dateVal) return '';
@@ -209,6 +226,11 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
   const [allProjects, setAllProjects] = useState<SavedProjectRecord[]>([]);
   const [teacherError, setTeacherError] = useState<string | null>(null);
   const [teacherNotice, setTeacherNotice] = useState<string | null>(null);
+  // True when the real class server answered the teacher sign-in. It cannot change the admin PIN or restore backups.
+  const [isCloudServer, setIsCloudServer] = useState<boolean>(false);
+  // Ticks once a second while a "too many wrong PINs" pause is counting down.
+  const [, setPauseTick] = useState<number>(0);
+  const studentStepRef = useRef<'grade' | 'classroom' | 'login'>('grade');
 
   // Teacher filters
   const [teacherGradeFilter, setTeacherGradeFilter] = useState<string>('ALL');
@@ -273,10 +295,32 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
   // Teacher - Quick Share Copied Feedback
   const [copiedShareLinkProjId, setCopiedShareLinkProjId] = useState<string | null>(null);
 
+  studentStepRef.current = studentStep;
+
+  // Drops everything the teacher portal loaded (student PINs, songs, teacher list) from memory.
+  const clearTeacherData = () => {
+    setActiveTeacherPin('');
+    setSignedInTeacher(null);
+    setIsMasterAdmin(false);
+    setIsCloudServer(false);
+    setAllStudents([]);
+    setAllProjects([]);
+    setTeachers([]);
+    setMyClassIds([]);
+    setInspectedStudent(null);
+    setSelectedClassroomForView(null);
+    setTeacherPinInput('');
+    setNewTeacherPinField('');
+    setBulkText('');
+    setEditingStudentId(null);
+    setShowAssignModal(false);
+    setAssignSourceProject(null);
+  };
+
   // Refresh data when modal opens
   useEffect(() => {
     if (!isOpen) {
-      setActiveTeacherPin('');
+      clearTeacherData();
       return;
     }
     setLoginError(null);
@@ -304,6 +348,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
       loginTeacher(pinToTry)
         .then((data) => {
           setActiveTeacherPin(pinToTry);
+          setIsCloudServer(!!data.cloud);
           setSignedInTeacher(data.currentTeacher ?? null);
           setMyClassIds(data.myClassIds);
           setAllStudents(data.students);
@@ -321,12 +366,16 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
     }
 
     setMode('student');
+    // A slow answer must not pull the student back if they have already moved on to another step.
+    const stepWhenAsked = studentStepRef.current;
     fetchPublicRoster()
       .then((data) => {
         setRoster(data.roster);
         setAllowSelfCreate(data.allowStudentSelfCreate);
+        const stillOnSameStep = studentStepRef.current === stepWhenAsked;
         if (data.classrooms && data.classrooms.length > 0) {
           setClassrooms(data.classrooms);
+          if (!stillOnSameStep) return;
           // If student already selected a valid classroom, start at login step
           let savedGrade = '';
           let savedClassId = '';
@@ -347,7 +396,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
           } else {
             setStudentStep('grade');
           }
-        } else {
+        } else if (stillOnSameStep) {
           setStudentStep('login');
         }
       })
@@ -402,8 +451,56 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
     );
   }, [roster, firstNameInput]);
 
+  // Count the "too many tries" pause down once a second (and stop when nothing is paused).
+  const [pauseTimerOn, setPauseTimerOn] = useState<boolean>(false);
+  useEffect(() => {
+    // A pause that was running before a reload is still counting down.
+    if (isOpen && anyPinPauseActive()) setPauseTimerOn(true);
+  }, [isOpen]);
+  useEffect(() => {
+    if (!isOpen || !pauseTimerOn) return;
+    const id = window.setInterval(() => {
+      setPauseTick((n) => n + 1);
+      if (!anyPinPauseActive()) setPauseTimerOn(false);
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [isOpen, pauseTimerOn]);
+
+  // Idle sign-out for the teacher portal (shared Chromebooks). Only teacher data is cleared;
+  // a student's own sign-in on the device is never touched.
+  const teacherSignedIn = isOpen && mode === 'teacher_portal' && !!activeTeacherPin;
+  useEffect(() => {
+    if (!teacherSignedIn) return;
+    let lastActive = Date.now();
+    const touch = () => {
+      lastActive = Date.now();
+    };
+    const events = ['pointerdown', 'keydown', 'wheel', 'touchstart', 'mousemove'] as const;
+    events.forEach((ev) => window.addEventListener(ev, touch, { passive: true }));
+    const check = window.setInterval(() => {
+      if (Date.now() - lastActive < TEACHER_IDLE_MS) return;
+      clearTeacherData();
+      setPickedTeacher(null);
+      fetchPublicTeachers()
+        .then(setPublicTeachers)
+        .catch(() => setPublicTeachers([]));
+      setTeacherNotice(null);
+      setTeacherError('You were signed out because the teacher portal sat idle for 20 minutes. Please sign in again.');
+      setMode('teacher_auth');
+    }, 15_000);
+    return () => {
+      events.forEach((ev) => window.removeEventListener(ev, touch));
+      window.clearInterval(check);
+    };
+  }, [teacherSignedIn]);
+
   const classroomDlg = useDialogBehavior<HTMLDivElement>(onClose, { active: isOpen });
   if (!isOpen) return null;
+
+  // The PIN pause for whatever name/teacher is currently typed or picked.
+  const studentPinId = studentPinKey(normalizeStudentName(firstNameInput.trim()), selectedClassId);
+  const studentPauseLeft = pinPauseSecondsLeft(studentPinId);
+  const teacherPauseLeft = pinPauseSecondsLeft(teacherPinKey(pickedTeacher?.id));
 
   const isUntitledScore =
     !currentScore.title.trim() ||
@@ -438,6 +535,14 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
       return;
     }
 
+    const pinId = studentPinKey(normalizeStudentName(cleanName), selectedClassId);
+    const pausedFor = pinPauseSecondsLeft(pinId);
+    if (pausedFor > 0) {
+      setPauseTimerOn(true);
+      setLoginError(studentPauseMessage(pausedFor));
+      return;
+    }
+
     setIsLoading(true);
     try {
       const res = await loginStudent({
@@ -447,11 +552,27 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
         grade: selectedGrade || undefined,
         classGroup: selectedClassroom?.name || undefined,
       });
+      clearWrongPins(pinId);
       setStudentProjects(res.projects);
       setPinInput('');
       onStudentLoginSuccess(res.student, res.projects);
     } catch (err: any) {
-      setLoginError(err.message || 'Could not sign in. Please check your name and PIN.');
+      if (err?.status === 429) {
+        noteServerPause(pinId, err.retryAfterSeconds);
+        setPauseTimerOn(true);
+        setLoginError(studentPauseMessage(pinPauseSecondsLeft(pinId)));
+      } else if (err?.status === 401) {
+        // A wrong PIN: after 10 of them for the same student, rest for a minute.
+        const paused = noteWrongPin(pinId);
+        if (paused > 0) {
+          setPauseTimerOn(true);
+          setLoginError(studentPauseMessage(paused));
+        } else {
+          setLoginError(err.message || 'Could not sign in. Please check your name and PIN.');
+        }
+      } else {
+        setLoginError(err.message || 'Could not sign in. Please check your name and PIN.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -555,9 +676,19 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
     setTeacherError(null);
     setIsLoading(true);
     const pin = teacherPinInput.trim();
+    const pinId = teacherPinKey(pickedTeacher?.id);
+    const pausedFor = pinPauseSecondsLeft(pinId);
+    if (pausedFor > 0) {
+      setPauseTimerOn(true);
+      setTeacherError(teacherPauseMessage(pausedFor));
+      setIsLoading(false);
+      return;
+    }
     try {
       const data = await loginTeacher(pin, pickedTeacher?.id);
+      clearWrongPins(pinId);
       setActiveTeacherPin(pin);
+      setIsCloudServer(!!data.cloud);
       setSignedInTeacher(data.currentTeacher ?? null);
       setMyClassIds(data.myClassIds);
       setClassView(data.myClassIds.length ? 'mine' : 'all');
@@ -570,7 +701,17 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
       setTeacherPinInput('');
       setMode('teacher_portal');
     } catch (err: any) {
-      setTeacherError(err.message || 'Incorrect Teacher PIN.');
+      if (err?.status === 429) {
+        noteServerPause(pinId, err.retryAfterSeconds);
+        setPauseTimerOn(true);
+        setTeacherError(teacherPauseMessage(pinPauseSecondsLeft(pinId)));
+      } else if (err?.status === 401) {
+        const paused = noteWrongPin(pinId);
+        if (paused > 0) setPauseTimerOn(true);
+        setTeacherError(paused > 0 ? teacherPauseMessage(paused) : err.message || 'Incorrect Teacher PIN.');
+      } else {
+        setTeacherError(err.message || 'Incorrect Teacher PIN.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -613,6 +754,11 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
 
     if (!fn || !pin) {
       setTeacherError('Student first name and PIN are required.');
+      return;
+    }
+    if (pin.length < 3) {
+      // Students sign in with at least 3 characters, so a shorter PIN could never be used.
+      setTeacherError('The PIN must be at least 3 characters, or the student will not be able to sign in.');
       return;
     }
     if (containsProfanity(fn) || containsProfanity(cg)) {
@@ -717,6 +863,10 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
     });
 
     for (const entry of entries) {
+      if (entry.pin.length < 3) {
+        setTeacherError(`The PIN for "${entry.firstName}" is too short. PINs must be at least 3 characters so the student can sign in. Please fix before importing.`);
+        return;
+      }
       if (containsProfanity(entry.firstName) || containsProfanity(entry.classGroup)) {
         setTeacherError(`Roster list contains inappropriate language ("${entry.firstName}"). Please fix before importing.`);
         return;
@@ -840,6 +990,11 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
   const handlePrintLoginCards = () => {
     const win = window.open('', '_blank', 'width=800,height=650');
     if (!win) return;
+    try {
+      win.opener = null; // the cards window gets no handle back to this page
+    } catch {
+      // ignore
+    }
 
     const studentsToPrint = allStudents
       .filter((s) => {
@@ -864,9 +1019,9 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
         (s) => `
         <div class="card">
           <div class="app">🎵 Mr. Arthur's Music Lab</div>
-          <div class="name">${s.firstName}</div>
-          <div class="group">${s.grade ? `<strong>${s.grade}</strong> • ` : ''}${s.classGroup || 'General Music'}</div>
-          <div class="pin">PIN: <strong>${s.pin}</strong></div>
+          <div class="name">${escapeHtml(s.firstName)}</div>
+          <div class="group">${s.grade ? `<strong>${escapeHtml(s.grade)}</strong> • ` : ''}${escapeHtml(s.classGroup || 'General Music')}</div>
+          <div class="pin">PIN: <strong>${escapeHtml(s.pin)}</strong></div>
         </div>`
       )
       .join('');
@@ -1195,7 +1350,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
               <button
                 type="button"
                 onClick={() => {
-                  setActiveTeacherPin('');
+                  clearTeacherData();
                   setMode('student');
                 }}
                 className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 cursor-pointer"
@@ -1218,10 +1373,16 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
           {/* 1. STUDENT SIGN-IN VIEW (Logged Out) */}
           {mode === 'student' && !studentSession && (
             <div className="space-y-4">
-              {loginError && (
-                <div className="p-3 rounded-xl bg-rose-500/15 border border-rose-500/40 text-rose-200 text-xs font-medium">
-                  {loginError}
+              {studentPauseLeft > 0 ? (
+                <div role="status" className="p-3 rounded-xl bg-amber-500/15 border border-amber-400/40 text-amber-100 text-xs font-medium">
+                  {studentPauseMessage(studentPauseLeft)}
                 </div>
+              ) : (
+                loginError && (
+                  <div className="p-3 rounded-xl bg-rose-500/15 border border-rose-500/40 text-rose-200 text-xs font-medium">
+                    {loginError}
+                  </div>
+                )
               )}
 
               {/* STEP 1: CHOOSE GRADE */}
@@ -1484,7 +1645,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                     </button>
                     <button
                       type="submit"
-                      disabled={isLoading}
+                      disabled={isLoading || studentPauseLeft > 0}
                       className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-sm shadow-lg cursor-pointer disabled:opacity-50"
                     >
                       <LogIn className="w-4 h-4" />
@@ -1834,6 +1995,11 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                 <KeyRound className="w-8 h-8 text-amber-300 mx-auto" />
                 <div className="text-sm font-bold text-white">Who&apos;s signing in?</div>
               </div>
+              {teacherError && (
+                <div className="p-3 rounded-xl bg-amber-500/15 border border-amber-400/40 text-amber-100 text-xs font-medium">
+                  {teacherError}
+                </div>
+              )}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {publicTeachers.map((t) => (
                   <button
@@ -1857,10 +2023,16 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
           )}
           {mode === 'teacher_auth' && (pickedTeacher || (publicTeachers !== null && publicTeachers.length === 0)) && (
             <form onSubmit={handleTeacherUnlock} className="max-w-sm mx-auto py-4 space-y-4">
-              {teacherError && (
-                <div className="p-3 rounded-xl bg-rose-500/15 border border-rose-500/40 text-rose-200 text-xs font-medium">
-                  {teacherError}
+              {teacherPauseLeft > 0 ? (
+                <div role="status" className="p-3 rounded-xl bg-amber-500/15 border border-amber-400/40 text-amber-100 text-xs font-medium">
+                  {teacherPauseMessage(teacherPauseLeft)}
                 </div>
+              ) : (
+                teacherError && (
+                  <div className="p-3 rounded-xl bg-rose-500/15 border border-rose-500/40 text-rose-200 text-xs font-medium">
+                    {teacherError}
+                  </div>
+                )
               )}
 
               <div className="space-y-2 text-center">
@@ -1881,8 +2053,8 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
 
               <button
                 type="submit"
-                disabled={isLoading}
-                className="w-full py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-sm shadow-lg cursor-pointer"
+                disabled={isLoading || teacherPauseLeft > 0}
+                className="w-full py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-sm shadow-lg cursor-pointer disabled:opacity-50"
               >
                 {isLoading ? 'Unlocking...' : 'Unlock Teacher Portal'}
               </button>
@@ -2067,6 +2239,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                   onClick={() => {
                     loginTeacher(activeTeacherPin)
                       .then((d) => {
+                        setIsCloudServer(!!d.cloud);
                         setAllStudents(d.students);
                         setAllProjects(d.projects);
                         if (d.classrooms) setClassrooms(d.classrooms);
@@ -3359,7 +3532,9 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                       checked={allowSelfCreate}
                       onChange={async (e) => {
                         const nextVal = e.target.checked;
+                        const before = allowSelfCreate;
                         setAllowSelfCreate(nextVal);
+                        setTeacherError(null);
                         try {
                           await teacherUpdateSettings({
                             teacherPin: activeTeacherPin,
@@ -3367,14 +3542,24 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                           });
                           setTeacherNotice('Updated classroom sign-in setting.');
                           window.setTimeout(() => setTeacherNotice(null), 2500);
-                        } catch {
-                          // ignore
+                        } catch (err: any) {
+                          // The server did not accept it: show the real setting again.
+                          setAllowSelfCreate(before);
+                          setTeacherError(err?.message || 'Could not change the sign-in setting. It was not changed.');
                         }
                       }}
                       className="w-5 h-5 accent-amber-400 cursor-pointer shrink-0"
                     />
                   </div>
 
+                  {isCloudServer ? (
+                    <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-1">
+                      <div className="font-bold text-white text-sm">Change Teacher Admin PIN</div>
+                      <p className="text-slate-400 text-[12px]">
+                        Not available here. Teacher PINs are managed by the Master Admin under Teachers &amp; Schools, and the Master Admin PIN is set on the class server.
+                      </p>
+                    </div>
+                  ) : (
                   <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-2">
                     <div className="font-bold text-white text-sm">Change Teacher Admin PIN</div>
                     <div className="flex items-center gap-2">
@@ -3411,6 +3596,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                       </button>
                     </div>
                   </div>
+                  )}
 
                   <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 flex flex-wrap items-center justify-between gap-3">
                     <div>
@@ -3418,8 +3604,13 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                         Classroom Database Backup (.json)
                       </div>
                       <p className="text-slate-400 text-[12px]">
-                        Download a complete copy of all student names, PINs, and compositions, or restore from a backup file.
+                        Download a complete copy of all student names, PINs, and compositions{isCloudServer ? '.' : ', or restore from a backup file.'}
                       </p>
+                      {isCloudServer && (
+                        <p className="text-slate-500 text-[12px] mt-1">
+                          Restoring a backup is not available on the class server: it would not change any saved data. Ask Mr. Arthur if something needs to be restored.
+                        </p>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       <button
@@ -3430,6 +3621,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                         <Download className="w-3.5 h-3.5" />
                         <span>Download Backup</span>
                       </button>
+                      {!isCloudServer && (
                       <label className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 font-semibold cursor-pointer">
                         <Upload className="w-3.5 h-3.5" />
                         <span>Restore Backup</span>
@@ -3440,6 +3632,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                           className="hidden"
                         />
                       </label>
+                      )}
                     </div>
                   </div>
 
