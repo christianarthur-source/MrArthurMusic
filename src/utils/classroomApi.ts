@@ -1349,6 +1349,31 @@ export async function loginTeacher(teacherPin: string, teacherId?: string): Prom
   };
 }
 
+/**
+ * The class server's save/delete answers only say "ok" (no lists). When the answer has no student
+ * list, ask for the teacher overview so the teacher's roster does not look empty afterwards.
+ */
+async function withTeacherLists(
+  res: any,
+  teacherPin: string,
+  want: { students?: boolean; projects?: boolean },
+): Promise<{ students: StudentRecord[]; projects: SavedProjectRecord[] }> {
+  const needStudents = Boolean(want.students) && !Array.isArray(res?.students);
+  const needProjects = Boolean(want.projects) && !Array.isArray(res?.projects);
+  let fresh: any = null;
+  if (needStudents || needProjects) {
+    try {
+      fresh = await callClassroomBackend({ action: 'teacher_overview', teacherPin });
+    } catch {
+      throw new Error('That was saved, but the list could not be refreshed. Press Refresh to see it.');
+    }
+  }
+  return {
+    students: Array.isArray(res?.students) ? res.students : fresh?.students || [],
+    projects: Array.isArray(res?.projects) ? res.projects : fresh?.projects || [],
+  };
+}
+
 export async function teacherSaveStudent(params: {
   teacherPin: string;
   id?: string;
@@ -1362,10 +1387,7 @@ export async function teacherSaveStudent(params: {
     action: 'teacher_save_student',
     ...params,
   });
-  return {
-    students: res.students || [],
-    projects: res.projects || [],
-  };
+  return withTeacherLists(res, params.teacherPin, { students: true, projects: true });
 }
 
 export async function teacherBulkAddStudents(params: {
@@ -1376,7 +1398,7 @@ export async function teacherBulkAddStudents(params: {
     action: 'teacher_bulk_add',
     ...params,
   });
-  return res.students || [];
+  return (await withTeacherLists(res, params.teacherPin, { students: true })).students;
 }
 
 export async function teacherDeleteStudent(params: {
@@ -1388,10 +1410,7 @@ export async function teacherDeleteStudent(params: {
     action: 'teacher_delete_student',
     ...params,
   });
-  return {
-    students: res.students || [],
-    projects: res.projects || [],
-  };
+  return withTeacherLists(res, params.teacherPin, { students: true, projects: true });
 }
 
 export async function teacherRenameProject(params: {
@@ -1403,7 +1422,7 @@ export async function teacherRenameProject(params: {
     action: 'teacher_rename_project',
     ...params,
   });
-  return res.projects || [];
+  return (await withTeacherLists(res, params.teacherPin, { projects: true })).projects;
 }
 
 export async function teacherSaveClassroom(params: {
