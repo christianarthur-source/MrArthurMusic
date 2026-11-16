@@ -1,6 +1,7 @@
 import { SoundSettingsConfig, SoundKit, SyllableStyle } from '../types/game';
 import { audioEngine } from '../services/audioEngine';
 import { Volume2, Sliders, Music, Check, X, Volume1 } from 'lucide-react';
+import { useDialogBehavior } from '../../components/Modal';
 
 interface SoundSettingsProps {
   isOpen: boolean;
@@ -15,6 +16,7 @@ export const SoundSettings: React.FC<SoundSettingsProps> = ({
   settings,
   onChangeSettings
 }) => {
+  const dlg = useDialogBehavior<HTMLDivElement>(onClose, { active: isOpen });
   if (!isOpen) return null;
 
   const kits: { id: SoundKit; name: string; icon: string; desc: string }[] = [
@@ -29,7 +31,7 @@ export const SoundSettings: React.FC<SoundSettingsProps> = ({
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
+    <div ref={dlg} role="dialog" aria-modal="true" aria-label="Sound settings" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
       <div className="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden">
         {/* Header */}
         <div className="p-5 sm:p-6 border-b border-slate-800 flex items-center justify-between bg-slate-950/50">

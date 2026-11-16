@@ -7,6 +7,7 @@ import { SoundSettingsConfig } from '../types/game';
 import { formatCountingSyllable } from '../utils/rhythmCounting';
 import { Play, Check, Trash2, ArrowRight, Volume2, Sparkles, RotateCcw } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { alertDialog } from '../../components/AppDialogs';
 
 interface BeatBuilderGameProps {
   levelConfig: LevelConfig;
@@ -153,7 +154,7 @@ export const BeatBuilderGame: React.FC<BeatBuilderGameProps> = ({
       setPlacedUnits(prev => [...prev, unit]);
       setSelectedUnitIndex(null);
     } else {
-      alert(`"${unit.name}" takes ${unit.durationBeats} beat(s), but only ${beatsRemaining} beat(s) remain in this 4-beat measure. Clear a block or pick a smaller rhythm!`);
+      void alertDialog(`"${unit.name}" takes ${unit.durationBeats} beat(s), but only ${beatsRemaining} beat(s) remain in this 4-beat measure. Clear a block or pick a smaller rhythm!`);
     }
   };
 
@@ -218,7 +219,7 @@ export const BeatBuilderGame: React.FC<BeatBuilderGameProps> = ({
   const handleSubmitCheck = () => {
     // 1. Check if measure is complete (strictly 4 beats)
     if (totalBeatsPlaced < 4) {
-      alert(`Your groove has ${totalBeatsPlaced} beats. Please fill all 4 beats before submitting!`);
+      void alertDialog(`Your groove has ${totalBeatsPlaced} beats. Please fill all 4 beats before submitting!`);
       return;
     }
 

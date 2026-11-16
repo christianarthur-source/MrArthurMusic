@@ -15,6 +15,7 @@ import {
 import { getTempoDescription } from './Header';
 import confetti from 'canvas-confetti';
 import { containsProfanity } from '../utils/profanityFilter';
+import { useDialogBehavior } from '../../components/Modal';
 
 interface SheetMusicModalProps {
   isOpen: boolean;
@@ -138,6 +139,7 @@ export const SheetMusicModal: React.FC<SheetMusicModalProps> = ({
   const [profanityWarning, setProfanityWarning] = useState<string | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
 
+  const dlg = useDialogBehavior<HTMLDivElement>(onClose, { active: isOpen });
   if (!isOpen) return null;
 
   const tempoDesc = getTempoDescription(bpm);
@@ -449,7 +451,7 @@ export const SheetMusicModal: React.FC<SheetMusicModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-3 sm:p-6 backdrop-blur-sm overflow-y-auto">
+    <div ref={dlg} role="dialog" aria-modal="true" aria-label="Sheet music" className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-3 sm:p-6 backdrop-blur-sm overflow-y-auto">
       <div className="relative my-auto w-full max-w-5xl rounded-3xl border-2 border-amber-400/60 bg-slate-900 text-white shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
         {/* Modal Header Bar */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 bg-slate-950 p-4 sm:px-6">

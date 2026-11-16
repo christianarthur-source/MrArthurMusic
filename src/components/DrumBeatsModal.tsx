@@ -3,6 +3,7 @@ import { DRUM_GROOVES, DrumGroove } from '../data/drumGrooves';
 import { DrumKitType } from '../audio/acousticSamples';
 import { X, Play, Square, Plus } from 'lucide-react';
 import { soundEngine } from '../audio/soundEngine';
+import { useDialogBehavior } from './Modal';
 
 interface DrumBeatsModalProps {
   isOpen: boolean;
@@ -112,6 +113,7 @@ export const DrumBeatsModal: React.FC<DrumBeatsModalProps> = ({
     return DRUM_GROOVES.filter(activeCategoryConfig.countPredicate);
   }, [activeCategoryConfig]);
 
+  const dlg = useDialogBehavior<HTMLDivElement>(onClose, { active: isOpen });
   if (!isOpen) return null;
 
   const handleTogglePreview = (groove: DrumGroove) => {
@@ -147,7 +149,7 @@ export const DrumBeatsModal: React.FC<DrumBeatsModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-xs p-3 sm:p-4">
+    <div ref={dlg} role="dialog" aria-modal="true" aria-label="Drum beats" className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-xs p-3 sm:p-4">
       <div className="bg-slate-900 text-white rounded-2xl sm:rounded-3xl shadow-2xl max-w-4xl w-full border border-slate-700/80 animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[88vh] overflow-hidden">
         {/* Header */}
         <div className="px-4 py-2.5 border-b border-slate-800 flex items-center justify-between bg-slate-900/95">

@@ -8,6 +8,7 @@ import { DynamicEars } from './DynamicEars';
 import { MusicTuner } from './MusicTuner';
 import { MusicSymbolMatch } from './MusicSymbolMatch';
 import { SongStarter } from './SongStarter';
+import { useDialogBehavior } from '../Modal';
 
 export type ToolId =
   | 'metronome'
@@ -121,10 +122,11 @@ export const ClassroomToolBoxModal: React.FC<ClassroomToolBoxModalProps> = ({
     }
   }, [isOpen, initialTool]);
 
+  const dlg = useDialogBehavior<HTMLDivElement>(onClose, { active: isOpen });
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-950/85 backdrop-blur-md animate-in fade-in duration-200">
+    <div ref={dlg} role="dialog" aria-modal="true" aria-label="Tool Box" className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-950/85 backdrop-blur-md animate-in fade-in duration-200">
       <div className="relative w-full max-w-5xl max-h-[92vh] bg-slate-900 border-2 border-slate-800 rounded-3xl shadow-2xl flex flex-col overflow-hidden text-slate-100">
         {/* Modal Header */}
         <div className="px-5 py-4 border-b border-slate-800/90 bg-slate-950/90 flex items-center justify-between gap-4 shrink-0">

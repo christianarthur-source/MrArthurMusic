@@ -4,6 +4,7 @@ import { apiClient } from '../services/apiClient';
 import { ALL_BADGES } from '../data/rhythmCatalog';
 import { containsInappropriateLanguage, PROFANITY_WARNING_MESSAGE } from '../utils/profanityFilter';
 import { User, KeyRound, Award, Flame, Star, LogOut, Check, X, ShieldAlert, Edit3 } from 'lucide-react';
+import { useDialogBehavior } from '../../components/Modal';
 
 interface StudentProfileModalProps {
   isOpen: boolean;
@@ -60,6 +61,7 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
   const isNameInappropriate = nameInput.trim() ? containsInappropriateLanguage(nameInput.trim()) : false;
   const isEditNameInappropriate = editName.trim() ? containsInappropriateLanguage(editName.trim()) : false;
 
+  const dlg = useDialogBehavior<HTMLDivElement>(onClose, { active: isOpen });
   if (!isOpen) return null;
 
   const handleSaveOrLogin = async (e: React.FormEvent) => {
@@ -134,7 +136,7 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
     : 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
+    <div ref={dlg} role="dialog" aria-modal="true" aria-label="Student profile" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in duration-200">
       <div className="w-full max-w-xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="p-5 sm:p-6 border-b border-slate-800 flex items-center justify-between bg-slate-950/50">

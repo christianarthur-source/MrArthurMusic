@@ -16,6 +16,7 @@ import {
   Check,
 } from 'lucide-react';
 import { soundEngine } from '../audio/soundEngine';
+import { DialogBehavior } from '../../components/Modal';
 
 interface BeatGridProps {
   tracks: BeatTrack[];
@@ -610,6 +611,7 @@ export const BeatGrid: React.FC<BeatGridProps> = ({
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-md p-4 animate-in fade-in duration-150"
           onClick={() => setSelectedTrackIndexForSound(null)}
         >
+          <DialogBehavior label="Choose a drum sound" onClose={() => setSelectedTrackIndexForSound(null)} />
           <div
             className="relative w-full max-w-lg rounded-3xl border-2 border-pink-400/80 bg-slate-900 p-5 sm:p-6 shadow-[0_0_50px_rgba(244,63,94,0.35)] overflow-hidden"
             onClick={(e) => e.stopPropagation()}

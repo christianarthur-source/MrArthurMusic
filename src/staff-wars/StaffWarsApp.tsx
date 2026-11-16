@@ -44,6 +44,7 @@ import {
 import { staffWarsAudio } from './audio/staffWarsAudio';
 import { livePitchDetector, PitchDetectionResult } from './audio/pitchDetector';
 import { SpaceCanvas } from './components/SpaceCanvas';
+import { DialogBehavior } from '../components/Modal';
 
 interface StaffWarsAppProps {
   onBackToHub: () => void;
@@ -1546,6 +1547,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
           className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-xs p-4 animate-in fade-in duration-150"
           onClick={() => setShowLeaderboard(false)}
         >
+          <DialogBehavior label="High scores" onClose={() => setShowLeaderboard(false)} />
           <div
             className="bg-slate-900 border-2 border-amber-400/50 rounded-3xl shadow-[0_0_50px_rgba(251,191,36,0.25)] max-w-md w-full p-6 text-white space-y-5 animate-in zoom-in-95 duration-150 flex flex-col max-h-[85vh] overflow-hidden"
             onClick={(e) => e.stopPropagation()}

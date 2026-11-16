@@ -34,6 +34,8 @@ import { Sparkles, Grid3X3, Compass, Radio, Music2, Layers, Activity, Save, X } 
 import { extractSongFromLocation } from './utils/songSharing';
 import { cleanProfanity, containsProfanity } from './utils/profanityFilter';
 import { StudentSession, saveStudentProject } from '../utils/classroomApi';
+import { DialogBehavior } from '../components/Modal';
+import { alertDialog } from '../components/AppDialogs';
 
 type AppMode = 'both' | 'grid' | 'melody' | 'bass' | 'explorer' | 'pads' | 'xylophone';
 
@@ -1124,7 +1126,7 @@ export default function BeatMachineApp({
         }
       }
     } catch (err: any) {
-      alert(err?.message || 'Failed to save beat.');
+      void alertDialog(err?.message || 'Failed to save beat.');
     } finally {
       setIsSavingBeat(false);
     }
@@ -1580,6 +1582,7 @@ export default function BeatMachineApp({
         {/* Save Beat Modal */}
         {isSaveBeatModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-xs">
+            <DialogBehavior label="Save your beat" onClose={() => setIsSaveBeatModalOpen(false)} />
             <div className="relative w-full max-w-md rounded-3xl border-3 border-amber-400 bg-slate-900 p-6 text-white shadow-2xl">
               <button
                 type="button"

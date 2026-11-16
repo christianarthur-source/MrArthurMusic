@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { StudentProfile, LeaderboardEntry } from '../types/game';
 import { apiClient } from '../services/apiClient';
 import { loginTeacher } from '../../utils/classroomApi';
+import { useDialogBehavior } from '../../components/Modal';
+import { alertDialog, confirmDialog } from '../../components/AppDialogs';
 
 interface TeacherDashboardModalProps {
   isOpen: boolean;
@@ -119,12 +121,12 @@ export const TeacherDashboardModal: React.FC<TeacherDashboardModalProps> = ({
       loadStudents();
       if (onStudentUpdated) onStudentUpdated();
     } catch (err: any) {
-      alert(err.message || 'Failed to update student');
+      void alertDialog(err.message || 'Failed to update student');
     }
   };
 
   const handleDelete = async (id: string, name: string) => {
-    if (confirm(`Are you sure you want to delete student "${name}"? This action cannot be undone.`)) {
+    if (await confirmDialog(`Are you sure you want to delete student "${name}"? This action cannot be undone.`, { confirmLabel: 'Delete', danger: true })) {
       try {
         await apiClient.deleteStudentProfile(id);
         setStudents(prev => prev.filter(s => s.id !== id));
@@ -152,10 +154,11 @@ export const TeacherDashboardModal: React.FC<TeacherDashboardModalProps> = ({
       loadStudents();
       if (onStudentUpdated) onStudentUpdated();
     } catch (err: any) {
-      alert(err.message || 'Failed to create student');
+      void alertDialog(err.message || 'Failed to create student');
     }
   };
 
+  const dlg = useDialogBehavior<HTMLDivElement>(onClose, { active: isOpen });
   if (!isOpen) return null;
 
   const filteredStudents = students.filter(s => {
@@ -167,7 +170,7 @@ export const TeacherDashboardModal: React.FC<TeacherDashboardModalProps> = ({
   const uniqueClasses = ['ALL', ...Array.from(new Set(students.map(s => s.classCode)))];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+    <div ref={dlg} role="dialog" aria-modal="true" aria-label="Teacher dashboard" className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
       <div className="bg-slate-900 border border-purple-500/40 rounded-3xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden text-white">
         {/* Header */}
         <div className="bg-gradient-to-r from-purple-900 via-indigo-900 to-slate-900 px-6 py-4 flex items-center justify-between border-b border-purple-500/30">

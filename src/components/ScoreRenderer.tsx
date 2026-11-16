@@ -60,6 +60,7 @@ import {
   TripletBracketSymbol,
   WholeRestSymbol,
 } from './NotationSymbols';
+import { DialogBehavior } from './Modal';
 
 interface ScoreRendererProps {
   score: Score;
@@ -2414,6 +2415,13 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
             setInstrumentSearch('');
           }}
         >
+          <DialogBehavior
+            label="Choose an instrument for this part"
+            onClose={() => {
+              setPickerTrackIndex(null);
+              setInstrumentSearch('');
+            }}
+          />
           <div
             className="bg-slate-900 text-white rounded-3xl shadow-2xl max-w-xl w-full border border-slate-700/90 animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[85vh] overflow-hidden"
             onClick={(e) => e.stopPropagation()}

@@ -11,6 +11,7 @@ import confetti from 'canvas-confetti';
 import { SharedSongData } from '../types';
 import { createShareableSongUrl } from '../utils/songSharing';
 import { createShortLink } from '../../utils/shortLinkService';
+import { useDialogBehavior } from '../../components/Modal';
 
 interface ShareModalProps {
   isOpen: boolean;
@@ -59,6 +60,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
     };
   }, [isOpen, songData]);
 
+  const dlg = useDialogBehavior<HTMLDivElement>(onClose, { active: isOpen });
   if (!isOpen) return null;
 
   const handleCopyLink = () => {
@@ -75,7 +77,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   const isShortLink = shareableUrl.includes('?s=');
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-xs">
+    <div ref={dlg} role="dialog" aria-modal="true" aria-label="Share your beat" className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-xs">
       <div className="relative w-full max-w-lg rounded-3xl border-4 border-amber-400 bg-slate-900 p-6 text-white shadow-2xl">
         {/* Close Button */}
         <button

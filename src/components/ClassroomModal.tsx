@@ -74,6 +74,8 @@ import {
 } from '../utils/classroomApi';
 import { createShortLink } from '../utils/shortLinkService';
 import { containsProfanity } from '../utils/profanityFilter';
+import { DialogBehavior, useDialogBehavior } from './Modal';
+import { confirmDialog, promptDialog } from './AppDialogs';
 
 function safeFormatDate(dateVal: any, opts: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' }): string {
   if (!dateVal) return '';
@@ -432,6 +434,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
     );
   }, [roster, firstNameInput]);
 
+  const classroomDlg = useDialogBehavior<HTMLDivElement>(onClose, { active: isOpen });
   if (!isOpen) return null;
 
   const isUntitledScore =
@@ -520,7 +523,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
 
   const handleStudentDeleteSong = async (project: SavedProjectRecord) => {
     if (!studentSession) return;
-    if (!window.confirm(`Delete "${project.title}" from your saved songs?`)) return;
+    if (!(await confirmDialog(`Delete "${project.title}" from your saved songs?`, { confirmLabel: 'Delete', danger: true }))) return;
     try {
       await deleteStudentProject({
         projectId: project.id,
@@ -710,7 +713,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
       stuProjCount > 0
         ? `Remove ${stu.firstName} and also delete their ${stuProjCount} saved song(s)?`
         : `Remove ${stu.firstName} from the class roster?`;
-    if (!window.confirm(msg)) return;
+    if (!(await confirmDialog(msg, { confirmLabel: 'Delete', danger: true }))) return;
     try {
       const res = await teacherDeleteStudent({
         teacherPin: activeTeacherPin,
@@ -800,7 +803,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
 
   const handleDeleteClassroom = async (cls: ClassroomRecord) => {
     const count = allStudents.filter((s) => s.classId === cls.id || s.classGroup === cls.name).length;
-    if (!window.confirm(`Delete classroom "${cls.name}"? ${count > 0 ? `(${count} students currently assigned)` : ''}`)) return;
+    if (!(await confirmDialog(`Delete classroom "${cls.name}"? ${count > 0 ? `(${count} students currently assigned)` : ''}`, { confirmLabel: 'Delete', danger: true }))) return;
     try {
       const res = await teacherDeleteClassroom({
         teacherPin: activeTeacherPin,
@@ -852,7 +855,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
       setTeacherError('Master Admin account cannot be deleted.');
       return;
     }
-    if (!window.confirm(`Delete teacher account for "${t.name}"?`)) return;
+    if (!(await confirmDialog(`Delete teacher account for "${t.name}"?`, { confirmLabel: 'Delete', danger: true }))) return;
     try {
       const res = await teacherDeleteTeacher({
         teacherPin: activeTeacherPin,
@@ -955,7 +958,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
   };
 
   const handleTeacherDeleteSong = async (proj: SavedProjectRecord) => {
-    if (!window.confirm(`Delete "${proj.title}" by ${proj.studentName}?`)) return;
+    if (!(await confirmDialog(`Delete "${proj.title}" by ${proj.studentName}?`, { confirmLabel: 'Delete', danger: true }))) return;
     try {
       await deleteStudentProject({
         projectId: proj.id,
@@ -1172,6 +1175,10 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
 
   return (
     <div
+      ref={classroomDlg}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Classroom and saved songs"
       className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4"
       onClick={onClose}
     >
@@ -3080,9 +3087,10 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                       onClick={async () => {
                         let titleToSave = currentScore.title.trim();
                         if (isUntitledScore || !titleToSave) {
-                          const prompted = window.prompt(
+                          const prompted = await promptDialog(
                             'Enter a title for this song to save under your teacher projects:',
-                            'Class Lesson Melody'
+                            'Class Lesson Melody',
+                            { confirmLabel: 'Save' }
                           );
                           if (!prompted || !prompted.trim()) return;
                           titleToSave = prompted.trim();
@@ -3506,6 +3514,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
           className="fixed inset-0 z-60 bg-slate-950/85 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in"
           onClick={() => setInspectedStudent(null)}
         >
+          <DialogBehavior label="Student work" onClose={() => setInspectedStudent(null)} />
           <div
             className="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-xl max-h-[85vh] flex flex-col overflow-hidden text-white"
             onClick={(e) => e.stopPropagation()}
@@ -3657,6 +3666,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
           className="fixed inset-0 z-60 bg-slate-950/85 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in"
           onClick={() => setShowAssignModal(false)}
         >
+          <DialogBehavior label="Send an assignment" onClose={() => setShowAssignModal(false)} />
           <div
             className="bg-slate-900 border border-purple-500/40 rounded-2xl shadow-2xl w-full max-w-xl max-h-[88vh] flex flex-col overflow-hidden text-white"
             onClick={(e) => e.stopPropagation()}

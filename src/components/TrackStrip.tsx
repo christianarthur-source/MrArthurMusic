@@ -12,6 +12,7 @@ import {
   RotateCcw,
   Radio,
 } from 'lucide-react';
+import { useDialogBehavior } from './Modal';
 
 interface TrackStripProps {
   tracks: Track[];
@@ -71,6 +72,7 @@ export const TrackStrip: React.FC<TrackStripProps> = ({
 }) => {
   const [selectedFxTrackIdx, setSelectedFxTrackIdx] = useState<number>(0);
 
+  const dlg = useDialogBehavior<HTMLDivElement>(onClose, { active: isOpen });
   if (!isOpen) return null;
 
   const activeFxTrackIdx = Math.min(selectedFxTrackIdx, Math.max(0, tracks.length - 1));
@@ -94,7 +96,7 @@ export const TrackStrip: React.FC<TrackStripProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6">
+    <div ref={dlg} role="dialog" aria-modal="true" aria-label="Mixer" className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6">
       {/* Backdrop overlay */}
       <div
         onClick={onClose}

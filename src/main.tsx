@@ -2,6 +2,7 @@ import {lazy, Suspense} from 'react';
 import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
 import {ErrorBoundary} from './components/ErrorBoundary';
+import {AppDialogHost} from './components/AppDialogs';
 import './index.css';
 
 // /wolfie (also /wolfi and /prostaff) is the advanced notation editor; it loads its own code only there.
@@ -18,5 +19,6 @@ createRoot(document.getElementById('root')!).render(
     ) : (
       <App />
     )}
+    <AppDialogHost />
   </ErrorBoundary>,
 );

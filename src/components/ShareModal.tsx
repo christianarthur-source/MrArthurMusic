@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Copy, Check, Share2, Globe, Loader2, Sparkles, FileAudio } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { useDialogBehavior } from './Modal';
 
 interface ShareModalProps {
   isOpen: boolean;
@@ -20,6 +21,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   const [copied, setCopied] = useState<boolean>(false);
   const [isExportingWav, setIsExportingWav] = useState<boolean>(false);
 
+  const dlg = useDialogBehavior<HTMLDivElement>(onClose, { active: isOpen });
   if (!isOpen) return null;
 
   const handleCopy = () => {
@@ -35,7 +37,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   const isShortLink = shareUrl.includes('?s=');
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-xs p-4">
+    <div ref={dlg} role="dialog" aria-modal="true" aria-label="Share your song" className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-xs p-4">
       <div className="bg-slate-900 text-white rounded-3xl shadow-2xl max-w-lg w-full border border-slate-700/80 animate-in fade-in zoom-in-95 duration-150 flex flex-col overflow-hidden">
         {/* Header */}
         <div className="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-900/90">

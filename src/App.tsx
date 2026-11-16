@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { DialogBehavior } from './components/Modal';
+import { alertDialog } from './components/AppDialogs';
 import {
   AccidentalType,
   ArticulationType,
@@ -2374,7 +2376,7 @@ export default function App() {
       try {
         const loadedScore = JSON.parse(event.target?.result as string);
         if (!isScoreShape(loadedScore)) {
-          alert('That file is not a Staff Composer song. Please choose a song file saved from this site.');
+          void alertDialog('That file is not a Staff Composer song. Please choose a song file saved from this site.');
         } else {
           const cleanScore = sanitizeLoadedScore(loadedScore);
           setCurrentProjectId(null);
@@ -2385,7 +2387,7 @@ export default function App() {
           setSelection({ trackIndex: 0, measureIndex: 0, itemIndex: 0 });
         }
       } catch {
-        alert('Invalid score file format. Please upload a valid Noteflight Junior JSON score.');
+        void alertDialog('Invalid score file format. Please upload a valid Noteflight Junior JSON score.');
       }
     };
     reader.readAsText(file);
@@ -2478,6 +2480,14 @@ export default function App() {
           }}
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-xs animate-in fade-in duration-150 cursor-pointer"
         >
+          <DialogBehavior
+            label="Mr. Arthur"
+            onClose={() => {
+              setIsAvatarOpen(false);
+              adminKeyBufferRef.current = '';
+              secretKeyBufferRef.current = '';
+            }}
+          />
           <div
             className="relative bg-slate-900 border-2 border-amber-400/60 rounded-3xl p-4 sm:p-5 shadow-2xl max-w-sm w-full flex flex-col items-center gap-3 animate-in zoom-in-95 duration-150 cursor-pointer select-none"
           >

@@ -6,6 +6,7 @@ import {
   EnsembleTemplate,
   createScoreFromEnsemble,
 } from '../data/ensembleTemplates';
+import { useDialogBehavior } from './Modal';
 
 interface EnsembleTemplatesModalProps {
   isOpen: boolean;
@@ -47,6 +48,7 @@ export const EnsembleTemplatesModal: React.FC<EnsembleTemplatesModalProps> = ({
     });
   }, [selectedCategory, searchQuery]);
 
+  const dlg = useDialogBehavior<HTMLDivElement>(onClose, { active: isOpen });
   if (!isOpen) return null;
 
   const handleSelectTemplate = (template: EnsembleTemplate) => {
@@ -56,7 +58,7 @@ export const EnsembleTemplatesModal: React.FC<EnsembleTemplatesModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 backdrop-blur-xs p-3 sm:p-4 select-none">
+    <div ref={dlg} role="dialog" aria-modal="true" aria-label="Ensemble templates" className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 backdrop-blur-xs p-3 sm:p-4 select-none">
       <div className="bg-slate-900 border border-slate-700 text-slate-100 rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         {/* Header */}
         <div className="px-5 py-4 border-b border-slate-800 flex items-center justify-between gap-3 bg-slate-900/90">

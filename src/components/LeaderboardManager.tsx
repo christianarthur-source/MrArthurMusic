@@ -5,6 +5,7 @@ import {
   fetchStaffWarsLeaderboard,
   teacherRemoveLeaderboardEntry,
 } from '../utils/classroomApi';
+import { confirmDialog } from './AppDialogs';
 
 type Game = 'staff_wars' | 'rhythm_rockstars';
 
@@ -78,7 +79,7 @@ export function LeaderboardManager({ teacherPin }: { teacherPin: string }) {
 
   const remove = async (row: Row) => {
     const gameLabel = GAMES.find((g) => g.id === game)?.label;
-    if (!window.confirm(`Remove ${row.name} (${row.score.toLocaleString()}) from the ${gameLabel} leaderboard?`)) return;
+    if (!(await confirmDialog(`Remove ${row.name} (${row.score.toLocaleString()}) from the ${gameLabel} leaderboard?`, { confirmLabel: 'Remove', danger: true }))) return;
     setBusyKey(row.key);
     setError(null);
     try {

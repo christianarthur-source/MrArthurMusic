@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Download, Play, Pause, Sparkles, X, Music, CheckCircle } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { useDialogBehavior } from '../../components/Modal';
 
 interface ExportModalProps {
   isOpen: boolean;
@@ -37,6 +38,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, audio
     }
   }, [isOpen, audioBlob]);
 
+  const dlg = useDialogBehavior<HTMLDivElement>(onClose, { active: !!(isOpen && audioBlob) });
   if (!isOpen || !audioBlob) return null;
 
   const togglePlay = () => {
@@ -68,7 +70,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, audio
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-xs">
+    <div ref={dlg} role="dialog" aria-modal="true" aria-label="Save your beat as audio" className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-xs">
       <div className="relative w-full max-w-md rounded-3xl border-4 border-amber-400 bg-slate-900 p-6 text-center text-white shadow-2xl">
         <button
           onClick={onClose}

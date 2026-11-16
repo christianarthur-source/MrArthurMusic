@@ -1,5 +1,6 @@
 import React from 'react';
 import { X, Keyboard, Sparkles, Lightbulb } from 'lucide-react';
+import { useDialogBehavior } from './Modal';
 
 interface HelpModalProps {
   isOpen: boolean;
@@ -7,6 +8,7 @@ interface HelpModalProps {
 }
 
 export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
+  const dlg = useDialogBehavior<HTMLDivElement>(onClose, { active: isOpen });
   if (!isOpen) return null;
 
   const shortcuts = [
@@ -23,7 +25,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
+    <div ref={dlg} role="dialog" aria-modal="true" aria-label="Keyboard shortcuts and student guide" className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
         <div className="flex items-center justify-between pb-3 border-b border-slate-200">
           <div className="flex items-center gap-2">

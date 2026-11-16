@@ -3,6 +3,7 @@ import { INSTRUMENTS } from '../data/instruments';
 import { InstrumentCategory, InstrumentDefinition } from '../types/music';
 import { X, Plus, Volume2, Search, Drum } from 'lucide-react';
 import { soundEngine } from '../audio/soundEngine';
+import { useDialogBehavior } from './Modal';
 
 interface InstrumentModalProps {
   isOpen: boolean;
@@ -175,6 +176,7 @@ export const InstrumentModal: React.FC<InstrumentModalProps> = ({
     });
   }, [isOpen, selectedCategory, filteredInstruments]);
 
+  const dlg = useDialogBehavior<HTMLDivElement>(onClose, { active: isOpen });
   if (!isOpen) return null;
 
   const handlePreview = async (e: React.MouseEvent, inst: InstrumentDefinition) => {
@@ -197,7 +199,7 @@ export const InstrumentModal: React.FC<InstrumentModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-xs p-3 sm:p-4">
+    <div ref={dlg} role="dialog" aria-modal="true" aria-label="Choose an instrument" className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-xs p-3 sm:p-4">
       <div className="bg-slate-900 text-white rounded-2xl sm:rounded-3xl shadow-2xl max-w-4xl w-full border border-slate-700/80 animate-in fade-in zoom-in-95 duration-150 flex flex-col max-h-[88vh] overflow-hidden">
         {/* Header */}
         <div className="px-5 py-3.5 border-b border-slate-800 flex items-center justify-between bg-slate-900/95">

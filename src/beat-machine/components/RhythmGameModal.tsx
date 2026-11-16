@@ -3,6 +3,7 @@ import { Sparkles, Trophy, X, RotateCcw, Volume2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { soundEngine } from '../audio/soundEngine';
 import { SoundType } from '../types';
+import { useDialogBehavior } from '../../components/Modal';
 
 interface RhythmGameModalProps {
   isOpen: boolean;
@@ -53,6 +54,7 @@ export const RhythmGameModal: React.FC<RhythmGameModalProps> = ({ isOpen, onClos
     };
   }, [isOpen, level]);
 
+  const dlg = useDialogBehavior<HTMLDivElement>(onClose, { active: isOpen });
   if (!isOpen) return null;
 
   const startLevelDemo = () => {
@@ -135,7 +137,7 @@ export const RhythmGameModal: React.FC<RhythmGameModalProps> = ({ isOpen, onClos
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-xs">
+    <div ref={dlg} role="dialog" aria-modal="true" aria-label="Rhythm game" className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-xs">
       <div className="relative w-full max-w-lg rounded-3xl border-4 border-indigo-500 bg-slate-900 p-6 text-white shadow-2xl">
         <button
           onClick={onClose}

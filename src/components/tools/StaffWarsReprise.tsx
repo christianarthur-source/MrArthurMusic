@@ -31,6 +31,7 @@ import {
   getToolboxAudioContext,
 } from './toolboxAudio';
 import { Pitch } from '../../types/music';
+import { alertDialog } from '../AppDialogs';
 
 export type StaffWarsClef = 'treble' | 'bass' | 'alto' | 'tenor' | 'grand';
 export type StaffWarsMode = 'arcade' | 'live-mic';
@@ -548,7 +549,7 @@ export const StaffWarsReprise: React.FC = () => {
       micRafRef.current = requestAnimationFrame(detectLoop);
     } catch {
       setIsMicListening(false);
-      alert('Microphone access denied or unavailable. You can still play in Arcade Button Mode!');
+      void alertDialog('Microphone access denied or unavailable. You can still play in Arcade Button Mode!');
     }
   };
 

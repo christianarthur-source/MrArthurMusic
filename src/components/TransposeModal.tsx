@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, ArrowUp, ArrowDown, Music2, RefreshCw, Layers } from 'lucide-react';
 import { KeySignature, Score } from '../types/music';
 import { transposePitch, transposeKeySignature } from '../utils/musicMath';
+import { useDialogBehavior } from './Modal';
 
 interface TransposeModalProps {
   isOpen: boolean;
@@ -22,6 +23,7 @@ export const TransposeModal: React.FC<TransposeModalProps> = ({
   const [targetScope, setTargetScope] = useState<'all' | 'selected'>('all');
   const [updateKeySignature, setUpdateKeySignature] = useState<boolean>(true);
 
+  const dlg = useDialogBehavior<HTMLDivElement>(onClose, { active: isOpen });
   if (!isOpen) return null;
 
   const activeTrack = score.tracks[selectedTrackIndex] || score.tracks[0];
@@ -76,7 +78,7 @@ export const TransposeModal: React.FC<TransposeModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-xs p-4">
+    <div ref={dlg} role="dialog" aria-modal="true" aria-label="Transpose" className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-xs p-4">
       <div className="bg-slate-900 text-white rounded-3xl shadow-2xl max-w-md w-full border border-slate-700/80 animate-in fade-in zoom-in-95 duration-150 flex flex-col overflow-hidden">
         {/* Header */}
         <div className="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-900/90">

@@ -1,5 +1,6 @@
 import React from 'react';
 import { X, ShieldCheck, Printer, Lock, CheckCircle2, FileText, UserCheck, Server, AlertCircle } from 'lucide-react';
+import { useDialogBehavior } from './Modal';
 
 interface EdLawPrivacyModalProps {
   isOpen: boolean;
@@ -7,6 +8,7 @@ interface EdLawPrivacyModalProps {
 }
 
 export const EdLawPrivacyModal: React.FC<EdLawPrivacyModalProps> = ({ isOpen, onClose }) => {
+  const dlg = useDialogBehavior<HTMLDivElement>(onClose, { active: isOpen });
   if (!isOpen) return null;
 
   const handlePrint = () => {
@@ -14,7 +16,7 @@ export const EdLawPrivacyModal: React.FC<EdLawPrivacyModalProps> = ({ isOpen, on
   };
 
   return (
-    <div
+    <div ref={dlg} role="dialog" aria-modal="true" aria-label="Privacy notice"
       className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5"
       onClick={onClose}
     >

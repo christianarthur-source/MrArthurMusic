@@ -2,6 +2,7 @@ import React from 'react';
 import { TEMPLATES } from '../data/templates';
 import { Score } from '../types/music';
 import { X, BookOpen, Star, Music, Award } from 'lucide-react';
+import { useDialogBehavior } from './Modal';
 
 interface TemplatesModalProps {
   isOpen: boolean;
@@ -14,10 +15,11 @@ export const TemplatesModal: React.FC<TemplatesModalProps> = ({
   onClose,
   onSelectScore,
 }) => {
+  const dlg = useDialogBehavior<HTMLDivElement>(onClose, { active: isOpen });
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
+    <div ref={dlg} role="dialog" aria-modal="true" aria-label="Song templates and classroom challenges" className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-xl w-full p-6 border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
         <div className="flex items-center justify-between pb-4 border-b border-slate-200">
           <div>

@@ -15,6 +15,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { containsProfanity } from '../utils/profanityFilter';
+import { DialogBehavior } from '../../components/Modal';
 
 interface SoundExplorerProps {
   onAssignToTrack?: (trackIndex: number, sample: SoundSample) => void;
@@ -386,6 +387,7 @@ export const SoundExplorer: React.FC<SoundExplorerProps> = ({
       {/* Track Assignment Modal */}
       {assigningSample && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 p-4 backdrop-blur-xs">
+          <DialogBehavior label="Pick a track for this sound" onClose={() => setAssigningSample(null)} />
           <div className="relative w-full max-w-md rounded-3xl border-4 border-indigo-500 bg-slate-900 p-6 text-white shadow-2xl">
             <div className="flex items-center gap-3">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-tr from-pink-500 to-indigo-500 text-2xl shadow-lg">
