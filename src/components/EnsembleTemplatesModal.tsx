@@ -72,7 +72,7 @@ export const EnsembleTemplatesModal: React.FC<EnsembleTemplatesModalProps> = ({
                   + Ensemble Score Templates
                 </h2>
                 <span className="px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/40 text-[12px] font-bold">
-                  Flat & Noteflight Presets
+                  Ready-made Ensemble Presets
                 </span>
               </div>
               <p className="text-xs text-slate-400">

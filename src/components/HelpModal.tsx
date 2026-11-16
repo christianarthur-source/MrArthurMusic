@@ -31,7 +31,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
           <div className="flex items-center gap-2">
             <Keyboard className="w-5 h-5 text-sky-500" />
             <h2 className="text-base font-bold text-slate-900">
-              Noteflight Keyboard Shortcuts & Student Guide
+              Keyboard Shortcuts & Student Guide
             </h2>
           </div>
           <button aria-label="Close"

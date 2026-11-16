@@ -1139,7 +1139,8 @@ export default function App() {
     (mode: UiMode) => {
       setUiMode(mode);
       try {
-        localStorage.setItem('noteflight_jr_uimode', mode);
+        // Nothing reads this key; it was renamed from a third-party product name (the old key is simply no longer written).
+        localStorage.setItem('mrarthur_staff_uimode', mode);
       } catch {
         // ignore
       }
@@ -2402,7 +2403,7 @@ export default function App() {
           setSelection({ trackIndex: 0, measureIndex: 0, itemIndex: 0 });
         }
       } catch {
-        void alertDialog('Invalid score file format. Please upload a valid Noteflight Junior JSON score.');
+        void alertDialog('Invalid score file format. Please upload a valid Staff Composer JSON score.');
       }
     };
     reader.readAsText(file);
