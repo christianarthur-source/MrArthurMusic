@@ -106,7 +106,6 @@ export const TempoTapper: React.FC = () => {
   const runnerPosRef = useRef<number>(10);
   const [mode, setMode] = useState<'free' | 'challenge'>('free');
 
-  const metronomeTimerRef = useRef<number | null>(null);
   const currentTier = getTierForBpm(bpm);
 
   // Play tap sound effect

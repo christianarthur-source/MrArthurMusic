@@ -115,6 +115,9 @@ export const TapGame: React.FC<TapGameProps> = ({
   };
 
   // Start live tapping challenge
+  // Metronome clicks are scheduled on the audio clock (sample accurate) and the
+  // tap window is judged against one fixed origin, so setTimeout jitter cannot
+  // shift the target times, and a tap a little BEFORE beat 1 still counts.
   const handleStartTapping = async () => {
     clearMetronome();
     audioEngine.stopAll();
@@ -125,56 +128,56 @@ export const TapGame: React.FC<TapGameProps> = ({
     const targetHits = computeTargetHits(pattern, settings.tempoBpm);
     targetEventsRef.current = targetHits;
 
-    setGameState('COUNT_IN');
     const secPerBeat = 60 / settings.tempoBpm;
+    const leadSec = 0.15;
+    const clock = await audioEngine.getClock();
+    const audioStart = clock.now + leadSec; // audio-clock time of the first count-in click
+    const perfStart = performance.now() + leadSec * 1000; // the same instant on the page clock
+
+    setGameState('COUNT_IN');
 
     // 1. Metronome count-in (4 beats - ALWAYS played during count-off)
-    for (let beat = 1; beat <= 4; beat++) {
-      const tid = window.setTimeout(() => {
-        audioEngine.playClick(beat === 1);
-      }, (beat - 1) * secPerBeat * 1000);
-      metronomeTimeoutsRef.current.push(tid);
+    for (let beat = 0; beat < 4; beat++) {
+      audioEngine.playClick(beat === 0, audioStart + beat * secPerBeat);
     }
 
-    // 2. Start tapping window exactly after count-in (4 beats delay)
-    const tapStartDelayMs = 4 * secPerBeat * 1000;
+    // 2. Tapping window opens exactly after the count-in. The student hears a
+    // click `latencySec` after it is scheduled, so their taps trail by that much.
+    const tapOriginMs = perfStart + 4 * secPerBeat * 1000 + clock.latencySec * 1000;
+    tapStartTimeRef.current = tapOriginMs;
+    const totalBeats = pattern.totalBeats;
+
+    // Metronome clicks keep going during the tap attempt if metronomeEnabled is true
+    if (metronomeEnabled) {
+      for (let b = 0; b < totalBeats; b++) {
+        // Beat 1 of measure gets high pitch accent
+        audioEngine.playClick(b % 4 === 0, audioStart + (4 + b) * secPerBeat);
+      }
+    }
 
     const startTid = window.setTimeout(() => {
       setGameState('TAPPING');
-      tapStartTimeRef.current = performance.now();
-
-      // Metronome clicks KEEP GOING during student tap attempt if metronomeEnabled is true!
-      const totalBeats = pattern.totalBeats;
-      for (let b = 0; b < totalBeats; b++) {
-        const beatTid = window.setTimeout(() => {
-          if (metronomeEnabled) {
-            // Beat 1 of measure gets high pitch accent
-            audioEngine.playClick(b % 4 === 0);
-          }
-        }, b * secPerBeat * 1000);
-        metronomeTimeoutsRef.current.push(beatTid);
-      }
-
-      // End tapping after measure ends
-      const totalMeasureSec = totalBeats * secPerBeat;
-      const endTid = window.setTimeout(() => {
-        evaluateFinishedRun();
-      }, totalMeasureSec * 1000 + 350);
-      metronomeTimeoutsRef.current.push(endTid);
-
-    }, tapStartDelayMs);
-
+    }, Math.max(0, tapOriginMs - performance.now()));
     metronomeTimeoutsRef.current.push(startTid);
+
+    // End tapping after the measure ends
+    const endTid = window.setTimeout(() => {
+      evaluateFinishedRun();
+    }, Math.max(0, tapOriginMs + totalBeats * secPerBeat * 1000 + 350 - performance.now()));
+    metronomeTimeoutsRef.current.push(endTid);
   };
 
   const handlePadTap = () => {
     // Drum sound immediately
     audioEngine.playPadHit(settings.soundKit);
 
-    if (gameState !== 'TAPPING') return;
+    if (gameState !== 'TAPPING' && gameState !== 'COUNT_IN') return;
 
     const now = performance.now();
     const elapsedSec = (now - tapStartTimeRef.current) / 1000;
+
+    // During the count-in only a tap just before beat 1 (inside the OK window) counts
+    if (gameState === 'COUNT_IN' && elapsedSec < -0.2) return;
 
     // Find closest unhit target
     let closestIdx = -1;
@@ -209,7 +212,7 @@ export const TapGame: React.FC<TapGameProps> = ({
         setLastFeedback({ text: isEarly ? 'A Bit Early ⚠️' : 'A Bit Late ⚠️', color: 'text-amber-400' });
         setHitsStats(prev => ({ ...prev, ok: prev.ok + 1 }));
       }
-    } else {
+    } else if (gameState === 'TAPPING') {
       setLastFeedback({ text: 'Extra Tap / Off Beat! ❌', color: 'text-rose-400' });
       setHitsStats(prev => ({ ...prev, extraTaps: prev.extraTaps + 1 }));
     }
@@ -365,7 +368,14 @@ export const TapGame: React.FC<TapGameProps> = ({
 
         {/* Big Rock Drum Pad */}
         <button
-          onClick={handlePadTap}
+          onPointerDown={(e) => {
+            // Register the tap on press, not release; keyboard activation arrives via onClick (detail 0)
+            if (e.pointerType === 'mouse' && e.button !== 0) return;
+            handlePadTap();
+          }}
+          onClick={(e) => {
+            if (e.detail === 0) handlePadTap();
+          }}
           className="w-56 h-56 sm:w-64 sm:h-64 rounded-full bg-gradient-to-b from-slate-800 to-slate-950 border-8 border-slate-700 hover:border-amber-400/80 active:border-amber-400 active:scale-95 shadow-[0_15px_35px_rgba(0,0,0,0.6)] flex flex-col items-center justify-center text-center transition-all cursor-pointer select-none group relative overflow-hidden"
         >
           {/* Pad texture ring */}

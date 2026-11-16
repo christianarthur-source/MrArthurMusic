@@ -22,6 +22,25 @@ class AudioEngine {
     return this.ctx;
   }
 
+  /**
+   * Audio-clock handle for sample-accurate scheduling (tap game). Resolves once
+   * the context is running, so currentTime is advancing. `latencySec` is how
+   * long a scheduled sound takes to actually reach the speakers.
+   */
+  public async getClock(): Promise<{ now: number; latencySec: number }> {
+    const ctx = this.initContext();
+    if (ctx.state === 'suspended') {
+      try {
+        await ctx.resume();
+      } catch {
+        // stays suspended: timing falls back to the page clock only
+      }
+    }
+    const out = (ctx as AudioContext & { outputLatency?: number }).outputLatency;
+    const latencySec = Math.min(0.15, Math.max(0, (Number.isFinite(out) ? out : 0) || ctx.baseLatency || 0));
+    return { now: ctx.currentTime, latencySec };
+  }
+
   public setVolume(volume: number) {
     if (this.masterGain && this.ctx) {
       const clamped = Math.max(0, Math.min(1, volume));
