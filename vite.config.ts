@@ -851,12 +851,6 @@ export default defineConfig(() => {
             if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {
               return 'vendor-react';
             }
-            if (id.includes('/rhythm-rockstars/')) {
-              return 'rhythm-rockstars';
-            }
-            if (id.includes('/beat-machine/')) {
-              return 'beat-machine';
-            }
           },
         },
       },

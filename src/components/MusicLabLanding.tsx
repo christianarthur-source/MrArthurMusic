@@ -11,7 +11,8 @@ import {
   Volume2,
 } from 'lucide-react';
 import { StudentSession } from '../utils/classroomApi';
-import { ClassroomToolBoxModal, ToolId } from './tools/ClassroomToolBoxModal';
+import { LazyClassroomToolBoxModal } from './tools/LazyClassroomToolBoxModal';
+import type { ToolId } from './tools/ClassroomToolBoxModal';
 
 export type MusicLabAppId = 'hub' | 'staff-composer' | 'rhythm-rockstars' | 'beat-machine' | 'daw' | 'staff-wars' | 'big-staff';
 
@@ -46,7 +47,7 @@ export const MusicLabLanding: React.FC<MusicLabLandingProps> = ({
               title="Click to view Mr. Arthur"
             >
               <img
-                src="/mr-arthur-avatar.jpg"
+                src="/mr-arthur-avatar-96.webp"
                 alt="Mr. Arthur"
                 className="w-full h-full object-cover object-top"
               />
@@ -921,7 +922,7 @@ export const MusicLabLanding: React.FC<MusicLabLandingProps> = ({
       </main>
 
       {/* Classroom Tool Box Modal */}
-      <ClassroomToolBoxModal
+      <LazyClassroomToolBoxModal
         isOpen={selectedToolModal !== null}
         onClose={() => setSelectedToolModal(null)}
         initialTool={selectedToolModal || 'tempo-tapper'}

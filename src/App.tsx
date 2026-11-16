@@ -39,28 +39,34 @@ import {
   getDrumPitchForSound,
   getDrumSoundForPitch,
 } from './audio/webMidiService';
-import { RhythmicPalette } from './components/RhythmicPalette';
-import { FloatingToolPalette } from './components/FloatingToolPalette';
-import { TransportBar } from './components/TransportBar';
-import { FullScreenMiniPalette } from './components/FullScreenMiniPalette';
-import { ScoreRenderer } from './components/ScoreRenderer';
-import { TrackStrip } from './components/TrackStrip';
-import { VirtualPiano } from './components/VirtualPiano';
-import { InstrumentModal } from './components/InstrumentModal';
-import { DrumBeatsModal } from './components/DrumBeatsModal';
 import { DrumGroove } from './data/drumGrooves';
-import { TemplatesModal } from './components/TemplatesModal';
-import { EnsembleTemplatesModal } from './components/EnsembleTemplatesModal';
-import { HelpModal } from './components/HelpModal';
-import { PrintView } from './components/PrintView';
-import { ShareModal } from './components/ShareModal';
-import { ClassroomModal } from './components/ClassroomModal';
-import { EdLawPrivacyModal } from './components/EdLawPrivacyModal';
-import { TransposeModal } from './components/TransposeModal';
 import { MusicLabLanding, MusicLabAppId } from './components/MusicLabLanding';
-import { ClassroomToolBoxModal, ToolId } from './components/tools/ClassroomToolBoxModal';
-import { ThanksgivingThemeOverlay } from './components/ThanksgivingThemeOverlay';
+import { LazyClassroomToolBoxModal } from './components/tools/LazyClassroomToolBoxModal';
+import type { ToolId } from './components/tools/ClassroomToolBoxModal';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { lazyModal } from './components/lazyModal';
+// Staff Composer's editor pieces live in one file that downloads only when the editor is opened,
+// so the landing page does not carry them.
+const editorPart = () => import('./components/staffComposerParts');
+const TransportBar = React.lazy(() => editorPart().then((m) => ({ default: m.TransportBar as React.ComponentType<React.ComponentProps<typeof m.TransportBar>> })));
+const ScoreRenderer = React.lazy(() => editorPart().then((m) => ({ default: m.ScoreRenderer as React.ComponentType<React.ComponentProps<typeof m.ScoreRenderer>> })));
+const RhythmicPalette = React.lazy(() => editorPart().then((m) => ({ default: m.RhythmicPalette as React.ComponentType<React.ComponentProps<typeof m.RhythmicPalette>> })));
+const FloatingToolPalette = React.lazy(() => editorPart().then((m) => ({ default: m.FloatingToolPalette as React.ComponentType<React.ComponentProps<typeof m.FloatingToolPalette>> })));
+const FullScreenMiniPalette = React.lazy(() => editorPart().then((m) => ({ default: m.FullScreenMiniPalette as React.ComponentType<React.ComponentProps<typeof m.FullScreenMiniPalette>> })));
+const TrackStrip = React.lazy(() => editorPart().then((m) => ({ default: m.TrackStrip as React.ComponentType<React.ComponentProps<typeof m.TrackStrip>> })));
+const VirtualPiano = React.lazy(() => editorPart().then((m) => ({ default: m.VirtualPiano as React.ComponentType<React.ComponentProps<typeof m.VirtualPiano>> })));
+// Windows: each downloads the first time it is opened, then stays mounted as before.
+const HelpModal = lazyModal(() => import('./components/HelpModal').then((m) => ({ default: m.HelpModal })));
+const EdLawPrivacyModal = lazyModal(() => import('./components/EdLawPrivacyModal').then((m) => ({ default: m.EdLawPrivacyModal })));
+const ClassroomModal = lazyModal(() => import('./components/ClassroomModal').then((m) => ({ default: m.ClassroomModal })));
+const InstrumentModal = lazyModal(() => import('./components/InstrumentModal').then((m) => ({ default: m.InstrumentModal })));
+const DrumBeatsModal = lazyModal(() => import('./components/DrumBeatsModal').then((m) => ({ default: m.DrumBeatsModal })));
+const TemplatesModal = lazyModal(() => import('./components/TemplatesModal').then((m) => ({ default: m.TemplatesModal })));
+const EnsembleTemplatesModal = lazyModal(() => import('./components/EnsembleTemplatesModal').then((m) => ({ default: m.EnsembleTemplatesModal })));
+const ShareModal = lazyModal(() => import('./components/ShareModal').then((m) => ({ default: m.ShareModal })));
+const TransposeModal = lazyModal(() => import('./components/TransposeModal').then((m) => ({ default: m.TransposeModal })));
+const PrintView = React.lazy(() => import('./components/PrintView').then((m) => ({ default: m.PrintView })));
+const ThanksgivingThemeOverlay = React.lazy(() => import('./components/ThanksgivingThemeOverlay').then((m) => ({ default: m.ThanksgivingThemeOverlay })));
 // The other tools load only when opened, so the hub and Staff Composer start faster.
 const RhythmRockStarsApp = React.lazy(() => import('./rhythm-rockstars/RhythmRockStarsApp'));
 const BeatMachineApp = React.lazy(() => import('./beat-machine/App'));
@@ -84,8 +90,6 @@ import {
   saveStudentProject,
   saveStudentSession,
 } from './utils/classroomApi';
-import { exportScoreToPdf } from './utils/pdfExport';
-import { exportScoreToMidi, exportScoreToMusicXml } from './utils/scoreExport';
 import { containsProfanity } from './utils/profanityFilter';
 import { createShortLink, fetchShortLink } from './utils/shortLinkService';
 
@@ -2379,16 +2383,18 @@ export default function App() {
 
   if (isPrintView) {
     return (
-      <PrintView
-        score={score}
-        onExit={() => setIsPrintView(false)}
-        uiMode={uiMode}
-        showPitchNames={showPitchNames}
-        noteLabelMode={noteLabelMode}
-        boomwhackerColors={boomwhackerColors}
-        showBeatCounters={showBeatCounters}
-        countingMode={countingMode}
-      />
+      <React.Suspense fallback={<ToolLoading />}>
+        <PrintView
+          score={score}
+          onExit={() => setIsPrintView(false)}
+          uiMode={uiMode}
+          showPitchNames={showPitchNames}
+          noteLabelMode={noteLabelMode}
+          boomwhackerColors={boomwhackerColors}
+          showBeatCounters={showBeatCounters}
+          countingMode={countingMode}
+        />
+      </React.Suspense>
     );
   }
 
@@ -2411,7 +2417,7 @@ export default function App() {
           >
             <div className="w-64 h-64 sm:w-72 sm:h-72 rounded-2xl overflow-hidden bg-black border border-slate-700 shadow-xl ring-2 ring-amber-400/30">
               <img
-                src="/mr-arthur-avatar.jpg"
+                src="/mr-arthur-avatar-512.webp"
                 alt="Mr. Arthur"
                 className="w-full h-full object-contain cursor-pointer"
               />
@@ -2574,7 +2580,7 @@ export default function App() {
         }}
       />
 
-      <ClassroomToolBoxModal
+      <LazyClassroomToolBoxModal
         isOpen={isToolBoxModalOpen}
         onClose={() => setIsToolBoxModalOpen(false)}
         initialTool={toolBoxInitialTool}
@@ -2704,6 +2710,7 @@ export default function App() {
   }
 
   return (
+    <React.Suspense fallback={<ToolLoading />}>
     <div
       className={`${
         isFullScreen ? 'fixed inset-0 z-50' : 'min-h-screen'
@@ -2838,10 +2845,10 @@ export default function App() {
             adminKeyBufferRef.current = '';
             secretKeyBufferRef.current = '';
           }}
-          onExportPdf={() => exportScoreToPdf(score)}
+          onExportPdf={() => void import('./utils/pdfExport').then((m) => m.exportScoreToPdf(score))}
           onExportWav={() => soundEngine.exportWav(score)}
-          onExportMidi={() => exportScoreToMidi(score)}
-          onExportMusicXml={() => exportScoreToMusicXml(score)}
+          onExportMidi={() => void import('./utils/scoreExport').then((m) => m.exportScoreToMidi(score))}
+          onExportMusicXml={() => void import('./utils/scoreExport').then((m) => m.exportScoreToMusicXml(score))}
           onExportJson={handleExportJSON}
           onImportJson={handleImportJSON}
           onOpenHelp={() => setIsHelpModalOpen(true)}
@@ -3408,10 +3415,13 @@ export default function App() {
       />
 
       {isSecretTheme && currentApp === 'staff-composer' && (
-        <ThanksgivingThemeOverlay onClose={() => setIsSecretTheme(false)} />
+        <React.Suspense fallback={null}>
+          <ThanksgivingThemeOverlay onClose={() => setIsSecretTheme(false)} />
+        </React.Suspense>
       )}
 
       {renderSharedAuthAndModals()}
     </div>
+    </React.Suspense>
   );
 }
