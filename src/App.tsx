@@ -488,6 +488,16 @@ export default function App() {
     document.title = titleForRoute({ app: currentApp, bigStaff: isBigStaff, tool: landingTool });
   }, [currentApp, isBigStaff, landingTool]);
 
+  // Switching between Big Staff and the normal staff inside Staff Composer keeps the address in step,
+  // so a refresh or a copied link opens the view the student is looking at (not a stale one).
+  useEffect(() => {
+    if (currentApp !== 'staff-composer' || hasShareParams()) return;
+    const inUrl = routeFromLocation();
+    if (inUrl.app === 'staff-composer' && inUrl.bigStaff !== isBigStaff) {
+      replaceRoute({ app: 'staff-composer', bigStaff: isBigStaff, tool: null });
+    }
+  }, [currentApp, isBigStaff]);
+
   // Leaving a tool stops its sound: a Staff Composer song must not keep playing behind the landing page.
   const lastAppRef = useRef<MusicLabAppId>(currentApp);
   useEffect(() => {
@@ -697,6 +707,8 @@ export default function App() {
   const currentAppRef = useRef(currentApp);
   currentAppRef.current = currentApp;
   const staffSaveTimerRef = useRef<number | undefined>(undefined);
+  const staffSaveInFlightRef = useRef(false);
+  const staffSaveQueuedRef = useRef(false);
   const currentProjectIdRef = useRef(currentProjectId);
   currentProjectIdRef.current = currentProjectId;
   const inStaffComposer = currentApp === 'staff-composer';
@@ -742,6 +754,13 @@ export default function App() {
     setCloudSaveStatus('saving');
     window.clearTimeout(staffSaveTimerRef.current);
     staffSaveTimerRef.current = window.setTimeout(() => {
+      // One save at a time: while a first save (no project id yet) is still in flight, a second
+      // one would be sent without the id and create a duplicate song. Queue it and re-run after.
+      if (staffSaveInFlightRef.current) {
+        staffSaveQueuedRef.current = true;
+        return;
+      }
+      staffSaveInFlightRef.current = true;
       saveStudentProject({
         studentId: activeTarget.studentId,
         pin: activeTarget.pin,
@@ -771,6 +790,13 @@ export default function App() {
         })
         .catch(() => {
           setCloudSaveStatus('device-only');
+        })
+        .finally(() => {
+          staffSaveInFlightRef.current = false;
+          if (staffSaveQueuedRef.current) {
+            staffSaveQueuedRef.current = false;
+            setStaffSaveRetry((n) => n + 1);
+          }
         });
     }, 600);
   }, [score, studentSession, editingAsTeacher, currentProjectId, inStaffComposer, staffSaveRetry]);
@@ -1234,8 +1260,11 @@ export default function App() {
 
   // Toggle Dotted handler (updates currently selected note immediately)
   const handleToggleDotted = useCallback(() => {
-    setIsDotted((prev) => {
-      const nextVal = !prev;
+    // Computed from current state (not inside a state updater): updaters must be pure, and
+    // pushing to the undo history from one ran twice under React StrictMode.
+    const nextVal = !isDotted;
+    setIsDotted(nextVal);
+    {
       if (selection && selection.itemIndex >= 0) {
         const nextScore: Score = JSON.parse(JSON.stringify(score));
         const measure = nextScore.tracks[selection.trackIndex]?.measures[selection.measureIndex];
@@ -1247,14 +1276,16 @@ export default function App() {
           pushScoreState(nextScore);
         }
       }
-      return nextVal;
-    });
-  }, [selection, score, pushScoreState]);
+    }
+  }, [isDotted, selection, score, pushScoreState]);
 
   // Toggle Tie handler
   const handleToggleTied = useCallback(() => {
-    setIsTied((prev) => {
-      const nextVal = !prev;
+    // Computed from current state (not inside a state updater): updaters must be pure, and
+    // pushing to the undo history from one ran twice under React StrictMode.
+    const nextVal = !isTied;
+    setIsTied(nextVal);
+    {
       if (selection && selection.itemIndex >= 0) {
         const nextScore: Score = JSON.parse(JSON.stringify(score));
         const item =
@@ -1264,9 +1295,8 @@ export default function App() {
           pushScoreState(nextScore);
         }
       }
-      return nextVal;
-    });
-  }, [selection, score, pushScoreState]);
+    }
+  }, [isTied, selection, score, pushScoreState]);
 
   // Change Accidental handler (updates currently selected note immediately + plays preview)
   const handleChangeAccidental = useCallback(
@@ -1299,8 +1329,11 @@ export default function App() {
 
   // Toggle Triplet handler
   const handleToggleTriplet = useCallback(() => {
-    setIsTriplet((prev) => {
-      const nextVal = !prev;
+    // Computed from current state (not inside a state updater): updaters must be pure, and
+    // pushing to the undo history from one ran twice under React StrictMode.
+    const nextVal = !isTriplet;
+    setIsTriplet(nextVal);
+    {
       if (selection && selection.itemIndex >= 0) {
         const nextScore: Score = JSON.parse(JSON.stringify(score));
         const measure = nextScore.tracks[selection.trackIndex]?.measures[selection.measureIndex];
@@ -1312,9 +1345,8 @@ export default function App() {
           pushScoreState(nextScore);
         }
       }
-      return nextVal;
-    });
-  }, [selection, score, pushScoreState]);
+    }
+  }, [isTriplet, selection, score, pushScoreState]);
 
   // Change Articulation handler
   const handleChangeArticulation = useCallback(
@@ -2878,13 +2910,11 @@ export default function App() {
           onToggleMetronome={() => setMetronome((v) => !v)}
           countIn={countIn}
           onToggleCountIn={() => {
-            setCountIn((prev) => {
-              const next = !prev;
-              try {
-                localStorage.setItem('staff_composer_count_in', String(next));
-              } catch {}
-              return next;
-            });
+            const next = !countIn;
+            setCountIn(next);
+            try {
+              localStorage.setItem('staff_composer_count_in', String(next));
+            } catch {}
           }}
           countInStatus={countInStatus}
           onOpenTranspose={() => setIsTransposeModalOpen(true)}
