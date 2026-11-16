@@ -45,6 +45,7 @@ import { staffWarsAudio } from './audio/staffWarsAudio';
 import { livePitchDetector, PitchDetectionResult } from './audio/pitchDetector';
 import { SpaceCanvas } from './components/SpaceCanvas';
 import { DialogBehavior } from '../components/Modal';
+import { shouldIgnoreShortcut } from '../utils/keyGuard';
 
 interface StaffWarsAppProps {
   onBackToHub: () => void;
@@ -853,7 +854,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
   // Keyboard shortcut listener for A, B, C, D, E, F, G and Spacebar
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (shouldIgnoreShortcut(e, { allowOnButtons: status === 'playing' })) return;
 
       const key = e.key.toUpperCase();
       if (status === 'menu' && (e.code === 'Space' || e.key === 'Enter')) {

@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { DialogBehavior } from './components/Modal';
 import { alertDialog } from './components/AppDialogs';
+import { isDialogOpen } from './utils/keyGuard';
 import {
   AccidentalType,
   ArticulationType,
@@ -1845,12 +1846,21 @@ export default function App() {
         return;
       }
 
-      // Space -> Toggle Play / Pause
+      // A pop-up window is open: the keys belong to it, not to the score behind it.
+      if (isDialogOpen()) return;
+      // Space / Enter on a focused button or link presses that control; it must not also play/edit the score.
+      if (
+        (e.code === 'Space' || e.key === ' ' || e.key === 'Enter') &&
+        e.target instanceof Element &&
+        e.target.closest('button, a[href], summary, [role="button"], [role="menuitem"], [role="tab"]')
+      ) {
+        return;
+      }
+
+      // Space -> Toggle Play / Pause (a held key must not flip play/pause back and forth)
       if (e.code === 'Space' || e.key === ' ' || e.key === 'Spacebar') {
         e.preventDefault();
-        if (e.target instanceof HTMLElement) {
-          e.target.blur();
-        }
+        if (e.repeat) return;
         handleTogglePlay();
         return;
       }

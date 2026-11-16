@@ -36,6 +36,7 @@ import { cleanProfanity, containsProfanity } from './utils/profanityFilter';
 import { StudentSession, saveStudentProject } from '../utils/classroomApi';
 import { DialogBehavior } from '../components/Modal';
 import { alertDialog } from '../components/AppDialogs';
+import { shouldIgnoreShortcut } from '../utils/keyGuard';
 
 type AppMode = 'both' | 'grid' | 'melody' | 'bass' | 'explorer' | 'pads' | 'xylophone';
 
@@ -467,6 +468,7 @@ export default function BeatMachineApp({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Don't hijack spacebar if user is typing inside an input, textarea, or contentEditable element
+      if (shouldIgnoreShortcut(e)) return;
       const target = e.target as HTMLElement | null;
       if (
         target &&

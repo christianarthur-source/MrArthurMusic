@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Sparkles, Volume2, Trophy, RotateCcw, Play, CheckCircle2, XCircle } from 'lucide-react';
 import { soundEngine } from '../../audio/soundEngine';
 import { InstrumentId, Pitch } from '../../types/music';
+import { shouldIgnoreShortcut } from '../../utils/keyGuard';
 
 interface SolfegeNote {
   syllable: string;
@@ -258,7 +259,7 @@ export const SolfegeTrainer: React.FC = () => {
   // Keyboard 1-8 listeners for Chromebook accessibility
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) return;
+      if (shouldIgnoreShortcut(e, { allowOnButtons: true, ownDialog: '[aria-label="Tool Box"]' })) return;
       const keyInt = parseInt(e.key, 10);
       if (keyInt >= 1 && keyInt <= 8) {
         e.preventDefault();

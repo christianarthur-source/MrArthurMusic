@@ -5,6 +5,7 @@ import { audioEngine } from '../services/audioEngine';
 import { SoundSettingsConfig } from '../types/game';
 import { Play, RotateCcw, Zap, Sparkles, Volume2, VolumeX } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { shouldIgnoreShortcut } from '../../utils/keyGuard';
 
 interface TapGameProps {
   levelConfig: LevelConfig;
@@ -262,9 +263,12 @@ export const TapGame: React.FC<TapGameProps> = ({
   // Keyboard Spacebar listener for Chromebooks
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code === 'Space' && !e.repeat && !isPadPressed.current) {
+      if (e.code !== 'Space' || shouldIgnoreShortcut(e, { allowOnButtons: true })) return;
+      if (!isPadPressed.current) {
         isPadPressed.current = true;
         e.preventDefault();
+        // A focused button must not also be "clicked" by the same Space press (would tap twice).
+        (document.activeElement as HTMLElement | null)?.blur?.();
         handlePadTap();
       }
     };

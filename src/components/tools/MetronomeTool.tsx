@@ -12,6 +12,7 @@ import {
   Minimize2,
   Sliders,
 } from 'lucide-react';
+import { shouldIgnoreShortcut } from '../../utils/keyGuard';
 
 export type MetronomeSound = 'woodblock' | 'beep' | 'drumstick' | 'cowbell' | 'silent';
 export type Subdivision = 1 | 2 | 3 | 4; // 1 = Quarter, 2 = Eighth, 3 = Triplet, 4 = 16th
@@ -362,8 +363,10 @@ export const MetronomeTool: React.FC = () => {
   // Keyboard shortcut: Spacebar toggles start/stop
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code === 'Space' && (e.target as HTMLElement)?.tagName !== 'INPUT') {
+      if (e.code === 'Space' && !shouldIgnoreShortcut(e, { allowOnButtons: true, ownDialog: '[aria-label="Tool Box"]' })) {
         e.preventDefault();
+        // A focused button must not also be "clicked" by the same Space press.
+        (document.activeElement as HTMLElement | null)?.blur?.();
         togglePlay();
       }
     };

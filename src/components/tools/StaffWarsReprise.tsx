@@ -32,6 +32,7 @@ import {
 } from './toolboxAudio';
 import { Pitch } from '../../types/music';
 import { alertDialog } from '../AppDialogs';
+import { shouldIgnoreShortcut } from '../../utils/keyGuard';
 
 export type StaffWarsClef = 'treble' | 'bass' | 'alto' | 'tenor' | 'grand';
 export type StaffWarsMode = 'arcade' | 'live-mic';
@@ -432,6 +433,7 @@ export const StaffWarsReprise: React.FC = () => {
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       if (!isPlaying || isGameOver || isPaused) return;
+      if (shouldIgnoreShortcut(e, { allowOnButtons: true, ownDialog: '[aria-label="Tool Box"]' })) return;
       const key = e.key.toUpperCase();
       if (['A', 'B', 'C', 'D', 'E', 'F', 'G'].includes(key)) {
         e.preventDefault();

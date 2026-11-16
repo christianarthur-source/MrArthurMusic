@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Volume2, VolumeX, RotateCcw, Sparkles } from 'lucide-react';
 import { soundEngine } from '../../audio/soundEngine';
 import { TempoChallenge } from './TempoChallenge';
+import { shouldIgnoreShortcut } from '../../utils/keyGuard';
 
 interface AnimalTier {
   name: string;
@@ -153,8 +154,9 @@ export const TempoTapper: React.FC = () => {
   useEffect(() => {
     if (mode !== 'free') return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.code === 'Space' && !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) {
+      if (e.code === 'Space' && !shouldIgnoreShortcut(e, { allowOnButtons: true, ownDialog: '[aria-label="Tool Box"]' })) {
         e.preventDefault();
+        (document.activeElement as HTMLElement | null)?.blur?.();
         handleTap();
       }
     };
