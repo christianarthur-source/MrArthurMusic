@@ -98,10 +98,14 @@ function getClassroomDbPath() {
   return path.join(dir, 'db.json');
 }
 
+// Local development only (npm run dev). There is no built-in teacher PIN: set DEV_TEACHER_PIN in
+// .env.local to use the teacher screens against this dev copy. The live site uses the Worker.
+const DEV_TEACHER_PIN = String(process.env.DEV_TEACHER_PIN || '');
+
 function loadClassroomDb(): ClassroomDb {
   const dbPath = getClassroomDbPath();
   const defaultDb: ClassroomDb = {
-    teacherPin: '1138',
+    teacherPin: DEV_TEACHER_PIN,
     allowSelfRegister: true,
     classrooms: [...DEFAULT_CLASSROOMS],
     students: [],
@@ -123,7 +127,7 @@ function loadClassroomDb(): ClassroomDb {
     const classrooms = hasOldMockClassrooms ? [...DEFAULT_CLASSROOMS] : parsed.classrooms;
 
     return {
-      teacherPin: parsed.teacherPin === '1234' ? '1138' : (parsed.teacherPin || '1138'),
+      teacherPin: DEV_TEACHER_PIN,
       allowSelfRegister: parsed.allowSelfRegister ?? true,
       myClasses: parsed.myClasses && typeof parsed.myClasses === 'object' ? parsed.myClasses : {},
       classrooms,
@@ -530,12 +534,12 @@ function classroomApiPlugin(): Plugin {
 
           // dev-only sample teachers for the sign-in picker (the real list lives in the database)
           const devTeachers = [
-            { id: 'teach_master', name: 'Mr. Arthur', pin: db.teacherPin || '1138' },
+            { id: 'teach_master', name: 'Mr. Arthur', pin: DEV_TEACHER_PIN },
             { id: 'teach_dev_mcmyler', name: 'Mrs. McMyler', pin: '2222' },
             { id: 'teach_dev_yerrick', name: 'Mrs. Yerrick', pin: '3333' },
           ];
           const devTeacherFor = (pin: string) =>
-            pin === '1138' || pin === 'adminbaby' ? devTeachers[0] : devTeachers.find((t) => t.pin === pin) || null;
+            devTeachers.find((t) => t.pin !== '' && t.pin === pin) || null;
 
           if (action === 'public_teachers') {
             return send(200, { ok: true, teachers: devTeachers.map(({ id, name }) => ({ id, name })) });
@@ -702,7 +706,7 @@ function classroomApiPlugin(): Plugin {
           }
 
           if (action === 'teacher_save_classroom') {
-            if (body.teacherPin !== db.teacherPin && body.teacherPin !== '1138' && body.teacherPin !== 'adminbaby') {
+            if (!DEV_TEACHER_PIN || body.teacherPin !== DEV_TEACHER_PIN) {
               return send(401, { ok: false, error: 'Unauthorized' });
             }
             const cls = body.classroom || {};
@@ -734,7 +738,7 @@ function classroomApiPlugin(): Plugin {
           }
 
           if (action === 'teacher_delete_classroom') {
-            if (body.teacherPin !== db.teacherPin && body.teacherPin !== '1138' && body.teacherPin !== 'adminbaby') {
+            if (!DEV_TEACHER_PIN || body.teacherPin !== DEV_TEACHER_PIN) {
               return send(401, { ok: false, error: 'Unauthorized' });
             }
             const classroomId = String(body.classroomId || '');
@@ -746,7 +750,7 @@ function classroomApiPlugin(): Plugin {
           }
 
           if (action === 'teacher_assign_project') {
-            if (body.teacherPin !== db.teacherPin && body.teacherPin !== '1138' && body.teacherPin !== 'adminbaby') {
+            if (!DEV_TEACHER_PIN || body.teacherPin !== DEV_TEACHER_PIN) {
               return send(401, { ok: false, error: 'Unauthorized' });
             }
             const sourceProject = body.sourceProject;

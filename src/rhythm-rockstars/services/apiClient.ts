@@ -133,7 +133,8 @@ export const apiClient = {
 
   saveLocalProfile(profile: StudentProfile) {
     try {
-      const serialized = JSON.stringify(profile);
+      // The passcode is never written to browser storage (it used to hold a copy of the class PIN).
+      const serialized = JSON.stringify({ ...profile, passcode: '' });
       localStorage.setItem(LOCAL_STORAGE_KEY, serialized);
       if (profile.id) {
         localStorage.setItem(studentStorageKey(profile.id), serialized);

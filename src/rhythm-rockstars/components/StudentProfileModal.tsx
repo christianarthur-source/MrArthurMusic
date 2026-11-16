@@ -203,8 +203,12 @@ export const StudentProfileModal: React.FC<StudentProfileModalProps> = ({
                   </h4>
                   <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 text-xs text-slate-400 mt-1">
                     <span>Class: <strong className="text-slate-200">{student.classCode}</strong></span>
-                    <span>·</span>
-                    <span>Secret PIN: <strong className="text-slate-200">{student.passcode}</strong></span>
+                    {student.passcode ? (
+                      <>
+                        <span>·</span>
+                        <span>Secret PIN: <strong className="text-slate-200">{student.passcode}</strong></span>
+                      </>
+                    ) : null}
                   </div>
 
                   <div className="flex items-center justify-center sm:justify-start gap-4 mt-4 pt-3 border-t border-slate-800/80">

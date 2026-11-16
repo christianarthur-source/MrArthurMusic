@@ -158,16 +158,22 @@ export const DEFAULT_TEACHERS: TeacherRecord[] = [
   {
     id: 'teach_master',
     name: 'Mr. Arthur',
-    pin: '1138',
+    pin: '', // no built-in PIN: teacher sign-in is checked by the server
     schoolName: 'Music Lab Elementary',
     isMasterAdmin: true,
     createdAt: new Date().toISOString(),
   },
 ];
 
+// The offline copy in this browser never signs a teacher in: teacher PINs are only checked by the
+// server. (Older versions accepted a built-in PIN here; that is gone.)
+function isLocalMasterPin(_db: ClassroomDbShape, _pin: string): boolean {
+  return false;
+}
+
 function getDefaultLocalDb(): ClassroomDbShape {
   return {
-    teacherPin: '1138',
+    teacherPin: '',
     allowStudentSelfCreate: true,
     teachers: [...DEFAULT_TEACHERS],
     classrooms: [...DEFAULT_CLASSROOMS],
@@ -192,7 +198,7 @@ function readLocalDb(): ClassroomDbShape {
     const classrooms = hasOldMockClassrooms ? [...DEFAULT_CLASSROOMS] : parsed.classrooms;
 
     return {
-      teacherPin: parsed.teacherPin === '1234' ? '1138' : (parsed.teacherPin || '1138'),
+      teacherPin: '',
       allowStudentSelfCreate: parsed.allowStudentSelfCreate !== undefined ? Boolean(parsed.allowStudentSelfCreate) : true,
       teachers: Array.isArray(parsed.teachers) && parsed.teachers.length > 0 ? parsed.teachers : [...DEFAULT_TEACHERS],
       classrooms,
@@ -372,8 +378,8 @@ function executeLocalFallback(payload: Record<string, any>): any {
 
     let authorized = false;
     let studentName = 'Student';
-    const isMaster = teacherPin === db.teacherPin || teacherPin === '1138' || teacherPin === 'adminbaby';
-    const matchedTeacher = (db.teachers || []).find((t) => String(t.pin).trim() === teacherPin);
+    const isMaster = isLocalMasterPin(db, teacherPin);
+    const matchedTeacher = undefined as TeacherRecord | undefined; // teachers are verified by the server only
     if (isTeacher && (isMaster || matchedTeacher)) {
       authorized = true;
       const st = db.students.find((s) => s.id === studentId);
@@ -445,8 +451,8 @@ function executeLocalFallback(payload: Record<string, any>): any {
     const teacherPin = String(payload.teacherPin || '');
 
     let authorized = false;
-    const isMaster = teacherPin === db.teacherPin || teacherPin === '1138' || teacherPin === 'adminbaby';
-    const matchedTeacher = (db.teachers || []).find((t) => String(t.pin).trim() === teacherPin);
+    const isMaster = isLocalMasterPin(db, teacherPin);
+    const matchedTeacher = undefined as TeacherRecord | undefined; // teachers are verified by the server only
     if (isTeacher && (isMaster || matchedTeacher)) {
       authorized = true;
     } else {
@@ -462,15 +468,15 @@ function executeLocalFallback(payload: Record<string, any>): any {
     return { ok: true };
   }
 
-  const isMasterPin = (pin: string) => pin === db.teacherPin || pin === '1138' || pin === 'adminbaby';
+  const isMasterPin = (pin: string) => isLocalMasterPin(db, pin);
 
   const verifyTeacher = () => {
     const teacherPin = String(payload.teacherPin || '').trim();
     const isMaster = isMasterPin(teacherPin);
     const teachers = db.teachers || [];
-    const matchedTeacher = teachers.find((t) => String(t.pin).trim() === teacherPin);
+    const matchedTeacher = undefined as TeacherRecord | undefined;
     if (!isMaster && !matchedTeacher) {
-      throw new Error('Invalid Teacher PIN.');
+      throw new Error('Teacher sign-in needs an internet connection. Please check the connection and try again.');
     }
     return { isMaster, teacher: matchedTeacher };
   };
@@ -1108,7 +1114,7 @@ function executeLocalFallback(payload: Record<string, any>): any {
  * When a server answers, its answer (including errors such as a wrong PIN) is final.
  */
 async function callClassroomBackend(payload: Record<string, any>): Promise<any> {
-  const endpoints = ['/api/classroom', '/api.php'];
+  const endpoints = ['/api/classroom'];
 
   for (const endpoint of endpoints) {
     let data: any;

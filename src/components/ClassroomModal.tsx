@@ -341,7 +341,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
           setAllowSelfCreate(data.allowStudentSelfCreate);
           if (data.classrooms) setClassrooms(data.classrooms);
           if (data.teachers) setTeachers(data.teachers);
-          setIsMasterAdmin(!!data.isMasterAdmin || pinToTry === '1138' || pinToTry === 'adminbaby');
+          setIsMasterAdmin(!!data.isMasterAdmin);
           setMode('teacher_portal');
         })
         .catch(() => {
@@ -595,7 +595,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
       setAllowSelfCreate(data.allowStudentSelfCreate);
       if (data.classrooms) setClassrooms(data.classrooms);
       if (data.teachers) setTeachers(data.teachers);
-      setIsMasterAdmin(!!data.isMasterAdmin || pin === '1138' || pin === 'adminbaby');
+      setIsMasterAdmin(!!data.isMasterAdmin);
       setTeacherPinInput('');
       setMode('teacher_portal');
     } catch (err: any) {
@@ -848,7 +848,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
   };
 
   const handleDeleteTeacher = async (t: TeacherRecord) => {
-    if (t.isMasterAdmin || t.pin === '1138' || t.pin === 'adminbaby') {
+    if (t.isMasterAdmin) {
       setTeacherError('Master Admin account cannot be deleted.');
       return;
     }
@@ -1147,7 +1147,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
     if (projectStudentFilter !== 'ALL') {
       const matchedTch = teachers.find((t) => t.id === projectStudentFilter);
       if (matchedTch) {
-        const isMaster = matchedTch.isMasterAdmin || matchedTch.pin === '1138' || matchedTch.pin === 'adminbaby';
+        const isMaster = matchedTch.isMasterAdmin;
         const tchNameLower = (matchedTch.name || '').toLowerCase();
         const projStudentNameLower = (p.studentName || '').toLowerCase();
         const matchesThisTeacher =
@@ -2847,7 +2847,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                         <span>Master Admin: Teachers &amp; Schools</span>
                       </div>
                       <p className="text-[11px] text-slate-300">
-                        Create and manage teacher logins across schools. You maintain master control with PIN 1138.
+                        Create and manage teacher logins across schools. You keep master control with your own master PIN.
                       </p>
                     </div>
                     <button
@@ -2953,7 +2953,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                   {/* Teachers List */}
                   <div className="space-y-2">
                     {teachers.map((tch) => {
-                      const isMaster = tch.isMasterAdmin || tch.pin === '1138' || tch.pin === 'adminbaby';
+                      const isMaster = tch.isMasterAdmin;
                       const tchNameLower = (tch.name || '').toLowerCase();
                       const tchProjectCount = allProjects.filter((p) => {
                         const projStudentNameLower = (p.studentName || '').toLowerCase();
@@ -3091,17 +3091,17 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                         try {
                           const currentTeacher = teachers.find((t) => t.id === projectStudentFilter) ||
                             signedInTeacher ||
-                            teachers.find((t) => t.isMasterAdmin || t.pin === '1138' || t.pin === 'adminbaby') || {
+                            teachers.find((t) => t.isMasterAdmin) || {
                               id: 'teach_master',
                               name: 'Mr. Arthur',
-                              pin: activeTeacherPin || '1138',
+                              pin: activeTeacherPin,
                             };
                           await onManualSaveCurrentSong(titleToSave, {
-                            teacherPin: activeTeacherPin || currentTeacher.pin || '1138',
+                            teacherPin: activeTeacherPin || currentTeacher.pin,
                             teacherName: currentTeacher.name || 'Mr. Arthur',
                             teacherId: currentTeacher.id || 'teach_master',
                           });
-                          const refreshed = await loginTeacher(activeTeacherPin || '1138');
+                          const refreshed = await loginTeacher(activeTeacherPin);
                           setAllProjects(refreshed.projects);
                           setTeacherNotice(`Saved "${titleToSave}" under ${currentTeacher.name}!`);
                           window.setTimeout(() => setTeacherNotice(null), 3000);
@@ -3137,7 +3137,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                       {teachers.length > 0 && (
                         <optgroup label="Teachers & Admins">
                           {teachers.map((t) => {
-                            const isMaster = t.isMasterAdmin || t.pin === '1138' || t.pin === 'adminbaby';
+                            const isMaster = t.isMasterAdmin;
                             const tNameLower = (t.name || '').toLowerCase();
                             const count = allProjects.filter((p) => {
                               const projStudentNameLower = (p.studentName || '').toLowerCase();

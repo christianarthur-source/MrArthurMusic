@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { StudentProfile, LeaderboardEntry } from '../types/game';
 import { apiClient } from '../services/apiClient';
+import { loginTeacher } from '../../utils/classroomApi';
 
 interface TeacherDashboardModalProps {
   isOpen: boolean;
@@ -42,7 +43,6 @@ export const TeacherDashboardModal: React.FC<TeacherDashboardModalProps> = ({
     avatar: '🎸',
   });
 
-  const TEACHER_PIN = '1138';
 
   useEffect(() => {
     if (isOpen) {
@@ -72,13 +72,22 @@ export const TeacherDashboardModal: React.FC<TeacherDashboardModalProps> = ({
     }
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  // The PIN is checked by the classroom server (the same teacher PIN as the Teacher Portal),
+  // not against a value built into the page.
+  const [isCheckingPin, setIsCheckingPin] = useState(false);
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (pinInput.trim() === TEACHER_PIN || pinInput.trim() === 'adminbaby') {
+    const pin = pinInput.trim();
+    if (!pin || isCheckingPin) return;
+    setIsCheckingPin(true);
+    try {
+      await loginTeacher(pin);
       setIsAuthenticated(true);
       setPinError('');
-    } else {
-      setPinError('Incorrect Teacher PIN.');
+    } catch {
+      setPinError('Incorrect Teacher PIN (or no connection).');
+    } finally {
+      setIsCheckingPin(false);
     }
   };
 
@@ -191,7 +200,7 @@ export const TeacherDashboardModal: React.FC<TeacherDashboardModalProps> = ({
               <form onSubmit={handleLogin} className="space-y-4">
                 <input
                   type="password"
-                  maxLength={6}
+                  maxLength={64}
                   value={pinInput}
                   onChange={(e) => setPinInput(e.target.value)}
                   placeholder="Enter Teacher PIN"

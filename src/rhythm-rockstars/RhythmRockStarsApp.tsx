@@ -80,7 +80,7 @@ export default function RhythmRockStarsApp({
         id: studentSession.id,
         name: studentSession.firstName,
         avatar: existing?.avatar || '🎸',
-        passcode: studentSession.pin || '1234',
+        passcode: '', // the class PIN stays with the class sign-in; the game doesn't need a copy
         classCode: studentSession.classGroup || 'Classroom',
         totalScore: existing?.totalScore || 0,
         highestStreak: existing?.highestStreak || 0,
