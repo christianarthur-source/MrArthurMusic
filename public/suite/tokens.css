@@ -1,0 +1,38 @@
+/* Mr. Arthur's Music Lab: shared design tokens.
+   One list of colours, corner radius, spacing, type scale and focus ring for the main app and every sub-site.
+   Values match the dark look the main app already has (slate + amber). Nothing here changes a page by itself:
+   a page opts in by reading var(--suite-...). Fonts: Fredoka (self-hosted, see /fonts.css). */
+:root {
+  --suite-font: 'Fredoka', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --suite-font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --suite-bg: #0b0f19;
+  --suite-panel: #0f172a;
+  --suite-panel-2: #1e293b;
+  --suite-line: #334155;
+  --suite-text: #f1f5f9;
+  --suite-muted: #94a3b8;
+  --suite-accent: #fbbf24;
+  --suite-accent-ink: #0f172a;
+  --suite-link: #7dd3fc;
+
+  --suite-radius-sm: 8px;
+  --suite-radius: 12px;
+  --suite-radius-lg: 24px;
+
+  --suite-space-1: 4px;
+  --suite-space-2: 8px;
+  --suite-space-3: 12px;
+  --suite-space-4: 16px;
+  --suite-space-5: 24px;
+  --suite-space-6: 32px;
+
+  --suite-text-xs: 0.75rem;
+  --suite-text-sm: 0.875rem;
+  --suite-text-md: 1rem;
+  --suite-text-lg: 1.25rem;
+  --suite-text-xl: 1.75rem;
+
+  --suite-focus-ring: 3px solid #fcd34d;
+  --suite-focus-offset: 2px;
+}

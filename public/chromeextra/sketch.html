@@ -3,7 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sketch Studio — Educational Audio-Visual Synth (Cymatics Sketch Max Clone)</title>
+  <title>Sketch Studio · Mr. Arthur's Music Lab</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/mr-arthur-favicon-32.png" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="stylesheet" href="/fonts.css" />
+  <link rel="stylesheet" href="/suite/tokens.css" />
+  <link rel="stylesheet" href="/suite/suite-header.css" />
   <link rel="stylesheet" href="css/styles.css" />
   <style>
     body {
@@ -42,7 +47,7 @@
     .sketch-standalone-app {
       display: flex;
       flex-direction: column;
-      height: calc(100vh - 48px);
+      height: calc(100vh - 48px - var(--suite-header-h, 0px));
       padding: 10px 16px 12px 16px;
       gap: 8px;
       box-sizing: border-box;
@@ -50,6 +55,7 @@
   </style>
 </head>
 <body>
+  <script src="/suite/suite-header.js" data-name="Sketch Studio" data-icon="🎨" data-help="Draw on the canvas to make music. Use the Chrome Music Lab Hub button to see the other experiments, or Music Lab to go back to all the tools."></script>
   <!-- Header -->
   <header class="sketch-standalone-header">
     <div class="sketch-standalone-title">
@@ -57,11 +63,11 @@
       <span>Sketch Studio</span>
       <span class="badge">Standalone Synth</span>
       <span style="font-size: 0.8rem; color: var(--text-secondary); font-weight: 500;">
-        Reverse-Engineered from Cymatics Sketch Max
+        Draw with sound and color
       </span>
     </div>
     <div>
-      <a href="https://mrarthurmusic.com/chromeextra/" class="tool-btn" style="text-decoration: none; font-size: 0.82rem;">
+      <a href="./" class="tool-btn" style="text-decoration: none; font-size: 0.82rem;">
         <span>♫ Chrome Music Lab Hub</span>
       </a>
     </div>

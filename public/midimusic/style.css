@@ -9,7 +9,7 @@
   --accent-ink: #201500;
   --good: #3ddc84;
   --radius: 14px;
-  --font: ui-rounded, "SF Pro Rounded", "Nunito", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+  --font: var(--suite-font, "Fredoka"), ui-rounded, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 [hidden] { display: none !important; }
@@ -23,7 +23,7 @@ button { cursor: pointer; border: 0; background: none; padding: 0; }
 button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 
 #app {
-  height: 100vh; height: 100dvh; display: flex; flex-direction: column; gap: 8px;
+  height: calc(100vh - var(--suite-header-h, 0px)); height: calc(100dvh - var(--suite-header-h, 0px)); display: flex; flex-direction: column; gap: 8px;
   padding: max(8px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
 }
 
@@ -224,7 +224,7 @@ input[type=range] { accent-color: var(--accent); height: 28px; margin: 0; }
 /* ---------- help + tour ---------- */
 .pill.help { border-color: #5cd6ff; color: #5cd6ff; }
 .help-q { width: 20px; height: 20px; border-radius: 50%; background: #5cd6ff; color: #0b1a22; display: grid; place-items: center; font-weight: 900; font-size: 14px; flex: 0 0 auto; }
-.helppanel { position: fixed; z-index: 45; width: min(400px, 94vw); max-height: calc(100dvh - 90px); overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: 0 18px 50px rgba(0, 0, 0, .65); padding: 12px; }
+.helppanel { position: fixed; z-index: 45; width: min(400px, 94vw); max-height: calc(100dvh - 90px - var(--suite-header-h, 0px)); overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: 0 18px 50px rgba(0, 0, 0, .65); padding: 12px; }
 .help-head { display: flex; align-items: center; justify-content: space-between; }
 .help-title { font-size: 18px; font-weight: 900; }
 .icon.small { width: 32px; height: 32px; font-size: 14px; }

@@ -3,7 +3,10 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Maestro! · Virtual Orchestra Conductor | Mr. Arthur Music</title>
+  <title>Conductor · Mr. Arthur's Music Lab</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/mr-arthur-favicon-32.png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="stylesheet" href="/suite/suite-header.css">
   <meta name="description" content="Conduct a live virtual orchestra with your webcam or mouse baton! Control tempo, dynamics, and instrument sections in real time." />
   
   <!-- Fonts -->
@@ -84,7 +87,7 @@
       z-index: 10;
       display: flex;
       flex-direction: column;
-      min-height: 100vh;
+      min-height: calc(100vh - var(--suite-header-h, 0px));
       max-width: 1400px;
       margin: 0 auto;
       width: 100%;
@@ -564,6 +567,7 @@
   </style>
 </head>
 <body>
+  <script src="/suite/suite-header.js" data-name="Conductor" data-icon="🪄" data-help="Wave your hand (webcam) or move the mouse like a baton to set the speed and loudness. Press the Music Lab button to leave."></script>
 
   <div class="concert-hall">
     <div class="spotlight"></div>
@@ -616,7 +620,7 @@
         </button>
         <a href="/" class="btn btn-dark" title="Back to Music Lab">
           <span>🏠</span>
-          <span>Exit</span>
+          <span>Music Lab</span>
         </a>
       </div>
     </header>

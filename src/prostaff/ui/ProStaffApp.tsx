@@ -298,7 +298,7 @@ export default function ProStaffApp() {
   // ---------- loading ----------
 
   useEffect(() => {
-    document.title = 'Wolfi — Pro Staff Notation';
+    document.title = "Wolfi Pro Staff · Mr. Arthur's Music Lab";
     const icon = document.createElement('link');
     icon.rel = 'icon';
     icon.type = 'image/svg+xml';

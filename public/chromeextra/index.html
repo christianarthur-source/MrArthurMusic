@@ -3,10 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Chrome Music Lab EXTRA — Educational Dark Mode Edition</title>
+  <title>Chrome Music Lab EXTRA · Mr. Arthur's Music Lab</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/mr-arthur-favicon-32.png" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="stylesheet" href="/fonts.css" />
+  <link rel="stylesheet" href="/suite/tokens.css" />
+  <link rel="stylesheet" href="/suite/suite-header.css" />
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
+  <script src="/suite/suite-header.js" data-name="Chrome Music Lab EXTRA" data-icon="🧪" data-help="Pick Song Maker, Kandinsky, Shared Piano, Rhythm or Sketch Studio from the top bar. Use the Color Palette button to change the colors. Press the Music Lab button to go back to all the tools."></script>
   <!-- ====================================================================
        Top Navigation Header (Hub + 4 Experiments + Theme & Palette Studio)
        ==================================================================== -->
@@ -253,7 +259,7 @@
                   <span style="color: var(--accent); margin-left: auto;">→</span>
                 </div>
                 <p class="exp-card-desc">
-                  Draw music! Reverse-engineered from Cymatics Sketch Max. 8 art mediums (Chalk, Marker, Crayon, Neon, Watercolor, Splatter, Pencil, Spray), thickness-to-velocity, scanhead sweep, and glide contours.
+                  Draw music! 8 art mediums (Chalk, Marker, Crayon, Neon, Watercolor, Splatter, Pencil, Spray), thickness-to-velocity, scanhead sweep, and glide contours.
                 </p>
                 <div style="margin-top: 10px; display: flex; gap: 8px;">
                   <span class="tool-btn" style="background: rgba(0, 229, 255, 0.15); border: 1px solid #00e5ff; color: #00e5ff; font-weight: 700; font-size: 0.78rem; padding: 4px 10px; border-radius: 6px;">Play Inside Hub</span>
@@ -274,6 +280,9 @@
       <!-- Interactive 8-Key Footer Piano Easter Egg (from shell/js/app.js) -->
       <footer class="hub-footer">
         <div class="hub-footer-caption">Click or drag across the footer bars to play a scale!</div>
+        <p class="hub-footer-note" style="margin: 10px 0 0; font-size: 0.75rem; color: var(--text-secondary); text-align: center;">
+          Chrome Music Lab EXTRA is an independent classroom project inspired by Google's Chrome Music Lab. It is not affiliated with or endorsed by Google.
+        </p>
         <div id="hub-footer-piano" class="footer-piano-bar"></div>
       </footer>
     </section>
