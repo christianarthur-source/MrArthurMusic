@@ -690,7 +690,7 @@ export function makeSampler(s: Studio, regionId: string) {
     return ops.addRegions(t.project, [clip]);
   });
   s.ui.set({ selectedTrack: trackId, selectedRegions: [clipId], editRegion: clipId, bottom: 'editor' });
-  s.ui.toast('success', `"${name}" is ready. Play it with your computer keys or the on-screen piano. Middle C plays the sound as recorded; higher keys play it higher.`);
+  s.ui.toast('success', `"${name}" is ready. Play it with your computer keys or the on-screen piano. Middle C plays the sound as recorded; higher keys play it higher and lower keys lower, at the same speed. Use "Where the sound starts" below to trim any quiet beginning.`);
 }
 
 export type VoicePreset = 'normal' | 'chipmunk' | 'giant' | 'robot' | 'radio';

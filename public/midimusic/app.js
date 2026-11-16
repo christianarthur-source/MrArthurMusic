@@ -688,7 +688,7 @@ function drawGrid() {
   if (samplerView) return drawSampler();
   cancelCapture();
   if (!q && state.tab === 'songs') {
-    gridEl.innerHTML = SONGS.map((sg) => `<button class="card song${state.song?.def === sg ? ' sel' : ''}" data-song="${sg.id}" style="--c:${LEVELS[sg.level].c}" title="${LEVELS[sg.level].name}"><span class="em">${LEVELS[sg.level].em}</span><span class="nm">${sg.title}</span></button>`).join('');
+    gridEl.innerHTML = SONGS.map((sg) => `<button class="card song${state.song?.def === sg ? ' sel' : ''}" data-song="${sg.id}" style="--c:${LEVELS[sg.level].c}" title="${LEVELS[sg.level].name}"><span class="em">${LEVELS[sg.level].em}</span><span class="nm">${sg.title}</span>${songsDone.has(sg.id) ? '<span class="tick" role="img" aria-label="Played">✓</span>' : ''}</button>`).join('');
     return;
   }
   if (!q && state.tab === 'groove') return drawGrooves();
@@ -824,7 +824,7 @@ function startSong(def) {
   buildKeyboard();
   setStart(low);
   $('songCtl').hidden = false;
-  $('curSong').textContent = '🎵 ' + def.title;
+  $('curSong').textContent = (songsDone.has(def.id) ? '✓ ' : '') + '🎵 ' + def.title;
   $('curSong').hidden = false;
   for (const el of gridEl.querySelectorAll('.card[data-song]')) el.classList.toggle('sel', el.dataset.song === def.id);
   showGuide(true);
@@ -872,12 +872,28 @@ function showGuide(scroll, afterHit) {
   }, 170);
 }
 
+// Songs played all the way through get a ✓ in the song list so the teacher can see at a glance what a student has done.
+// Kept only for this browser session (a reload keeps it, closing the tab clears it); signed in or not makes no difference.
+const DONE_KEY = 'midimusic_songs_done';
+const songsDone = (() => {
+  try { return new Set(JSON.parse(sessionStorage.getItem(DONE_KEY) || '[]')); } catch { return new Set(); }
+})();
+function markSongDone(def) {
+  songsDone.add(def.id);
+  try { sessionStorage.setItem(DONE_KEY, JSON.stringify([...songsDone])); } catch { /* storage blocked: the ✓ lasts until reload */ }
+  if (state.song?.def === def) $('curSong').textContent = '✓ 🎵 ' + def.title;
+  if (state.tab === 'songs') drawGrid();
+}
+
 function songHit(key) {
   const sg = state.song;
   if (sg.demo || sg.i >= sg.notes.length) return;
   if ((((key - sg.notes[sg.i].n) % 12) + 12) % 12 !== 0) return; // right note name, any octave
   sg.i++;
-  if (sg.i >= sg.notes.length) toast(`🎉 You played “${sg.def.title}”! Great job!`);
+  if (sg.i >= sg.notes.length) {
+    markSongDone(sg.def);
+    toast(`🎉 You played “${sg.def.title}”! Great job!`);
+  }
   showGuide(true, true);
 }
 

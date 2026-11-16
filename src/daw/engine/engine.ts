@@ -187,7 +187,10 @@ export class AudioEngine {
       const a = p.assets[id];
       if (a && this.assets.status(id) === 'idle') this.assets.load(a).catch(() => undefined);
     }
-    for (const t of p.tracks) if (t.kind === 'instrument' && t.instrument) this.instruments.load(t.instrument.id).catch(() => undefined);
+    for (const t of p.tracks) {
+      if (t.kind !== 'instrument' || !t.instrument) continue;
+      this.instruments.load(t.instrument.id).then((inst) => inst.want?.(notePitches(p, t.id))).catch(() => undefined);
+    }
     // Start stretch processing for regions that need it.
     for (const r of p.regions) {
       if (r.kind !== 'audio') continue;
@@ -204,7 +207,19 @@ export class AudioEngine {
       const a = p.assets[id];
       if (a) jobs.push(this.assets.load(a).catch((e: Error) => problems.push(e.message)));
     }
-    for (const t of p.tracks) if (t.kind === 'instrument' && t.instrument) jobs.push(this.instruments.load(t.instrument.id).catch(() => undefined));
+    for (const t of p.tracks) {
+      if (t.kind !== 'instrument' || !t.instrument) continue;
+      // A sampler's keys are prepared in the background; an export waits for the ones the song uses.
+      jobs.push(
+        this.instruments
+          .load(t.instrument.id)
+          .then((inst) => {
+            inst.want?.(notePitches(p, t.id));
+            return inst.settled?.();
+          })
+          .catch(() => undefined),
+      );
+    }
     await withTimeout(Promise.all(jobs), timeoutMs);
     const stretchJobs: Promise<unknown>[] = [];
     for (const r of p.regions) {
@@ -466,7 +481,7 @@ export class AudioEngine {
     }
     const dest = this.graph.strip(trackId)?.input ?? this.graph.masterIn;
     const t = this.ctx.currentTime + 0.005;
-    const v = inst.noteOn(this.ctx, dest, pitch, velocity, t);
+    const v = inst.noteOn(this.ctx, dest, pitch, velocity, t, 0, { startLevel: track?.instrument?.startLevel });
     let released = false;
     return () => {
       if (released) return;
@@ -528,8 +543,16 @@ export class AudioEngine {
     this.scheduler.dispose();
     this.graph.dispose();
     this.assets.dispose();
+    this.instruments.dispose();
     await this.ctx.close().catch(() => undefined);
   }
+}
+
+/** Every key a track's MIDI clips use. */
+function notePitches(p: Project, trackId: string): Set<number> {
+  const out = new Set<number>();
+  for (const r of p.regions) if (r.kind === 'midi' && r.trackId === trackId) for (const n of r.notes) out.add(n.pitch);
+  return out;
 }
 
 function withTimeout<T>(p: Promise<T>, ms: number): Promise<T | undefined> {

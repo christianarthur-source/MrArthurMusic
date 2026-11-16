@@ -130,6 +130,8 @@ function track(v: unknown, i: number, seen: Set<string>, warnings: string[]): Tr
   if (kind === 'instrument') {
     const inst = isObj(v.instrument) && typeof v.instrument.id === 'string' ? v.instrument.id : 'piano';
     t.instrument = { id: /^[A-Za-z0-9_:.@-]{1,96}$/.test(inst) ? inst : 'piano' };
+    const level = isObj(v.instrument) ? v.instrument.startLevel : undefined;
+    if (typeof level === 'number' && Number.isFinite(level)) t.instrument.startLevel = Math.min(0.5, Math.max(0, level));
   }
   t.automation = (Array.isArray(v.automation) ? v.automation : [])
     .slice(0, 32)

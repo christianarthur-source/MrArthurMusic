@@ -1,5 +1,6 @@
 import { AlertTriangle } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { SAMPLER_PREFIX, SAMPLER_START_DEFAULT, SAMPLER_START_MAX } from '../engine/instruments';
 import { audioPlayback } from '../engine/scheduler';
 import * as ops from '../model/ops';
 import { secondsPerTick } from '../model/time';
@@ -52,6 +53,7 @@ export function Inspector() {
           )
         ) : (
           <div aria-label="Track effects">
+            {track && <SamplerStart trackId={track.id} />}
             {track ? <EffectsChain owner={{ trackId: track.id }} effects={track.effects} /> : <EffectsChain owner="master" effects={project.master.effects} />}
             {!track && <p className="mt-2 text-xs text-slate-500">Select a track to edit its effects. With no track selected you are editing the Master (the whole song).</p>}
           </div>
@@ -134,6 +136,38 @@ function RegionProps({ region }: { region: Region }) {
         </div>
       </div>
       {region.kind === 'audio' && <AudioProps region={region} live={live} commit={commit} update={update} />}
+      {region.kind === 'midi' && <SamplerStart trackId={region.trackId} />}
+    </div>
+  );
+}
+
+/**
+ * "Sound starts at": for a sampler track, how loud the recording must get before a note begins.
+ * Lower catches a soft beginning; higher skips quiet breath or room noise before the sound.
+ * Takes effect on the next note you play, so you can drag it and tap a key to hear the change.
+ */
+function SamplerStart({ trackId }: { trackId: string }) {
+  const s = useStudio();
+  const inst = useProject((p) => p.tracks.find((t) => t.id === trackId)?.instrument);
+  if (!inst?.id.startsWith(SAMPLER_PREFIX)) return null;
+  const level = inst.startLevel ?? SAMPLER_START_DEFAULT;
+  const pct = Math.round(level * 100);
+  const live = (v: number) => {
+    s.store.beginGesture();
+    s.store.preview((p) => ops.updateTrack(p, trackId, { instrument: { ...inst, startLevel: v / 100 } }));
+  };
+  const commit = () => {
+    s.store.commitGesture('Sound start level');
+    s.engine.auditionNote(trackId, 60, 100, 0.6);
+  };
+  return (
+    <div className="mb-2 max-w-md rounded-xl bg-slate-800/50 p-2.5 ring-1 ring-slate-800" data-testid="sampler-start">
+      <div className="flex justify-between text-xs">
+        <span className="font-semibold">Where the sound starts</span>
+        <span className="font-mono text-slate-400">{pct}%{pct === Math.round(SAMPLER_START_DEFAULT * 100) ? ' (default)' : ''}</span>
+      </div>
+      <Slider label="Where the sound starts (volume)" className="w-full" min={0} max={Math.round(SAMPLER_START_MAX * 100)} step={1} value={pct} defaultValue={Math.round(SAMPLER_START_DEFAULT * 100)} format={(v) => `${v}%`} onChange={live} onCommit={commit} />
+      <p className="text-xs leading-snug text-slate-400">Each note begins once your recording gets this loud. Lower = starts earlier. Higher = skips quiet noise before the sound.</p>
     </div>
   );
 }
