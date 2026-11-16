@@ -30,6 +30,7 @@ export const LAB_ENTRIES: readonly LabEntry[] = [
   { id: 'song-starter', title: 'Song Starter', emoji: '🎶', group: 'create', grades: ['K-2'], to: { app: 'song-starter' } },
   { id: 'midimusic', title: 'MIDI MUSIC', emoji: '🎹', group: 'create', grades: 'all', to: { path: '/midimusic/' } },
   { id: 'chromeextra', title: 'Chrome Music Lab EXTRA', emoji: '🧪', group: 'create', grades: 'all', to: { path: '/chromeextra/' } },
+  { id: 'typebeat', title: 'Type Beat', emoji: '⌨️', group: 'create', grades: 'all', to: { path: '/typebeat/' } },
   { id: 'staff-wars', title: 'Staff Wars', emoji: '🚀', group: 'play', grades: ['3-5', '6-8'], to: { app: 'staff-wars' } },
   { id: 'rhythm-rockstars', title: 'Rhythm Rock Stars', emoji: '🎸', group: 'play', grades: 'all', to: { app: 'rhythm-rockstars' } },
   { id: 'solfege-trainer', title: 'Do-Re-Mi Trainer', emoji: '🔔', group: 'practice', grades: ['K-2', '3-5'], to: { app: 'solfege-trainer' } },
