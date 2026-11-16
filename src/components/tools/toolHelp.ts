@@ -62,10 +62,12 @@ export const TOOL_HELP: Record<ToolId, ToolHelp> = {
   },
   tuner: {
     steps: [
-      'Pick your instrument (guitar, violin, bass and more).',
-      'Press Start Listening and allow the microphone, then play one string at a time.',
-      'The needle shows if the note is flat or sharp. When it says in tune, move on to the next string.',
-      'Tap a string to tune just that one, or leave it on Auto-Detect. The speaker button plays a string\'s reference pitch.',
+      'Pick your instrument (guitar, violin, bass and more), or leave it on Chromatic.',
+      'Press Start Listening and allow the microphone, then play one note at a time.',
+      'Watch the big ruler: the line moves left when you are too low and right when you are too high. The small ruler below shows tiny differences.',
+      'When it says In tune and the ring fills, move on. Tap a string to tune just that one, or leave it on Auto.',
+      'Band instruments: open Settings (gear) and choose B♭, E♭ or F to see the note you read. The speaker button plays the concert reference pitch.',
     ],
   },
+
 };
