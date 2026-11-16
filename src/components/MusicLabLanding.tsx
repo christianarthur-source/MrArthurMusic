@@ -5,6 +5,7 @@ import { LazyClassroomToolBoxModal } from './tools/LazyClassroomToolBoxModal';
 import type { ToolId } from './tools/ClassroomToolBoxModal';
 import { GRADE_BANDS, GradeFilter, LabEntry, entryById, hrefForEntry, matchesGrade, readRecentTools } from '../labCatalog';
 import { isToolId, urlForRoute } from '../routes';
+import { LAB_TOOL_ART } from './LabToolArt';
 
 export type MusicLabAppId = 'hub' | 'staff-composer' | 'rhythm-rockstars' | 'beat-machine' | 'daw' | 'staff-wars' | 'big-staff';
 
@@ -94,16 +95,20 @@ const BARS_ART = (
   </div>
 );
 
-const SPACE_ART = (
-  <div className="relative h-full flex items-center justify-between px-2">
-    <div className="absolute inset-x-0 top-2 h-px bg-sky-400/40" />
-    <div className="absolute inset-x-0 top-5 h-px bg-sky-400/40" />
-    <div className="absolute inset-x-0 top-8 h-px bg-sky-400/40" />
-    <div className="absolute inset-x-0 top-11 h-px bg-sky-400/40" />
-    <div className="absolute inset-x-0 top-14 h-px bg-sky-400/40" />
-    <div className="w-8 h-8 rounded-full bg-emerald-500/20 border-2 border-emerald-400 flex items-center justify-center text-lg z-10">𝄞</div>
-    <div className="flex-1 h-1 bg-gradient-to-r from-emerald-400 via-yellow-300 to-rose-500 mx-2 rounded-full animate-pulse motion-reduce:animate-none" />
-    <div className="w-6 h-6 rounded-full bg-amber-400 text-slate-950 font-black text-xs flex items-center justify-center z-10">♩</div>
+const DAW_ART = (
+  <div className="relative h-full flex flex-col justify-around">
+    {[
+      [['w-[34%] bg-rose-400', ''], ['w-[22%] bg-amber-400', 'ml-[6%]'], ['w-[24%] bg-rose-400', 'ml-[4%]']],
+      [['w-[18%] bg-sky-400', 'ml-[10%]'], ['w-[40%] bg-emerald-400', 'ml-[4%]'], ['w-[14%] bg-sky-400', 'ml-[4%]']],
+      [['w-[50%] bg-violet-400', ''], ['w-[30%] bg-indigo-400', 'ml-[6%]']],
+    ].map((clips, row) => (
+      <div key={row} className="flex h-3.5 rounded bg-slate-900">
+        {clips.map(([c, m], i) => (
+          <div key={i} className={`h-full rounded-sm ${c} ${m}`} />
+        ))}
+      </div>
+    ))}
+    <div className="absolute inset-y-0 left-[46%] w-0.5 bg-white/90 rounded-full" />
   </div>
 );
 
@@ -127,33 +132,30 @@ const GEMS_ART = (
 const FEATURED: { id: string; f: Feature }[] = [
   { id: 'midimusic', f: { emoji: '🎹', title: 'MIDI MUSIC', badge: 'Keyboard', blurb: 'Plug in a MIDI keyboard and play 140+ instruments, learn songs and jam with a beat.', cta: 'Open MIDI MUSIC', accent: 'amber', art: KEYBOARD_ART } },
   { id: 'chromeextra', f: { emoji: '🧪', title: 'Chrome Music Lab EXTRA', badge: 'Experiments', blurb: 'Song Maker, Kandinsky, Shared Piano and Rhythm, with custom colour themes.', cta: 'Open Music Lab EXTRA', accent: 'sky', art: BARS_ART } },
-  { id: 'staff-wars', f: { emoji: '🚀', title: 'Staff Wars', badge: 'Space arcade', blurb: 'Blast enemy notes with spaceship lasers before they hit your clef!', cta: 'Play Staff Wars', accent: 'amber', art: SPACE_ART } },
+  { id: 'daw', f: { emoji: '🎚️', title: 'Studio DAW', badge: 'Studio', blurb: 'Mix loops, record microphone vocals and make full songs.', cta: 'Launch Studio DAW', accent: 'indigo', art: DAW_ART } },
   { id: 'rhythm-rockstars', f: { emoji: '🎸', title: 'Rhythm Rock Stars', badge: 'Rhythm game', blurb: 'Tap along to drum beats, decode rock rhythms and beat 6 stages!', cta: 'Play Rhythm Rock Stars', accent: 'rose', art: GEMS_ART } },
 ];
 
 interface ToolCardDef {
-  emoji: string;
+  /** The only text on the tile. */
   title: string;
-  kind: string;
-  blurb: string;
-  cta: string;
   accent: AccentName;
 }
 
-/** The additional classroom tools: one grid, every card the same size. */
-const TOOL_ORDER = ['beat-machine', 'daw', 'song-starter', 'solfege-trainer', 'music-symbol-match', 'dynamic-ears', 'instrument-zoo', 'metronome', 'tempo-tapper', 'tuner'];
+/** The additional classroom tools: one grid of picture tiles (see LabToolArt.tsx), every tile the same size. */
+const TOOL_ORDER = ['beat-machine', 'staff-wars', 'song-starter', 'solfege-trainer', 'music-symbol-match', 'dynamic-ears', 'instrument-zoo', 'metronome', 'tempo-tapper', 'tuner'];
 
 const TOOL_CARDS: Record<string, ToolCardDef> = {
-  'beat-machine': { emoji: '🥁', title: 'Beat Machine', kind: 'Create', blurb: 'Tap the glowing pads to build custom drum grooves.', cta: 'Launch Beat Machine', accent: 'amber' },
-  daw: { emoji: '🎛️', title: 'Studio DAW', kind: 'Create', blurb: 'Mix loops, record microphone vocals and make full songs.', cta: 'Launch Studio DAW', accent: 'indigo' },
-  'song-starter': { emoji: '🎶', title: 'Song Starter', kind: 'Create', blurb: 'K-2 Song Box: drag sound blocks to make a song.', cta: 'Open Song Starter', accent: 'orange' },
-  'solfege-trainer': { emoji: '🔔', title: 'Do-Re-Mi Trainer', kind: 'Practice', blurb: 'Play rainbow bells and practice Curwen hand signs.', cta: 'Play Chimes', accent: 'rose' },
-  'music-symbol-match': { emoji: '🃏', title: 'Symbol Match', kind: 'Practice', blurb: 'Match notes, rests, clefs and dynamics in memory and speed modes.', cta: 'Play Symbol Match', accent: 'violet' },
-  'dynamic-ears': { emoji: '👂', title: 'Dynamic Ears', kind: 'Practice', blurb: 'Classroom quiet meter and sound challenges.', cta: 'Open Meter', accent: 'emerald' },
-  'instrument-zoo': { emoji: '🎻', title: 'Instrument Zoo', kind: 'Practice', blurb: 'Tap to hear real orchestra instrument sounds.', cta: 'Visit the Zoo', accent: 'cyan' },
-  metronome: { emoji: '⏱️', title: 'Metronome', kind: 'Tool', blurb: 'Screen flash, woodblock clicks and animal speeds.', cta: 'Open Metronome', accent: 'amber' },
-  'tempo-tapper': { emoji: '👆', title: 'Tap Tempo', kind: 'Tool', blurb: 'Tap the beat to find any song’s speed.', cta: 'Open Tap Tempo', accent: 'orange' },
-  tuner: { emoji: '🎛️', title: 'Instrument Tuner', kind: 'Tool', blurb: 'Tune guitar, violin, bass and more with your mic.', cta: 'Open Tuner', accent: 'teal' },
+  'beat-machine': { title: 'Beat Machine', accent: 'amber' },
+  'staff-wars': { title: 'Staff Wars', accent: 'sky' },
+  'song-starter': { title: 'Song Starter', accent: 'orange' },
+  'solfege-trainer': { title: 'Do-Re-Mi Trainer', accent: 'rose' },
+  'music-symbol-match': { title: 'Symbol Match', accent: 'violet' },
+  'dynamic-ears': { title: 'Dynamic Ears', accent: 'emerald' },
+  'instrument-zoo': { title: 'Instrument Zoo', accent: 'cyan' },
+  metronome: { title: 'Metronome', accent: 'amber' },
+  'tempo-tapper': { title: 'Tap Tempo', accent: 'orange' },
+  tuner: { title: 'Instrument Tuner', accent: 'teal' },
 };
 
 export const MusicLabLanding: React.FC<MusicLabLandingProps> = ({
@@ -247,31 +249,22 @@ export const MusicLabLanding: React.FC<MusicLabLandingProps> = ({
     );
   };
 
-  /** A smaller card for the rest of the classroom tools: all identical in size. */
+  /** A picture tile for the rest of the classroom tools: a big logo and just the tool's name. */
   const toolCard = (id: string) => {
     const t = TOOL_CARDS[id];
-    if (!t) return null;
+    const Art = LAB_TOOL_ART[id];
+    if (!t || !Art) return null;
     const a = ACCENTS[t.accent];
     return (
       <a
         key={id}
         {...linkProps(id)}
-        className={`group h-full flex flex-col rounded-3xl bg-gradient-to-br from-slate-900 to-slate-950 border ${a.border} p-4 transition-all duration-200 hover:shadow-xl ${a.shadow} focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300`}
+        className={`group h-full flex flex-col items-center gap-3 rounded-3xl bg-gradient-to-br from-slate-900 to-slate-950 border ${a.border} p-4 transition-all duration-200 hover:shadow-xl hover:-translate-y-0.5 ${a.shadow} focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300`}
       >
-        <div className="flex items-center justify-between gap-2">
-          <div className={`w-11 h-11 shrink-0 rounded-2xl border flex items-center justify-center text-2xl group-hover:scale-110 transition-transform shadow-inner ${a.tile}`}>
-            <span aria-hidden="true">{t.emoji}</span>
-          </div>
-          <span className={`px-2 py-0.5 rounded-full text-[12px] font-black uppercase tracking-wide border font-['Fredoka',sans-serif] ${a.chip}`}>{t.kind}</span>
+        <div className={`w-full aspect-square max-w-[9.5rem] rounded-2xl border p-3 shadow-inner transition-transform group-hover:scale-105 motion-reduce:transition-none motion-reduce:group-hover:scale-100 ${a.tile}`}>
+          <Art />
         </div>
-        <h3 className={`mt-3 text-base font-black text-white font-['Fredoka',sans-serif] transition-colors ${a.titleHover}`}>{t.title}</h3>
-        <p className={`mt-1 text-xs font-bold leading-snug ${a.text}`}>{t.blurb}</p>
-        <span className={`mt-auto pt-3`}>
-          <span className={`w-full py-2 rounded-xl bg-slate-800 group-hover:text-slate-950 font-black text-xs flex items-center justify-center gap-1.5 transition-colors font-['Fredoka',sans-serif] ${a.text} ${a.btnHover}`}>
-            <span>{t.cta}</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </span>
-        </span>
+        <h3 className={`mt-auto text-base sm:text-lg font-black text-white text-center leading-tight font-['Fredoka',sans-serif] transition-colors ${a.titleHover}`}>{t.title}</h3>
       </a>
     );
   };
@@ -564,9 +557,9 @@ export const MusicLabLanding: React.FC<MusicLabLandingProps> = ({
               <h2 id="more-heading" className="text-2xl sm:text-3xl font-black text-white font-['Fredoka',sans-serif]">
                 More classroom tools
               </h2>
-              <span className="text-xs sm:text-sm text-slate-400 font-semibold">Drums, studio, practice games and teacher helpers · smartboard ready</span>
+              <span className="text-xs sm:text-sm text-slate-400 font-semibold">Drums, games, practice and teacher helpers · smartboard ready</span>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
               {TOOL_ORDER.filter(visible).map((id) => toolCard(id))}
             </div>
           </section>
