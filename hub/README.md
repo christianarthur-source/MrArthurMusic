@@ -5,6 +5,8 @@
 
 A modern, responsive Progressive Web Application designed for the daily realities of elementary music education (K–6) and sixth-grade chorus. Built for teachers working across classrooms, laptops, Chromebooks, iPads, and mobile carts.
 
+This folder is the Hub's own Vite app. It is part of the Mr. Arthur's Music Lab site repository: it is built into `dist/Hub` by the root `npm run build` and served at `/Hub/`.
+
 ---
 
 ## ✨ Features
@@ -13,7 +15,7 @@ A modern, responsive Progressive Web Application designed for the daily realitie
 - **K–6 Standards-Aligned Units**: Pre-loaded with Kodály and Orff Schulwerk units aligned with National Core Arts & NYS Music Standards.
 - **Dual-Engine AI Lesson Plan Builder**:
   - *Built-In Pedagogical Engine*: Instant, zero-config, offline lesson generation with balanced 5-step timing, NYS standards tagging, materials lists, and rubrics.
-  - *Google Gemini Live AI*: Connect a Google AI Studio API key for direct Gemini 2.0 Flash lesson generation.
+  - *Free AI* (Cloudflare Workers AI, no key needed) and *Claude* (the site's key, or one entered in the Hub's Settings): optional AI lesson generation through `/api/hub/free-ai` and `/api/hub/claude`.
   - *8 One-Click Presets*: Scarf movement (K), steady beat vs. rhythm (1st), Curwen solfege (2nd), recorder BAG (3rd), syncopation (4th), Boomwhackers (5th), orchestra families (5th), and 2-part chorus harmony (6th).
 - **Teach Mode**: Full-screen, distraction-free presenter view for classroom smartboards with large controls, timers, and step progression.
 
@@ -52,44 +54,33 @@ A modern, responsive Progressive Web Application designed for the daily realitie
 
 ---
 
-## 🚀 Getting Started
+## 🚀 Development
 
-### Local Development
+The Hub is not a standalone repository; it lives in the `hub/` folder of the site repository.
 
 ```bash
-# Clone the repository
-git clone https://github.com/christianarthur-source/Music-Teacher-Hub.git
-cd Music-Teacher-Hub
-
-# Install dependencies
+cd hub
 npm install
-
-# Start development server
-npm run dev
+npm run dev            # http://localhost:5173/Hub/ , its /api/hub/* routes run as Vite middleware with a local SQLite file
+npm run build          # type check + Vite build
 ```
 
-Visit `http://localhost:5173` in your browser.
+From the repository root, `npm run build` builds the site and then the Hub into `dist/Hub`.
 
-### Production Build
+### Server side
 
-```bash
-npm run build
-```
+`hub/server/*.mjs` holds the Hub's API (PIN lock and cloud sync in Cloudflare D1, YouTube and calendar helpers, image search, Claude and Workers AI proxies). `cloudflare/worker.mjs` mounts it under `/api/hub/*`; `hub/vite.config.ts` mounts the same code for local development.
 
-The output files are generated in `./dist`.
+### Tests
+
+`node cloudflare/hub.test.mjs` from the repository root.
 
 ---
 
 ## 🛠️ Technology Stack
 
 - **Framework**: React 18, TypeScript, Vite
-- **Styling**: Tailwind CSS
+- **Styling**: Tailwind CSS 3
 - **Icons**: Lucide React
-- **Audio Engine**: Web Audio API (real-time granular pitch shifter, synthetic oscillator instruments, mic pitch detection)
-- **Hosting & CI/CD**: GitHub Pages & GitHub Actions
-
----
-
-## 📄 License
-
-MIT License. Designed with care for music educators.
+- **Audio Engine**: Web Audio API (granular pitch shifter, synthetic instruments, microphone pitch detection)
+- **Hosting**: Cloudflare Workers (static assets plus the API Worker), deployed by Cloudflare Workers Builds from GitHub
