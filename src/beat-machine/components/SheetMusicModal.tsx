@@ -182,7 +182,6 @@ export const SheetMusicModal: React.FC<SheetMusicModalProps> = ({
         document.body.appendChild(downloadLink);
         downloadLink.click();
         document.body.removeChild(downloadLink);
-        URL.revokeObjectURL(url);
 
         confetti({
           particleCount: 70,
@@ -190,6 +189,18 @@ export const SheetMusicModal: React.FC<SheetMusicModalProps> = ({
           origin: { y: 0.6 },
         });
       }
+    };
+    // Always release the object URL, whether the picture drew, failed to load, or there was no canvas
+    const originalOnLoad = img.onload as ((ev: Event) => void) | null;
+    img.onload = (ev) => {
+      try {
+        originalOnLoad?.call(img, ev);
+      } finally {
+        URL.revokeObjectURL(url);
+      }
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
     };
     img.src = url;
   };

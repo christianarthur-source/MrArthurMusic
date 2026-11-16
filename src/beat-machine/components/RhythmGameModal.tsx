@@ -43,7 +43,12 @@ export const RhythmGameModal: React.FC<RhythmGameModalProps> = ({ isOpen, onClos
   const [feedbackState, setFeedbackState] = useState<'neutral' | 'success' | 'tryAgain'>('neutral');
 
   const currentChallenge = CHALLENGES[level];
-  const demoTimeoutRefs = useRef<NodeJS.Timeout[]>([]);
+  const demoTimeoutRefs = useRef<ReturnType<typeof setTimeout>[]>([]);
+  // Every timer goes through here, so closing the window (or restarting the demo) cancels all of
+  // them: a stray demo replay with the window closed came from untracked inner timeouts.
+  const later = (fn: () => void, ms: number) => {
+    demoTimeoutRefs.current.push(setTimeout(fn, ms));
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -72,13 +77,13 @@ export const RhythmGameModal: React.FC<RhythmGameModalProps> = ({ isOpen, onClos
         soundEngine.playSound(sound);
         setHighlightPad(sound);
 
-        setTimeout(() => {
+        later(() => {
           setHighlightPad(null);
         }, stepInterval * 0.5);
 
         // When demo completes
         if (idx === currentChallenge.sequence.length - 1) {
-          setTimeout(() => {
+          later(() => {
             setIsPlayingDemo(false);
             setFeedback('Your turn! Tap the rhythm back!');
           }, stepInterval * 0.8);
@@ -94,7 +99,7 @@ export const RhythmGameModal: React.FC<RhythmGameModalProps> = ({ isOpen, onClos
 
     soundEngine.playSound(sound);
     setHighlightPad(sound);
-    setTimeout(() => setHighlightPad(null), 150);
+    later(() => setHighlightPad(null), 150);
 
     const newInput = [...playerInput, sound];
     setPlayerInput(newInput);
@@ -107,7 +112,7 @@ export const RhythmGameModal: React.FC<RhythmGameModalProps> = ({ isOpen, onClos
       setFeedbackState('tryAgain');
       setFeedback('Oops! Almost! Listen again and give it another try!');
       soundEngine.playSound('plop', 0, 0.7, 0.5);
-      setTimeout(() => {
+      later(() => {
         startLevelDemo();
       }, 1200);
       return;
@@ -126,7 +131,7 @@ export const RhythmGameModal: React.FC<RhythmGameModalProps> = ({ isOpen, onClos
         origin: { y: 0.6 },
       });
 
-      setTimeout(() => {
+      later(() => {
         if (level < CHALLENGES.length - 1) {
           setLevel((prev) => prev + 1);
         } else {

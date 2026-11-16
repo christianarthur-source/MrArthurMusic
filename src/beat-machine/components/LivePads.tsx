@@ -50,8 +50,11 @@ export const LivePads: React.FC<LivePadsProps> = ({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't trigger if user is typing in an input field
-      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) return;
+      // Don't trigger if user is typing in a field, or the key is part of a browser shortcut
+      // (Ctrl/Cmd+R, S, A ...) or is a held-down key repeating
+      const target = e.target as HTMLElement | null;
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(target?.tagName || '') || target?.isContentEditable) return;
+      if (e.ctrlKey || e.metaKey || e.altKey || e.repeat) return;
 
       const keyUpper = e.key.toUpperCase();
       const match = PAD_CONFIG.find((p) => p.key === keyUpper);

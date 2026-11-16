@@ -31,7 +31,7 @@ import {
 } from './types';
 import confetti from '../utils/confetti';
 import { Sparkles, Grid3X3, Compass, Radio, Music2, Layers, Activity, Save, X } from 'lucide-react';
-import { extractSongFromLocation } from './utils/songSharing';
+import { extractSongFromLocation, clampBpm } from './utils/songSharing';
 import { cleanProfanity, containsProfanity } from './utils/profanityFilter';
 import { StudentSession, saveStudentProject } from '../utils/classroomApi';
 import { DialogBehavior } from '../components/Modal';
@@ -171,7 +171,7 @@ export default function BeatMachineApp({
 
   // Import shared song data with flexible track matching and scale adaptation
   const handleImportSong = useCallback((data: SharedSongData) => {
-    if (data.bpm) setBpm(data.bpm);
+    if (data.bpm) setBpm(clampBpm(data.bpm));
     if (data.measures) {
       setTotalMeasures(Math.min(4, Math.max(1, data.measures)));
       setActiveMeasure(0);
@@ -209,7 +209,12 @@ export default function BeatMachineApp({
       soundEngine.setFilter(data.isFilterOn);
     }
 
-    if (data.drumTracks && Array.isArray(data.drumTracks)) {
+    if (data.drumTracks && Array.isArray(data.drumTracks) && data.drumTracks.length === 0) {
+      // A melody/bass-only beat has no drum tracks in its link. Keep the drum rows (so the grid,
+      // and the voice recorder that writes into the last row, always have something to work
+      // with) but clear their steps: the shared beat has no drums.
+      setTracks((prev) => prev.map((t) => ({ ...t, steps: Array(64).fill(false) })));
+    } else if (data.drumTracks && Array.isArray(data.drumTracks)) {
       setTracks(() => {
         return data.drumTracks.map((sharedTrack, idx) => {
           const sample = ALL_AVAILABLE_SAMPLES.find((s) => s.soundType === sharedTrack.soundType) ||
@@ -428,8 +433,9 @@ export default function BeatMachineApp({
       if (!audioCtx) return;
 
       const stepsPerMeasure = totalStepsInMeasureRef.current;
-      const secondsPerBeat = 60.0 / bpmRef.current;
-      const secondsPerStep = secondsPerBeat * (4.0 / stepsPerMeasure);
+      const safeBpm = Number.isFinite(bpmRef.current) && bpmRef.current > 0 ? bpmRef.current : 110;
+      const secondsPerBeat = 60.0 / safeBpm;
+      const secondsPerStep = Math.max(0.01, secondsPerBeat * (4.0 / stepsPerMeasure));
 
       const totalSongSteps = totalMeasuresRef.current * stepsPerMeasure;
 
@@ -999,7 +1005,11 @@ export default function BeatMachineApp({
 
   const handleToggleSongRecord = async () => {
     if (!isRecordingSong) {
-      soundEngine.startRecordingSong();
+      if (!soundEngine.startRecordingSong()) {
+        // e.g. an older iPad: say so instead of showing "recording" and ending with nothing
+        void alertDialog("Saving your beat as audio doesn't work in this browser. Try Chrome on a Chromebook or computer.");
+        return;
+      }
       setIsRecordingSong(true);
       if (!isPlaying) {
         setIsPlaying(true);
@@ -1023,6 +1033,7 @@ export default function BeatMachineApp({
       const copy = [...prev];
       const micTrackIdx = copy.findIndex((t) => t.sample.soundType === 'custom-mic');
       const targetIdx = micTrackIdx >= 0 ? micTrackIdx : copy.length - 1;
+      if (targetIdx < 0) return prev; // no drum rows at all: nothing to put the sample on
 
       copy[targetIdx] = {
         ...copy[targetIdx],

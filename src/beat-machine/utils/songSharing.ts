@@ -26,6 +26,19 @@ export interface CompactSongPayload {
   };
 }
 
+export const MIN_SAFE_BPM = 40;
+export const MAX_SAFE_BPM = 240;
+
+/**
+ * A tempo from a share link or saved song is untrusted: a negative or huge value made the
+ * scheduler loop forever. The slider covers 60-180; this allows a little extra room.
+ */
+export const clampBpm = (value: unknown, fallback = 110): number => {
+  const n = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(MAX_SAFE_BPM, Math.max(MIN_SAFE_BPM, Math.round(n)));
+};
+
 /**
  * Returns the public app URL where anyone can open without Google or developer login.
  * In AI Studio, the development URL is ais-dev-* (which requires Google workspace developer auth),
@@ -53,7 +66,9 @@ export const compressSong = (song: SharedSongData): CompactSongPayload => {
       if (val) active.push(idx);
     });
     if (active.length > 0) {
-      d[track.soundType] = active;
+      // Two tracks can use the same sample: merge their steps (OR) instead of the second replacing the first
+      const merged = new Set([...(d[track.soundType] || []), ...active]);
+      d[track.soundType] = Array.from(merged).sort((a, b) => a - b);
     }
   });
 
@@ -113,7 +128,8 @@ export const decompressSong = (raw: any): SharedSongData | null => {
 
   // Legacy format where drumTracks and melodyTracks are already full arrays
   if (Array.isArray(raw.drumTracks) && Array.isArray(raw.melodyTracks)) {
-    return raw as SharedSongData;
+    const legacy = raw as SharedSongData;
+    return legacy.bpm !== undefined ? { ...legacy, bpm: clampBpm(legacy.bpm) } : legacy;
   }
 
   // Compact v2 format
@@ -157,7 +173,7 @@ export const decompressSong = (raw: any): SharedSongData | null => {
   return {
     version: 2,
     title: compact.t || "Mr. Arthur's Beat",
-    bpm: typeof compact.b === 'number' ? compact.b : 110,
+    bpm: typeof compact.b === 'number' ? clampBpm(compact.b) : 110,
     measures: typeof compact.m === 'number' ? Math.min(4, Math.max(1, compact.m)) : 1,
     totalStepsInMeasure: compact.st === 8 ? 8 : 16,
     packId: compact.p || 'classic-hiphop',

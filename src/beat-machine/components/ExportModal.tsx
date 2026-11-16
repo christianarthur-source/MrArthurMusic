@@ -57,7 +57,8 @@ export const ExportModal: React.FC<ExportModalProps> = ({ isOpen, onClose, audio
     if (!audioUrl) return;
     const a = document.createElement('a');
     a.href = audioUrl;
-    a.download = `my-awesome-beat-${new Date().toISOString().slice(0, 10)}.webm`;
+    const ext = /mp4|aac/.test(audioBlob.type) ? 'm4a' : /ogg/.test(audioBlob.type) ? 'ogg' : 'webm';
+    a.download = `my-awesome-beat-${new Date().toISOString().slice(0, 10)}.${ext}`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

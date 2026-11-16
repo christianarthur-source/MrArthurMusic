@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Copy,
   Check,
@@ -30,8 +30,15 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   const [shareableUrl, setShareableUrl] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState<boolean>(true);
 
+  // The link is made once, from the beat as it is when the modal opens. `songData` is a new
+  // object on every render of the app (the playhead moves ~4x a second), so depending on it
+  // sent a new short-link request each time and blanked the box.
+  const songDataRef = useRef(songData);
+  songDataRef.current = songData;
+
   useEffect(() => {
     if (!isOpen) return;
+    const songData = songDataRef.current;
     let isCancelled = false;
     setIsGenerating(true);
 
@@ -58,7 +65,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
     return () => {
       isCancelled = true;
     };
-  }, [isOpen, songData]);
+  }, [isOpen]);
 
   const dlg = useDialogBehavior<HTMLDivElement>(onClose, { active: isOpen });
   if (!isOpen) return null;

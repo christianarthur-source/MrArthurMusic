@@ -1653,15 +1653,35 @@ class SoundEngine {
   }
 
   // --- SONG RECORDING & EXPORT (.WAV) ---
-  public startRecordingSong() {
+  /** Container formats MediaRecorder can write here: Chrome/Firefox take webm/ogg, Safari/iPad only mp4. */
+  public static pickRecordingMimeType(): string | null {
+    if (typeof MediaRecorder === 'undefined') return null;
+    const candidates = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus', 'audio/ogg'];
+    for (const type of candidates) {
+      try {
+        if (MediaRecorder.isTypeSupported(type)) return type;
+      } catch {
+        // ignore
+      }
+    }
+    return '';
+  }
+
+  private recordedMimeType: string = 'audio/webm';
+
+  /** Returns false when this browser cannot record (the caller tells the student instead of pretending to record). */
+  public startRecordingSong(): boolean {
     this.initContext();
-    if (!this.mediaStreamDest) return;
+    if (!this.mediaStreamDest) return false;
+    const mime = SoundEngine.pickRecordingMimeType();
+    if (mime === null) return false;
 
     this.recordedChunks = [];
     try {
-      this.mediaRecorder = new MediaRecorder(this.mediaStreamDest.stream, {
-        mimeType: 'audio/webm',
-      });
+      this.mediaRecorder = mime
+        ? new MediaRecorder(this.mediaStreamDest.stream, { mimeType: mime })
+        : new MediaRecorder(this.mediaStreamDest.stream);
+      this.recordedMimeType = this.mediaRecorder.mimeType || mime || 'audio/webm';
       this.mediaRecorder.ondataavailable = (e) => {
         if (e.data && e.data.size > 0) {
           this.recordedChunks.push(e.data);
@@ -1669,8 +1689,12 @@ class SoundEngine {
       };
       this.mediaRecorder.start(100);
       this.isRecordingSong = true;
+      return true;
     } catch (e) {
       console.warn('MediaRecorder error:', e);
+      this.mediaRecorder = null;
+      this.isRecordingSong = false;
+      return false;
     }
   }
 
@@ -1683,7 +1707,7 @@ class SoundEngine {
 
       this.mediaRecorder.onstop = () => {
         this.isRecordingSong = false;
-        const blob = new Blob(this.recordedChunks, { type: 'audio/webm' });
+        const blob = new Blob(this.recordedChunks, { type: this.recordedMimeType });
         resolve(blob);
       };
 
@@ -1701,7 +1725,14 @@ class SoundEngine {
     if (!this.ctx) throw new Error('AudioContext unavailable');
 
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const mediaRecorder = new MediaRecorder(stream);
+    let mediaRecorder: MediaRecorder;
+    try {
+      mediaRecorder = new MediaRecorder(stream);
+    } catch (err) {
+      // Release the microphone: without this the mic stays on after a failed start
+      stream.getTracks().forEach((track) => track.stop());
+      throw err;
+    }
     const audioChunks: Blob[] = [];
 
     return new Promise((resolve, reject) => {
