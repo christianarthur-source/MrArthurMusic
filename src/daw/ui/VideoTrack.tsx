@@ -3,7 +3,7 @@ import { RefObject, useEffect, useRef, useState } from 'react';
 import { secondsToTicks, ticksToSeconds } from '../model/time';
 import { Project } from '../model/types';
 import { togglePlay } from './actions';
-import { cx, Modal, ProgressBar } from './controls';
+import { cx, leaveWithMouse, Modal, ProgressBar, useMenuDismiss } from './controls';
 import { useEngineState, useProject, useStudio, useUi } from './studio';
 import { HEADER_W, ticksToPx } from './timeline/layout';
 import { addVideo, detachVideoSound, removeVideo, removeVideoSound, seekToVideoStart, toggleVideoSoundMute, onVideoRestored, parseVideoLink, restoreVideoFromLink, thumbStep, VIDEO_ACCEPT, videoStartSec, videoThumbnails, videoUrl } from './video';
@@ -165,6 +165,7 @@ export function VideoStrip() {
   const sound = useProject((p) => p.tracks.find((t) => t.id === p.video?.audioTrackId));
   const videoWindow = useUi((u) => u.videoWindow);
   const [menu, setMenu] = useState(false);
+  useMenuDismiss(menu, () => setMenu(false));
   if (!video) return null;
   return (
     <div className="flex shrink-0 border-b border-slate-800 bg-slate-950" style={{ height: STRIP_H }} data-testid="video-strip">
@@ -194,12 +195,12 @@ export function VideoStrip() {
           ) : (
             <span className="text-[10px] text-slate-500" title="This video's sound was not imported, or it was detached or removed">no linked sound</span>
           )}
-          <div className="relative ml-auto">
+          <div className="relative ml-auto" data-menu-root>
             <StripButton label="More video options" onClick={() => setMenu(!menu)}>
               ⋯
             </StripButton>
             {menu && (
-              <div role="menu" className="absolute left-0 top-7 z-[70] w-52 rounded-xl border border-slate-700 bg-slate-900 p-1 shadow-2xl" onPointerLeave={() => setMenu(false)}>
+              <div role="menu" data-menu-root className="absolute left-0 top-7 z-[70] w-52 rounded-xl border border-slate-700 bg-slate-900 p-1 shadow-2xl" onPointerLeave={leaveWithMouse(() => setMenu(false))}>
                 {[
                   ['Go to video start', () => seekToVideoStart(s)],
                   ['Replace video…', () => s.ui.set({ dialog: 'video' })],
@@ -308,13 +309,14 @@ export function VideoWindow() {
   return (
     <div className="fixed z-[60] flex flex-col overflow-hidden rounded-xl border border-slate-700 bg-black shadow-2xl" style={{ left: pos.x, top: pos.y, width: 400, minWidth: 220, maxWidth: '80vw', resize: 'horizontal' }} data-testid="video-window">
       <div
-        className="flex cursor-move items-center gap-1 bg-slate-900 px-2 py-1 text-xs text-slate-300 select-none"
+        className="flex cursor-move touch-none items-center gap-1 bg-slate-900 px-2 py-1 text-xs text-slate-300 select-none"
         onPointerDown={(e) => {
           e.currentTarget.setPointerCapture(e.pointerId);
           drag.current = { dx: e.clientX - pos.x, dy: e.clientY - pos.y };
         }}
         onPointerMove={(e) => drag.current && setPos({ x: Math.max(0, Math.min(window.innerWidth - 120, e.clientX - drag.current.dx)), y: Math.max(0, Math.min(window.innerHeight - 60, e.clientY - drag.current.dy)) })}
         onPointerUp={() => (drag.current = null)}
+        onPointerCancel={() => (drag.current = null)}
       >
         <Film size={12} className="text-amber-300" /> Video
         <button type="button" className="ml-auto flex items-center gap-1 rounded px-1.5 py-0.5 hover:bg-slate-700" title="Theater Mode" onPointerDown={(e) => e.stopPropagation()} onClick={() => s.ui.set({ theater: true })}>

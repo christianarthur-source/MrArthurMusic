@@ -14,6 +14,7 @@ import { LibraryPanel } from './ui/LibraryPanel';
 import { Mixer } from './ui/Mixer';
 import { AudioStatusBanner, ContextMenu, TaskStatus, Toasts, Tutorial } from './ui/Overlays';
 import { StartScreen } from './ui/StartScreen';
+import { AskHost } from './ui/ask';
 import { HostIntegration, Studio, StudioContext, useStudio, useUi } from './ui/studio';
 import { Timeline } from './ui/timeline/Timeline';
 import { TopBar } from './ui/TopBar';
@@ -133,6 +134,7 @@ export function DawApp(props: DawAppProps) {
 
   return (
     <div className="daw-root fixed inset-0 flex flex-col bg-slate-950  text-slate-100" {...themeRootProps(theme)}>
+      <AskHost />
       {!catalog ? null : screen === 'start' || !studio ? (
         <StartScreen catalog={catalog} onOpen={open} onExit={props.onBackToHub} studentName={props.studentSession?.firstName} />
       ) : (
@@ -308,7 +310,11 @@ function Resizer({ onDrag, vertical }: { onDrag: (dx: number, dy: number) => voi
     <div
       role="separator"
       aria-orientation={vertical ? 'vertical' : 'horizontal'}
-      className={cx('shrink-0 bg-slate-800 hover:bg-amber-400/60', vertical ? 'w-1 cursor-col-resize' : 'h-1 cursor-row-resize')}
+      // A 4 px bar is too thin for a finger: the invisible ::before widens the grab area to 20 px without moving anything.
+      className={cx(
+        'relative shrink-0 touch-none bg-slate-800 hover:bg-amber-400/60 before:absolute before:content-[""]',
+        vertical ? 'w-1 cursor-col-resize before:-inset-x-2 before:inset-y-0' : 'h-1 cursor-row-resize before:-inset-y-2 before:inset-x-0',
+      )}
       onPointerDown={(e) => {
         e.currentTarget.setPointerCapture(e.pointerId);
         last.current = { x: e.clientX, y: e.clientY };
@@ -319,6 +325,7 @@ function Resizer({ onDrag, vertical }: { onDrag: (dx: number, dy: number) => voi
         last.current = { x: e.clientX, y: e.clientY };
       }}
       onPointerUp={() => (last.current = null)}
+      onPointerCancel={() => (last.current = null)}
     />
   );
 }

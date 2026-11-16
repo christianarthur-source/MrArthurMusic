@@ -5,7 +5,7 @@ import { automatableTargets, automationTargetInfo } from '../model/automation';
 import * as ops from '../model/ops';
 import { Track } from '../model/types';
 import { addTrack, removeTrack } from './actions';
-import { cx, EditableText, fmtDb, fmtPan, Meter, SmallToggle, Slider } from './controls';
+import { cx, EditableText, fmtDb, fmtPan, leaveWithMouse, Meter, SmallToggle, Slider, useMenuDismiss } from './controls';
 import { useProject, useStudio, useUi } from './studio';
 import { computeRows, HEADER_W, RULER_H } from './timeline/layout';
 
@@ -30,11 +30,12 @@ export function TrackHeaders() {
   const rows = useMemo(() => computeRows(project), [project]);
   const instruments = useInstrumentList();
   const [adding, setAdding] = useState(false);
+  useMenuDismiss(adding, () => setAdding(false));
 
   return (
     <div className="relative flex shrink-0 flex-col border-r border-slate-800 bg-slate-900" style={{ width: HEADER_W }}>
       <div className="flex shrink-0 items-center justify-between border-b border-slate-800 px-2" style={{ height: RULER_H }}>
-        <div className="relative">
+        <div className="relative" data-menu-root>
           <button
             type="button"
             data-testid="add-track"
@@ -45,7 +46,7 @@ export function TrackHeaders() {
             <Plus size={14} /> Track
           </button>
           {adding && (
-            <div className="absolute left-0 top-8 z-50 w-56 rounded-xl border border-slate-700 bg-slate-900 p-1 shadow-xl" onPointerLeave={() => setAdding(false)}>
+            <div className="absolute left-0 top-8 z-50 w-56 rounded-xl border border-slate-700 bg-slate-900 p-1 shadow-xl" onPointerLeave={leaveWithMouse(() => setAdding(false))}>
               <MenuButton
                 icon={<AudioLines size={15} />}
                 title="Audio track"
@@ -109,6 +110,7 @@ function MenuButton({ icon, title, sub, onClick }: { icon: React.ReactNode; titl
 function TrackHeader({ track, height, selected, instruments, index, count }: { track: Track; height: number; selected: boolean; instruments: InstrumentDescriptor[]; index: number; count: number }) {
   const s = useStudio();
   const [menu, setMenu] = useState(false);
+  useMenuDismiss(menu, () => setMenu(false));
   const update = (label: string, patch: Partial<Track>, key?: string) => s.store.exec(label, (p) => ops.updateTrack(p, track.id, patch), key);
   const meterBuf = useMemo(() => new Float32Array(512), []);
   const readMeter = useCallback(() => s.engine.meterLevel(s.engine.graph.strip(track.id)?.meter, meterBuf), [s, track.id, meterBuf]);
@@ -149,7 +151,7 @@ function TrackHeader({ track, height, selected, instruments, index, count }: { t
               onClick={() => s.store.exec('Arm track', (p) => ({ ...p, tracks: p.tracks.map((t) => ({ ...t, arm: t.id === track.id ? !track.arm : t.kind === 'audio' ? false : t.arm })) }))}
             />
           )}
-          <button type="button" aria-label="Track options" title="Track options" className="rounded p-0.5 text-slate-400 hover:bg-slate-700 hover:text-white" onClick={() => setMenu((m) => !m)}>
+          <button type="button" aria-label="Track options" title="Track options" data-menu-root className="rounded p-0.5 text-slate-400 hover:bg-slate-700 hover:text-white" onClick={() => setMenu((m) => !m)}>
             <MoreVertical size={15} />
           </button>
         </div>
@@ -213,7 +215,7 @@ function TrackHeader({ track, height, selected, instruments, index, count }: { t
         <Meter read={readMeter} />
       </div>
       {menu && (
-        <div className="absolute right-1 top-7 z-50 w-56 rounded-xl border border-slate-700 bg-slate-900 p-1 text-sm shadow-xl" onPointerLeave={() => setMenu(false)}>
+        <div data-menu-root className="absolute right-1 top-7 z-50 w-56 rounded-xl border border-slate-700 bg-slate-900 p-1 text-sm shadow-xl" onPointerLeave={leaveWithMouse(() => setMenu(false))}>
           <MenuRow icon={<Copy size={14} />} label="Duplicate track" onClick={() => s.store.exec('Duplicate track', (p) => ops.duplicateTrack(p, track.id))} />
           <MenuRow icon={<ChevronUp size={14} />} label="Move up" disabled={index === 0} onClick={() => s.store.exec('Move track', (p) => ops.moveTrack(p, track.id, index - 1))} />
           <MenuRow icon={<ChevronDown size={14} />} label="Move down" disabled={index === count - 1} onClick={() => s.store.exec('Move track', (p) => ops.moveTrack(p, track.id, index + 1))} />

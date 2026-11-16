@@ -78,7 +78,7 @@ export function Ruler({ project, scrollX, width }: { project: Project; scrollX: 
   return (
     <canvas
       ref={canvas}
-      className="block shrink-0 cursor-pointer select-none"
+      className="block shrink-0 cursor-pointer touch-none select-none"
       style={{ width, height: RULER_H }}
       role="slider"
       aria-label="Timeline ruler: click to move the playhead, drag to set the loop"
@@ -122,6 +122,11 @@ export function Ruler({ project, scrollX, width }: { project: Project; scrollX: 
           }
           return { ...p, loop: { enabled: true, start, end } };
         });
+      }}
+      onPointerCancel={() => {
+        if (!drag.current) return;
+        drag.current = null;
+        s.store.cancelGesture();
       }}
       onPointerUp={(e) => {
         const d = drag.current;

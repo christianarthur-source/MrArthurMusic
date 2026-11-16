@@ -1,19 +1,20 @@
 import { Moon, Palette, Sun } from 'lucide-react';
 import { useState } from 'react';
-import { cx, IconButton } from './controls';
+import { cx, IconButton, leaveWithMouse, useMenuDismiss } from './controls';
 import { ACCENTS, DEFAULT_ACCENT, setTheme, useTheme } from './theme';
 
 /** Top-bar button: light or dark theme and an accent color (remembered on this computer). */
 export function ThemeMenu() {
   const theme = useTheme();
   const [open, setOpen] = useState(false);
+  useMenuDismiss(open, () => setOpen(false));
   return (
-    <div className="relative">
+    <div className="relative" data-menu-root>
       <IconButton label="Look: light or dark theme and accent color" active={open} onClick={() => setOpen((o) => !o)} testId="theme-menu">
         <Palette size={16} />
       </IconButton>
       {open && (
-        <div role="dialog" aria-label="Theme" className="absolute right-0 top-9 z-[70] w-64 space-y-3 rounded-xl border border-slate-700 bg-slate-900 p-3 shadow-2xl" onPointerLeave={() => setOpen(false)}>
+        <div role="dialog" aria-label="Theme" className="absolute right-0 top-9 z-[70] w-64 space-y-3 rounded-xl border border-slate-700 bg-slate-900 p-3 shadow-2xl" onPointerLeave={leaveWithMouse(() => setOpen(false))}>
           <div className="flex rounded-lg bg-slate-800 p-0.5" role="radiogroup" aria-label="Theme">
             {(
               [

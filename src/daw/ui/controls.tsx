@@ -206,17 +206,51 @@ export function EditableText({ value, onCommit, className, label, maxLength = 40
   );
 }
 
+const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
 export function Modal({ title, onClose, children, wide }: { title: string; onClose: () => void; children: ReactNode; wide?: boolean }) {
+  const panel = useRef<HTMLDivElement>(null);
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
+  // Escape closes, Tab stays inside, focus goes in on open and back to the opener on close.
   useEffect(() => {
+    const root = panel.current;
+    const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    if (root && !root.contains(document.activeElement)) {
+      (root.querySelector<HTMLElement>(FOCUSABLE) ?? root).focus({ preventScroll: true });
+    }
     const h = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') closeRef.current();
+      else if (e.key === 'Tab' && root) {
+        const items = Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE)).filter((el) => el.getClientRects().length > 0);
+        if (!items.length) {
+          e.preventDefault();
+          return;
+        }
+        const first = items[0];
+        const last = items[items.length - 1];
+        const cur = document.activeElement as HTMLElement | null;
+        if (!cur || !root.contains(cur)) {
+          e.preventDefault();
+          first.focus();
+        } else if (e.shiftKey && (cur === first || cur === root)) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && cur === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
     };
     window.addEventListener('keydown', h);
-    return () => window.removeEventListener('keydown', h);
-  }, [onClose]);
+    return () => {
+      window.removeEventListener('keydown', h);
+      if (previous && previous.isConnected) previous.focus({ preventScroll: true });
+    };
+  }, []);
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/70 p-4" onPointerDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div role="dialog" aria-modal="true" aria-label={title} className={cx('max-h-[90vh] w-full overflow-auto rounded-2xl border border-slate-700 bg-slate-900 p-5 shadow-2xl', wide ? 'max-w-3xl' : 'max-w-lg')}>
+      <div ref={panel} tabIndex={-1} role="dialog" aria-modal="true" aria-label={title} className={cx('max-h-[90vh] w-full overflow-auto rounded-2xl border border-slate-700 bg-slate-900 p-5 shadow-2xl outline-none', wide ? 'max-w-3xl' : 'max-w-lg')}>
         <div className="mb-4 flex items-center justify-between">
           <h2 className="daw-display text-xl text-amber-300">{title}</h2>
           <button className="rounded-lg px-2 py-1 text-slate-400 hover:bg-slate-800 hover:text-white" onClick={onClose} aria-label="Close">
@@ -228,6 +262,36 @@ export function Modal({ title, onClose, children, wide }: { title: string; onClo
     </div>
   );
 }
+
+/**
+ * Close a pop-up menu when the Escape key is pressed or a press lands outside it. Mark the menu panel and the
+ * button that opens it with data-menu-root so pressing the button again still toggles normally.
+ */
+export function useMenuDismiss(open: boolean, close: () => void) {
+  const closeRef = useRef(close);
+  closeRef.current = close;
+  useEffect(() => {
+    if (!open) return;
+    const down = (e: PointerEvent) => {
+      const t = e.target as Element | null;
+      if (!t || !t.closest('[data-menu-root]')) closeRef.current();
+    };
+    const key = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeRef.current();
+    };
+    document.addEventListener('pointerdown', down, true);
+    document.addEventListener('keydown', key);
+    return () => {
+      document.removeEventListener('pointerdown', down, true);
+      document.removeEventListener('keydown', key);
+    };
+  }, [open]);
+}
+
+/** Pointer-leave closing is for a mouse only; on touch the finger lifting must not shut the menu. */
+export const leaveWithMouse = (close: () => void) => (e: { pointerType: string }) => {
+  if (e.pointerType === 'mouse') close();
+};
 
 export const fmtDb = (v: number) => (v <= -60 ? '-∞ dB' : `${v > 0 ? '+' : ''}${v.toFixed(1)} dB`);
 export const fmtPan = (v: number) => (Math.abs(v) < 0.01 ? 'Center' : v < 0 ? `${Math.round(-v * 100)}% Left` : `${Math.round(v * 100)}% Right`);

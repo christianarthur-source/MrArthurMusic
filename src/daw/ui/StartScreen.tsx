@@ -1,4 +1,5 @@
 import { Copy, FolderOpen, Trash2 } from 'lucide-react';
+import { askConfirm } from './ask';
 import { useEffect, useRef, useState } from 'react';
 import { deleteProjectLocal, duplicateProject, importProjectFile, listProjects, loadProjectLocal, ProjectSummary, saveProjectLocal } from '../persistence/projectRepo';
 import { Project } from '../model/types';
@@ -158,7 +159,7 @@ export function StartScreen({
                   aria-label={`Delete ${r.title}`}
                   className="rounded-lg p-2 text-slate-400 hover:bg-rose-500/20 hover:text-rose-300"
                   onClick={async () => {
-                    if (!confirm(`Delete "${r.title}" from this computer? This cannot be undone.`)) return;
+                    if (!(await askConfirm(`Delete "${r.title}" from this computer? This cannot be undone.`, { title: 'Delete song', confirmLabel: 'Delete', danger: true }))) return;
                     await deleteProjectLocal(r.id);
                     void refresh();
                   }}

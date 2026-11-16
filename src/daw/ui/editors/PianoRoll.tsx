@@ -314,16 +314,25 @@ export function PianoRoll({ region, track, chord = 'single' }: { region: MidiReg
     s.store.commitGesture(d.kind === 'velocity' ? 'Change velocity' : d.kind === 'move' ? 'Move notes' : 'Edit note');
   };
 
+  // The system took the touch away (a call, an edge swipe...): drop the half-finished edit instead of leaving it stuck.
+  const onCancel = () => {
+    if (!drag.current) return;
+    drag.current = null;
+    setBox(null);
+    s.store.cancelGesture();
+  };
+
   return (
     <div ref={wrap} className="relative h-full min-h-0 w-full overflow-hidden" data-testid="piano-roll">
       <canvas
         ref={canvas}
         style={{ width: size.w, height: size.h }}
-        className="block cursor-crosshair select-none"
+        className="block cursor-crosshair touch-none select-none"
         aria-label="Piano roll: click to add notes, drag to move, right-click to delete"
         onPointerDown={onDown}
         onPointerMove={onMove}
         onPointerUp={onUp}
+        onPointerCancel={onCancel}
         onContextMenu={(e) => e.preventDefault()}
         onWheel={(e) => {
           if (e.ctrlKey || e.metaKey) {

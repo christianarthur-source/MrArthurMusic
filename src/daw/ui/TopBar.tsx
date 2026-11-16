@@ -1,8 +1,9 @@
 import { ArrowLeft, Check, Cloud, HelpCircle, Home, KeyboardMusic, Library, Loader2, Mic, Menu, Redo2, Save, Share2, Sliders, Undo2, Gauge } from 'lucide-react';
+import { askConfirm } from './ask';
 import { useRef, useState } from 'react';
 import { saveProjectLocal, duplicateProject } from '../persistence/projectRepo';
 import { importFiles, redo, undo } from './actions';
-import { cx, EditableText, IconButton } from './controls';
+import { cx, EditableText, IconButton, leaveWithMouse, useMenuDismiss } from './controls';
 import { ThemeMenu } from './ThemeMenu';
 import { useProject, useStudio, useSubscribe, useUi } from './studio';
 
@@ -17,6 +18,7 @@ export function TopBar({ onHome, onSave, cloudLabel }: { onHome: () => void; onS
   const beginner = useUi((u) => u.beginner);
   const [menu, setMenu] = useState<'file' | 'help' | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
+  useMenuDismiss(menu !== null, () => setMenu(null));
 
   const item = (label: string, run: () => void, hint?: string) => (
     <button
@@ -43,12 +45,12 @@ export function TopBar({ onHome, onSave, cloudLabel }: { onHome: () => void; onS
       <IconButton label="My songs (start screen)" onClick={onHome}>
         <Home size={17} />
       </IconButton>
-      <div className="relative">
+      <div className="relative" data-menu-root>
         <IconButton label="File menu" onClick={() => setMenu(menu === 'file' ? null : 'file')} active={menu === 'file'}>
           <Menu size={17} /> <span className="hidden sm:inline">File</span>
         </IconButton>
         {menu === 'file' && (
-          <div role="menu" className="absolute left-0 top-9 z-[70] w-64 rounded-xl border border-slate-700 bg-slate-900 p-1 shadow-2xl" onPointerLeave={() => setMenu(null)}>
+          <div role="menu" className="absolute left-0 top-9 z-[70] w-64 rounded-xl border border-slate-700 bg-slate-900 p-1 shadow-2xl" onPointerLeave={leaveWithMouse(() => setMenu(null))}>
             {item('Share (link)…', () => s.ui.set({ dialog: 'share' }))}
             {item('New song…', onHome)}
             {item('Save', onSave, 'Ctrl+S')}
@@ -63,8 +65,8 @@ export function TopBar({ onHome, onSave, cloudLabel }: { onHome: () => void; onS
             {item('Export / download…', () => s.ui.set({ dialog: 'export' }), 'Ctrl+E')}
             {item('Recording setup…', () => s.ui.set({ dialog: 'record' }))}
             {item('Storage & cache…', () => s.ui.set({ dialog: 'storage' }))}
-            {item('Clear song…', () => {
-              if (!confirm('Remove all tracks and clips from this song? You can undo this.')) return;
+            {item('Clear song…', async () => {
+              if (!(await askConfirm('Remove all tracks and clips from this song? You can undo this.', { title: 'Clear song', confirmLabel: 'Clear song', danger: true }))) return;
               s.store.exec('Clear song', (p) => ({ ...p, tracks: [], regions: [], markers: [] }));
             })}
           </div>
@@ -136,12 +138,12 @@ export function TopBar({ onHome, onSave, cloudLabel }: { onHome: () => void; onS
       <IconButton label={libraryOpen ? 'Hide loop library' : 'Show loop library'} active={libraryOpen} onClick={() => s.ui.set({ libraryOpen: !libraryOpen })}>
         <Library size={16} /> <span className="hidden lg:inline">Loops</span>
       </IconButton>
-      <div className="relative">
+      <div className="relative" data-menu-root>
         <IconButton label="Help" onClick={() => setMenu(menu === 'help' ? null : 'help')} active={menu === 'help'}>
           <HelpCircle size={17} />
         </IconButton>
         {menu === 'help' && (
-          <div role="menu" className="absolute right-0 top-9 z-[70] w-64 rounded-xl border border-slate-700 bg-slate-900 p-1 shadow-2xl" onPointerLeave={() => setMenu(null)}>
+          <div role="menu" className="absolute right-0 top-9 z-[70] w-64 rounded-xl border border-slate-700 bg-slate-900 p-1 shadow-2xl" onPointerLeave={leaveWithMouse(() => setMenu(null))}>
             {item('Guided tutorial', () => s.ui.set({ tutorialStep: 0 }))}
             {item('Keyboard shortcuts', () => s.ui.set({ dialog: 'shortcuts' }), '?')}
             {item(beginner ? 'Switch to advanced mode' : 'Switch to beginner mode', () => s.ui.set({ beginner: !beginner }))}

@@ -18,6 +18,16 @@ export function useKeyboard(s: Studio, enabled: boolean, onSave: () => void) {
       const t = e.target as HTMLElement | null;
       return !!t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable);
     };
+    // Space/Enter on a focused button or link must press that control, not trigger a shortcut.
+    const onActivatable = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      return !!t && typeof t.closest === 'function' && !!t.closest('button, a[href], summary, [role="button"], [role="menuitem"], [role="tab"]');
+    };
+    // Keys typed inside an open window belong to that window.
+    const inDialog = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      return !!t && typeof t.closest === 'function' && !!t.closest('[aria-modal="true"]');
+    };
     // Letters play notes only while the note editor or on-screen keyboard is open, so they stay shortcuts otherwise.
     const pianoOn = () => {
       const b = s.ui.get().bottom;
@@ -29,6 +39,8 @@ export function useKeyboard(s: Studio, enabled: boolean, onSave: () => void) {
       const mod = e.ctrlKey || e.metaKey;
       const k = e.key.toLowerCase();
       const ui = s.ui.get();
+      if (e.key !== 'Escape' && (inDialog(e) || ui.dialog !== 'none')) return;
+      if ((e.key === ' ' || e.key === 'Enter') && !mod && onActivatable(e)) return;
 
       if (pianoOn() && !mod && !e.altKey) {
         if (k in PIANO_KEYS) {
@@ -50,6 +62,8 @@ export function useKeyboard(s: Studio, enabled: boolean, onSave: () => void) {
         s.ui.set({ menu: null, dialog: 'none', tool: 'pointer' });
         return;
       }
+      // Holding a key must not flip toggles back and forth (nudge, zoom, delete and undo may repeat).
+      if (e.repeat && !['ArrowLeft', 'ArrowRight', '-', '=', '+', 'Delete', 'Backspace'].includes(e.key) && !(mod && (k === 'z' || k === 'y'))) return;
       if (mod) {
         if (k === 'z') {
           e.preventDefault();
