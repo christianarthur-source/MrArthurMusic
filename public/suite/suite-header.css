@@ -1,4 +1,4 @@
-/* Shared header strip for the plain-HTML sub-sites (MIDI MUSIC, Chrome Music Lab EXTRA, Conductor, Denti Chorus).
+/* Shared header strip for the plain-HTML sub-sites (MIDI MUSIC, Chrome Music Lab EXTRA, Denti Chorus).
    Inserted by suite-header.js. Same words, same place, same look as the Music Lab button in the main app. */
 @import url(/fonts.css);
 @import url(/suite/tokens.css);

@@ -5,7 +5,7 @@ The website at mrarthurmusic.com: music tools and games for elementary and middl
 - **Music Lab landing page and tools** (`src/`): Staff Composer, Beat Machine, Studio DAW (`src/daw`), Staff Wars, Rhythm Rock Stars and the Tool Box mini-tools. React + Vite + Tailwind.
 - **Wolfi** (`src/prostaff`): advanced notation editor at `/wolfi`.
 - **The Staff Room** (`hub/`): teacher planning area at `/Hub/` (its own Vite app, built into `dist/Hub`).
-- **Plain HTML sub-sites** in `public/`: `midimusic/`, `chromeextra/`, `conductor/`, `Dentichorus/`.
+- **Plain HTML sub-sites** in `public/`: `midimusic/`, `chromeextra/`, `Dentichorus/`.
 - **Server** (`cloudflare/worker.mjs`, `src/server/`): a Cloudflare Worker for `/api/*`; everything else is static files from `dist/`.
 - `public/_headers` sets caching and security headers; `public/fonts/` holds the self-hosted fonts.
 

@@ -433,6 +433,12 @@ export function useAutoRestoreVideo() {
   useEffect(() => {
     if (!key || autoTried.has(key)) return;
     autoTried.add(key);
+    // Only Google Drive links (fetched through the site's own helper) load on their own. A link to any other
+    // website is not fetched until the student presses "Download it", so a shared song can't make the
+    // viewer's browser contact a stranger's server unasked.
+    const link = s.store.get().video?.link ?? '';
+    const parsed = link ? parseVideoLink(link) : null;
+    if (!parsed || !('drive' in parsed)) return;
     void videoUrl(s.store.get()).then((u) => {
       if (!u) void restoreVideoFromLink(s);
     });
