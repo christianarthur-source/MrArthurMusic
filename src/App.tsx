@@ -20,7 +20,7 @@ import {
   THEME_TRACK_FX_DRUMS,
 } from './types/music';
 import { DrumSound } from './data/drumGrooves';
-import { DrumKitType } from './audio/acousticSamples';
+import { DrumKitType, SAMPLE_CDN_UNAVAILABLE_EVENT } from './audio/acousticSamples';
 import { DEFAULT_BLANK_SCORE, createEmptyMeasure } from './data/templates';
 import {
   getItemDuration,
@@ -322,6 +322,13 @@ export default function App() {
 
   // Profanity filter alert banner state
   const [profanityAlert, setProfanityAlert] = useState<string | null>(null);
+  // Shown once if the instrument sound files cannot be downloaded (some school networks block them).
+  const [soundNotice, setSoundNotice] = useState(false);
+  useEffect(() => {
+    const show = () => setSoundNotice(true);
+    window.addEventListener(SAMPLE_CDN_UNAVAILABLE_EVENT, show);
+    return () => window.removeEventListener(SAMPLE_CDN_UNAVAILABLE_EVENT, show);
+  }, []);
   const profanityTimerRef = useRef<number | null>(null);
 
   const triggerProfanityAlert = useCallback((fieldLabel: string) => {
@@ -1993,7 +2000,9 @@ export default function App() {
   }>({ pitches: [], timer: null });
 
   useEffect(() => {
-    webMidiService.init().catch(() => {});
+    // No permission prompt on page load: only reconnect if the browser already remembers an earlier
+    // "allow". Otherwise the student taps the MIDI button in the top bar (onInitMidi).
+    webMidiService.initIfAlreadyAllowed().catch(() => {});
     const unsubDevices = webMidiService.onDevicesChanged((devices) => {
       setMidiDevices([...devices]);
     });
@@ -2725,6 +2734,19 @@ export default function App() {
         accept=".json"
         className="hidden"
       />
+
+      {soundNotice && (
+        <div role="status" className="w-full bg-amber-500 text-slate-900 px-4 py-2 text-xs font-bold flex items-center justify-center gap-2 shadow-lg z-50">
+          <span>🔇</span>
+          <span>Some instrument sounds could not load (the school network may block them), so a simpler built-in sound is playing.</span>
+          <button
+            onClick={() => setSoundNotice(false)}
+            className="ml-3 px-2 py-0.5 rounded bg-amber-700/80 hover:bg-amber-700 text-white text-[11px] cursor-pointer"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* Strict Classroom Profanity Filter Alert Banner */}
       {profanityAlert && (

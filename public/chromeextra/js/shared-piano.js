@@ -85,7 +85,10 @@ export class SharedPianoApp {
     this.buildKeyboardDOM();
     this.initBroadcastRoom();
     this.initOnlineRoom();
-    this.initWebMIDI();
+    // No permission prompt on page load: reconnect silently only if the browser already remembers an earlier
+    // "allow"; otherwise the student clicks the MIDI button (see initMidiButton).
+    this.initWebMIDI({ promptIfNeeded: false });
+    this.initMidiButton();
 
     themeManager.subscribe(() => {
       this.updateKeyColors();
@@ -678,8 +681,35 @@ export class SharedPianoApp {
     }
   }
 
-  async initWebMIDI() {
-    if (!navigator.requestMIDIAccess) return;
+  initMidiButton() {
+    const btn = document.getElementById('sp-midi-btn');
+    if (!btn) return;
+    if (!navigator.requestMIDIAccess) {
+      btn.hidden = true;
+      return;
+    }
+    btn.addEventListener('click', async () => {
+      const ok = await this.initWebMIDI({ promptIfNeeded: true });
+      const label = btn.querySelector('span');
+      if (label) label.textContent = ok ? 'MIDI on' : 'MIDI blocked';
+      btn.title = ok
+        ? 'MIDI keyboard connected. Play your keyboard!'
+        : 'The browser did not allow MIDI. Check the lock icon in the address bar.';
+    });
+  }
+
+  async initWebMIDI({ promptIfNeeded = false } = {}) {
+    if (!navigator.requestMIDIAccess) return false;
+    if (this.midiReady) return true;
+    if (!promptIfNeeded) {
+      // Ask the Permissions API first so a "not yet decided" state never triggers the browser prompt.
+      try {
+        const status = await navigator.permissions.query({ name: 'midi', sysex: false });
+        if (status.state !== 'granted') return false;
+      } catch (e) {
+        return false;
+      }
+    }
     try {
       const midiAccess = await navigator.requestMIDIAccess();
       for (const input of midiAccess.inputs.values()) {
@@ -693,8 +723,13 @@ export class SharedPianoApp {
           }
         };
       }
+      this.midiReady = true;
+      const label = document.querySelector('#sp-midi-btn span');
+      if (label) label.textContent = 'MIDI on';
+      return true;
     } catch (e) {
       // WebMIDI optional
+      return false;
     }
   }
 

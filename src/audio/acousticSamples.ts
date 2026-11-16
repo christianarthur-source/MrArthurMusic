@@ -2,6 +2,33 @@ import { InstrumentId, Pitch, Score } from '../types/music';
 
 const SOUNDFONT_CDN_BASE = 'https://gleitz.github.io/midi-js-soundfonts/MusyngKite';
 
+/*
+ * The instrument samples come from gleitz.github.io (MusyngKite, Creative Commons BY-SA 3.0, roughly 20 MB for
+ * the instruments that are not bundled). Many schools filter that host, so a failed or very slow download must
+ * never stall playback: after a few failures we stop asking for a minute (notes play with the built-in synthesised
+ * sound straight away) and tell the page once, so it can show a short explanation.
+ */
+export const SAMPLE_CDN_UNAVAILABLE_EVENT = 'mrmusic:sample-cdn-unavailable';
+const CDN_TIMEOUT_MS = 6000;
+const CDN_MAX_FAILURES = 3;
+const CDN_PAUSE_MS = 60_000;
+let cdnFailures = 0;
+let cdnPausedUntil = 0;
+let cdnNoticeSent = false;
+
+function recordCdnFailure() {
+  cdnFailures += 1;
+  if (cdnFailures >= CDN_MAX_FAILURES) {
+    cdnPausedUntil = Date.now() + CDN_PAUSE_MS;
+    // After the pause one more failure pauses again; one success clears the count.
+    cdnFailures = CDN_MAX_FAILURES - 1;
+    if (!cdnNoticeSent && typeof window !== 'undefined') {
+      cdnNoticeSent = true;
+      window.dispatchEvent(new CustomEvent(SAMPLE_CDN_UNAVAILABLE_EVENT));
+    }
+  }
+}
+
 /**
  * Maps Staff Composer InstrumentIds to MusyngKite General MIDI SoundFont instrument names.
  * Unpitched percussion and custom SFX use dedicated procedural/physical synthesis.
@@ -337,19 +364,31 @@ export async function loadSoundfontSampleAnchor(
   const pending = pendingFetchCache.get(key);
   if (pending) return pending;
 
+  // While the host is being skipped, answer at once (the caller falls back to the built-in sound).
+  if (Date.now() < cdnPausedUntil) return null;
+
   const noteName = midiToSoundfontNoteName(anchorMidi);
   const promise = (async () => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), CDN_TIMEOUT_MS);
     try {
       const url = `${SOUNDFONT_CDN_BASE}/${sfName}-mp3/${noteName}.mp3`;
-      const response = await fetch(url, { mode: 'cors' });
-      if (!response.ok) return null;
+      const response = await fetch(url, { mode: 'cors', signal: controller.signal });
+      if (!response.ok) {
+        if (response.status >= 500) recordCdnFailure();
+        return null;
+      }
       const arrayBuffer = await response.arrayBuffer();
       const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+      cdnFailures = 0;
       sampleBufferCache.set(key, audioBuffer);
       return audioBuffer;
     } catch {
+      // Blocked host, no network or timeout.
+      recordCdnFailure();
       return null;
     } finally {
+      clearTimeout(timer);
       pendingFetchCache.delete(key);
     }
   })();

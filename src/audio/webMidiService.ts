@@ -137,6 +137,22 @@ class WebMidiService {
     return typeof navigator !== 'undefined' && 'requestMIDIAccess' in navigator;
   }
 
+  /**
+   * Starts MIDI only if the browser already has permission saved from an earlier visit, so a student who
+   * allowed it once keeps their keyboard working without a prompt. Never shows the permission prompt:
+   * that must come from a click (call init() from a button).
+   */
+  public async initIfAlreadyAllowed(): Promise<boolean> {
+    if (!this.isSupported) return false;
+    try {
+      const status = await (navigator as any).permissions?.query({ name: 'midi', sysex: false });
+      if (status?.state === 'granted') return this.init();
+    } catch {
+      // Permissions API missing or 'midi' unsupported: wait for the student to click the MIDI button.
+    }
+    return false;
+  }
+
   public async init(): Promise<boolean> {
     if (this.isInitialized && this.midiAccess) return true;
     if (!this.isSupported) return false;
