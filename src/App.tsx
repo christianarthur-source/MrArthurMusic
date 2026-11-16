@@ -1871,6 +1871,13 @@ export default function App() {
         return;
       }
 
+      // ? -> keyboard shortcuts and student guide
+      if ((e.key === '?' || (e.key === '/' && e.shiftKey)) && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault();
+        setIsHelpModalOpen(true);
+        return;
+      }
+
       // Copy Measure (Ctrl+C / Cmd+C)
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c' && selection?.itemIndex === -1) {
         e.preventDefault();

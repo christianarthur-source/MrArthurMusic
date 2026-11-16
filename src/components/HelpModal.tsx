@@ -22,6 +22,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
     { key: 'Backspace / Delete', action: 'Replace selected note with equivalent rest' },
     { key: 'Spacebar', action: 'Play / Pause score playback' },
     { key: 'Ctrl + Z / Ctrl + Y', action: 'Undo / Redo edits' },
+    { key: '?', action: 'Open this help window' },
   ];
 
   return (

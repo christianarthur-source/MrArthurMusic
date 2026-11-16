@@ -39,6 +39,7 @@ import {
 import { EdLawPrivacyModal } from './EdLawPrivacyModal';
 import { LeaderboardManager } from './LeaderboardManager';
 import { Score } from '../types/music';
+import { parseRosterCsv } from '../utils/rosterCsv';
 import { PublicStudentInfo, SavedProjectRecord, StudentRecord, StudentSession, MusicLabAppType, ClassroomRecord, TeacherRecord, STANDARD_GRADES, deleteStudentProject, fetchPublicRoster, fetchStudentProjects, loginStudent, loginTeacher, fetchPublicTeachers, setMyClasses, PublicTeacher, teacherBulkAddStudents, teacherDeleteStudent, teacherRenameProject, teacherSaveStudent, teacherUpdateSettings, teacherSaveClassroom, teacherDeleteClassroom, teacherSaveTeacher, teacherDeleteTeacher, teacherAssignProject, normalizeStudentName, formatStudentDisplayName, changeStudentPin, saveStudentSession } from '../utils/classroomApi';
 import { createShortLink } from '../utils/shortLinkService';
 import { containsProfanity } from '../utils/profanityFilter';
@@ -251,6 +252,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
   const [studentSearch, setStudentSearch] = useState<string>('');
   const [showBulkAdd, setShowBulkAdd] = useState<boolean>(false);
   const [bulkText, setBulkText] = useState<string>('');
+  const rosterFileRef = useRef<HTMLInputElement>(null);
 
   // Teacher - Classrooms Manager state
   const [showAddClassroom, setShowAddClassroom] = useState<boolean>(false);
@@ -838,6 +840,30 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
       setAllProjects(res.projects);
     } catch (err: any) {
       setTeacherError(err.message || 'Could not delete student.');
+    }
+  };
+
+  /** Reads a roster file (CSV saved from a spreadsheet) into the Bulk Add box. The teacher still reviews it and presses Import. */
+  const handleRosterFile = async (file: File | undefined) => {
+    setTeacherError(null);
+    if (!file) return;
+    if (file.size > 1_000_000) {
+      setTeacherError('That file is too big for a class list (over 1 MB). Check that it is a CSV of names.');
+      return;
+    }
+    try {
+      const { lines, skippedHeader, truncated } = parseRosterCsv(await file.text());
+      if (lines.length === 0) {
+        setTeacherError('No student names were found in that file. Use one student per row: Name, PIN, Class.');
+        return;
+      }
+      setBulkText((prev) => [prev.trim(), ...lines].filter(Boolean).join('\n'));
+      setTeacherNotice(
+        `Loaded ${lines.length} row${lines.length === 1 ? '' : 's'}${skippedHeader ? ' (header row skipped)' : ''}${truncated ? ', first 500 only' : ''}. Check the list, then press Import Students.`
+      );
+      window.setTimeout(() => setTeacherNotice(null), 6000);
+    } catch {
+      setTeacherError('Could not read that file.');
     }
   };
 
@@ -2385,6 +2411,29 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                         placeholder={'Emma S., 1024, Room 101\nNoah K, 2048, Room 101\nOlivia T.'}
                         className="w-full p-2.5 rounded-lg bg-slate-900 border border-slate-700 text-xs font-mono text-white"
                       />
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <input
+                            ref={rosterFileRef}
+                            type="file"
+                            accept=".csv,.tsv,.txt,text/csv,text/plain"
+                            className="sr-only"
+                            aria-label="Choose a class list file (CSV)"
+                            tabIndex={-1}
+                            onChange={(e) => {
+                              void handleRosterFile(e.target.files?.[0]);
+                              e.target.value = '';
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => rosterFileRef.current?.click()}
+                            className="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 font-semibold cursor-pointer"
+                          >
+                            Load from CSV file…
+                          </button>
+                          <span className="text-[12px] text-slate-400">Spreadsheet saved as CSV: Name, PIN, Class</span>
+                        </div>
                       <div className="flex justify-end gap-2">
                         <button
                           type="button"
@@ -2400,6 +2449,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                         >
                           Import Students
                         </button>
+                      </div>
                       </div>
                     </div>
                   )}
