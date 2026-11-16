@@ -219,7 +219,8 @@ export const extractSongFromLocation = (): SharedSongData | null => {
     if (!songParam) return null;
 
     // Decode base64 and URI component
-    const decodedJson = decodeURIComponent(atob(songParam));
+    // A "+" in an old link may have been read as a space by the browser: put it back.
+    const decodedJson = decodeURIComponent(atob(songParam.replace(/ /g, '+')));
     const parsed = JSON.parse(decodedJson);
     return decompressSong(parsed);
   } catch (err) {

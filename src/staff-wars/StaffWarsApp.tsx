@@ -890,7 +890,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
             className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700 text-xs font-black transition-colors cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span className="hidden sm:inline">Music Lab Home</span>
+            <span className="hidden sm:inline">Music Lab</span>
           </button>
 
           <div className="flex items-center gap-2.5">

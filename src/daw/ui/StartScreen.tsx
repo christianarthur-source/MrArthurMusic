@@ -64,7 +64,7 @@ export function StartScreen({
           </div>
           {onExit && (
             <button type="button" className="rounded-lg bg-slate-800 px-3 py-2 text-sm hover:bg-slate-700" onClick={onExit}>
-              ← Back to Music Lab
+              ← Music Lab
             </button>
           )}
         </div>

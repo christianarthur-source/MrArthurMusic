@@ -37,7 +37,7 @@ export function TopBar({ onHome, onSave, cloudLabel }: { onHome: () => void; onS
     <header className="flex h-12 shrink-0 items-center gap-2 border-b border-slate-800 bg-slate-950 px-2">
       {s.host.onExit && (
         <IconButton label="Back to Music Lab" onClick={s.host.onExit}>
-          <ArrowLeft size={17} />
+          <ArrowLeft size={17} /> <span className="hidden sm:inline">Music Lab</span>
         </IconButton>
       )}
       <IconButton label="My songs (start screen)" onClick={onHome}>

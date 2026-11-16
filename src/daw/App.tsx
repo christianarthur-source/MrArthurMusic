@@ -43,7 +43,7 @@ function extractLegacyProjectFromLocation(): unknown | null {
 
     if (!projParam) return null;
 
-    const decodedJson = decodeURIComponent(atob(projParam));
+    const decodedJson = decodeURIComponent(atob(projParam.replace(/ /g, '+')));
     const parsed = JSON.parse(decodedJson);
     const project = decompressLegacyDawProject(parsed);
     // The link has been read: take the song out of the address bar so a refresh or a later
