@@ -205,7 +205,7 @@ export const TransportBar: React.FC<TransportBarProps> = ({
           </button>
         )}
         <div className="flex items-center gap-2.5 pr-4 border-r border-slate-700/80">
-          <button
+          <button aria-label="Click to enlarge Mr. Arthur's avatar!"
             type="button"
             onClick={() => {
               soundEngine.playWelcomeChime();
@@ -319,7 +319,7 @@ export const TransportBar: React.FC<TransportBarProps> = ({
 
       {/* Main Playback Transport + Tempo + Meter/Key */}
       <div className="flex flex-wrap items-center gap-2">
-        <button
+        <button aria-label="Return to Start"
           onClick={(e) => {
             e.currentTarget.blur();
             onRewind();

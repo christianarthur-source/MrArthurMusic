@@ -76,7 +76,7 @@ export const VoiceRecorderModal: React.FC<VoiceRecorderModalProps> = ({
     <div ref={dlg} role="dialog" aria-modal="true" aria-label="Voice recorder" className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-xs">
       <div className="relative w-full max-w-lg rounded-3xl border-4 border-pink-400 bg-slate-900 p-6 text-white shadow-2xl">
         {/* Close Button */}
-        <button
+        <button aria-label="Close"
           onClick={onClose}
           className="absolute top-4 right-4 flex h-10 w-10 items-center justify-center rounded-full bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white"
         >

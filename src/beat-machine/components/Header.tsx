@@ -145,7 +145,7 @@ export const Header: React.FC<HeaderProps> = ({
           )}
 
           <div className="flex items-center gap-2.5 pr-2 sm:pr-4 border-r border-slate-700/80">
-            <button
+            <button aria-label="Click to view Mr. Arthur (Secret Admin Portal available here!)"
               type="button"
               onClick={() => {
                 globalSoundEngine.playWelcomeChime();
@@ -169,7 +169,7 @@ export const Header: React.FC<HeaderProps> = ({
                 <span className="text-xl sm:text-2xl font-black tracking-wide bg-gradient-to-r from-amber-300 via-rose-300 via-sky-300 to-emerald-300 bg-clip-text text-transparent font-['Fredoka',sans-serif] leading-none">
                   Beat Machine
                 </span>
-                <button
+                <button aria-label="Secret Light Show"
                   type="button"
                   onClick={onOpenSecretLightShow}
                   className="text-base sm:text-lg hover:scale-125 transition-transform cursor-pointer p-0.5 rounded-full hover:bg-slate-800/50"
@@ -266,7 +266,7 @@ export const Header: React.FC<HeaderProps> = ({
 
             {/* Custom BPM +/- controls */}
             <div className="ml-1 flex items-center gap-1 border-l border-slate-700 pl-1.5">
-              <button
+              <button aria-label="Decrease Tempo"
                 onClick={() => onChangeBpm(Math.max(60, bpm - 5))}
                 className="flex h-6 w-6 items-center justify-center rounded bg-slate-700 text-xs font-black text-white hover:bg-slate-600 active:scale-90 transition-transform"
                 title="Decrease Tempo"
@@ -276,7 +276,7 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="text-xs font-black text-amber-300 px-1 whitespace-nowrap">
                 {bpm} <span className="text-[10px] text-slate-400 font-normal">BPM</span>
               </span>
-              <button
+              <button aria-label="Increase Tempo"
                 onClick={() => onChangeBpm(Math.min(180, bpm + 5))}
                 className="flex h-6 w-6 items-center justify-center rounded bg-slate-700 text-xs font-black text-white hover:bg-slate-600 active:scale-90 transition-transform"
                 title="Increase Tempo"

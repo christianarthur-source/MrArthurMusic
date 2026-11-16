@@ -827,7 +827,7 @@ export const SongStarter: React.FC = () => {
 
                         {blockDef ? (
                           <>
-                            <button
+                            <button aria-label="Remove"
                               type="button"
                               onClick={(e) => handleClearSlot(laneIdx, slotIdx, e)}
                               className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-slate-950/60 hover:bg-rose-500 text-white flex items-center justify-center text-[10px] font-black transition-colors"

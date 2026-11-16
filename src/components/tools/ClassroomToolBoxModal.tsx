@@ -147,7 +147,7 @@ export const ClassroomToolBoxModal: React.FC<ClassroomToolBoxModalProps> = ({
             </div>
           </div>
 
-          <button
+          <button aria-label="Close Tool Box"
             type="button"
             onClick={onClose}
             className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition-colors cursor-pointer border border-slate-700"

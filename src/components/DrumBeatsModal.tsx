@@ -166,7 +166,7 @@ export const DrumBeatsModal: React.FC<DrumBeatsModalProps> = ({
               </h2>
             </div>
           </div>
-          <button
+          <button aria-label="Close"
             onClick={() => {
               soundEngine.stopDrumPreview();
               onClose();

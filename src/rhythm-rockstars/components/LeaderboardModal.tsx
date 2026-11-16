@@ -66,7 +66,7 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            <button
+            <button aria-label="Refresh Leaderboard"
               onClick={loadLeaderboard}
               disabled={isLoading}
               className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
@@ -74,7 +74,7 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
             >
               <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin text-amber-400' : ''}`} />
             </button>
-            <button
+            <button aria-label="Close"
               onClick={onClose}
               className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
             >

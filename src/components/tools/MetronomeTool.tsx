@@ -513,7 +513,7 @@ export const MetronomeTool: React.FC = () => {
 
           {/* Stepper Buttons (-5, -1, +1, +5) & Tap Button */}
           <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
-            <button
+            <button aria-label="-5 BPM"
               type="button"
               onClick={() => adjustBpm(-5)}
               className="px-3.5 py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-black text-sm active:scale-95 transition-all cursor-pointer border border-slate-700 shadow-sm"
@@ -521,7 +521,7 @@ export const MetronomeTool: React.FC = () => {
             >
               -5
             </button>
-            <button
+            <button aria-label="-1 BPM"
               type="button"
               onClick={() => adjustBpm(-1)}
               className="px-3.5 py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-black text-sm active:scale-95 transition-all cursor-pointer border border-slate-700 shadow-sm"
@@ -544,7 +544,7 @@ export const MetronomeTool: React.FC = () => {
               )}
             </button>
 
-            <button
+            <button aria-label="+1 BPM"
               type="button"
               onClick={() => adjustBpm(1)}
               className="px-3.5 py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-black text-sm active:scale-95 transition-all cursor-pointer border border-slate-700 shadow-sm"
@@ -552,7 +552,7 @@ export const MetronomeTool: React.FC = () => {
             >
               <Plus className="w-4 h-4 inline" />
             </button>
-            <button
+            <button aria-label="+5 BPM"
               type="button"
               onClick={() => adjustBpm(5)}
               className="px-3.5 py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-black text-sm active:scale-95 transition-all cursor-pointer border border-slate-700 shadow-sm"

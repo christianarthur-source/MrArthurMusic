@@ -561,7 +561,7 @@ export const RhythmicPalette: React.FC<RhythmicPaletteProps> = ({
 
               {/* Compact Accidentals */}
               <div className="flex items-center gap-0.5 bg-slate-800/90 p-1 rounded-xl border border-slate-700/80">
-                <button
+                <button aria-label="Sharp (♯)"
                   onClick={() => onChangeAccidental(activeAccidental === 'sharp' ? null : 'sharp')}
                   title="Sharp (♯)"
                   className={`px-2 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all cursor-pointer ${
@@ -572,7 +572,7 @@ export const RhythmicPalette: React.FC<RhythmicPaletteProps> = ({
                 >
                   <SharpUIIcon className="w-3 h-3" />
                 </button>
-                <button
+                <button aria-label="Flat (♭)"
                   onClick={() => onChangeAccidental(activeAccidental === 'flat' ? null : 'flat')}
                   title="Flat (♭)"
                   className={`px-2 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all cursor-pointer ${
@@ -583,7 +583,7 @@ export const RhythmicPalette: React.FC<RhythmicPaletteProps> = ({
                 >
                   <FlatUIIcon className="w-3 h-3" />
                 </button>
-                <button
+                <button aria-label="Natural (♮)"
                   onClick={() => onChangeAccidental(activeAccidental === 'natural' ? null : 'natural')}
                   title="Natural (♮)"
                   className={`px-2 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all cursor-pointer ${
@@ -704,7 +704,7 @@ export const RhythmicPalette: React.FC<RhythmicPaletteProps> = ({
 
           <div className="w-px h-5 bg-slate-800 mx-0.5" />
           {!isMeasureSelected && uiMode !== 'simple' && (
-            <button
+            <button aria-label="Delete Selected Note (Backspace / Del)"
               onClick={onDeleteSelected}
               disabled={!hasSelection}
               title="Delete Selected Note (Backspace / Del)"
@@ -718,7 +718,7 @@ export const RhythmicPalette: React.FC<RhythmicPaletteProps> = ({
             </button>
           )}
 
-          <button
+          <button aria-label="Undo (Ctrl+Z)"
             onClick={onUndo}
             disabled={!canUndo}
             title="Undo (Ctrl+Z)"
@@ -728,7 +728,7 @@ export const RhythmicPalette: React.FC<RhythmicPaletteProps> = ({
           >
             <Undo2 className="w-4 h-4" />
           </button>
-          <button
+          <button aria-label="Redo (Ctrl+Y)"
             onClick={onRedo}
             disabled={!canRedo}
             title="Redo (Ctrl+Y)"
@@ -750,7 +750,7 @@ export const RhythmicPalette: React.FC<RhythmicPaletteProps> = ({
             <span>Reset</span>
           </button>
 
-          <button
+          <button aria-label="Shortcuts & Instructions"
             onClick={onOpenHelp}
             title="Shortcuts & Instructions"
             className="p-1.5 rounded-xl text-sky-400 hover:bg-slate-800 transition-all cursor-pointer"
@@ -808,6 +808,8 @@ export const RhythmicPalette: React.FC<RhythmicPaletteProps> = ({
               <>
                 <button
                   onClick={onMoveMeasureLeft}
+                  aria-label="Move measure left"
+                  title="Move measure left"
                   disabled={(selection?.measureIndex ?? 0) === 0}
                   className="flex items-center gap-1 px-2 py-1 rounded-lg font-bold bg-slate-800 text-slate-200 hover:bg-slate-700 disabled:opacity-40 cursor-pointer"
                 >
@@ -815,6 +817,8 @@ export const RhythmicPalette: React.FC<RhythmicPaletteProps> = ({
                 </button>
                 <button
                   onClick={onMoveMeasureRight}
+                  aria-label="Move measure right"
+                  title="Move measure right"
                   className="flex items-center gap-1 px-2 py-1 rounded-lg font-bold bg-slate-800 text-slate-200 hover:bg-slate-700 cursor-pointer"
                 >
                   <ArrowRight className="w-3.5 h-3.5" />

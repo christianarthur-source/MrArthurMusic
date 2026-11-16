@@ -429,7 +429,7 @@ export const SolfegeTrainer: React.FC = () => {
       {mode === 'mystery-quiz' && (
         <div className="p-4 rounded-2xl bg-gradient-to-r from-rose-950/80 via-slate-900 to-indigo-950/80 border-2 border-rose-500/40 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <button
+            <button aria-label="Hear the mystery note again"
               type="button"
               onClick={replayMysteryNote}
               className="w-12 h-12 rounded-2xl bg-rose-500 hover:bg-rose-400 text-white flex items-center justify-center text-xl shadow-lg shadow-rose-500/30 active:scale-95 transition-all cursor-pointer shrink-0"

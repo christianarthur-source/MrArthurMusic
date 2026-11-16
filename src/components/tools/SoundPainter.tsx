@@ -636,7 +636,7 @@ export const SoundPainter: React.FC = () => {
             )}
           </button>
 
-          <button
+          <button aria-label="Undo Last Stroke"
             type="button"
             onClick={handleUndo}
             disabled={shapes.length === 0}
@@ -646,7 +646,7 @@ export const SoundPainter: React.FC = () => {
             <Undo2 className="w-4 h-4" />
           </button>
 
-          <button
+          <button aria-label="Clear Canvas"
             type="button"
             onClick={handleClear}
             disabled={shapes.length === 0}
@@ -797,7 +797,10 @@ export const SoundPainter: React.FC = () => {
               onTouchStart={handleStartDraw}
               onTouchMove={handleMoveDraw}
               onTouchEnd={handleEndDraw}
-              className="w-full h-auto block"
+              onTouchCancel={handleEndDraw}
+              role="img"
+              aria-label="Drawing area. Draw shapes with the mouse or your finger; each shape makes sound when the playhead reaches it."
+              className="w-full h-auto block touch-none"
             />
 
             {shapes.length === 0 && !isPlaying && (

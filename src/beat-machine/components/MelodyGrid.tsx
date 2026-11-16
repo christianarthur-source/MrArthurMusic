@@ -514,7 +514,7 @@ export const MelodyGrid: React.FC<MelodyGridProps> = ({
 
           {/* Remove Measure Button */}
           {totalMeasures > 1 && onRemoveMeasure && (
-            <button
+            <button aria-label="Remove last measure"
               onClick={onRemoveMeasure}
               className="flex items-center gap-1 rounded-lg bg-slate-800 px-2 py-1 text-xs font-black text-slate-400 hover:bg-rose-500/20 hover:text-rose-300 transition-all"
               title="Remove last measure"

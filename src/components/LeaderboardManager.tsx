@@ -111,7 +111,7 @@ export function LeaderboardManager({ teacherPin }: { teacherPin: string }) {
             {g.label}
           </button>
         ))}
-        <button
+        <button aria-label="Refresh"
           type="button"
           onClick={() => load(game)}
           title="Refresh"

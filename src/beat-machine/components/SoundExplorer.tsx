@@ -245,7 +245,7 @@ export const SoundExplorer: React.FC<SoundExplorerProps> = ({
             }`}
           />
           {searchQuery && (
-            <button
+            <button aria-label="Close"
               onClick={() => setSearchQuery('')}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-white"
             >

@@ -48,7 +48,7 @@ export const EdLawPrivacyModal: React.FC<EdLawPrivacyModalProps> = ({ isOpen, on
               <Printer className="w-3.5 h-3.5" />
               <span>Print / Save PDF</span>
             </button>
-            <button
+            <button aria-label="Close"
               type="button"
               onClick={onClose}
               className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 cursor-pointer"

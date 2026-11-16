@@ -91,7 +91,7 @@ export const TransposeModal: React.FC<TransposeModalProps> = ({
               <p className="text-xs text-slate-400">Shift pitches and keys up or down</p>
             </div>
           </div>
-          <button
+          <button aria-label="Close"
             onClick={onClose}
             className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
           >
@@ -198,6 +198,7 @@ export const TransposeModal: React.FC<TransposeModalProps> = ({
               <button
                 type="button"
                 onClick={() => setSemitones((s) => Math.max(-24, s - 1))}
+                aria-label="Down one half step"
                 className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white cursor-pointer"
               >
                 <ArrowDown className="w-4 h-4" />
@@ -205,6 +206,7 @@ export const TransposeModal: React.FC<TransposeModalProps> = ({
               <button
                 type="button"
                 onClick={() => setSemitones((s) => Math.min(24, s + 1))}
+                aria-label="Up one half step"
                 className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white cursor-pointer"
               >
                 <ArrowUp className="w-4 h-4" />

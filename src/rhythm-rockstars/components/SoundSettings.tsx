@@ -49,7 +49,7 @@ export const SoundSettings: React.FC<SoundSettingsProps> = ({
             </div>
           </div>
 
-          <button
+          <button aria-label="Close"
             onClick={onClose}
             className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
           >
@@ -148,6 +148,9 @@ export const SoundSettings: React.FC<SoundSettingsProps> = ({
             </div>
             <button
               onClick={() => onChangeSettings({ countIn: !settings.countIn })}
+              role="switch"
+              aria-checked={settings.countIn}
+              aria-label="Metronome count-in"
               className={`w-12 h-6 rounded-full transition-colors relative ${
                 settings.countIn ? 'bg-amber-400' : 'bg-slate-800'
               }`}

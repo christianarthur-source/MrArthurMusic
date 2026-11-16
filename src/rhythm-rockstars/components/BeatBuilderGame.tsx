@@ -363,7 +363,7 @@ export const BeatBuilderGame: React.FC<BeatBuilderGameProps> = ({
                   <span className="text-[10px] font-extrabold font-mono text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-md">
                     {durationBeats > 1 ? `BEATS ${startBeat}-${endBeat}` : `BEAT ${startBeat}`}
                   </span>
-                  <button
+                  <button aria-label="Remove Note"
                     onClick={(e) => handleRemoveUnit(index, e)}
                     className="p-1 text-slate-500 hover:text-rose-400 rounded-md transition-colors"
                     title="Remove Note"

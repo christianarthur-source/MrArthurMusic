@@ -1235,7 +1235,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                 ← Student View
               </button>
             )}
-            <button
+            <button aria-label="Close"
               type="button"
               onClick={onClose}
               className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 cursor-pointer"
@@ -1738,7 +1738,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                                 <FolderOpen className="w-3.5 h-3.5" />
                                 <span>Open in {appMeta.shortName}</span>
                               </button>
-                              <button
+                              <button aria-label="Delete song"
                                 type="button"
                                 onClick={() => handleStudentDeleteSong(proj)}
                                 title="Delete song"
@@ -2094,7 +2094,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                   </button>
                 </div>
 
-                <button
+                <button aria-label="Refresh list"
                   type="button"
                   onClick={() => {
                     loginTeacher(activeTeacherPin)
@@ -2156,7 +2156,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                           placeholder="4-digit"
                           className="w-full px-2 py-1.5 rounded-lg bg-slate-900 border border-slate-700 text-xs font-mono text-amber-300"
                         />
-                        <button
+                        <button aria-label="Generate random 4-digit PIN"
                           type="button"
                           title="Generate random 4-digit PIN"
                           onClick={() =>
@@ -2459,7 +2459,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                               </div>
 
                               <div className="flex items-center gap-1 shrink-0">
-                                <button
+                                <button aria-label="Edit name or PIN"
                                   type="button"
                                   onClick={() => {
                                     setEditingStudentId(stu.id);
@@ -2474,7 +2474,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                                 >
                                   <Edit3 className="w-3.5 h-3.5" />
                                 </button>
-                                <button
+                                <button aria-label="Delete student"
                                   type="button"
                                   onClick={() => handleDeleteStudent(stu)}
                                   title="Delete student"
@@ -2741,7 +2741,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                             className="group p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 hover:border-amber-400/70 hover:bg-slate-900/90 transition-all flex items-center justify-between gap-3 text-xs cursor-pointer shadow-sm"
                           >
                             <div className="flex items-center gap-3 flex-wrap flex-1">
-                              <button
+                              <button aria-label={mine ? 'Remove from My Classes' : 'Add to My Classes'}
                                 type="button"
                                 onClick={(e) => {
                                   e.stopPropagation();
@@ -2795,7 +2795,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                                 <Users className="w-3.5 h-3.5" />
                                 <span>View Students ({studentCount})</span>
                               </button>
-                              <button
+                              <button aria-label="Edit classroom"
                                 type="button"
                                 onClick={() => {
                                   setEditingClassId(cls.id);
@@ -2810,7 +2810,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                               >
                                 <Edit3 className="w-3.5 h-3.5" />
                               </button>
-                              <button
+                              <button aria-label="Delete classroom"
                                 type="button"
                                 onClick={() => handleDeleteClassroom(cls)}
                                 className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800 cursor-pointer"
@@ -3024,7 +3024,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                               <Music className="w-3 h-3" />
                               <span>View Songs</span>
                             </button>
-                            <button
+                            <button aria-label="Edit teacher"
                               type="button"
                               onClick={() => {
                                 setEditingTeacherId(tch.id);
@@ -3040,7 +3040,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                               <Edit3 className="w-3.5 h-3.5" />
                             </button>
                             {!isMaster && (
-                              <button
+                              <button aria-label="Delete teacher"
                                 type="button"
                                 onClick={() => handleDeleteTeacher(tch)}
                                 className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800 cursor-pointer"
@@ -3334,7 +3334,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                                       <Share2 className="w-3.5 h-3.5" />
                                     )}
                                   </button>
-                                  <button
+                                  <button aria-label="Assign this song to students or classrooms"
                                     type="button"
                                     onClick={() => handleOpenAssignModal(proj)}
                                     title="Assign this song to students or classrooms"
@@ -3342,7 +3342,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                                   >
                                     <Send className="w-3.5 h-3.5" />
                                   </button>
-                                  <button
+                                  <button aria-label="Rename song title"
                                     type="button"
                                     onClick={() => {
                                       setRenamingProjectId(proj.id);
@@ -3353,7 +3353,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                                   >
                                     <Edit3 className="w-3.5 h-3.5" />
                                   </button>
-                                  <button
+                                  <button aria-label="Delete project"
                                     type="button"
                                     onClick={() => handleTeacherDeleteSong(proj)}
                                     title="Delete project"
@@ -3540,7 +3540,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                   </p>
                 </div>
               </div>
-              <button
+              <button aria-label="Close"
                 type="button"
                 onClick={() => setInspectedStudent(null)}
                 className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 cursor-pointer"
@@ -3642,7 +3642,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                               <Share2 className="w-4 h-4" />
                             )}
                           </button>
-                          <button
+                          <button aria-label="Delete project"
                             type="button"
                             onClick={() => handleTeacherDeleteSong(proj)}
                             title="Delete project"
@@ -3686,7 +3686,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                   </p>
                 </div>
               </div>
-              <button
+              <button aria-label="Close"
                 type="button"
                 onClick={() => setShowAssignModal(false)}
                 className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 cursor-pointer"

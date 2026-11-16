@@ -303,6 +303,8 @@ export const SecretLightShowModal: React.FC<SecretLightShowModalProps> = ({
         ref={canvasRef}
         width={640}
         height={360}
+        role="img"
+        aria-label="Light show. Press anywhere to add a burst of light."
         onClick={handleCanvasClick}
         className="absolute inset-0 h-full w-full object-cover cursor-pointer"
       />
@@ -453,12 +455,14 @@ export const SecretLightShowModal: React.FC<SecretLightShowModalProps> = ({
             <span className="text-xs font-black text-amber-300">{bpm} BPM</span>
             <button
               onClick={() => onChangeBpm(Math.max(60, bpm - 10))}
+              aria-label="Slower"
               className="flex h-6 w-6 items-center justify-center rounded-md bg-slate-700 text-xs font-black text-white hover:bg-slate-600 active:scale-90"
             >
               -
             </button>
             <button
               onClick={() => onChangeBpm(Math.min(180, bpm + 10))}
+              aria-label="Faster"
               className="flex h-6 w-6 items-center justify-center rounded-md bg-slate-700 text-xs font-black text-white hover:bg-slate-600 active:scale-90"
             >
               +

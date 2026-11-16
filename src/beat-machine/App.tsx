@@ -1586,7 +1586,7 @@ export default function BeatMachineApp({
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-xs">
             <DialogBehavior label="Save your beat" onClose={() => setIsSaveBeatModalOpen(false)} />
             <div className="relative w-full max-w-md rounded-3xl border-3 border-amber-400 bg-slate-900 p-6 text-white shadow-2xl">
-              <button
+              <button aria-label="Close"
                 type="button"
                 onClick={() => setIsSaveBeatModalOpen(false)}
                 className="absolute top-4 right-4 flex h-9 w-9 items-center justify-center rounded-xl bg-slate-800 text-slate-300 hover:bg-slate-700 cursor-pointer"

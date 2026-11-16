@@ -548,7 +548,7 @@ export const MusicSymbolMatch: React.FC = () => {
             </button>
           </div>
 
-          <button
+          <button aria-label="Study Guide"
             type="button"
             onClick={() => setShowStudyGuide(!showStudyGuide)}
             className="p-2 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors cursor-pointer"

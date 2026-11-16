@@ -2450,7 +2450,7 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
                   </p>
                 </div>
               </div>
-              <button
+              <button aria-label="Close"
                 onClick={() => {
                   setPickerTrackIndex(null);
                   setInstrumentSearch('');
@@ -2588,7 +2588,7 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
 
                       <div className="flex items-center gap-2">
                         {/* Audio Preview Button */}
-                        <button
+                        <button aria-label="Preview instrument sound"
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();

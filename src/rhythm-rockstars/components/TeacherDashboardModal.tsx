@@ -183,7 +183,7 @@ export const TeacherDashboardModal: React.FC<TeacherDashboardModalProps> = ({
               <p className="text-xs text-purple-300">Manage student accounts, scores, PINs, and classroom rosters</p>
             </div>
           </div>
-          <button
+          <button aria-label="Close"
             onClick={onClose}
             className="w-10 h-10 rounded-full bg-slate-800/80 hover:bg-red-600/80 flex items-center justify-center text-slate-300 hover:text-white transition-colors cursor-pointer text-lg font-bold"
           >

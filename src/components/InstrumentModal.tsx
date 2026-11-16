@@ -216,7 +216,7 @@ export const InstrumentModal: React.FC<InstrumentModalProps> = ({
               </h2>
             </div>
           </div>
-          <button
+          <button aria-label="Close"
             onClick={onClose}
             className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
             title="Close"
@@ -363,7 +363,7 @@ export const InstrumentModal: React.FC<InstrumentModalProps> = ({
 
                     {/* Right: Audio Preview & Add */}
                     <div className="flex items-center gap-1 shrink-0">
-                      <button
+                      <button aria-label={`Audition ${inst.name}`}
                         type="button"
                         onClick={(e) => handlePreview(e, inst)}
                         title={`Audition ${inst.name}`}

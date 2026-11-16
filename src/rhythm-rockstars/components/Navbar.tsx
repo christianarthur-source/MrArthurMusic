@@ -50,7 +50,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         )}
 
         <div className="flex items-center gap-2.5 pr-2 sm:pr-4 border-r border-slate-700/80">
-          <button
+          <button aria-label="Click to view Mr. Arthur (Secret Admin Portal available here!)"
             type="button"
             onClick={() => {
               soundEngine.playWelcomeChime();
@@ -76,7 +76,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           {/* Secret Easter Egg Button */}
-          <button
+          <button aria-label={isSecretUnlocked ? 'Level 7 Secret Unlocked!' : '??? Secret Rockstar Door'}
             type="button"
             onClick={(e) => {
               e.stopPropagation();
@@ -158,7 +158,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         )}
 
-        <button
+        <button aria-label="Sound & Counting Settings"
           onClick={onOpenSettings}
           className="p-2 rounded-xl text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700 border border-slate-700/80 transition-colors cursor-pointer"
           title="Sound & Counting Settings"

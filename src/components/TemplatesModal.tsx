@@ -31,7 +31,7 @@ export const TemplatesModal: React.FC<TemplatesModalProps> = ({
               Pick a starter song or challenge puzzle to complete with your music class.
             </p>
           </div>
-          <button
+          <button aria-label="Close"
             onClick={onClose}
             className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100"
           >

@@ -319,7 +319,7 @@ export const TempoTapper: React.FC = () => {
                 )}
               </button>
 
-              <button
+              <button aria-label="Reset to 100 BPM"
                 type="button"
                 onClick={handleReset}
                 title="Reset to 100 BPM"

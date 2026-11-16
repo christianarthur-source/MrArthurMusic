@@ -472,7 +472,7 @@ export const SheetMusicModal: React.FC<SheetMusicModalProps> = ({
             </div>
           </div>
 
-          <button
+          <button aria-label="Close"
             onClick={onClose}
             className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white transition-colors"
           >

@@ -148,7 +148,7 @@ export const FloatingToolPalette: React.FC<FloatingToolPaletteProps> = ({
     >
       {/* Scroll to Top Indicator Button */}
       {onScrollToTop && (
-        <button
+        <button aria-label="Back to top palette"
           type="button"
           onClick={onScrollToTop}
           title="Back to top palette"
@@ -218,7 +218,7 @@ export const FloatingToolPalette: React.FC<FloatingToolPaletteProps> = ({
         })}
 
         {/* Rest Button */}
-        <button
+        <button aria-label="Rest Mode (R)"
           type="button"
           onClick={() => {
             if (isSelectMode) onToggleSelectMode();
@@ -260,7 +260,7 @@ export const FloatingToolPalette: React.FC<FloatingToolPaletteProps> = ({
         ).map(({ id, label, Icon }) => {
           const isSelected = activeAccidental === id;
           return (
-            <button
+            <button aria-label={label}
               key={id}
               type="button"
               onClick={() => onChangeAccidental(isSelected ? null : id)}
@@ -319,7 +319,7 @@ export const FloatingToolPalette: React.FC<FloatingToolPaletteProps> = ({
       </button>
 
       {/* Delete / Clear */}
-      <button
+      <button aria-label="Delete Selected Note / Measure (Backspace / Delete)"
         type="button"
         onClick={onDeleteSelected}
         title="Delete Selected Note / Measure (Backspace / Delete)"
@@ -330,7 +330,7 @@ export const FloatingToolPalette: React.FC<FloatingToolPaletteProps> = ({
 
       {/* Undo & Redo */}
       <div className="flex items-center gap-0.5">
-        <button
+        <button aria-label="Undo (Ctrl+Z)"
           type="button"
           onClick={onUndo}
           disabled={!canUndo}
@@ -339,7 +339,7 @@ export const FloatingToolPalette: React.FC<FloatingToolPaletteProps> = ({
         >
           <Undo2 className="w-3.5 h-3.5" />
         </button>
-        <button
+        <button aria-label="Redo (Ctrl+Y)"
           type="button"
           onClick={onRedo}
           disabled={!canRedo}

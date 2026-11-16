@@ -3286,7 +3286,7 @@ export default function App() {
               {/* Right: Zoom & Close Big Staff */}
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1 bg-slate-800/80 p-1 rounded-2xl border border-slate-700/80">
-                  <button
+                  <button aria-label="Zoom Out Big Staff"
                     type="button"
                     onClick={() => setBigStaffZoom((z) => Math.max(1.1, Math.round((z - 0.1) * 100) / 100))}
                     title="Zoom Out Big Staff"
@@ -3297,7 +3297,7 @@ export default function App() {
                   <span className="text-[11px] font-bold text-slate-300 px-1">
                     {Math.round(bigStaffZoom * 100)}%
                   </span>
-                  <button
+                  <button aria-label="Zoom In Big Staff"
                     type="button"
                     onClick={() => setBigStaffZoom((z) => Math.min(1.85, Math.round((z + 0.1) * 100) / 100))}
                     title="Zoom In Big Staff"

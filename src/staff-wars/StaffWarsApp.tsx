@@ -939,7 +939,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
           </button>
 
           {/* Music Toggle */}
-          <button
+          <button aria-label={isMusicEnabled ? 'Music: ON' : 'Music: OFF'}
             type="button"
             onClick={toggleMusic}
             className={`p-2 rounded-xl border cursor-pointer transition-colors ${
@@ -964,7 +964,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
 
           {/* Mr. Arthur Avatar */}
           {onOpenAvatar && (
-            <button
+            <button aria-label="Click to enlarge Mr. Arthur's avatar"
               type="button"
               onClick={onOpenAvatar}
               className="w-8 h-8 rounded-full overflow-hidden border-2 border-amber-400/70 hover:border-amber-300 transition-all hover:scale-105 cursor-pointer shadow-md shrink-0 ml-1"
@@ -1570,7 +1570,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
                   </p>
                 </div>
               </div>
-              <button
+              <button aria-label="Close"
                 type="button"
                 onClick={() => setShowLeaderboard(false)}
                 className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"

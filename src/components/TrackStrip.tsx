@@ -137,7 +137,7 @@ export const TrackStrip: React.FC<TrackStripProps> = ({
               <Plus className="w-4 h-4" />
               <span>Add Track</span>
             </button>
-            <button
+            <button aria-label="Close Mixer"
               onClick={onClose}
               className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
               title="Close Mixer"
@@ -197,7 +197,7 @@ export const TrackStrip: React.FC<TrackStripProps> = ({
                           </span>
                         </div>
                         {tracks.length > 1 && (
-                          <button
+                          <button aria-label="Delete Track"
                             onClick={(e) => {
                               e.stopPropagation();
                               onRemoveTrack(trackIndex);

@@ -238,7 +238,7 @@ export const BeatGrid: React.FC<BeatGridProps> = ({
 
             {/* Remove Measure Button if multiple measures */}
             {totalMeasures > 1 && onRemoveMeasure && (
-              <button
+              <button aria-label="Remove last measure"
                 onClick={onRemoveMeasure}
                 className="flex items-center gap-1 rounded-lg bg-slate-800 px-2 py-1 text-xs font-black text-slate-400 hover:bg-rose-500/20 hover:text-rose-300 transition-all"
                 title="Remove last measure"
@@ -429,7 +429,7 @@ export const BeatGrid: React.FC<BeatGridProps> = ({
                       </button>
 
                       {/* Solo Button */}
-                      <button
+                      <button aria-label="Solo track"
                         onClick={() => onToggleSolo(trackIdx)}
                         className={`rounded-md px-1.5 py-0.5 text-[10px] font-black transition-colors ${
                           track.solo
@@ -520,7 +520,7 @@ export const BeatGrid: React.FC<BeatGridProps> = ({
             <div className="absolute left-0 bottom-full mb-2 z-50 w-72 sm:w-80 rounded-2xl border-2 border-pink-500/80 bg-slate-900 p-3 shadow-2xl space-y-2 animate-in fade-in zoom-in-95 duration-150">
               <div className="flex items-center justify-between pb-1 border-b border-slate-800">
                 <span className="text-xs font-black uppercase text-pink-300">Choose Sound Pack 🎒</span>
-                <button onClick={() => setIsPackDropdownOpen(false)} className="text-slate-400 hover:text-white">
+                <button aria-label="Close" onClick={() => setIsPackDropdownOpen(false)} className="text-slate-400 hover:text-white">
                   <X className="h-4 w-4" />
                 </button>
               </div>
@@ -572,7 +572,7 @@ export const BeatGrid: React.FC<BeatGridProps> = ({
             <div className="absolute right-0 bottom-full mb-2 z-50 w-72 sm:w-80 rounded-2xl border-2 border-amber-400/80 bg-slate-900 p-3 shadow-2xl space-y-2 animate-in fade-in zoom-in-95 duration-150">
               <div className="flex items-center justify-between pb-1 border-b border-slate-800">
                 <span className="text-xs font-black uppercase text-amber-300">Choose Ready Groove 🎶</span>
-                <button onClick={() => setIsGrooveDropdownOpen(false)} className="text-slate-400 hover:text-white">
+                <button aria-label="Close" onClick={() => setIsGrooveDropdownOpen(false)} className="text-slate-400 hover:text-white">
                   <X className="h-4 w-4" />
                 </button>
               </div>
@@ -634,7 +634,7 @@ export const BeatGrid: React.FC<BeatGridProps> = ({
                 </div>
               </div>
 
-              <button
+              <button aria-label="Close"
                 onClick={() => setSelectedTrackIndexForSound(null)}
                 className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white transition-colors"
                 title="Close"

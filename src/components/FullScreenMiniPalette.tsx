@@ -132,7 +132,7 @@ export const FullScreenMiniPalette: React.FC<FullScreenMiniPaletteProps> = ({
 
       {/* Play & Rewind */}
       <div className="flex items-center gap-1">
-        <button
+        <button aria-label="Rewind to Start"
           onClick={onRewind}
           className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition-colors cursor-pointer"
           title="Rewind to Start"
@@ -193,7 +193,7 @@ export const FullScreenMiniPalette: React.FC<FullScreenMiniPaletteProps> = ({
         })}
 
         {/* Rest Toggle */}
-        <button
+        <button aria-label="Rest Mode (R)"
           onClick={() => {
             if (isSelectMode) onToggleSelectMode();
             onToggleRestMode();
@@ -233,7 +233,7 @@ export const FullScreenMiniPalette: React.FC<FullScreenMiniPaletteProps> = ({
         ).map(({ id, label, Icon }) => {
           const active = activeAccidental === id;
           return (
-            <button
+            <button aria-label={label}
               key={id}
               onClick={() => onChangeAccidental(active ? null : id)}
               className={`p-1.5 rounded-lg transition-all cursor-pointer ${
@@ -253,14 +253,14 @@ export const FullScreenMiniPalette: React.FC<FullScreenMiniPaletteProps> = ({
 
       {/* Edit & Measure Actions */}
       <div className="flex items-center gap-1">
-        <button
+        <button aria-label="Delete Selected Note or Clear Measure (Backspace)"
           onClick={onDeleteSelected}
           className="p-1.5 rounded-xl bg-rose-950/60 hover:bg-rose-900/80 text-rose-300 border border-rose-800/50 transition-colors cursor-pointer"
           title="Delete Selected Note or Clear Measure (Backspace)"
         >
           <Trash2 className="w-3.5 h-3.5" />
         </button>
-        <button
+        <button aria-label="Undo (Ctrl+Z)"
           onClick={onUndo}
           disabled={!canUndo}
           className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-35 text-slate-300 transition-colors cursor-pointer"
@@ -268,7 +268,7 @@ export const FullScreenMiniPalette: React.FC<FullScreenMiniPaletteProps> = ({
         >
           <Undo2 className="w-3.5 h-3.5" />
         </button>
-        <button
+        <button aria-label="Redo (Ctrl+Y)"
           onClick={onRedo}
           disabled={!canRedo}
           className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-35 text-slate-300 transition-colors cursor-pointer"
@@ -315,7 +315,7 @@ export const FullScreenMiniPalette: React.FC<FullScreenMiniPaletteProps> = ({
         </button>
 
         <div className="flex items-center bg-slate-950/80 rounded-xl border border-slate-800 px-1 py-0.5">
-          <button
+          <button aria-label="Zoom Out Staff"
             onClick={() => onChangeScoreZoom(Math.max(1.0, Math.round((scoreZoom - 0.15) * 100) / 100))}
             className="p-1 text-slate-400 hover:text-white transition-colors cursor-pointer"
             title="Zoom Out Staff"
@@ -325,7 +325,7 @@ export const FullScreenMiniPalette: React.FC<FullScreenMiniPaletteProps> = ({
           <span className="text-[11px] font-bold text-indigo-300 px-1.5 min-w-[42px] text-center">
             {Math.round(scoreZoom * 100)}%
           </span>
-          <button
+          <button aria-label="Zoom In Staff (Make Notes Bigger)"
             onClick={() => onChangeScoreZoom(Math.min(1.85, Math.round((scoreZoom + 0.15) * 100) / 100))}
             className="p-1 text-slate-400 hover:text-white transition-colors cursor-pointer"
             title="Zoom In Staff (Make Notes Bigger)"

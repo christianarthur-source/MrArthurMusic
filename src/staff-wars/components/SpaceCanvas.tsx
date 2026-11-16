@@ -580,6 +580,8 @@ export const SpaceCanvas: React.FC<SpaceCanvasProps> = ({
         ref={canvasRef}
         width={1000}
         height={520}
+        role="img"
+        aria-label="Game area: notes fall toward the base. Name each note with the keys A to G or the on-screen buttons."
         className="w-full h-full block"
       />
     </div>

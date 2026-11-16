@@ -594,7 +594,7 @@ export const MusicTuner: React.FC = () => {
           </button>
 
           {/* Settings Button */}
-          <button
+          <button aria-label="Calibration & Settings"
             type="button"
             onClick={() => setShowSettings((v) => !v)}
             className={`p-2 rounded-xl border text-xs font-bold cursor-pointer transition-colors ${
@@ -675,6 +675,7 @@ export const MusicTuner: React.FC = () => {
           ref={canvasRef}
           width={280}
           height={60}
+          aria-hidden="true"
           className="absolute top-2 inset-x-0 mx-auto pointer-events-none opacity-30"
         />
 
