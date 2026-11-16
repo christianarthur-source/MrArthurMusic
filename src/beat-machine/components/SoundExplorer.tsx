@@ -219,7 +219,7 @@ export const SoundExplorer: React.FC<SoundExplorerProps> = ({
                 <span className="text-base">{cat.icon}</span>
                 <span>{cat.label}</span>
                 <span
-                  className={`rounded-full px-2 py-0.5 text-[10px] font-black ${
+                  className={`rounded-full px-2 py-0.5 text-[12px] font-black ${
                     isSelected ? 'bg-white/25 text-white' : 'bg-slate-900 text-slate-400'
                   }`}
                 >
@@ -253,7 +253,7 @@ export const SoundExplorer: React.FC<SoundExplorerProps> = ({
             </button>
           )}
           {containsProfanity(searchQuery) && (
-            <div className="absolute left-0 -bottom-5 text-[10px] font-bold text-rose-400">
+            <div className="absolute left-0 -bottom-5 text-[12px] font-bold text-rose-400">
               Inappropriate search term blocked
             </div>
           )}
@@ -298,7 +298,7 @@ export const SoundExplorer: React.FC<SoundExplorerProps> = ({
                   </button>
 
                   {/* Fun tag pill */}
-                  <span className="rounded-full bg-slate-900/80 px-2.5 py-1 text-[11px] font-black text-amber-300 border border-slate-700/80 shadow-xs">
+                  <span className="rounded-full bg-slate-900/80 px-2.5 py-1 text-[12px] font-black text-amber-300 border border-slate-700/80 shadow-xs">
                     {sample.funTag}
                   </span>
                 </div>

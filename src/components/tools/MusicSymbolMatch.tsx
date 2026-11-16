@@ -511,7 +511,7 @@ export const MusicSymbolMatch: React.FC = () => {
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-xl font-black text-white">Music Symbol Match</h3>
-              <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-violet-400/20 text-violet-300 border border-violet-400/40">
+              <span className="text-[12px] uppercase font-mono px-2 py-0.5 rounded-full bg-violet-400/20 text-violet-300 border border-violet-400/40">
                 Notes • Rests • Dynamics • Clefs
               </span>
             </div>
@@ -655,7 +655,7 @@ export const MusicSymbolMatch: React.FC = () => {
                           <div className="flex items-center justify-center h-16 w-full text-white my-auto">
                             <SymbolVisual id={card.symbolItem.id} size="md" color="#F8FAFC" />
                           </div>
-                          <div className="text-[10px] text-violet-300 font-bold uppercase tracking-wider">
+                          <div className="text-[12px] text-violet-300 font-bold uppercase tracking-wider">
                             Symbol Card
                           </div>
                         </>
@@ -664,7 +664,7 @@ export const MusicSymbolMatch: React.FC = () => {
                           <div className="font-black text-sm text-amber-300 my-auto leading-snug">
                             {card.symbolItem.name}
                           </div>
-                          <div className="text-[10px] text-slate-300 font-sans leading-tight">
+                          <div className="text-[12px] text-slate-300 font-sans leading-tight">
                             {card.symbolItem.definition}
                           </div>
                         </>
@@ -675,7 +675,7 @@ export const MusicSymbolMatch: React.FC = () => {
                       <div className="w-10 h-10 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-xl text-slate-400 shadow-inner">
                         🎵
                       </div>
-                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                      <span className="text-[12px] font-bold text-slate-500 uppercase tracking-widest">
                         Tap Flip
                       </span>
                     </div>
@@ -818,7 +818,7 @@ export const MusicSymbolMatch: React.FC = () => {
                 </div>
                 <div>
                   <div className="font-bold text-xs text-amber-300 leading-tight">{item.name}</div>
-                  <div className="text-[10px] text-slate-400 font-sans mt-0.5 leading-tight">
+                  <div className="text-[12px] text-slate-400 font-sans mt-0.5 leading-tight">
                     {item.definition}
                   </div>
                 </div>

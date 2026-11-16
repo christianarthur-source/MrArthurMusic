@@ -55,7 +55,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
           {shortcuts.map((s, idx) => (
             <div key={idx} className="py-2.5 flex items-center justify-between text-xs">
               <span className="text-slate-600 font-medium">{s.action}</span>
-              <kbd className="px-2 py-1 bg-slate-100 border border-slate-300 rounded font-mono font-bold text-slate-800 text-[11px] shrink-0 ml-2">
+              <kbd className="px-2 py-1 bg-slate-100 border border-slate-300 rounded font-mono font-bold text-slate-800 text-[12px] shrink-0 ml-2">
                 {s.key}
               </kbd>
             </div>
@@ -63,7 +63,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
         </div>
 
         <div className="mt-5 pt-3 border-t border-slate-200 flex items-center justify-between">
-          <span className="text-[11px] text-slate-500 font-medium">
+          <span className="text-[12px] text-slate-500 font-medium">
             🔒 NY Ed Law § 2-d Compliant • No Ads or Tracking
           </span>
           <button

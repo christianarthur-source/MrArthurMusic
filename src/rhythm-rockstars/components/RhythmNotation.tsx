@@ -471,7 +471,7 @@ export const RhythmNotation: React.FC<RhythmNotationProps> = ({
                 {syllableStyle !== 'none' && (
                   <div className="mt-1 text-center whitespace-nowrap">
                     <span
-                      className={`text-[11px] sm:text-sm font-semibold tracking-wide transition-colors ${
+                      className={`text-[12px] sm:text-sm font-semibold tracking-wide transition-colors ${
                         isActive
                           ? 'text-amber-300 font-bold'
                           : 'text-slate-400'

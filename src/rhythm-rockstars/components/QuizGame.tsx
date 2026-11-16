@@ -358,7 +358,7 @@ export const QuizGame: React.FC<QuizGameProps> = ({
                       onChangeKit(kitId);
                       audioEngine.playUniformRhythmNote(kitId);
                     }}
-                    className="px-2 py-0.5 rounded-md bg-slate-950/80 hover:bg-slate-800 border border-slate-800/80 text-[11px] font-bold text-slate-300 hover:text-white transition-colors cursor-pointer"
+                    className="px-2 py-0.5 rounded-md bg-slate-950/80 hover:bg-slate-800 border border-slate-800/80 text-[12px] font-bold text-slate-300 hover:text-white transition-colors cursor-pointer"
                     title={`Switch rhythm sample to ${kitLabels[kitId].name}`}
                   >
                     {kitLabels[kitId].icon} {kitLabels[kitId].name}

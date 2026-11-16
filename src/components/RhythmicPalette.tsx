@@ -379,7 +379,7 @@ export const RhythmicPalette: React.FC<RhythmicPaletteProps> = ({
                 <span className="font-mono font-black tracking-tighter text-emerald-400">|: :|</span>
                 <span>Repeat</span>
                 {currentMeasureEnding && (
-                  <span className="bg-amber-400 text-slate-950 px-1 py-0.2 rounded text-[10px] font-black leading-none font-serif">
+                  <span className="bg-amber-400 text-slate-950 px-1 py-0.2 rounded text-[12px] font-black leading-none font-serif">
                     {currentMeasureEnding}.
                   </span>
                 )}
@@ -388,7 +388,7 @@ export const RhythmicPalette: React.FC<RhythmicPaletteProps> = ({
 
               {openDropdown === 'repeat' && (
                 <div className="absolute left-0 mt-2 w-64 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-2 z-50 flex flex-col gap-1 text-xs">
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-2.5 pt-1 pb-0.5">
+                  <div className="text-[12px] font-bold uppercase tracking-wider text-slate-400 px-2.5 pt-1 pb-0.5">
                     Measure {targetMeasureNum} Repeat Signs
                   </div>
                   <button
@@ -422,7 +422,7 @@ export const RhythmicPalette: React.FC<RhythmicPaletteProps> = ({
                     {currentMeasureHasRepeatEnd && <Check className="w-3.5 h-3.5 text-sky-400" />}
                   </button>
                   <div className="h-px bg-slate-800 my-1" />
-                  <div className="text-[10px] font-bold uppercase tracking-wider text-amber-400/90 px-2.5 pt-1 pb-0.5">
+                  <div className="text-[12px] font-bold uppercase tracking-wider text-amber-400/90 px-2.5 pt-1 pb-0.5">
                     1st & 2nd Endings (Volta)
                   </div>
                   <button
@@ -433,7 +433,7 @@ export const RhythmicPalette: React.FC<RhythmicPaletteProps> = ({
                     className="flex items-center justify-between px-3 py-1.5 rounded-xl hover:bg-slate-800 text-left font-semibold text-slate-200 hover:text-amber-300 transition-colors cursor-pointer"
                   >
                     <span className="flex items-center gap-2">
-                      <span className="font-serif font-black border border-amber-400/60 bg-amber-400/10 text-amber-300 rounded px-1.5 py-0.5 text-[11px] leading-none">
+                      <span className="font-serif font-black border border-amber-400/60 bg-amber-400/10 text-amber-300 rounded px-1.5 py-0.5 text-[12px] leading-none">
                         1.
                       </span>
                       <span>1st Ending on Measure {targetMeasureNum}</span>
@@ -448,7 +448,7 @@ export const RhythmicPalette: React.FC<RhythmicPaletteProps> = ({
                     className="flex items-center justify-between px-3 py-1.5 rounded-xl hover:bg-slate-800 text-left font-semibold text-slate-200 hover:text-amber-300 transition-colors cursor-pointer"
                   >
                     <span className="flex items-center gap-2">
-                      <span className="font-serif font-black border border-amber-400/60 bg-amber-400/10 text-amber-300 rounded px-1.5 py-0.5 text-[11px] leading-none">
+                      <span className="font-serif font-black border border-amber-400/60 bg-amber-400/10 text-amber-300 rounded px-1.5 py-0.5 text-[12px] leading-none">
                         2.
                       </span>
                       <span>2nd Ending on Measure {targetMeasureNum}</span>
@@ -499,7 +499,7 @@ export const RhythmicPalette: React.FC<RhythmicPaletteProps> = ({
 
               {openDropdown === 'lyric' && (
                 <div className="absolute left-0 mt-2 w-64 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-3 z-50 flex flex-col gap-2 text-xs">
-                  <div className="text-[11px] font-bold text-slate-300">
+                  <div className="text-[12px] font-bold text-slate-300">
                     Lyric for Selected Note:
                   </div>
                   <input
@@ -518,7 +518,7 @@ export const RhythmicPalette: React.FC<RhythmicPaletteProps> = ({
                     placeholder="Type word/syllable, press Enter..."
                     className="w-full px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-white text-xs focus:border-purple-400 focus:outline-hidden"
                   />
-                  <div className="text-[10px] text-slate-400">
+                  <div className="text-[12px] text-slate-400">
                     Press <b>Enter</b> or <b>Space</b> to move to the next note.
                   </div>
                 </div>
@@ -619,7 +619,7 @@ export const RhythmicPalette: React.FC<RhythmicPaletteProps> = ({
                 {openDropdown === 'expressions' && (
                   <div className="absolute left-0 mt-2 w-72 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-3 z-50 flex flex-col gap-2.5 text-xs">
                     <div>
-                      <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                      <div className="text-[12px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
                         Articulations & Accents
                       </div>
                       <div className="grid grid-cols-5 gap-1">
@@ -653,7 +653,7 @@ export const RhythmicPalette: React.FC<RhythmicPaletteProps> = ({
                     <div className="h-px bg-slate-800" />
 
                     <div>
-                      <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                      <div className="text-[12px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">
                         Dynamics (Volume Markings)
                       </div>
                       <div className="grid grid-cols-7 gap-1">

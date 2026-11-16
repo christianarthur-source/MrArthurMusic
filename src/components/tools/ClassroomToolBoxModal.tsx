@@ -137,7 +137,7 @@ export const ClassroomToolBoxModal: React.FC<ClassroomToolBoxModalProps> = ({
             <div>
               <h2 className="text-lg sm:text-xl font-black text-white font-['Fredoka',sans-serif] flex items-center gap-2">
                 <span>Music Class Tool Box</span>
-                <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-amber-400/10 text-amber-300 border border-amber-400/30">
+                <span className="text-[12px] uppercase font-mono px-2 py-0.5 rounded-full bg-amber-400/10 text-amber-300 border border-amber-400/30">
                   Interactive Mini-Tools
                 </span>
               </h2>
@@ -179,7 +179,7 @@ export const ClassroomToolBoxModal: React.FC<ClassroomToolBoxModalProps> = ({
                 <div className="text-left">
                   <div className="leading-tight">{tab.title}</div>
                   <div
-                    className={`text-[9px] font-medium leading-none ${
+                    className={`text-[12px] font-medium leading-none ${
                       isActive ? 'text-slate-950/80' : 'text-slate-500'
                     }`}
                   >

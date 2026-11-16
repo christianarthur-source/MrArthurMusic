@@ -34,7 +34,7 @@ export const PedagogyBar: React.FC<PedagogyBarProps> = ({
     <div className="bg-slate-900/80 border-b border-slate-800 px-4 py-2 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-300">
       {/* Student Helper Mode Toggles */}
       <div className="flex items-center gap-2.5 flex-wrap">
-        <span className="font-bold text-slate-400 tracking-wider uppercase text-[10px]">
+        <span className="font-bold text-slate-400 tracking-wider uppercase text-[12px]">
           Student Helpers:
         </span>
 
@@ -50,7 +50,7 @@ export const PedagogyBar: React.FC<PedagogyBarProps> = ({
           <Eye className="w-3.5 h-3.5" />
           <span>Note Letters</span>
           <span
-            className={`text-[9px] px-1 py-0.2 rounded font-mono font-bold ${
+            className={`text-[12px] px-1 py-0.2 rounded font-mono font-bold ${
               showPitchNames ? 'bg-sky-600 text-white' : 'bg-slate-700 text-slate-400'
             }`}
           >
@@ -70,7 +70,7 @@ export const PedagogyBar: React.FC<PedagogyBarProps> = ({
           <Palette className="w-3.5 h-3.5" />
           <span>Boomwhacker Colors</span>
           <span
-            className={`text-[9px] px-1 py-0.2 rounded font-mono font-bold ${
+            className={`text-[12px] px-1 py-0.2 rounded font-mono font-bold ${
               boomwhackerColors ? 'bg-amber-600 text-white' : 'bg-slate-700 text-slate-400'
             }`}
           >
@@ -90,7 +90,7 @@ export const PedagogyBar: React.FC<PedagogyBarProps> = ({
           <Hash className="w-3.5 h-3.5" />
           <span>Beat Counter (1-2-3-4)</span>
           <span
-            className={`text-[9px] px-1 py-0.2 rounded font-mono font-bold ${
+            className={`text-[12px] px-1 py-0.2 rounded font-mono font-bold ${
               showBeatCounters ? 'bg-indigo-600 text-white' : 'bg-slate-700 text-slate-400'
             }`}
           >
@@ -102,11 +102,11 @@ export const PedagogyBar: React.FC<PedagogyBarProps> = ({
       {/* Chroma-Notes Mini Legend (when enabled) */}
       {boomwhackerColors && (
         <div className="hidden xl:flex items-center gap-1.5 bg-slate-800/90 px-3 py-1.5 rounded-xl border border-slate-700 shadow-xs">
-          <span className="text-[10px] text-slate-400 font-bold mr-1">Chroma:</span>
+          <span className="text-[12px] text-slate-400 font-bold mr-1">Chroma:</span>
           {steps.map((st) => (
             <div
               key={st}
-              className="w-4.5 h-4.5 rounded-full flex items-center justify-center text-[10px] font-black shadow-xs"
+              className="w-4.5 h-4.5 rounded-full flex items-center justify-center text-[12px] font-black shadow-xs"
               style={{
                 backgroundColor: BOOMWHACKER_COLORS[st].bg,
                 color: BOOMWHACKER_COLORS[st].text,
@@ -122,7 +122,7 @@ export const PedagogyBar: React.FC<PedagogyBarProps> = ({
       {/* Save status, Export & Import */}
       <div className="flex items-center gap-2.5">
         {lastSavedTime && (
-          <div className="flex items-center gap-1 text-[11px] text-emerald-400 font-semibold">
+          <div className="flex items-center gap-1 text-[12px] text-emerald-400 font-semibold">
             <CheckCircle2 className="w-3.5 h-3.5" />
             <span>Saved {lastSavedTime}</span>
           </div>

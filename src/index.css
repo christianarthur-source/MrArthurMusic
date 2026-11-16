@@ -50,6 +50,16 @@
   outline-offset: var(--suite-focus-offset, 2px) !important;
 }
 
+/* Touch screens: icon-only buttons (the small close / undo / delete / zoom ones, which all carry an aria-label) grow to a
+   finger-sized 44 px target (audit WP-6.4). The DAW has its own dense layout and is left alone. */
+@media (pointer: coarse) {
+  button[aria-label]:not(.daw-root *):not([role="switch"]):not([role="tab"]):not(:has(> img:only-child)) {
+    min-width: 44px;
+    min-height: 44px;
+    justify-content: center;
+  }
+}
+
 /* Honour "reduce motion": no bounces, slides, flashes or endless animation (audit WP-6.6). Spinners keep turning
    so a student can still tell something is loading. */
 @media (prefers-reduced-motion: reduce) {

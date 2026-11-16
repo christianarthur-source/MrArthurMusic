@@ -116,7 +116,7 @@ export const TrackStrip: React.FC<TrackStripProps> = ({
                 <h2 className="text-base font-black tracking-tight text-white">
                   Virtual Studio Mixer & FX Console
                 </h2>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                <span className="px-2 py-0.5 rounded-full text-[12px] font-extrabold uppercase tracking-wider bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
                   Live Audio Engine
                 </span>
               </div>
@@ -155,7 +155,7 @@ export const TrackStrip: React.FC<TrackStripProps> = ({
               <span className="text-xs font-extrabold uppercase tracking-wider text-slate-400">
                 Channel Faders & Stereo Pan ({tracks.length} {tracks.length === 1 ? 'Track' : 'Tracks'})
               </span>
-              <span className="text-[11px] text-slate-400">
+              <span className="text-[12px] text-slate-400">
                 Click a channel to edit its FX rack →
               </span>
             </div>
@@ -225,7 +225,7 @@ export const TrackStrip: React.FC<TrackStripProps> = ({
                             });
                           }
                         }}
-                        className="w-full bg-slate-900 border border-slate-700 text-slate-200 text-[11px] font-semibold rounded-lg px-2 py-1 focus:outline-hidden focus:border-indigo-400 cursor-pointer"
+                        className="w-full bg-slate-900 border border-slate-700 text-slate-200 text-[12px] font-semibold rounded-lg px-2 py-1 focus:outline-hidden focus:border-indigo-400 cursor-pointer"
                       >
                         {Object.entries(INSTRUMENTS_BY_CATEGORY).map(([category, instList]) => (
                           <optgroup key={category} label={category} className="bg-slate-900 text-white">
@@ -244,7 +244,7 @@ export const TrackStrip: React.FC<TrackStripProps> = ({
                       className="bg-slate-900/90 border border-slate-800 rounded-xl p-2 flex flex-col gap-1"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <div className="flex items-center justify-between text-[10px] font-bold">
+                      <div className="flex items-center justify-between text-[12px] font-bold">
                         <span className="text-slate-400">PAN (L / R)</span>
                         <button
                           onClick={() => onUpdateTrack(trackIndex, { pan: 0 })}
@@ -265,7 +265,7 @@ export const TrackStrip: React.FC<TrackStripProps> = ({
                         }
                         className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-cyan-400"
                       />
-                      <div className="flex justify-between text-[9px] text-slate-500 font-bold">
+                      <div className="flex justify-between text-[12px] text-slate-500 font-bold">
                         <span>L</span>
                         <span>C</span>
                         <span>R</span>
@@ -306,7 +306,7 @@ export const TrackStrip: React.FC<TrackStripProps> = ({
                       className="bg-slate-950 border border-slate-800/90 rounded-xl p-2.5 flex flex-col items-center gap-2"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <div className="w-full flex items-center justify-between text-[10px] font-bold">
+                      <div className="w-full flex items-center justify-between text-[12px] font-bold">
                         <span className="text-slate-400 flex items-center gap-1">
                           {track.muted ? (
                             <VolumeX className="w-3.5 h-3.5 text-rose-400" />
@@ -321,7 +321,7 @@ export const TrackStrip: React.FC<TrackStripProps> = ({
                       {/* Vertical Fader Bar + Range Input */}
                       <div className="relative h-32 w-full flex items-center justify-center">
                         {/* dB Scale Tick Marks */}
-                        <div className="absolute left-2 inset-y-1 flex flex-col justify-between text-[9px] font-mono text-slate-600 pointer-events-none">
+                        <div className="absolute left-2 inset-y-1 flex flex-col justify-between text-[12px] font-mono text-slate-600 pointer-events-none">
                           <span>0dB</span>
                           <span>-6</span>
                           <span>-12</span>
@@ -363,12 +363,12 @@ export const TrackStrip: React.FC<TrackStripProps> = ({
                     </div>
 
                     {/* Quick Mini FX Summary Pill */}
-                    <div className="flex items-center justify-between text-[10px] px-1 pt-0.5 text-slate-400">
+                    <div className="flex items-center justify-between text-[12px] px-1 pt-0.5 text-slate-400">
                       <span className="flex items-center gap-1 font-bold text-indigo-300">
                         <Sparkles className="w-3 h-3" />
                         FX Rack
                       </span>
-                      <span className="font-mono text-[10px] text-slate-400">
+                      <span className="font-mono text-[12px] text-slate-400">
                         Rev {Math.round(trackFx.reverb * 100)}% · Dly {Math.round(trackFx.delay * 100)}%
                       </span>
                     </div>
@@ -390,7 +390,7 @@ export const TrackStrip: React.FC<TrackStripProps> = ({
                         <h3 className="text-xs font-black uppercase tracking-wider text-indigo-300">
                           Track FX Rack — {activeFxTrack.name}
                         </h3>
-                        <p className="text-[11px] text-slate-400">
+                        <p className="text-[12px] text-slate-400">
                           Real-time Web Audio effects processor for this channel
                         </p>
                       </div>
@@ -398,7 +398,7 @@ export const TrackStrip: React.FC<TrackStripProps> = ({
                     <button
                       onClick={() => updateTrackFx(activeFxTrackIdx, DEFAULT_TRACK_FX)}
                       title="Reset FX to default"
-                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-bold transition-colors cursor-pointer"
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[12px] font-bold transition-colors cursor-pointer"
                     >
                       <RotateCcw className="w-3 h-3" />
                       <span>Reset FX</span>
@@ -407,7 +407,7 @@ export const TrackStrip: React.FC<TrackStripProps> = ({
 
                   {/* FX Presets */}
                   <div>
-                    <div className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-1.5">
+                    <div className="text-[12px] font-extrabold uppercase tracking-wider text-slate-400 mb-1.5">
                       Quick Studio FX Presets
                     </div>
                     <div className="flex flex-wrap gap-1.5">
@@ -415,7 +415,7 @@ export const TrackStrip: React.FC<TrackStripProps> = ({
                         <button
                           key={preset.name}
                           onClick={() => updateTrackFx(activeFxTrackIdx, preset.fx)}
-                          className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-900 hover:bg-indigo-500/20 text-slate-300 hover:text-indigo-200 border border-slate-800 hover:border-indigo-500/40 transition-all cursor-pointer"
+                          className="px-2.5 py-1 rounded-lg text-[12px] font-bold bg-slate-900 hover:bg-indigo-500/20 text-slate-300 hover:text-indigo-200 border border-slate-800 hover:border-indigo-500/40 transition-all cursor-pointer"
                         >
                           {preset.name}
                         </button>
@@ -429,7 +429,7 @@ export const TrackStrip: React.FC<TrackStripProps> = ({
                     <div className="bg-slate-900/90 border border-slate-800/90 rounded-xl p-3 flex flex-col gap-1.5">
                       <div className="flex justify-between items-center text-xs font-bold">
                         <span className="text-sky-300">Concert Hall Reverb</span>
-                        <span className="font-mono text-[11px] text-slate-300">
+                        <span className="font-mono text-[12px] text-slate-300">
                           {Math.round(activeFx.reverb * 100)}%
                         </span>
                       </div>
@@ -444,7 +444,7 @@ export const TrackStrip: React.FC<TrackStripProps> = ({
                         }
                         className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-sky-400"
                       />
-                      <span className="text-[10px] text-slate-500">
+                      <span className="text-[12px] text-slate-500">
                         Adds stereo acoustic room & hall depth
                       </span>
                     </div>
@@ -453,7 +453,7 @@ export const TrackStrip: React.FC<TrackStripProps> = ({
                     <div className="bg-slate-900/90 border border-slate-800/90 rounded-xl p-3 flex flex-col gap-1.5">
                       <div className="flex justify-between items-center text-xs font-bold">
                         <span className="text-purple-300">Stereo Echo / Delay</span>
-                        <span className="font-mono text-[11px] text-slate-300">
+                        <span className="font-mono text-[12px] text-slate-300">
                           {Math.round(activeFx.delay * 100)}%
                         </span>
                       </div>
@@ -468,7 +468,7 @@ export const TrackStrip: React.FC<TrackStripProps> = ({
                         }
                         className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-purple-400"
                       />
-                      <span className="text-[10px] text-slate-500">
+                      <span className="text-[12px] text-slate-500">
                         Rhythmic repeating delay reflections
                       </span>
                     </div>
@@ -477,7 +477,7 @@ export const TrackStrip: React.FC<TrackStripProps> = ({
                     <div className="bg-slate-900/90 border border-slate-800/90 rounded-xl p-3 flex flex-col gap-1.5">
                       <div className="flex justify-between items-center text-xs font-bold">
                         <span className="text-cyan-300">Lush Chorus Widener</span>
-                        <span className="font-mono text-[11px] text-slate-300">
+                        <span className="font-mono text-[12px] text-slate-300">
                           {Math.round(activeFx.chorus * 100)}%
                         </span>
                       </div>
@@ -492,7 +492,7 @@ export const TrackStrip: React.FC<TrackStripProps> = ({
                         }
                         className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-cyan-400"
                       />
-                      <span className="text-[10px] text-slate-500">
+                      <span className="text-[12px] text-slate-500">
                         Modulated detuned ensemble shimmer
                       </span>
                     </div>
@@ -501,7 +501,7 @@ export const TrackStrip: React.FC<TrackStripProps> = ({
                     <div className="bg-slate-900/90 border border-slate-800/90 rounded-xl p-3 flex flex-col gap-1.5">
                       <div className="flex justify-between items-center text-xs font-bold">
                         <span className="text-amber-300">Warm Tube Drive</span>
-                        <span className="font-mono text-[11px] text-slate-300">
+                        <span className="font-mono text-[12px] text-slate-300">
                           {Math.round(activeFx.drive * 100)}%
                         </span>
                       </div>
@@ -516,7 +516,7 @@ export const TrackStrip: React.FC<TrackStripProps> = ({
                         }
                         className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-amber-400"
                       />
-                      <span className="text-[10px] text-slate-500">
+                      <span className="text-[12px] text-slate-500">
                         Soft harmonic saturation & punch
                       </span>
                     </div>
@@ -525,7 +525,7 @@ export const TrackStrip: React.FC<TrackStripProps> = ({
                     <div className="bg-slate-900/90 border border-slate-800/90 rounded-xl p-3 flex flex-col gap-1.5">
                       <div className="flex justify-between items-center text-xs font-bold">
                         <span className="text-emerald-300">Bass EQ (180 Hz)</span>
-                        <span className="font-mono text-[11px] text-slate-300">
+                        <span className="font-mono text-[12px] text-slate-300">
                           {activeFx.eqBass > 0 ? `+${activeFx.eqBass}` : activeFx.eqBass} dB
                         </span>
                       </div>
@@ -540,7 +540,7 @@ export const TrackStrip: React.FC<TrackStripProps> = ({
                         }
                         className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-emerald-400"
                       />
-                      <span className="text-[10px] text-slate-500">
+                      <span className="text-[12px] text-slate-500">
                         Boost or cut low-end warmth
                       </span>
                     </div>
@@ -549,7 +549,7 @@ export const TrackStrip: React.FC<TrackStripProps> = ({
                     <div className="bg-slate-900/90 border border-slate-800/90 rounded-xl p-3 flex flex-col gap-1.5">
                       <div className="flex justify-between items-center text-xs font-bold">
                         <span className="text-rose-300">Treble EQ (3.5 kHz)</span>
-                        <span className="font-mono text-[11px] text-slate-300">
+                        <span className="font-mono text-[12px] text-slate-300">
                           {activeFx.eqTreble > 0 ? `+${activeFx.eqTreble}` : activeFx.eqTreble} dB
                         </span>
                       </div>
@@ -564,14 +564,14 @@ export const TrackStrip: React.FC<TrackStripProps> = ({
                         }
                         className="w-full h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-rose-400"
                       />
-                      <span className="text-[10px] text-slate-500">
+                      <span className="text-[12px] text-slate-500">
                         Boost or cut high-frequency sparkle
                       </span>
                     </div>
                   </div>
                 </div>
 
-                <div className="text-[11px] text-slate-400 bg-slate-900/70 border border-slate-800/80 rounded-xl px-3 py-2 flex items-center justify-between">
+                <div className="text-[12px] text-slate-400 bg-slate-900/70 border border-slate-800/80 rounded-xl px-3 py-2 flex items-center justify-between">
                   <span>
                     Tip: All mixer faders, panning, and FX settings are included when you download a <b>.wav</b> audio file or share your song link!
                   </span>

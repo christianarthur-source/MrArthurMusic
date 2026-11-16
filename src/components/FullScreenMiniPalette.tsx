@@ -322,7 +322,7 @@ export const FullScreenMiniPalette: React.FC<FullScreenMiniPaletteProps> = ({
           >
             <ZoomOut className="w-3.5 h-3.5" />
           </button>
-          <span className="text-[11px] font-bold text-indigo-300 px-1.5 min-w-[42px] text-center">
+          <span className="text-[12px] font-bold text-indigo-300 px-1.5 min-w-[42px] text-center">
             {Math.round(scoreZoom * 100)}%
           </span>
           <button aria-label="Zoom In Staff (Make Notes Bigger)"

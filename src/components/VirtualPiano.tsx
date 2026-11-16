@@ -41,7 +41,7 @@ export const VirtualPiano: React.FC<VirtualPianoProps> = ({
         <div className="flex items-center gap-2">
           <Music className="w-4 h-4 text-sky-400" />
           <span>Virtual Piano & Pitch Explorer (Grades 5–8)</span>
-          <span className="text-[11px] text-slate-400 hidden sm:inline">
+          <span className="text-[12px] text-slate-400 hidden sm:inline">
             Click keys to play & insert notes, or press keys A–G
           </span>
         </div>
@@ -79,7 +79,7 @@ export const VirtualPiano: React.FC<VirtualPianoProps> = ({
                         />
                       )}
                       <span className="font-bold text-slate-800 text-sm">{step}</span>
-                      <span className="text-[10px] text-slate-400 font-mono">{octave}</span>
+                      <span className="text-[12px] text-slate-400 font-mono">{octave}</span>
                     </button>
                   );
                 })}
@@ -104,7 +104,7 @@ export const VirtualPiano: React.FC<VirtualPianoProps> = ({
                       style={{ left: `${leftPos}px` }}
                       className="group absolute top-0 z-10 w-6 h-22 bg-gradient-to-b from-slate-900 via-slate-800 to-black hover:to-slate-700 rounded-b-sm shadow-md active:bg-slate-700 active:translate-y-0.5 transition-all flex flex-col justify-end items-center pb-1.5 focus:outline-hidden"
                     >
-                      <span className="text-[10px] font-bold text-slate-300 leading-tight">
+                      <span className="text-[12px] font-bold text-slate-300 leading-tight">
                         {bKey.step}♯
                       </span>
                     </button>
@@ -125,7 +125,7 @@ export const VirtualPiano: React.FC<VirtualPianoProps> = ({
                 />
               )}
               <span className="font-bold text-slate-800 text-sm">C</span>
-              <span className="text-[10px] text-slate-400 font-mono">5</span>
+              <span className="text-[12px] text-slate-400 font-mono">5</span>
             </button>
           </div>
         </div>

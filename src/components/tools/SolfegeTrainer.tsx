@@ -420,7 +420,7 @@ export const SolfegeTrainer: React.FC = () => {
             ))}
           </div>
         </div>
-        <span className="text-[10px] text-emerald-400 font-bold px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 hidden md:inline">
+        <span className="text-[12px] text-emerald-400 font-bold px-2 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20 hidden md:inline">
           🎧 Concert SoundFont Audio
         </span>
       </div>
@@ -505,7 +505,7 @@ export const SolfegeTrainer: React.FC = () => {
                   {note.handEmoji}
                 </span>
                 <span
-                  className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md ${
+                  className={`text-[12px] font-mono font-bold px-1.5 py-0.5 rounded-md ${
                     isActive ? 'bg-black/30 text-white' : 'bg-slate-800 text-slate-400'
                   }`}
                 >
@@ -519,7 +519,7 @@ export const SolfegeTrainer: React.FC = () => {
                   className="w-4 h-4 rounded-full mx-auto shadow-inner"
                   style={{ backgroundColor: note.color }}
                 />
-                <div className="text-[10px] font-bold text-slate-400 leading-tight">
+                <div className="text-[12px] font-bold text-slate-400 leading-tight">
                   {note.step}
                   {note.octave}
                 </div>
@@ -534,7 +534,7 @@ export const SolfegeTrainer: React.FC = () => {
                   {note.syllable}
                 </div>
                 <div
-                  className={`text-[9px] font-semibold truncate ${
+                  className={`text-[12px] font-semibold truncate ${
                     isActive ? 'text-slate-900' : 'text-slate-400'
                   }`}
                 >
@@ -555,7 +555,7 @@ export const SolfegeTrainer: React.FC = () => {
             Press keys <strong>1 through 8</strong> on your keyboard to play!
           </span>
         </div>
-        <div className="text-slate-500 font-mono text-[11px] shrink-0">
+        <div className="text-slate-500 font-mono text-[12px] shrink-0">
           Chroma-Notes / Boomwhacker Colors
         </div>
       </div>

@@ -77,7 +77,7 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
                       ))}
                     </div>
                   ) : (
-                    <span className="flex items-center gap-1 text-[11px] font-semibold text-slate-500">
+                    <span className="flex items-center gap-1 text-[12px] font-semibold text-slate-500">
                       <Lock className="w-3 h-3" />
                       {lvl.minPointsToUnlock} pts
                     </span>
@@ -88,21 +88,21 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
                   {lvl.title}
                 </h4>
                 <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-                  <span className="text-[11px] font-bold text-amber-300">
+                  <span className="text-[12px] font-bold text-amber-300">
                     {lvl.difficultyLabel}
                   </span>
-                  <span className="text-[10px] font-black text-rose-400 bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/20">
+                  <span className="text-[12px] font-black text-rose-400 bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/20">
                     +{lvl.basePointsPerQuestion} pts
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-400 mt-1 line-clamp-2">
+                <p className="text-[12px] text-slate-400 mt-1 line-clamp-2">
                   {lvl.description}
                 </p>
               </div>
 
               {/* Rhythms Introduced Pill Row */}
               <div className="mt-3 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs">
-                <span className="text-[10px] text-slate-400 font-semibold truncate max-w-[170px]">
+                <span className="text-[12px] text-slate-400 font-semibold truncate max-w-[170px]">
                   {lvl.rhythmTypesIntroduced.join(' · ')}
                 </span>
 

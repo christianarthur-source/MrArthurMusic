@@ -103,7 +103,7 @@ export const TransposeModal: React.FC<TransposeModalProps> = ({
         <div className="p-6 space-y-5 text-xs">
           {/* Quick Interval Presets */}
           <div>
-            <label className="block text-slate-400 font-bold mb-2 uppercase tracking-wider text-[10px]">
+            <label className="block text-slate-400 font-bold mb-2 uppercase tracking-wider text-[12px]">
               Quick Interval Buttons
             </label>
             <div className="grid grid-cols-4 gap-2">
@@ -190,7 +190,7 @@ export const TransposeModal: React.FC<TransposeModalProps> = ({
               <div className="font-extrabold text-sm text-slate-200">
                 {semitones > 0 ? `+${semitones}` : semitones} Semitones
               </div>
-              <div className="text-[11px] text-slate-400">
+              <div className="text-[12px] text-slate-400">
                 Key of {score.keySignature} {updateKeySignature ? `➔ Key of ${projectedKey}` : '(Key signature unchanged)'}
               </div>
             </div>
@@ -216,7 +216,7 @@ export const TransposeModal: React.FC<TransposeModalProps> = ({
 
           {/* Scope Selection */}
           <div className="space-y-2">
-            <label className="block text-slate-400 font-bold uppercase tracking-wider text-[10px]">
+            <label className="block text-slate-400 font-bold uppercase tracking-wider text-[12px]">
               Apply To
             </label>
             <div className="grid grid-cols-2 gap-2">

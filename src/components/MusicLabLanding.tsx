@@ -382,13 +382,13 @@ export const MusicLabLanding: React.FC<MusicLabLandingProps> = ({
 
                 {/* Big Visual Multitrack Timeline Simulation */}
                 <div className="p-3.5 rounded-2xl bg-slate-950 border border-indigo-500/30 space-y-2">
-                  <div className="h-4 rounded-lg bg-amber-500/90 w-4/5 flex items-center px-2 text-[10px] text-slate-950 font-black shadow-sm">
+                  <div className="h-4 rounded-lg bg-amber-500/90 w-4/5 flex items-center px-2 text-[12px] text-slate-950 font-black shadow-sm">
                     🥁 Hip-Hop Drums (120 BPM)
                   </div>
-                  <div className="h-4 rounded-lg bg-pink-500/90 w-3/5 ml-4 flex items-center px-2 text-[10px] text-white font-black shadow-sm">
+                  <div className="h-4 rounded-lg bg-pink-500/90 w-3/5 ml-4 flex items-center px-2 text-[12px] text-white font-black shadow-sm">
                     🎸 808 Sub Bass
                   </div>
-                  <div className="h-4 rounded-lg bg-sky-400/90 w-5/6 flex items-center px-2 text-[10px] text-slate-950 font-black shadow-sm">
+                  <div className="h-4 rounded-lg bg-sky-400/90 w-5/6 flex items-center px-2 text-[12px] text-slate-950 font-black shadow-sm">
                     🎹 Warm Rhodes Chords
                   </div>
                 </div>
@@ -1062,7 +1062,7 @@ export const MusicLabLanding: React.FC<MusicLabLandingProps> = ({
               href="/Dentichorus/index.html"
               target="_blank"
               rel="noopener noreferrer"
-              className="px-2.5 py-1.5 rounded-lg text-slate-500 hover:text-amber-300 hover:bg-slate-800/60 transition-colors text-[11px]"
+              className="px-2.5 py-1.5 rounded-lg text-slate-500 hover:text-amber-300 hover:bg-slate-800/60 transition-colors text-[12px]"
             >
               Denti Chorus
             </a>

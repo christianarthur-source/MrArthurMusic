@@ -162,7 +162,7 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
 
             <div className="flex flex-col justify-center select-none">
-              <span className="text-[10px] sm:text-xs font-extrabold tracking-wider uppercase text-amber-300/95 font-['Fredoka',sans-serif] leading-tight">
+              <span className="text-[12px] sm:text-xs font-extrabold tracking-wider uppercase text-amber-300/95 font-['Fredoka',sans-serif] leading-tight">
                 Mr. Arthur&apos;s
               </span>
               <div className="flex items-center gap-1.5">
@@ -224,7 +224,7 @@ export const Header: React.FC<HeaderProps> = ({
             <>
               <Square className="h-4 w-4 fill-white shrink-0" />
               <span className="text-xs sm:text-sm font-black tracking-wider">STOP</span>
-              <kbd className="hidden sm:inline-flex items-center rounded bg-black/25 px-1.5 py-0.5 text-[9px] font-bold tracking-wider text-rose-100 uppercase border border-rose-300/30">
+              <kbd className="hidden sm:inline-flex items-center rounded bg-black/25 px-1.5 py-0.5 text-[12px] font-bold tracking-wider text-rose-100 uppercase border border-rose-300/30">
                 Space
               </kbd>
             </>
@@ -232,7 +232,7 @@ export const Header: React.FC<HeaderProps> = ({
             <>
               <Play className="h-4 w-4 fill-slate-950 shrink-0" />
               <span className="text-xs sm:text-sm font-black tracking-wider">PLAY</span>
-              <kbd className="hidden sm:inline-flex items-center rounded bg-emerald-950/20 px-1.5 py-0.5 text-[9px] font-bold tracking-wider text-emerald-950 uppercase border border-emerald-950/20">
+              <kbd className="hidden sm:inline-flex items-center rounded bg-emerald-950/20 px-1.5 py-0.5 text-[12px] font-bold tracking-wider text-emerald-950 uppercase border border-emerald-950/20">
                 Space
               </kbd>
             </>
@@ -274,7 +274,7 @@ export const Header: React.FC<HeaderProps> = ({
                 -
               </button>
               <span className="text-xs font-black text-amber-300 px-1 whitespace-nowrap">
-                {bpm} <span className="text-[10px] text-slate-400 font-normal">BPM</span>
+                {bpm} <span className="text-[12px] text-slate-400 font-normal">BPM</span>
               </span>
               <button aria-label="Increase Tempo"
                 onClick={() => onChangeBpm(Math.min(180, bpm + 5))}
@@ -331,7 +331,7 @@ export const Header: React.FC<HeaderProps> = ({
             {isExtrasOpen && (
               <div className="absolute left-0 top-full z-[100] mt-2 w-52 rounded-2xl border-2 border-slate-600 bg-slate-900/98 p-2 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150 space-y-1">
                 <div className="px-3 py-1 border-b border-slate-800 mb-1">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-amber-300">
+                  <span className="text-[12px] font-black uppercase tracking-wider text-amber-300">
                     Extras & Tools
                   </span>
                 </div>
@@ -398,7 +398,7 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center gap-2">
           {/* Steps Switcher: 8 vs 16 steps */}
           <div className="flex items-center gap-1 rounded-xl bg-slate-900 p-1 border border-slate-800 text-xs font-black">
-            <span className="text-[10px] text-slate-400 uppercase tracking-wider px-1 font-bold">Steps:</span>
+            <span className="text-[12px] text-slate-400 uppercase tracking-wider px-1 font-bold">Steps:</span>
             <button
               onClick={() => onToggleTotalSteps(8)}
               className={`rounded-lg px-2 py-0.5 transition-all font-black text-xs ${
@@ -433,7 +433,7 @@ export const Header: React.FC<HeaderProps> = ({
             >
               <span>FX 🎛️</span>
               {activeFxCount > 0 && (
-                <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-cyan-300 text-slate-950 text-[9px] font-black animate-pulse">
+                <span className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-cyan-300 text-slate-950 text-[12px] font-black animate-pulse">
                   {activeFxCount}
                 </span>
               )}
@@ -448,11 +448,11 @@ export const Header: React.FC<HeaderProps> = ({
                 />
                 <div className="absolute right-0 top-full z-[100] mt-2 w-56 rounded-2xl border-2 border-slate-600 bg-slate-900 p-2.5 shadow-2xl backdrop-blur-xl space-y-1">
                   <div className="px-2 py-0.5 border-b border-slate-800 mb-1 flex items-center justify-between">
-                    <span className="text-[10px] font-black uppercase tracking-wider text-amber-300">
+                    <span className="text-[12px] font-black uppercase tracking-wider text-amber-300">
                       Audio Effects Rack
                     </span>
                     {activeFxCount > 0 && (
-                      <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300">
+                      <span className="text-[12px] font-black px-1.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300">
                         {activeFxCount} Active
                       </span>
                     )}

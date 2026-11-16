@@ -139,7 +139,7 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
                         {entry.name}
                       </span>
                       {isMe && (
-                        <span className="text-[11px] font-black text-amber-400 bg-amber-400/20 px-2 py-0.5 rounded-full border border-amber-400/30 shrink-0">
+                        <span className="text-[12px] font-black text-amber-400 bg-amber-400/20 px-2 py-0.5 rounded-full border border-amber-400/30 shrink-0">
                           You
                         </span>
                       )}
@@ -147,7 +147,7 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
 
                     {/* Sub details: Level, Streak, Quizzes, Stars */}
                     <div className="flex items-center gap-2 text-xs text-slate-400 mt-1 flex-wrap">
-                      <span className="text-amber-300 font-bold bg-slate-900 px-2 py-0.5 rounded border border-slate-800 text-[11px]">
+                      <span className="text-amber-300 font-bold bg-slate-900 px-2 py-0.5 rounded border border-slate-800 text-[12px]">
                         Level {entry.highestLevel || 1}
                       </span>
                       <span>•</span>
@@ -181,7 +181,7 @@ export const LeaderboardModal: React.FC<LeaderboardModalProps> = ({
                   <span className="font-mono font-black text-base sm:text-lg text-amber-400 block tabular-nums">
                     {entry.totalScore.toLocaleString()}
                   </span>
-                  <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">
+                  <span className="text-[12px] text-slate-400 uppercase font-bold tracking-wider">
                     Points
                   </span>
                 </div>

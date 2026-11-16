@@ -165,7 +165,7 @@ export const VoiceRecorderModal: React.FC<VoiceRecorderModalProps> = ({
               >
                 <span className="text-2xl">🐿️</span>
                 <span className="mt-1 text-xs font-bold">Chipmunk</span>
-                <span className="text-[10px] text-slate-400">High & Fast</span>
+                <span className="text-[12px] text-slate-400">High & Fast</span>
               </button>
 
               <button
@@ -181,7 +181,7 @@ export const VoiceRecorderModal: React.FC<VoiceRecorderModalProps> = ({
               >
                 <span className="text-2xl">🧒</span>
                 <span className="mt-1 text-xs font-bold">Normal You</span>
-                <span className="text-[10px] text-slate-400">Original Sound</span>
+                <span className="text-[12px] text-slate-400">Original Sound</span>
               </button>
 
               <button
@@ -197,7 +197,7 @@ export const VoiceRecorderModal: React.FC<VoiceRecorderModalProps> = ({
               >
                 <span className="text-2xl">👾</span>
                 <span className="mt-1 text-xs font-bold">Giant Monster</span>
-                <span className="text-[10px] text-slate-400">Deep & Heavy</span>
+                <span className="text-[12px] text-slate-400">Deep & Heavy</span>
               </button>
             </div>
 

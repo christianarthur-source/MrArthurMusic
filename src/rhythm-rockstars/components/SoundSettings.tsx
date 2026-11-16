@@ -74,7 +74,7 @@ export const SoundSettings: React.FC<SoundSettingsProps> = ({
                 }`}
               >
                 <span className="block text-sm font-bold">Kodály</span>
-                <span className="text-[10px] text-slate-400">Ta, Ti-Ti, Tika</span>
+                <span className="text-[12px] text-slate-400">Ta, Ti-Ti, Tika</span>
               </button>
 
               <button
@@ -86,7 +86,7 @@ export const SoundSettings: React.FC<SoundSettingsProps> = ({
                 }`}
               >
                 <span className="block text-sm font-bold">Numbers</span>
-                <span className="text-[10px] text-slate-400">1, 2 &, 3 e & a, 4</span>
+                <span className="text-[12px] text-slate-400">1, 2 &, 3 e & a, 4</span>
               </button>
 
               <button
@@ -98,7 +98,7 @@ export const SoundSettings: React.FC<SoundSettingsProps> = ({
                 }`}
               >
                 <span className="block text-sm font-bold">Ear Only</span>
-                <span className="text-[10px] text-slate-400">No text syllables</span>
+                <span className="text-[12px] text-slate-400">No text syllables</span>
               </button>
             </div>
           </div>
@@ -129,7 +129,7 @@ export const SoundSettings: React.FC<SoundSettingsProps> = ({
                       <span className={`text-xs font-bold block ${settings.soundKit === kit.id ? 'text-amber-300' : 'text-white'}`}>
                         {kit.name}
                       </span>
-                      <span className="text-[10px] text-slate-400 block">{kit.desc}</span>
+                      <span className="text-[12px] text-slate-400 block">{kit.desc}</span>
                     </div>
                   </div>
                   {settings.soundKit === kit.id && (
@@ -182,7 +182,7 @@ export const SoundSettings: React.FC<SoundSettingsProps> = ({
               onChange={(e) => onChangeSettings({ tempoBpm: parseInt(e.target.value, 10) })}
               className="w-full accent-amber-400 h-2 bg-slate-800 rounded-lg cursor-pointer"
             />
-            <div className="flex justify-between text-[10px] text-slate-500 mt-1">
+            <div className="flex justify-between text-[12px] text-slate-500 mt-1">
               <span>70 (Slow Practice)</span>
               <span>96 (Rock)</span>
               <span>130 (Turbo)</span>

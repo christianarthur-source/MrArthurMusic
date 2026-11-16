@@ -2478,7 +2478,7 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
               </div>
 
               {/* Category Pills - Flex Wrap with ZERO Horizontal Scrollbar */}
-              <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-semibold">
+              <div className="flex flex-wrap items-center gap-1.5 text-[12px] font-semibold">
                 {(
                   [
                     'All',
@@ -2577,12 +2577,12 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
                           <div className="text-xs font-bold leading-tight flex items-center gap-2">
                             <span>{inst.name}</span>
                             {isCurrent && (
-                              <span className="text-[10px] bg-indigo-500/30 text-indigo-300 px-1.5 py-0.2 rounded font-semibold">
+                              <span className="text-[12px] bg-indigo-500/30 text-indigo-300 px-1.5 py-0.2 rounded font-semibold">
                                 Current
                               </span>
                             )}
                           </div>
-                          <div className="text-[10px] text-slate-400">{inst.category}</div>
+                          <div className="text-[12px] text-slate-400">{inst.category}</div>
                         </div>
                       </div>
 

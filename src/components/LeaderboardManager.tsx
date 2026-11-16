@@ -120,7 +120,7 @@ export function LeaderboardManager({ teacherPin }: { teacherPin: string }) {
           <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
         </button>
       </div>
-      <p className="text-slate-400 text-[11px]">
+      <p className="text-slate-400 text-[12px]">
         Anyone can view these boards. Remove an entry that looks wrong; the student can still play and earn a new score.
       </p>
 
@@ -135,7 +135,7 @@ export function LeaderboardManager({ teacherPin }: { teacherPin: string }) {
             <span className="w-6 text-right font-mono text-slate-500">{i + 1}</span>
             <div className="flex-1 min-w-0">
               <div className="font-bold text-white truncate">{row.name}</div>
-              <div className="text-[11px] text-slate-400">{row.detail}</div>
+              <div className="text-[12px] text-slate-400">{row.detail}</div>
             </div>
             <span className="font-mono tabular-nums text-amber-300">{row.score.toLocaleString()}</span>
             <button

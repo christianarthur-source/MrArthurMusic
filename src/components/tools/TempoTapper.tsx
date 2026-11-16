@@ -413,14 +413,14 @@ export const TempoTapper: React.FC = () => {
             >
               <div className="flex items-center justify-between">
                 <span className="text-xl">{tier.emoji}</span>
-                <span className="text-[10px] font-bold text-slate-400">
+                <span className="text-[12px] font-bold text-slate-400">
                   {tier.minBpm}–{tier.maxBpm > 300 ? '200+' : tier.maxBpm}
                 </span>
               </div>
               <div className="font-extrabold text-xs text-white mt-1 font-['Fredoka',sans-serif]">
                 {tier.term}
               </div>
-              <div className="text-[10px] text-slate-400 truncate">{tier.meaning}</div>
+              <div className="text-[12px] text-slate-400 truncate">{tier.meaning}</div>
             </button>
           ))}
         </div>

@@ -278,21 +278,21 @@ export const TempoChallenge: React.FC<{ startBpm: number }> = ({ startBpm }) => 
       <div className="grid grid-cols-3 gap-3">
         <div className="rounded-2xl bg-slate-900 border border-amber-500/30 p-3 text-center">
           <div className="text-3xl sm:text-4xl font-black font-mono text-amber-300">{points}</div>
-          <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Points</div>
+          <div className="text-[12px] font-bold text-slate-400 uppercase tracking-wider">Points</div>
         </div>
         <div className="rounded-2xl bg-slate-900 border border-rose-500/30 p-3 text-center">
           <div className="text-3xl sm:text-4xl font-black font-mono text-rose-300 flex items-center justify-center gap-1">
             {streak}
             {streak >= 5 && <Flame className="w-6 h-6 text-orange-400" />}
           </div>
-          <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Streak</div>
+          <div className="text-[12px] font-bold text-slate-400 uppercase tracking-wider">Streak</div>
         </div>
         <div className="rounded-2xl bg-slate-900 border border-sky-500/30 p-3 text-center">
           <div className="text-3xl sm:text-4xl font-black font-mono text-sky-300">
             {taps}
             <span className="text-base text-slate-500">/{ROUND_TAPS}</span>
           </div>
-          <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Taps</div>
+          <div className="text-[12px] font-bold text-slate-400 uppercase tracking-wider">Taps</div>
         </div>
       </div>
 

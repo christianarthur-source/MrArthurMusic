@@ -193,21 +193,21 @@ export const BeatGrid: React.FC<BeatGridProps> = ({
         <div className="flex flex-wrap items-center gap-2">
           {/* Song Timeline Length Info & Quick Jump */}
           <div className="flex items-center gap-1.5 rounded-xl bg-app-bg/90 p-1.5 border border-app-border">
-            <span className="text-[11px] font-black uppercase tracking-wider text-pink-300 px-1">
+            <span className="text-[12px] font-black uppercase tracking-wider text-pink-300 px-1">
               Song: {totalMeasures} {totalMeasures === 1 ? 'Measure' : 'Measures'} ({totalMeasures * stepsPerMeasure} Steps)
             </span>
 
             {/* Quick jump to measure buttons */}
             {totalMeasures > 1 && (
               <div className="flex items-center gap-1 border-l border-slate-700 pl-1.5">
-                <span className="text-[10px] font-bold text-slate-400">Jump:</span>
+                <span className="text-[12px] font-bold text-slate-400">Jump:</span>
                 {Array.from({ length: totalMeasures }).map((_, mIdx) => {
                   const isCurrentPlayingMeasure = isPlaying && Math.floor(currentStep / stepsPerMeasure) === mIdx;
                   return (
                     <button
                       key={mIdx}
                       onClick={() => scrollToMeasure(mIdx)}
-                      className={`flex items-center gap-1 rounded-lg px-2 py-0.5 text-[11px] font-black transition-all ${
+                      className={`flex items-center gap-1 rounded-lg px-2 py-0.5 text-[12px] font-black transition-all ${
                         isCurrentPlayingMeasure
                           ? 'bg-amber-400 text-slate-950 shadow-xs'
                           : 'bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white'
@@ -285,7 +285,7 @@ export const BeatGrid: React.FC<BeatGridProps> = ({
               <span className="text-xs font-black uppercase tracking-wider text-slate-400">
                 Sounds ({tracks.length})
               </span>
-              <span className="text-[10px] text-pink-400 font-bold">Tap to test 🔊</span>
+              <span className="text-[12px] text-pink-400 font-bold">Tap to test 🔊</span>
             </div>
 
             {/* Extended Measures Timeline Ruler */}
@@ -299,14 +299,14 @@ export const BeatGrid: React.FC<BeatGridProps> = ({
                   {/* Measure Header Banner */}
                   <div className="flex items-center justify-between px-1">
                     <div className="flex items-center gap-1.5">
-                      <span className="flex h-5 items-center justify-center rounded-md bg-pink-500/20 px-2 text-[10px] sm:text-xs font-black text-pink-300 border border-pink-500/30">
+                      <span className="flex h-5 items-center justify-center rounded-md bg-pink-500/20 px-2 text-[12px] sm:text-xs font-black text-pink-300 border border-pink-500/30">
                         Measure {mIdx + 1}
                       </span>
                       {isPlaying && Math.floor(currentStep / stepsPerMeasure) === mIdx && (
                         <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
                       )}
                     </div>
-                    <span className="text-[10px] font-bold text-slate-400">
+                    <span className="text-[12px] font-bold text-slate-400">
                       Steps {mIdx * stepsPerMeasure + 1}–{(mIdx + 1) * stepsPerMeasure}
                     </span>
                   </div>
@@ -331,7 +331,7 @@ export const BeatGrid: React.FC<BeatGridProps> = ({
                               : 'bg-slate-900/80 text-slate-400 font-bold border border-slate-800'
                           }`}
                         >
-                          <span className="text-[10px] sm:text-[11px] leading-none">
+                          <span className="text-[12px] sm:text-[12px] leading-none">
                             {isBeatStart ? `B${beatNum}` : `${(sIdx % beatDivider) + 1}`}
                           </span>
                         </div>
@@ -349,7 +349,7 @@ export const BeatGrid: React.FC<BeatGridProps> = ({
                   title={`Extend song further to the right (+ ${stepsPerMeasure} steps)`}
                 >
                   <Plus className="h-4 w-4" />
-                  <span className="text-[10px]">+ Measure</span>
+                  <span className="text-[12px]">+ Measure</span>
                 </button>
               )}
             </div>
@@ -398,7 +398,7 @@ export const BeatGrid: React.FC<BeatGridProps> = ({
                     </div>
 
                     {/* Pitch Shift Tag (Deep / High / Normal) */}
-                    <div className="mt-1 flex items-center gap-1 text-[10px]">
+                    <div className="mt-1 flex items-center gap-1 text-[12px]">
                       <button
                         onClick={() => {
                           const pitches = [0.7, 1.0, 1.5];
@@ -431,7 +431,7 @@ export const BeatGrid: React.FC<BeatGridProps> = ({
                       {/* Solo Button */}
                       <button aria-label="Solo track"
                         onClick={() => onToggleSolo(trackIdx)}
-                        className={`rounded-md px-1.5 py-0.5 text-[10px] font-black transition-colors ${
+                        className={`rounded-md px-1.5 py-0.5 text-[12px] font-black transition-colors ${
                           track.solo
                             ? 'bg-amber-400 text-slate-950 shadow-xs'
                             : 'bg-slate-800 text-slate-400 hover:text-amber-300'
@@ -543,7 +543,7 @@ export const BeatGrid: React.FC<BeatGridProps> = ({
                       <span className="text-xl shrink-0">{pack.emoji}</span>
                       <div className="min-w-0 flex-1">
                         <div className="text-xs font-black truncate">{pack.name}</div>
-                        <div className="text-[10px] text-slate-400 truncate">{pack.description}</div>
+                        <div className="text-[12px] text-slate-400 truncate">{pack.description}</div>
                       </div>
                       {isSelected && <Check className="h-4 w-4 text-pink-400 shrink-0" />}
                     </button>
@@ -592,7 +592,7 @@ export const BeatGrid: React.FC<BeatGridProps> = ({
                         <span className="text-xl shrink-0">{preset.icon}</span>
                         <div className="min-w-0">
                           <div className="text-xs font-black text-white truncate">{preset.title}</div>
-                          <div className="text-[10px] text-slate-400 truncate">{preset.bpm} BPM • {tempo.term}</div>
+                          <div className="text-[12px] text-slate-400 truncate">{preset.bpm} BPM • {tempo.term}</div>
                         </div>
                       </div>
                       <span className="text-xs font-bold text-amber-400 shrink-0">Load</span>
@@ -703,7 +703,7 @@ export const BeatGrid: React.FC<BeatGridProps> = ({
                       <div className="truncate text-xs font-black text-white">
                         {sample.name}
                       </div>
-                      <div className="truncate text-[10px] font-semibold text-slate-400">
+                      <div className="truncate text-[12px] font-semibold text-slate-400">
                         {sample.funTag || sample.category}
                       </div>
                     </div>

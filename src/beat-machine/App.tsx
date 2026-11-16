@@ -1217,7 +1217,7 @@ export default function BeatMachineApp({
             >
               <Music2 className="h-4 w-4" />
               <span>Melody 🎹</span>
-              <span className="rounded-full bg-slate-950/40 px-1.5 py-0.5 text-[10px] text-pink-300">
+              <span className="rounded-full bg-slate-950/40 px-1.5 py-0.5 text-[12px] text-pink-300">
                 {melodyInstrument}
               </span>
             </button>
@@ -1232,7 +1232,7 @@ export default function BeatMachineApp({
             >
               <Activity className="h-4 w-4" />
               <span>Bass 🎸</span>
-              <span className="rounded-full bg-slate-950/40 px-1.5 py-0.5 text-[10px] text-purple-300">
+              <span className="rounded-full bg-slate-950/40 px-1.5 py-0.5 text-[12px] text-purple-300">
                 {bassInstrument}
               </span>
             </button>
@@ -1628,7 +1628,7 @@ export default function BeatMachineApp({
                   className="w-full px-4 py-3 rounded-2xl bg-slate-950 border border-slate-700 focus:border-amber-400 text-sm font-bold text-white focus:outline-hidden"
                   autoFocus
                 />
-                <p className="text-[11px] text-slate-400">
+                <p className="text-[12px] text-slate-400">
                   Your beat will save to your Music Lab account and can be loaded anytime!
                 </p>
               </div>

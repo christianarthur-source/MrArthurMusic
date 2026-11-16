@@ -1208,7 +1208,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                   ? `${studentSession.firstName}'s Saved Songs`
                   : 'Student Sign In'}
               </h2>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[12px] text-slate-400">
                 {mode === 'teacher_portal'
                   ? 'Manage student names, PINs, and saved compositions'
                   : mode === 'teacher_auth'
@@ -1265,14 +1265,14 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                         <GraduationCap className="w-4 h-4 text-sky-400" />
                         <span>Step 1: What Grade Are You In?</span>
                       </h3>
-                      <p className="text-[11px] text-slate-400">
+                      <p className="text-[12px] text-slate-400">
                         Choose your grade level to find your music class
                       </p>
                     </div>
                     <button
                       type="button"
                       onClick={() => setStudentStep('login')}
-                      className="text-[11px] text-slate-400 hover:text-sky-300 underline cursor-pointer"
+                      className="text-[12px] text-slate-400 hover:text-sky-300 underline cursor-pointer"
                     >
                       Skip to All Classes →
                     </button>
@@ -1298,7 +1298,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                         >
                           <div className="flex items-center justify-between">
                             <span className="text-xl">🎓</span>
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-sky-300 border border-slate-700">
+                            <span className="text-[12px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-sky-300 border border-slate-700">
                               {count} {count === 1 ? 'class' : 'classes'}
                             </span>
                           </div>
@@ -1319,7 +1319,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                         <School className="w-4 h-4 text-amber-400" />
                         <span>Step 2: Choose Your Teacher / Classroom</span>
                       </h3>
-                      <p className="text-[11px] text-slate-400">
+                      <p className="text-[12px] text-slate-400">
                         Teachers in <strong>{selectedGrade || 'your grade'}</strong>
                       </p>
                     </div>
@@ -1356,7 +1356,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                         >
                           <div className="flex items-start justify-between gap-2">
                             <div className="font-bold text-sm text-white">{cls.name}</div>
-                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-amber-300 border border-slate-700 shrink-0">
+                            <span className="text-[12px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-amber-300 border border-slate-700 shrink-0">
                               {stuCount} {stuCount === 1 ? 'student' : 'students'}
                             </span>
                           </div>
@@ -1394,7 +1394,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                       <button
                         type="button"
                         onClick={() => setStudentStep('grade')}
-                        className="text-[11px] text-sky-400 hover:text-sky-300 font-semibold cursor-pointer"
+                        className="text-[12px] text-sky-400 hover:text-sky-300 font-semibold cursor-pointer"
                       >
                         Change Class ↻
                       </button>
@@ -1415,14 +1415,14 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                         autoFocus
                         className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 focus:border-sky-400 focus:outline-hidden text-sm font-semibold text-white"
                       />
-                      <p className="text-[11px] text-slate-400">
+                      <p className="text-[12px] text-slate-400">
                         💡 Period is optional — <strong>Alex M</strong> and <strong>Alex M.</strong> sign into the exact same account!
                       </p>
 
                       {/* Quick Roster Picker for selected class */}
                       {studentsInSelectedClass.length > 0 && (
                         <div className="space-y-1 pt-1">
-                          <span className="text-[11px] text-slate-400 font-semibold">
+                          <span className="text-[12px] text-slate-400 font-semibold">
                             Tap your name from the roster:
                           </span>
                           <div className="max-h-36 overflow-y-auto flex flex-wrap gap-1.5 p-2 rounded-xl bg-slate-950/60 border border-slate-800">
@@ -1462,7 +1462,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                         ) &&
                         selectedClassroom?.allowSelfRegister !== false &&
                         allowSelfCreate && (
-                          <div className="p-2 rounded-lg bg-emerald-500/15 border border-emerald-500/40 text-[11px] text-emerald-300 font-semibold">
+                          <div className="p-2 rounded-lg bg-emerald-500/15 border border-emerald-500/40 text-[12px] text-emerald-300 font-semibold">
                             ✓ New student "{formatStudentDisplayName(firstNameInput.trim())}" joining {selectedClassroom?.name || 'Class'} — enter a 4-digit PIN to create your account!
                           </div>
                         )}
@@ -1509,7 +1509,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                     <button
                       type="button"
                       onClick={() => setIsPrivacyModalOpen(true)}
-                      className="flex items-center gap-1.5 text-[11px] text-slate-400 hover:text-emerald-300 transition-colors cursor-pointer"
+                      className="flex items-center gap-1.5 text-[12px] text-slate-400 hover:text-emerald-300 transition-colors cursor-pointer"
                     >
                       <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
                       <span>NY Ed Law § 2-d &amp; Student Privacy</span>
@@ -1547,7 +1547,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                       <span className="text-sky-300">{currentScore.title || 'Untitled'}</span>
                     </span>
                   </div>
-                  <p className="text-[11px] text-slate-400">
+                  <p className="text-[12px] text-slate-400">
                     {isUntitledScore
                       ? 'Give your song a title below (or in the top bar) and it will save automatically!'
                       : '✓ Auto-Save is active for this titled song.'}
@@ -1635,7 +1635,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                         key={f.id}
                         type="button"
                         onClick={() => setStudentAppFilter(f.id)}
-                        className={`flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold border transition-all cursor-pointer whitespace-nowrap ${
+                        className={`flex items-center gap-1 px-2.5 py-1 rounded-xl text-[12px] font-bold border transition-all cursor-pointer whitespace-nowrap ${
                           studentAppFilter === f.id
                             ? 'bg-amber-400 border-amber-300 text-slate-950 shadow-xs'
                             : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800'
@@ -1654,7 +1654,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                     <p className="text-xs font-semibold text-slate-300">
                       No saved songs yet!
                     </p>
-                    <p className="text-[11px] text-slate-500">
+                    <p className="text-[12px] text-slate-500">
                       Create a song in Staff Composer or Beat Machine and click &quot;Save&quot; to keep it here!
                     </p>
                   </div>
@@ -1681,31 +1681,31 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                                   {proj.title}
                                 </span>
                                 <span
-                                  className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border flex items-center gap-1 font-['Fredoka',sans-serif] ${appMeta.badgeClass}`}
+                                  className={`px-2 py-0.5 rounded-md text-[12px] font-black uppercase tracking-wider border flex items-center gap-1 font-['Fredoka',sans-serif] ${appMeta.badgeClass}`}
                                   title={`Made in ${appMeta.name}`}
                                 >
                                   <span>{appMeta.emoji}</span>
                                   <span>{appMeta.name}</span>
                                 </span>
                                 {isCurrent && (
-                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-500/30 text-sky-200">
+                                  <span className="px-2 py-0.5 rounded-full text-[12px] font-bold bg-sky-500/30 text-sky-200">
                                     Open Now
                                   </span>
                                 )}
                                 {proj.isAssignment && (
-                                  <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-purple-500/20 text-purple-300 border border-purple-500/40 flex items-center gap-1">
+                                  <span className="px-2 py-0.5 rounded-md text-[12px] font-black uppercase tracking-wider bg-purple-500/20 text-purple-300 border border-purple-500/40 flex items-center gap-1">
                                     <BookOpen className="w-2.5 h-2.5 text-purple-300" />
                                     <span>Class Assignment</span>
                                   </span>
                                 )}
                               </div>
                               {proj.assignmentInstructions && (
-                                <div className="mt-1 px-2.5 py-1 rounded-lg bg-purple-500/10 border border-purple-500/30 text-[11px] text-purple-200 flex items-start gap-1.5">
+                                <div className="mt-1 px-2.5 py-1 rounded-lg bg-purple-500/10 border border-purple-500/30 text-[12px] text-purple-200 flex items-start gap-1.5">
                                   <span className="font-bold shrink-0">📝 Task:</span>
                                   <span>{proj.assignmentInstructions}</span>
                                 </div>
                               )}
-                              <div className="text-[11px] text-slate-400 flex items-center gap-1.5 flex-wrap mt-0.5">
+                              <div className="text-[12px] text-slate-400 flex items-center gap-1.5 flex-wrap mt-0.5">
                                 <span>
                                   Saved{' '}
                                   {safeFormatDate(proj.updatedAt)}{' '}
@@ -2133,7 +2133,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                     className="p-3 rounded-xl bg-slate-950/70 border border-slate-800 flex flex-wrap items-end gap-2"
                   >
                     <div className="flex-1 min-w-[140px]">
-                      <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1">
+                      <label className="block text-[12px] font-bold uppercase text-slate-400 mb-1">
                         First Name &amp; Last Initial
                       </label>
                       <input
@@ -2145,7 +2145,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                       />
                     </div>
                     <div className="w-24">
-                      <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1">
+                      <label className="block text-[12px] font-bold uppercase text-slate-400 mb-1">
                         PIN
                       </label>
                       <div className="flex items-center gap-1">
@@ -2162,14 +2162,14 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                           onClick={() =>
                             setNewStuPin(String(Math.floor(1000 + Math.random() * 9000)))
                           }
-                          className="px-1.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-300 cursor-pointer"
+                          className="px-1.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-[12px] text-slate-300 cursor-pointer"
                         >
                           🎲
                         </button>
                       </div>
                     </div>
                     <div className="w-28">
-                      <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1">
+                      <label className="block text-[12px] font-bold uppercase text-slate-400 mb-1">
                         Grade
                       </label>
                       <select
@@ -2190,7 +2190,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                       </select>
                     </div>
                     <div className="w-32">
-                      <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1">
+                      <label className="block text-[12px] font-bold uppercase text-slate-400 mb-1">
                         Classroom
                       </label>
                       <select
@@ -2265,7 +2265,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
 
                   {/* Student Quick Filter Tabs by Classroom */}
                   <div className="space-y-1.5">
-                    <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                    <div className="flex items-center justify-between text-[12px] font-bold uppercase tracking-wider text-slate-400">
                       <span>Browse By Classroom:</span>
                       {teacherClassFilter !== 'ALL' && (
                         <button
@@ -2312,7 +2312,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                             }`}
                           >
                             <span>{cls.name}</span>
-                            <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+                            <span className={`text-[12px] px-1.5 py-0.2 rounded-full font-mono ${
                               isSelected ? 'bg-slate-900 text-sky-200' : 'bg-slate-800 text-slate-400'
                             }`}>
                               {inClassCount}
@@ -2440,7 +2440,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                                   PIN: {stu.pin}
                                 </span>
                                 {stu.grade && (
-                                  <span className="px-2 py-0.5 rounded-md bg-sky-500/20 text-sky-300 font-semibold border border-sky-500/30 text-[11px]">
+                                  <span className="px-2 py-0.5 rounded-md bg-sky-500/20 text-sky-300 font-semibold border border-sky-500/30 text-[12px]">
                                     {stu.grade}
                                   </span>
                                 )}
@@ -2450,7 +2450,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                                 <button
                                   type="button"
                                   onClick={() => setInspectedStudent(stu)}
-                                  className="flex items-center gap-1 px-2 py-1 rounded-md bg-sky-500/15 hover:bg-sky-500/30 text-sky-300 border border-sky-500/30 font-bold text-[11px] cursor-pointer"
+                                  className="flex items-center gap-1 px-2 py-1 rounded-md bg-sky-500/15 hover:bg-sky-500/30 text-sky-300 border border-sky-500/30 font-bold text-[12px] cursor-pointer"
                                   title="View and monitor student's saved compositions"
                                 >
                                   <Eye className="w-3 h-3" />
@@ -2507,7 +2507,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                         {classView === 'mine' ? <Star className="w-4 h-4 text-amber-400" /> : <School className="w-4 h-4 text-amber-400" />}
                         <span>{classView === 'mine' ? `${signedInTeacher?.name || 'Mr. Arthur'}'s Classes` : 'Classrooms & Grades Manager'}</span>
                       </h3>
-                      <p className="text-[11px] text-slate-400">
+                      <p className="text-[12px] text-slate-400">
                         {classView === 'mine'
                           ? 'Classes labeled with your name, plus any you star in All Classrooms.'
                           : 'Classes labeled with your name are yours automatically; star (☆) any others you teach'}
@@ -2541,7 +2541,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div>
-                          <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1">
+                          <label className="block text-[12px] font-bold uppercase text-slate-400 mb-1">
                             Classroom Name *
                           </label>
                           <input
@@ -2554,7 +2554,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                           />
                         </div>
                         <div>
-                          <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1">
+                          <label className="block text-[12px] font-bold uppercase text-slate-400 mb-1">
                             Grade *
                           </label>
                           <select
@@ -2570,7 +2570,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                           </select>
                         </div>
                         <div>
-                          <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1">
+                          <label className="block text-[12px] font-bold uppercase text-slate-400 mb-1">
                             Teacher Name (Opt.)
                           </label>
                           <input
@@ -2634,11 +2634,11 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                               <span className="font-extrabold text-sm text-white">
                                 {selectedClassroomForView.name}
                               </span>
-                              <span className="px-2 py-0.5 rounded-md bg-sky-500/20 text-sky-300 font-bold border border-sky-500/30 text-[11px]">
+                              <span className="px-2 py-0.5 rounded-md bg-sky-500/20 text-sky-300 font-bold border border-sky-500/30 text-[12px]">
                                 {selectedClassroomForView.grade}
                               </span>
                             </div>
-                            <p className="text-[11px] text-slate-400">
+                            <p className="text-[12px] text-slate-400">
                               {selectedClassroomForView.teacherName ? `Teacher: ${selectedClassroomForView.teacherName} • ` : ''}
                               Click any student to monitor, load, or share their saved compositions
                             </p>
@@ -2684,11 +2684,11 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                                       <span className="font-extrabold text-sm text-white hover:text-sky-300 transition-colors">
                                         {stu.firstName}
                                       </span>
-                                      <span className="px-2 py-0.5 rounded-md bg-slate-800 font-mono text-amber-300 font-bold text-[11px]">
+                                      <span className="px-2 py-0.5 rounded-md bg-slate-800 font-mono text-amber-300 font-bold text-[12px]">
                                         PIN: {stu.pin}
                                       </span>
                                     </div>
-                                    <div className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
+                                    <div className="text-[12px] text-slate-400 flex items-center gap-1 mt-0.5">
                                       <span>{studentWorks.length} song{studentWorks.length === 1 ? '' : 's'} saved</span>
                                       {studentWorks.length > 0 && (
                                         <span>• Latest: &quot;{studentWorks[0].title}&quot;</span>
@@ -2760,7 +2760,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                                 <span className="font-extrabold text-sm text-white group-hover:text-amber-300 transition-colors">
                                   {cls.name}
                                 </span>
-                                <span className="text-[11px] text-sky-400 group-hover:underline font-semibold flex items-center gap-1">
+                                <span className="text-[12px] text-sky-400 group-hover:underline font-semibold flex items-center gap-1">
                                   <span>(Click to Open Roster)</span>
                                   <ChevronRight className="w-3.5 h-3.5" />
                                 </span>
@@ -2772,11 +2772,11 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                                 {studentCount} student{studentCount === 1 ? '' : 's'}
                               </span>
                               {cls.allowSelfRegister !== false ? (
-                                <span className="text-[10px] text-emerald-400 font-semibold">
+                                <span className="text-[12px] text-emerald-400 font-semibold">
                                   ✓ Self-Register Open
                                 </span>
                               ) : (
-                                <span className="text-[10px] text-amber-400 font-semibold">
+                                <span className="text-[12px] text-amber-400 font-semibold">
                                   🔒 Self-Register Closed
                                 </span>
                               )}
@@ -2853,7 +2853,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                         <Shield className="w-4 h-4" />
                         <span>Master Admin: Teachers &amp; Schools</span>
                       </div>
-                      <p className="text-[11px] text-slate-300">
+                      <p className="text-[12px] text-slate-300">
                         Create and manage teacher logins across schools. You keep master control with your own master PIN.
                       </p>
                     </div>
@@ -2885,7 +2885,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
-                          <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1">
+                          <label className="block text-[12px] font-bold uppercase text-slate-400 mb-1">
                             Teacher Name *
                           </label>
                           <input
@@ -2898,7 +2898,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                           />
                         </div>
                         <div>
-                          <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1">
+                          <label className="block text-[12px] font-bold uppercase text-slate-400 mb-1">
                             Teacher PIN (4+ digits) *
                           </label>
                           <input
@@ -2911,7 +2911,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                           />
                         </div>
                         <div>
-                          <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1">
+                          <label className="block text-[12px] font-bold uppercase text-slate-400 mb-1">
                             School Name (Opt.)
                           </label>
                           <input
@@ -2923,7 +2923,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                           />
                         </div>
                         <div>
-                          <label className="block text-[10px] font-bold uppercase text-slate-400 mb-1">
+                          <label className="block text-[12px] font-bold uppercase text-slate-400 mb-1">
                             Grades / Subject (Opt.)
                           </label>
                           <input
@@ -2997,15 +2997,15 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                             {tch.gradeRange && (
                               <span className="text-slate-400">🎵 {tch.gradeRange}</span>
                             )}
-                            <span className="px-2 py-0.5 rounded-md bg-sky-500/15 text-sky-300 font-bold border border-sky-500/30 text-[11px] flex items-center gap-1">
+                            <span className="px-2 py-0.5 rounded-md bg-sky-500/15 text-sky-300 font-bold border border-sky-500/30 text-[12px] flex items-center gap-1">
                               🎵 {tchProjectCount} song{tchProjectCount === 1 ? '' : 's'}
                             </span>
                             {isMaster ? (
-                              <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30 text-[10px]">
+                              <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30 text-[12px]">
                                 ⭐ Master Admin
                               </span>
                             ) : (
-                              <span className="px-2 py-0.5 rounded-md bg-slate-800 text-slate-400 text-[10px]">
+                              <span className="px-2 py-0.5 rounded-md bg-slate-800 text-slate-400 text-[12px]">
                                 Teacher
                               </span>
                             )}
@@ -3074,7 +3074,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                       <button
                         type="button"
                         onClick={() => setProjectStudentFilter('ALL')}
-                        className="text-[11px] underline text-amber-300 hover:text-white cursor-pointer"
+                        className="text-[12px] underline text-amber-300 hover:text-white cursor-pointer"
                       >
                         Show All
                       </button>
@@ -3263,27 +3263,27 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                                       {proj.title}
                                     </span>
                                     <span
-                                      className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border flex items-center gap-1 font-['Fredoka',sans-serif] ${appMeta.badgeClass}`}
+                                      className={`px-2 py-0.5 rounded-md text-[12px] font-black uppercase tracking-wider border flex items-center gap-1 font-['Fredoka',sans-serif] ${appMeta.badgeClass}`}
                                     >
                                       <span>{appMeta.emoji}</span>
                                       <span>{appMeta.name}</span>
                                     </span>
-                                    <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-bold text-[11px]">
+                                    <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-300 font-bold text-[12px]">
                                       by {proj.studentName}
                                     </span>
                                     {proj.isAssignment && (
-                                      <span className="px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 font-bold text-[10px] border border-purple-500/30 flex items-center gap-1">
+                                      <span className="px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 font-bold text-[12px] border border-purple-500/30 flex items-center gap-1">
                                         <BookOpen className="w-2.5 h-2.5" />
                                         <span>Assignment</span>
                                       </span>
                                     )}
                                   </div>
                                   {proj.assignmentInstructions && (
-                                    <div className="mt-1 px-2.5 py-1 rounded-lg bg-purple-500/10 border border-purple-500/25 text-[11px] text-purple-200">
+                                    <div className="mt-1 px-2.5 py-1 rounded-lg bg-purple-500/10 border border-purple-500/25 text-[12px] text-purple-200">
                                       📝 <span className="font-semibold">Instructions:</span> {proj.assignmentInstructions}
                                     </div>
                                   )}
-                                  <div className="text-[11px] text-slate-400 flex items-center gap-1.5 flex-wrap mt-0.5">
+                                  <div className="text-[12px] text-slate-400 flex items-center gap-1.5 flex-wrap mt-0.5">
                                     <span>
                                       Updated{' '}
                                       {safeFormatDate(proj.updatedAt)}{' '}
@@ -3382,7 +3382,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                       <div className="font-bold text-white text-sm">
                         Allow New Students to Self-Register on Sign In
                       </div>
-                      <p className="text-slate-400 text-[11px]">
+                      <p className="text-slate-400 text-[12px]">
                         When enabled, a student whose first name isn&apos;t on the list yet can type their first name and choose a 4-digit PIN to create their account automatically.
                       </p>
                     </div>
@@ -3449,7 +3449,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                       <div className="font-bold text-white text-sm">
                         Classroom Database Backup (.json)
                       </div>
-                      <p className="text-slate-400 text-[11px]">
+                      <p className="text-slate-400 text-[12px]">
                         Download a complete copy of all student names, PINs, and compositions, or restore from a backup file.
                       </p>
                     </div>
@@ -3482,7 +3482,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                         <ShieldCheck className="w-4 h-4 text-emerald-400" />
                         <span>NY State Education Law § 2-d Compliance</span>
                       </div>
-                      <p className="text-slate-400 text-[11px]">
+                      <p className="text-slate-400 text-[12px]">
                         Review the Parents&apos; Bill of Rights, data minimization policies, and print compliance documentation for your district Data Protection Officer (DPO).
                       </p>
                     </div>
@@ -3575,24 +3575,24 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
                               {proj.title}
                             </span>
                             <span
-                              className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border flex items-center gap-1 font-['Fredoka',sans-serif] ${appMeta.badgeClass}`}
+                              className={`px-2 py-0.5 rounded-md text-[12px] font-black uppercase tracking-wider border flex items-center gap-1 font-['Fredoka',sans-serif] ${appMeta.badgeClass}`}
                             >
                               <span>{appMeta.emoji}</span>
                               <span>{appMeta.name}</span>
                             </span>
                             {proj.isAssignment && (
-                              <span className="px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 font-bold text-[10px] border border-purple-500/30 flex items-center gap-1">
+                              <span className="px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 font-bold text-[12px] border border-purple-500/30 flex items-center gap-1">
                                 <BookOpen className="w-2.5 h-2.5" />
                                 <span>Assignment</span>
                               </span>
                             )}
                           </div>
                           {proj.assignmentInstructions && (
-                            <div className="mt-1 px-2.5 py-1 rounded-lg bg-purple-500/10 border border-purple-500/25 text-[11px] text-purple-200">
+                            <div className="mt-1 px-2.5 py-1 rounded-lg bg-purple-500/10 border border-purple-500/25 text-[12px] text-purple-200">
                               📝 <span className="font-semibold">Task:</span> {proj.assignmentInstructions}
                             </div>
                           )}
-                          <div className="text-[11px] text-slate-400 flex items-center gap-1.5 flex-wrap mt-1">
+                          <div className="text-[12px] text-slate-400 flex items-center gap-1.5 flex-wrap mt-1">
                             <span>
                               Updated{' '}
                               {safeFormatDate(proj.updatedAt)}{' '}
@@ -3699,14 +3699,14 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
             <div className="p-5 overflow-y-auto space-y-4 text-xs flex-1">
               {/* Song to Assign */}
               <div className="p-3 rounded-xl bg-slate-950/70 border border-slate-800 space-y-1">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                <div className="text-[12px] font-bold uppercase tracking-wider text-slate-400">
                   Song / Template To Assign:
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="font-extrabold text-white text-sm">
                     {assignSourceProject.title}
                   </span>
-                  <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-sky-500/20 text-sky-300 border border-sky-500/30 font-['Fredoka',sans-serif]">
+                  <span className="px-2 py-0.5 rounded-md text-[12px] font-black uppercase tracking-wider bg-sky-500/20 text-sky-300 border border-sky-500/30 font-['Fredoka',sans-serif]">
                     {getAppDescriptor(assignSourceProject.appType).name}
                   </span>
                 </div>
@@ -3714,7 +3714,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
 
               {/* Instructions */}
               <div className="space-y-1.5">
-                <label className="block text-[10px] font-bold uppercase text-slate-400">
+                <label className="block text-[12px] font-bold uppercase text-slate-400">
                   Assignment Instructions (Visible to Students)
                 </label>
                 <textarea
@@ -3729,10 +3729,10 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
               {/* Classroom / Target Selection */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <label className="text-[10px] font-bold uppercase text-slate-400">
+                  <label className="text-[12px] font-bold uppercase text-slate-400">
                     Assign To Classroom:
                   </label>
-                  <span className="text-[11px] text-purple-300 font-semibold">
+                  <span className="text-[12px] text-purple-300 font-semibold">
                     {assignSelectedStudentIds.length} student{assignSelectedStudentIds.length === 1 ? '' : 's'} selected
                   </span>
                 </div>
@@ -3769,7 +3769,7 @@ export const ClassroomModal: React.FC<ClassroomModalProps> = ({
 
                 {/* Individual Checkbox Toggle for Fine-Grained Control */}
                 <div className="p-3 rounded-xl bg-slate-950/70 border border-slate-800 space-y-2 max-h-40 overflow-y-auto">
-                  <div className="flex items-center justify-between text-[11px] border-b border-slate-800 pb-1.5">
+                  <div className="flex items-center justify-between text-[12px] border-b border-slate-800 pb-1.5">
                     <span className="font-semibold text-slate-300">Individual Student Toggles</span>
                     <div className="flex items-center gap-2">
                       <button

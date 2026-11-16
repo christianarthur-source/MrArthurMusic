@@ -556,7 +556,7 @@ export const MusicTuner: React.FC = () => {
         <div className="flex items-center gap-2">
           <span className="text-2xl">{currentPreset.emoji}</span>
           <div>
-            <label className="block text-[10px] font-black uppercase tracking-wider text-slate-400">
+            <label className="block text-[12px] font-black uppercase tracking-wider text-slate-400">
               Instrument
             </label>
             <div className="relative inline-block">
@@ -869,11 +869,11 @@ export const MusicTuner: React.FC = () => {
             <div>
               <h4 className="text-xs font-black uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
                 <span>{currentPreset.name} Strings</span>
-                <span className="text-[10px] text-slate-500 font-normal">
+                <span className="text-[12px] text-slate-500 font-normal">
                   ({Object.keys(tunedStrings).length} / {currentPreset.strings.length} in tune)
                 </span>
               </h4>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[12px] text-slate-400">
                 Tap a string to tune it specifically, or use Auto-Detect!
               </p>
             </div>
@@ -913,20 +913,20 @@ export const MusicTuner: React.FC = () => {
                 >
                   {/* In Tune Check Badge */}
                   {isTuned && (
-                    <div className="absolute top-2 right-2 w-4 h-4 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center text-[10px] font-black">
+                    <div className="absolute top-2 right-2 w-4 h-4 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center text-[12px] font-black">
                       <Check className="w-2.5 h-2.5" />
                     </div>
                   )}
 
                   <div>
-                    <div className="text-[10px] font-bold text-slate-400 uppercase leading-none">
+                    <div className="text-[12px] font-bold text-slate-400 uppercase leading-none">
                       {str.name.split(' ')[0]}
                     </div>
                     <div className="text-xl font-black font-['Fredoka',sans-serif] mt-0.5 text-white flex items-baseline justify-center">
                       <span>{str.note}</span>
                       <span className="text-xs text-slate-400 ml-0.5">{str.octave}</span>
                     </div>
-                    <div className="text-[10px] font-mono text-slate-400">
+                    <div className="text-[12px] font-mono text-slate-400">
                       {str.targetFreq.toFixed(1)} Hz
                     </div>
                   </div>
@@ -938,7 +938,7 @@ export const MusicTuner: React.FC = () => {
                       e.stopPropagation();
                       playTone(str.targetFreq, `${str.note}${str.octave}`);
                     }}
-                    className={`mt-1 py-1 px-2 rounded-xl text-[10px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer ${
+                    className={`mt-1 py-1 px-2 rounded-xl text-[12px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer ${
                       isTonePlaying
                         ? 'bg-amber-400 text-slate-950 animate-pulse font-black'
                         : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
@@ -961,7 +961,7 @@ export const MusicTuner: React.FC = () => {
           <button
             type="button"
             onClick={() => setTunedStrings({})}
-            className="flex items-center gap-1 text-[11px] text-slate-400 hover:text-white cursor-pointer"
+            className="flex items-center gap-1 text-[12px] text-slate-400 hover:text-white cursor-pointer"
           >
             <RotateCcw className="w-3 h-3" />
             <span>Reset Checked Strings</span>

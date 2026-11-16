@@ -71,7 +71,7 @@ export const EnsembleTemplatesModal: React.FC<EnsembleTemplatesModalProps> = ({
                 <h2 className="text-lg sm:text-xl font-black text-white font-['Fredoka',sans-serif]">
                   + Ensemble Score Templates
                 </h2>
-                <span className="px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/40 text-[10px] font-bold">
+                <span className="px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/40 text-[12px] font-bold">
                   Flat & Noteflight Presets
                 </span>
               </div>
@@ -169,12 +169,12 @@ export const EnsembleTemplatesModal: React.FC<EnsembleTemplatesModalProps> = ({
                           <h3 className="text-sm sm:text-base font-black text-white group-hover:text-sky-300 transition-colors font-['Fredoka',sans-serif]">
                             {ens.name}
                           </h3>
-                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                          <span className="text-[12px] font-bold text-slate-400 uppercase tracking-wider">
                             {ens.instruments.length} Staves • {ens.tempo} BPM • {ens.timeSignature[0]}/{ens.timeSignature[1]}
                           </span>
                         </div>
                       </div>
-                      <span className="px-2 py-0.5 rounded-md bg-slate-800 text-sky-300 text-[10px] font-bold shrink-0">
+                      <span className="px-2 py-0.5 rounded-md bg-slate-800 text-sky-300 text-[12px] font-bold shrink-0">
                         {ens.category.replace('_', ' & ')}
                       </span>
                     </div>
@@ -188,9 +188,9 @@ export const EnsembleTemplatesModal: React.FC<EnsembleTemplatesModalProps> = ({
                       {ens.instruments.map((inst, i) => (
                         <span
                           key={i}
-                          className="px-2 py-0.5 rounded-md bg-slate-900 border border-slate-800 text-slate-300 text-[11px] font-medium flex items-center gap-1"
+                          className="px-2 py-0.5 rounded-md bg-slate-900 border border-slate-800 text-slate-300 text-[12px] font-medium flex items-center gap-1"
                         >
-                          <span className="opacity-60 font-mono text-[9px]">
+                          <span className="opacity-60 font-mono text-[12px]">
                             {inst.clef === 'treble' ? '𝄞' : '𝄢'}
                           </span>
                           <span>{inst.name}</span>
@@ -201,7 +201,7 @@ export const EnsembleTemplatesModal: React.FC<EnsembleTemplatesModalProps> = ({
 
                   {/* Footer Action */}
                   <div className="pt-3.5 mt-3 border-t border-slate-800/80 flex items-center justify-between text-xs">
-                    <span className="text-[11px] text-slate-400">
+                    <span className="text-[12px] text-slate-400">
                       Creates {numMeasures}-bar multi-track score
                     </span>
                     <button

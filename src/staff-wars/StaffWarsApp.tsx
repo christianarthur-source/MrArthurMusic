@@ -901,11 +901,11 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
               alt="Staff Wars"
               className="w-8 h-8 rounded-lg object-cover border border-amber-400/50 shadow-[0_0_12px_rgba(251,191,36,0.4)]"
             />
-            <div>
+            <div className="hidden min-[430px]:block">
               <h1 className="text-base sm:text-lg font-black tracking-wider text-amber-400 drop-shadow-[0_0_10px_rgba(251,191,36,0.6)] leading-none">
                 STAFF WARS
               </h1>
-              <span className="text-[10px] uppercase tracking-widest text-slate-400 block font-mono mt-0.5">
+              <span className="text-[12px] uppercase tracking-widest text-slate-400 hidden sm:block font-mono mt-0.5">
                 {inputMode === 'mic' ? 'Live Instrument Edition 🎤' : 'Galactic Note Defense 🚀'}
               </span>
             </div>
@@ -913,7 +913,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
         </div>
 
         {/* Header Badges & Audio Controls */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-1.5 sm:gap-2.5">
           {studentSession && (
             <div className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-xl bg-indigo-950/80 border border-indigo-500/40 text-xs text-indigo-300">
               <span>🚀 Cadet:</span>
@@ -933,7 +933,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
           >
             <Trophy className="w-3.5 h-3.5 text-amber-400 group-hover:scale-110 transition-transform" />
             <span className="font-mono font-bold">BEST: {highScore.toLocaleString()}</span>
-            <span className="text-[10px] text-slate-400 font-semibold group-hover:text-amber-300 hidden sm:inline ml-1 underline">
+            <span className="text-[12px] text-slate-400 font-semibold group-hover:text-amber-300 hidden sm:inline ml-1 underline">
               Leaderboard
             </span>
           </button>
@@ -956,6 +956,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
           <button
             type="button"
             onClick={toggleMute}
+            aria-label={isMuted ? 'Unmute sound effects' : 'Mute sound effects'}
             className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 cursor-pointer transition-colors"
             title={isMuted ? 'Unmute SFX' : 'Mute SFX'}
           >
@@ -1029,7 +1030,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
                     <span className="text-xl">⌨️</span>
                     <span className="font-extrabold text-sm text-white">Keyboard & Buttons</span>
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-1">
+                  <p className="text-[12px] text-slate-400 mt-1">
                     Click buttons or press keys A through G to blast notes.
                   </p>
                 </button>
@@ -1047,7 +1048,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
                     <span className="text-xl">🎤</span>
                     <span className="font-extrabold text-sm text-white">Live Microphone (Star Wars Live)</span>
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-1">
+                  <p className="text-[12px] text-slate-400 mt-1">
                     Play your acoustic instrument into the mic to shoot lasers!
                   </p>
                 </button>
@@ -1077,7 +1078,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
                     >
                       <div className="text-xs font-black">{opt.label}</div>
                       <div
-                        className={`text-[10px] truncate ${
+                        className={`text-[12px] truncate ${
                           transposition === opt.id ? 'text-slate-800' : 'text-slate-400'
                         }`}
                       >
@@ -1103,7 +1104,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
                       <span className="font-bold text-white block">
                         {micActive ? 'Microphone Active & Ready' : 'Microphone Permission'}
                       </span>
-                      <span className="text-[11px] text-slate-400">
+                      <span className="text-[12px] text-slate-400">
                         {micActive
                           ? detectedPitch
                             ? `Heard note: ${detectedPitch.writtenNoteName} (${detectedPitch.frequency.toFixed(0)} Hz)`
@@ -1126,7 +1127,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
                     </button>
                   ) : (
                     <div className="flex items-center gap-2">
-                      <span className="px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 font-bold text-[11px] flex items-center gap-1">
+                      <span className="px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 font-bold text-[12px] flex items-center gap-1">
                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                         Ready
                       </span>
@@ -1178,7 +1179,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
                     }`}
                   >
                     <div className="font-extrabold text-xs text-white truncate">{diff.title}</div>
-                    <p className="text-[10px] text-slate-400 mt-0.5 line-clamp-2">{diff.desc}</p>
+                    <p className="text-[12px] text-slate-400 mt-0.5 line-clamp-2">{diff.desc}</p>
                   </button>
                 ))}
               </div>
@@ -1194,7 +1195,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="text-[11px] font-bold text-slate-300 block mb-1">
+                      <label className="text-[12px] font-bold text-slate-300 block mb-1">
                         Lowest Note:
                       </label>
                       <select
@@ -1215,7 +1216,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
                     </div>
 
                     <div>
-                      <label className="text-[11px] font-bold text-slate-300 block mb-1">
+                      <label className="text-[12px] font-bold text-slate-300 block mb-1">
                         Highest Note:
                       </label>
                       <select
@@ -1235,7 +1236,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
                       </select>
                     </div>
                   </div>
-                  <p className="text-[10px] text-slate-400">
+                  <p className="text-[12px] text-slate-400">
                     Currently spawning {noteListRef.current.length} unique pitches within this range.
                   </p>
                 </div>
@@ -1247,7 +1248,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
               <div className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800 text-xs">
                 <div>
                   <span className="font-bold text-white">Button Naming Style:</span>
-                  <p className="text-[11px] text-slate-400">Switch between letter names and vocal Solfege</p>
+                  <p className="text-[12px] text-slate-400">Switch between letter names and vocal Solfege</p>
                 </div>
                 <div className="flex items-center gap-1.5 bg-slate-900 p-1 rounded-xl border border-slate-700">
                   <button
@@ -1311,7 +1312,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
                   ))}
                 </div>
                 {inputMode === 'buttons' && wrongPressCount > 0 && (
-                  <span className="text-[10px] font-bold text-rose-400 bg-rose-500/20 px-2 py-0.5 rounded-full border border-rose-500/40">
+                  <span className="text-[12px] font-bold text-rose-400 bg-rose-500/20 px-2 py-0.5 rounded-full border border-rose-500/40">
                     Strike {wrongPressCount}/3
                   </span>
                 )}
@@ -1319,7 +1320,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
 
               {/* Level & Speed Escalation */}
               <div className="flex flex-col items-center">
-                <span className="text-[10px] uppercase font-bold text-sky-400 tracking-widest font-mono">
+                <span className="text-[12px] uppercase font-bold text-sky-400 tracking-widest font-mono">
                   HYPERSPACE LEVEL {level}
                 </span>
                 <div className="flex items-center gap-1 text-xs text-slate-300 font-bold">
@@ -1339,7 +1340,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
                   </div>
                 )}
                 <div className="text-right">
-                  <span className="text-[10px] uppercase font-bold text-slate-400 block font-mono">
+                  <span className="text-[12px] uppercase font-bold text-slate-400 block font-mono">
                     SCORE
                   </span>
                   <span className="text-lg font-black font-mono text-amber-400 leading-none">
@@ -1379,7 +1380,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
                         Live Pitch Detector ({transposition} Instrument):
                       </span>
                       {micActive ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[11px] font-bold border border-emerald-500/40 animate-pulse">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[12px] font-bold border border-emerald-500/40 animate-pulse">
                           ● LISTENING
                         </span>
                       ) : (
@@ -1394,7 +1395,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
                         </button>
                       )}
                     </div>
-                    <p className="text-[11px] text-slate-400">
+                    <p className="text-[12px] text-slate-400">
                       Play the note shown on the staff. When in tune, your starfighter will fire!
                     </p>
                   </div>
@@ -1403,7 +1404,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
                 {/* Pitch Reading & Cents Tuning Gauge */}
                 <div className="flex items-center gap-3 bg-slate-950/80 px-4 py-2 rounded-xl border border-cyan-500/30">
                   <div>
-                    <span className="text-[10px] uppercase text-slate-400 block font-mono">
+                    <span className="text-[12px] uppercase text-slate-400 block font-mono">
                       HEARD PITCH
                     </span>
                     <span
@@ -1420,7 +1421,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
                   </div>
 
                   {detectedPitch && (
-                    <div className="text-left font-mono text-[10px]">
+                    <div className="text-left font-mono text-[12px]">
                       <div className="text-slate-400">
                         Tune: {detectedPitch.cents > 0 ? `+${detectedPitch.cents}` : detectedPitch.cents}¢
                       </div>
@@ -1463,7 +1464,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
                       <span className="tracking-wider group-hover:scale-110 transition-transform">
                         {label}
                       </span>
-                      <span className="text-[11px] text-slate-400 group-hover:text-slate-900 font-mono font-bold">
+                      <span className="text-[12px] text-slate-400 group-hover:text-slate-900 font-mono font-bold">
                         [{letter}]
                       </span>
                     </button>
@@ -1607,7 +1608,7 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
                         setLeaderboardClef(tab.id);
                         loadLeaderboard(tab.id);
                       }}
-                      className={`py-1.5 px-1.5 rounded-xl text-[11px] font-black transition-all cursor-pointer flex items-center justify-center gap-1 ${
+                      className={`py-1.5 px-1.5 rounded-xl text-[12px] font-black transition-all cursor-pointer flex items-center justify-center gap-1 ${
                         isActive
                           ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-400/20'
                           : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
@@ -1678,12 +1679,12 @@ export const StaffWarsApp: React.FC<StaffWarsAppProps> = ({
                             {entry.name}
                           </span>
                           {entry.level && entry.level >= 1 && (
-                            <span className="text-[10px] uppercase font-mono font-bold px-1.5 py-0.5 rounded bg-sky-500/15 text-sky-300 border border-sky-400/30">
+                            <span className="text-[12px] uppercase font-mono font-bold px-1.5 py-0.5 rounded bg-sky-500/15 text-sky-300 border border-sky-400/30">
                               LVL {entry.level}
                             </span>
                           )}
                           {isCurrentPlayer && (
-                            <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded bg-amber-400/20 text-amber-300 border border-amber-400/40">
+                            <span className="text-[12px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded bg-amber-400/20 text-amber-300 border border-amber-400/40">
                               YOU
                             </span>
                           )}

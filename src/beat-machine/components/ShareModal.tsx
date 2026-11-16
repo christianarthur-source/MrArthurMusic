@@ -112,7 +112,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
             <div className="flex items-center justify-between text-xs text-slate-300 font-medium">
               <span>Public Shareable URL (No login required)</span>
               {isShortLink && (
-                <span className="text-[11px] text-amber-400 font-bold">✨ Compact Link</span>
+                <span className="text-[12px] text-amber-400 font-bold">✨ Compact Link</span>
               )}
             </div>
             <div className="flex items-center gap-2">

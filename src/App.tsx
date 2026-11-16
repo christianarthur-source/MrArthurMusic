@@ -2821,7 +2821,7 @@ export default function App() {
           <span>Some instrument sounds could not load (the school network may block them), so a simpler built-in sound is playing.</span>
           <button
             onClick={() => setSoundNotice(false)}
-            className="ml-3 px-2 py-0.5 rounded bg-amber-700/80 hover:bg-amber-700 text-white text-[11px] cursor-pointer"
+            className="ml-3 px-2 py-0.5 rounded bg-amber-700/80 hover:bg-amber-700 text-white text-[12px] cursor-pointer"
           >
             Dismiss
           </button>
@@ -2835,7 +2835,7 @@ export default function App() {
           <span>{profanityAlert}</span>
           <button
             onClick={() => setProfanityAlert(null)}
-            className="ml-3 px-2 py-0.5 rounded bg-rose-800/80 hover:bg-rose-800 text-[11px] cursor-pointer"
+            className="ml-3 px-2 py-0.5 rounded bg-rose-800/80 hover:bg-rose-800 text-[12px] cursor-pointer"
           >
             Dismiss
           </button>
@@ -3079,7 +3079,7 @@ export default function App() {
                     </div>
                     <div className="flex flex-col items-start leading-tight">
                       <span className="text-xs sm:text-sm font-black">Quarter</span>
-                      <span className="text-[10px] font-bold opacity-75">1 Beat</span>
+                      <span className="text-[12px] font-bold opacity-75">1 Beat</span>
                     </div>
                   </button>
 
@@ -3104,7 +3104,7 @@ export default function App() {
                     </div>
                     <div className="flex flex-col items-start leading-tight">
                       <span className="text-xs sm:text-sm font-black">Eighth</span>
-                      <span className="text-[10px] font-bold opacity-75">½ Beat</span>
+                      <span className="text-[12px] font-bold opacity-75">½ Beat</span>
                     </div>
                   </button>
 
@@ -3132,7 +3132,7 @@ export default function App() {
                     </div>
                     <div className="flex flex-col items-start leading-tight">
                       <span className="text-xs sm:text-sm font-black">Half</span>
-                      <span className="text-[10px] font-bold opacity-75">2 Beats</span>
+                      <span className="text-[12px] font-bold opacity-75">2 Beats</span>
                     </div>
                   </button>
 
@@ -3159,7 +3159,7 @@ export default function App() {
                     </div>
                     <div className="flex flex-col items-start leading-tight">
                       <span className="text-xs sm:text-sm font-black">Whole</span>
-                      <span className="text-[10px] font-bold opacity-75">4 Beats</span>
+                      <span className="text-[12px] font-bold opacity-75">4 Beats</span>
                     </div>
                   </button>
 
@@ -3184,7 +3184,7 @@ export default function App() {
                     </div>
                     <div className="flex flex-col items-start leading-tight">
                       <span className="text-xs sm:text-sm font-black">Rest</span>
-                      <span className="text-[10px] font-bold opacity-75">Shh!</span>
+                      <span className="text-[12px] font-bold opacity-75">Shh!</span>
                     </div>
                   </button>
                 </div>
@@ -3294,7 +3294,7 @@ export default function App() {
                   >
                     −
                   </button>
-                  <span className="text-[11px] font-bold text-slate-300 px-1">
+                  <span className="text-[12px] font-bold text-slate-300 px-1">
                     {Math.round(bigStaffZoom * 100)}%
                   </span>
                   <button aria-label="Zoom In Big Staff"
@@ -3389,7 +3389,7 @@ export default function App() {
                   href="/Dentichorus/index.html"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-2.5 py-1.5 rounded-lg text-slate-500 hover:text-amber-300 hover:bg-slate-800/60 transition-colors text-[11px]"
+                  className="px-2.5 py-1.5 rounded-lg text-slate-500 hover:text-amber-300 hover:bg-slate-800/60 transition-colors text-[12px]"
                 >
                   Denti Chorus
                 </a>

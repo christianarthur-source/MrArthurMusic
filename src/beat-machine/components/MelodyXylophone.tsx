@@ -110,7 +110,7 @@ export const MelodyXylophone: React.FC<MelodyXylophoneProps> = ({
               {/* Note names */}
               <div className="my-auto flex flex-col items-center">
                 <span className="text-xl sm:text-2xl font-black drop-shadow-md">{key.label}</span>
-                <span className="text-[11px] sm:text-xs font-bold text-white/90 drop-shadow">
+                <span className="text-[12px] sm:text-xs font-bold text-white/90 drop-shadow">
                   {key.solfege}
                 </span>
               </div>

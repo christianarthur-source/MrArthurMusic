@@ -228,7 +228,7 @@ export const InstrumentModal: React.FC<InstrumentModalProps> = ({
         {/* Quick Shortcuts: Grand Piano & Drum Beats */}
         <div className="px-5 py-2.5 bg-slate-950/40 border-b border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-xs">
           <div className="flex items-center gap-2">
-            <span className="text-[11px] font-semibold text-slate-400">Quick Add:</span>
+            <span className="text-[12px] font-semibold text-slate-400">Quick Add:</span>
             <button
               onClick={() => {
                 onAddGrandPiano();
@@ -299,7 +299,7 @@ export const InstrumentModal: React.FC<InstrumentModalProps> = ({
                   <span>{cat.icon}</span>
                   <span>{cat.label}</span>
                   <span
-                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-semibold ${
+                    className={`text-[12px] px-1.5 py-0.2 rounded-full font-semibold ${
                       isSelected ? 'bg-sky-600 text-sky-100' : 'bg-slate-700 text-slate-400'
                     }`}
                   >
@@ -348,7 +348,7 @@ export const InstrumentModal: React.FC<InstrumentModalProps> = ({
                         <div className="text-xs font-bold text-white group-hover:text-sky-300 truncate">
                           {inst.name}
                         </div>
-                        <div className="text-[10px] text-slate-400 flex items-center gap-1.5">
+                        <div className="text-[12px] text-slate-400 flex items-center gap-1.5">
                           <span
                             className="font-serif font-black text-slate-300"
                             title={`${clefName} Clef`}

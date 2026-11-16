@@ -531,17 +531,17 @@ export const InstrumentZoo: React.FC = () => {
                         </h4>
                       </div>
                       <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider border ${inst.badgeBg}`}>
+                        <span className={`px-2 py-0.5 rounded-md text-[12px] font-black uppercase tracking-wider border ${inst.badgeBg}`}>
                           {inst.family}
                         </span>
-                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        <span className="text-[12px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                           ✨ Real Sound
                         </span>
                       </div>
                     </div>
                   </div>
 
-                  <span className="text-[10px] font-mono px-2 py-1 rounded-md bg-slate-950 border border-slate-800 text-slate-400">
+                  <span className="text-[12px] font-mono px-2 py-1 rounded-md bg-slate-950 border border-slate-800 text-slate-400">
                     {inst.clef === 'treble' ? '🎼 Treble' : '𝄢 Bass'}
                   </span>
                 </div>
@@ -553,7 +553,7 @@ export const InstrumentZoo: React.FC = () => {
 
                 {/* Interactive Clickable Preview Notes Bar */}
                 <div className="p-2 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-2">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                  <span className="text-[12px] font-bold text-slate-400 uppercase tracking-wider">
                     Tap a Note:
                   </span>
                   <div className="flex items-center gap-1.5 flex-wrap">
@@ -567,7 +567,7 @@ export const InstrumentZoo: React.FC = () => {
                             e.stopPropagation();
                             playSingleNote(inst, note, nIdx);
                           }}
-                          className={`px-2 py-0.5 rounded-md text-[11px] font-mono font-bold transition-all cursor-pointer ${
+                          className={`px-2 py-0.5 rounded-md text-[12px] font-mono font-bold transition-all cursor-pointer ${
                             isThisNoteActive
                               ? 'bg-amber-400 text-slate-950 scale-110 shadow-md font-black ring-2 ring-amber-300'
                               : 'bg-slate-900 hover:bg-slate-800 text-slate-200 hover:text-white border border-slate-700/80 active:scale-95'
@@ -584,7 +584,7 @@ export const InstrumentZoo: React.FC = () => {
                 </div>
 
                 {/* Did You Know / Fun Fact */}
-                <div className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800/80 text-[11px] text-amber-200/90 flex items-start gap-2">
+                <div className="p-2.5 rounded-xl bg-slate-950/80 border border-slate-800/80 text-[12px] text-amber-200/90 flex items-start gap-2">
                   <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
                   <span>
                     <strong>Did you know?</strong> {inst.funFact}

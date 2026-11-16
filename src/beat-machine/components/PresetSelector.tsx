@@ -57,7 +57,7 @@ export const PresetSelector: React.FC<PresetSelectorProps> = ({
               Ready Grooves:
             </h3>
           </div>
-          <span className="text-[11px] font-bold text-amber-300 flex items-center gap-1">
+          <span className="text-[12px] font-bold text-amber-300 flex items-center gap-1">
             <Sparkles className="h-3 w-3" />
             1-Click Beats
           </span>
@@ -80,7 +80,7 @@ export const PresetSelector: React.FC<PresetSelectorProps> = ({
                     <h4 className="truncate text-xs font-black text-white group-hover:text-amber-300">
                       {preset.title}
                     </h4>
-                    <span className="text-[10px] font-bold text-slate-400">
+                    <span className="text-[12px] font-bold text-slate-400">
                       {preset.bpm} BPM • {tempo.term}
                     </span>
                   </div>

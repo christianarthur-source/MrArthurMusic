@@ -490,7 +490,7 @@ export const SheetMusicModal: React.FC<SheetMusicModalProps> = ({
             <button
               type="button"
               onClick={() => setProfanityWarning(null)}
-              className="px-2 py-0.5 rounded bg-rose-800/80 hover:bg-rose-800 text-[11px] cursor-pointer"
+              className="px-2 py-0.5 rounded bg-rose-800/80 hover:bg-rose-800 text-[12px] cursor-pointer"
             >
               Dismiss
             </button>

@@ -724,7 +724,7 @@ export const SongStarter: React.FC = () => {
                 <div>
                   <div className="font-black text-sm leading-tight">{beat.name}</div>
                   <div
-                    className={`text-[10px] leading-none mt-0.5 ${
+                    className={`text-[12px] leading-none mt-0.5 ${
                       isSelected ? 'text-slate-950/80 font-bold' : 'text-slate-400'
                     }`}
                   >
@@ -792,7 +792,7 @@ export const SongStarter: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => handleClearTrack(laneIdx)}
-                    className="text-[10px] text-slate-400 hover:text-rose-300 font-bold px-2 py-0.5 rounded-lg hover:bg-slate-800/80 transition-colors"
+                    className="text-[12px] text-slate-400 hover:text-rose-300 font-bold px-2 py-0.5 rounded-lg hover:bg-slate-800/80 transition-colors"
                   >
                     Clear line ✕
                   </button>
@@ -821,7 +821,7 @@ export const SongStarter: React.FC = () => {
                         }`}
                       >
                         {/* Step number badge */}
-                        <span className="absolute top-1.5 left-2 px-1.5 py-0.2 rounded-full bg-slate-950/60 text-white font-mono font-black text-[9px]">
+                        <span className="absolute top-1.5 left-2 px-1.5 py-0.2 rounded-full bg-slate-950/60 text-white font-mono font-black text-[12px]">
                           #{slotIdx + 1}
                         </span>
 
@@ -830,7 +830,7 @@ export const SongStarter: React.FC = () => {
                             <button aria-label="Remove"
                               type="button"
                               onClick={(e) => handleClearSlot(laneIdx, slotIdx, e)}
-                              className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-slate-950/60 hover:bg-rose-500 text-white flex items-center justify-center text-[10px] font-black transition-colors"
+                              className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-slate-950/60 hover:bg-rose-500 text-white flex items-center justify-center text-[12px] font-black transition-colors"
                               title="Remove"
                             >
                               ✕
@@ -845,7 +845,7 @@ export const SongStarter: React.FC = () => {
                         ) : (
                           <div className="flex flex-col items-center justify-center text-slate-600 space-y-0.5">
                             <Plus className="w-6 h-6 opacity-40" />
-                            <span className="text-[10px] font-black uppercase tracking-wider opacity-60">
+                            <span className="text-[12px] font-black uppercase tracking-wider opacity-60">
                               Drop Sound
                             </span>
                           </div>

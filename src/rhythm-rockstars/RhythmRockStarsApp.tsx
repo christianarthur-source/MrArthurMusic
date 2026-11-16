@@ -343,7 +343,7 @@ export default function RhythmRockStarsApp({
                 >
                   <span>{lvl.badgeIcon}</span>
                   <span>{isSecret ? '⚡ Secret Lvl 7' : `Lvl ${lvl.levelNumber}`}</span>
-                  <span className={`text-[10px] font-mono px-1 py-0.2 rounded ${
+                  <span className={`text-[12px] font-mono px-1 py-0.2 rounded ${
                     isCurrent ? 'bg-slate-950/30 text-slate-950 font-black' : 'text-amber-400 bg-slate-900'
                   }`}>
                     +{lvl.basePointsPerQuestion}pts

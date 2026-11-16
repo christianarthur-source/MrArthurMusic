@@ -221,7 +221,7 @@ export const TransportBar: React.FC<TransportBarProps> = ({
             />
           </button>
           <div className="flex flex-col justify-center select-none">
-            <span className="text-[11px] sm:text-xs font-extrabold tracking-wider uppercase text-amber-300/95 font-['Fredoka',sans-serif] leading-tight">
+            <span className="text-[12px] sm:text-xs font-extrabold tracking-wider uppercase text-amber-300/95 font-['Fredoka',sans-serif] leading-tight">
               {isSecretTheme ? '🦃 Thankful Mr. Arthur\'s' : 'Mr. Arthur\'s'}
             </span>
             <span className={`text-2xl sm:text-3xl font-black tracking-wide font-['Fredoka',sans-serif] leading-none ${
@@ -253,24 +253,24 @@ export const TransportBar: React.FC<TransportBarProps> = ({
                 className="text-xs text-slate-400 border-b border-transparent hover:border-slate-600 focus:border-sky-400 focus:outline-hidden bg-transparent py-0.5 placeholder:text-slate-600 w-24 sm:w-28"
               />
               {cloudSaveStatus === 'saving' ? (
-                <span className="text-[10px] text-sky-300 font-semibold hidden xl:inline">
+                <span className="text-[12px] text-sky-300 font-semibold hidden xl:inline">
                   Saving...
                 </span>
               ) : cloudSaveStatus === 'saved' ? (
-                <span className="text-[10px] text-emerald-400 font-semibold hidden xl:inline">
+                <span className="text-[12px] text-emerald-400 font-semibold hidden xl:inline">
                   ✓ Auto-Saved
                 </span>
               ) : cloudSaveStatus === 'device-only' ? (
                 <span
                   title="The class account could not be reached. This song is saved on this device and will be sent when the connection is back."
-                  className="text-[10px] text-amber-300 font-semibold hidden xl:inline"
+                  className="text-[12px] text-amber-300 font-semibold hidden xl:inline"
                 >
                   Saved on this device only
                 </span>
               ) : cloudSaveStatus === 'untitled' ? (
                 <span
                   title="Type a song title above to automatically save this song to your account"
-                  className="text-[10px] text-amber-300/90 hidden xl:inline"
+                  className="text-[12px] text-amber-300/90 hidden xl:inline"
                 >
                   Title to save
                 </span>
@@ -278,7 +278,7 @@ export const TransportBar: React.FC<TransportBarProps> = ({
                 lastSavedTime && (
                   <span
                     title="Saved on this device. Sign in and give the song a title to save it to your class account."
-                    className="text-[10px] text-emerald-400/80 hidden xl:inline"
+                    className="text-[12px] text-emerald-400/80 hidden xl:inline"
                   >
                     ✓ Saved on this device
                   </span>
@@ -388,13 +388,13 @@ export const TransportBar: React.FC<TransportBarProps> = ({
             }`}
           >
             {countInStatus?.isCountIn ? (
-              <span className="px-1.5 py-0.5 rounded-md bg-amber-400 text-slate-950 font-black text-[11px] animate-pulse">
+              <span className="px-1.5 py-0.5 rounded-md bg-amber-400 text-slate-950 font-black text-[12px] animate-pulse">
                 Beat {countInStatus.beat}
               </span>
             ) : (
               <>
-                <span className="font-mono text-[11px] font-bold">1-2-3-4</span>
-                <span className="hidden lg:inline text-[11px]">Count-In</span>
+                <span className="font-mono text-[12px] font-bold">1-2-3-4</span>
+                <span className="hidden lg:inline text-[12px]">Count-In</span>
               </>
             )}
           </button>
@@ -403,7 +403,7 @@ export const TransportBar: React.FC<TransportBarProps> = ({
         {/* Compact Tempo Control */}
         <div className="flex items-center gap-2 bg-slate-800/80 border border-slate-700/80 px-3 py-1 rounded-xl">
           <div className="flex flex-col">
-            <div className="flex items-center justify-between gap-2 text-[11px] font-semibold text-slate-200">
+            <div className="flex items-center justify-between gap-2 text-[12px] font-semibold text-slate-200">
               <span>{tempoInfo.term}</span>
               <span className="font-mono text-sky-400">{tempo} BPM</span>
             </div>
@@ -483,7 +483,7 @@ export const TransportBar: React.FC<TransportBarProps> = ({
             title="Plug in any USB / Bluetooth MIDI keyboard controller. Click to detect MIDI controllers."
           >
             <span>🎹</span>
-            <span className="hidden md:inline text-[11px]">MIDI</span>
+            <span className="hidden md:inline text-[12px]">MIDI</span>
           </button>
         )}
 
@@ -495,7 +495,7 @@ export const TransportBar: React.FC<TransportBarProps> = ({
         >
           <Sliders className="w-3.5 h-3.5 text-indigo-400" />
           <span>Mixer</span>
-          <span className="px-1.5 py-0.2 rounded-full bg-indigo-500/40 text-indigo-100 text-[10px] font-black">
+          <span className="px-1.5 py-0.2 rounded-full bg-indigo-500/40 text-indigo-100 text-[12px] font-black">
             {trackCount}
           </span>
         </button>
@@ -550,7 +550,7 @@ export const TransportBar: React.FC<TransportBarProps> = ({
                     <Users className="w-4 h-4 text-sky-400" />
                     <span>Ensemble Templates</span>
                   </span>
-                  <span className="px-1.5 py-0.5 rounded-md bg-sky-400 text-slate-950 text-[9px] font-black uppercase tracking-wider">
+                  <span className="px-1.5 py-0.5 rounded-md bg-sky-400 text-slate-950 text-[12px] font-black uppercase tracking-wider">
                     Full Band
                   </span>
                 </button>
@@ -610,7 +610,7 @@ export const TransportBar: React.FC<TransportBarProps> = ({
             <GraduationCap className="w-4 h-4 text-amber-400" />
             <span>Helpers</span>
             {activeHelperCount > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full bg-amber-400 text-slate-950 text-[10px] font-black">
+              <span className="px-1.5 py-0.2 rounded-full bg-amber-400 text-slate-950 text-[12px] font-black">
                 {activeHelperCount}
               </span>
             )}
@@ -620,7 +620,7 @@ export const TransportBar: React.FC<TransportBarProps> = ({
           {openMenu === 'helpers' && (
             <div className="absolute right-0 mt-2 w-72 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-3 z-50 flex flex-col gap-2.5 text-xs">
               <div>
-                <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 px-1">
+                <div className="text-[12px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 px-1">
                   Note Pitch Labels
                 </div>
                 <div className="grid grid-cols-1 gap-1">
@@ -652,7 +652,7 @@ export const TransportBar: React.FC<TransportBarProps> = ({
               <div className="h-px bg-slate-800" />
 
               <div>
-                <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 px-1">
+                <div className="text-[12px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 px-1">
                   Rhythm Counting Underlay
                 </div>
                 <div className="grid grid-cols-1 gap-1">
@@ -692,7 +692,7 @@ export const TransportBar: React.FC<TransportBarProps> = ({
                   }`}
                 >
                   <span>Boomwhacker Note Colors</span>
-                  <span className="text-[10px] font-bold">{boomwhackerColors ? 'ON' : 'OFF'}</span>
+                  <span className="text-[12px] font-bold">{boomwhackerColors ? 'ON' : 'OFF'}</span>
                 </button>
 
                 {boomwhackerColors && (
@@ -700,7 +700,7 @@ export const TransportBar: React.FC<TransportBarProps> = ({
                     {(['C', 'D', 'E', 'F', 'G', 'A', 'B'] as const).map((st) => (
                       <span
                         key={st}
-                        className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black"
+                        className="w-5 h-5 rounded-full flex items-center justify-center text-[12px] font-black"
                         style={{
                           backgroundColor: BOOMWHACKER_COLORS[st].bg,
                           color: BOOMWHACKER_COLORS[st].text,
@@ -721,14 +721,14 @@ export const TransportBar: React.FC<TransportBarProps> = ({
                   }`}
                 >
                   <span>Beat Ruler (1 - 2 - 3 - 4)</span>
-                  <span className="text-[10px] font-bold">{showBeatCounters ? 'ON' : 'OFF'}</span>
+                  <span className="text-[12px] font-bold">{showBeatCounters ? 'ON' : 'OFF'}</span>
                 </button>
               </div>
 
               <div className="h-px bg-slate-800 my-2" />
 
               {/* Score View Layout */}
-              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-2 pb-1">
+              <div className="text-[12px] font-bold uppercase tracking-wider text-slate-400 px-2 pb-1">
                 Score View Layout
               </div>
               <div className="grid grid-cols-2 gap-1.5 px-1 pb-1">
@@ -824,7 +824,7 @@ export const TransportBar: React.FC<TransportBarProps> = ({
 
           {openMenu === 'export' && (
             <div className="absolute right-0 mt-2 w-64 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl p-2 z-50 flex flex-col gap-1 text-xs">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-2.5 pt-1 pb-0.5">
+              <div className="text-[12px] font-bold uppercase tracking-wider text-slate-400 px-2.5 pt-1 pb-0.5">
                 Shareable Link
               </div>
               <button
@@ -839,7 +839,7 @@ export const TransportBar: React.FC<TransportBarProps> = ({
               </button>
 
               <div className="h-px bg-slate-800 my-1" />
-              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-2.5 pb-0.5">
+              <div className="text-[12px] font-bold uppercase tracking-wider text-slate-400 px-2.5 pb-0.5">
                 Sheet Music & Print
               </div>
               <button
@@ -864,7 +864,7 @@ export const TransportBar: React.FC<TransportBarProps> = ({
               </button>
 
               <div className="h-px bg-slate-800 my-1" />
-              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-2.5 pb-0.5">
+              <div className="text-[12px] font-bold uppercase tracking-wider text-slate-400 px-2.5 pb-0.5">
                 Audio & Notation Apps
               </div>
               <button
@@ -899,7 +899,7 @@ export const TransportBar: React.FC<TransportBarProps> = ({
               </button>
 
               <div className="h-px bg-slate-800 my-1" />
-              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-2.5 pb-0.5">
+              <div className="text-[12px] font-bold uppercase tracking-wider text-slate-400 px-2.5 pb-0.5">
                 Project File
               </div>
               <button

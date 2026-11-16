@@ -176,7 +176,7 @@ export const EdLawPrivacyModal: React.FC<EdLawPrivacyModalProps> = ({ isOpen, on
 
         {/* Modal Footer */}
         <div className="px-6 py-3.5 bg-slate-950/80 border-t border-slate-800 flex items-center justify-between print:hidden">
-          <span className="text-[11px] text-slate-400">
+          <span className="text-[12px] text-slate-400">
             N.Y. Educ. Law § 2-d &amp; 8 N.Y.C.R.R. Part 121
           </span>
           <button

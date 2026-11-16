@@ -124,7 +124,7 @@ export const LivePads: React.FC<LivePadsProps> = ({
               }`}
             >
               {/* Keyboard badge */}
-              <span className="self-end rounded-md bg-black/35 px-1.5 py-0.5 text-[10px] font-black uppercase text-white/90">
+              <span className="self-end rounded-md bg-black/35 px-1.5 py-0.5 text-[12px] font-black uppercase text-white/90">
                 {key}
               </span>
 

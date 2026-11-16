@@ -602,7 +602,7 @@ export const SoundPainter: React.FC = () => {
               <h3 className="text-xl font-black text-white font-['Fredoka',sans-serif]">
                 Sound Painter
               </h3>
-              <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40">
+              <span className="text-[12px] uppercase font-mono px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/40">
                 Chrome Music Lab &apos;Kandinsky&apos; Inspired
               </span>
             </div>
@@ -686,8 +686,8 @@ export const SoundPainter: React.FC = () => {
                       className={`w-6 h-6 rounded-full shrink-0 shadow-inner ${isSelected ? c.glow : ''}`}
                     />
                     <div className="overflow-hidden">
-                      <div className="text-[11px] font-bold text-white truncate">{c.name}</div>
-                      <div className="text-[9px] text-slate-400 truncate">{c.instrument}</div>
+                      <div className="text-[12px] font-bold text-white truncate">{c.name}</div>
+                      <div className="text-[12px] text-slate-400 truncate">{c.instrument}</div>
                     </div>
                   </button>
                 );
@@ -699,7 +699,7 @@ export const SoundPainter: React.FC = () => {
           <div className="border-t border-slate-800 pt-3">
             <div className="flex items-center justify-between text-xs mb-1.5">
               <span className="font-bold text-slate-300">Loop Speed</span>
-              <span className="text-[10px] font-mono text-amber-400">
+              <span className="text-[12px] font-mono text-amber-400">
                 {playbackSpeed === 6 ? '🐢 Slow' : playbackSpeed === 4 ? '🚶 Medium' : '🐆 Fast'}
               </span>
             </div>
@@ -738,7 +738,7 @@ export const SoundPainter: React.FC = () => {
                 className="w-full text-left px-3 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 text-xs font-bold text-amber-300 flex items-center justify-between transition-colors cursor-pointer border border-slate-700/60"
               >
                 <span>☀️ Singing Sun &amp; Hill</span>
-                <span className="text-slate-500 text-[10px]">Load</span>
+                <span className="text-slate-500 text-[12px]">Load</span>
               </button>
               <button
                 type="button"
@@ -746,7 +746,7 @@ export const SoundPainter: React.FC = () => {
                 className="w-full text-left px-3 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 text-xs font-bold text-rose-300 flex items-center justify-between transition-colors cursor-pointer border border-slate-700/60"
               >
                 <span>🎆 Starry Triangles</span>
-                <span className="text-slate-500 text-[10px]">Load</span>
+                <span className="text-slate-500 text-[12px]">Load</span>
               </button>
               <button
                 type="button"
@@ -754,7 +754,7 @@ export const SoundPainter: React.FC = () => {
                 className="w-full text-left px-3 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 text-xs font-bold text-cyan-300 flex items-center justify-between transition-colors cursor-pointer border border-slate-700/60"
               >
                 <span>🌊 Ocean Waves</span>
-                <span className="text-slate-500 text-[10px]">Load</span>
+                <span className="text-slate-500 text-[12px]">Load</span>
               </button>
             </div>
           </div>
@@ -775,7 +775,7 @@ export const SoundPainter: React.FC = () => {
         {/* Interactive Drawing Canvas */}
         <div className="lg:col-span-9 bg-slate-900/90 border border-slate-800 p-3 sm:p-4 rounded-3xl relative overflow-hidden shadow-2xl flex flex-col items-center">
           {/* Top Canvas Guide */}
-          <div className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-bold text-slate-400 border-b border-slate-800 mb-2">
+          <div className="w-full flex items-center justify-between px-3 py-1.5 text-[12px] font-bold text-slate-400 border-b border-slate-800 mb-2">
             <span className="flex items-center gap-1.5">
               <span className="text-amber-400">▲</span> High Pitches (Birds &amp; Bells)
             </span>
@@ -820,15 +820,15 @@ export const SoundPainter: React.FC = () => {
           <div className="w-full mt-3 grid grid-cols-3 gap-2 text-center text-xs">
             <div className="p-2 rounded-xl bg-slate-950/60 border border-slate-800">
               <div className="font-bold text-rose-300">⭕ Circles</div>
-              <div className="text-[10px] text-slate-400">Singing face voices</div>
+              <div className="text-[12px] text-slate-400">Singing face voices</div>
             </div>
             <div className="p-2 rounded-xl bg-slate-950/60 border border-slate-800">
               <div className="font-bold text-sky-300">〰️ Lines</div>
-              <div className="text-[10px] text-slate-400">Gliding melody notes</div>
+              <div className="text-[12px] text-slate-400">Gliding melody notes</div>
             </div>
             <div className="p-2 rounded-xl bg-slate-950/60 border border-slate-800">
               <div className="font-bold text-amber-300">🔺 Triangles</div>
-              <div className="text-[10px] text-slate-400">Metallic percussion chime</div>
+              <div className="text-[12px] text-slate-400">Metallic percussion chime</div>
             </div>
           </div>
         </div>

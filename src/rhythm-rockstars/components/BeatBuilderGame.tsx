@@ -317,7 +317,7 @@ export const BeatBuilderGame: React.FC<BeatBuilderGameProps> = ({
               Your 4/4 Measure:
             </span>
             <span
-              className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${
+              className={`text-[12px] font-bold px-2.5 py-0.5 rounded-full ${
                 totalBeatsPlaced === 4
                   ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                   : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
@@ -360,7 +360,7 @@ export const BeatBuilderGame: React.FC<BeatBuilderGameProps> = ({
               >
                 {/* Beat Span Header */}
                 <div className="w-full flex items-center justify-between">
-                  <span className="text-[10px] font-extrabold font-mono text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-md">
+                  <span className="text-[12px] font-extrabold font-mono text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-md">
                     {durationBeats > 1 ? `BEATS ${startBeat}-${endBeat}` : `BEAT ${startBeat}`}
                   </span>
                   <button aria-label="Remove Note"
@@ -379,13 +379,13 @@ export const BeatBuilderGame: React.FC<BeatBuilderGameProps> = ({
 
                 {/* Syllable Label */}
                 {settings.syllableStyle !== 'none' && (
-                  <span className="text-[11px] sm:text-xs font-bold text-amber-300">
+                  <span className="text-[12px] sm:text-xs font-bold text-amber-300">
                     {settings.syllableStyle === 'kodaly'
                       ? unit.syllableKodaly
                       : formatCountingSyllable(unit, startBeat)}
                   </span>
                 )}
-                <span className="text-[10px] text-slate-400 truncate max-w-full">{unit.name}</span>
+                <span className="text-[12px] text-slate-400 truncate max-w-full">{unit.name}</span>
               </div>
             );
           })}
@@ -396,11 +396,11 @@ export const BeatBuilderGame: React.FC<BeatBuilderGameProps> = ({
               key={`empty-${beatNum}`}
               className="col-span-1 flex flex-col items-center justify-center min-h-[140px] sm:min-h-[160px] rounded-2xl border-2 border-dashed border-slate-800 bg-slate-900/40 p-3 text-slate-600 hover:border-slate-700 transition-all select-none"
             >
-              <span className="text-[10px] font-mono font-bold text-slate-500 mb-2">
+              <span className="text-[12px] font-mono font-bold text-slate-500 mb-2">
                 BEAT {beatNum}
               </span>
               <span className="text-3xl font-light text-slate-600 mb-1">+</span>
-              <span className="text-[10px] font-semibold text-slate-500">Empty Beat</span>
+              <span className="text-[12px] font-semibold text-slate-500">Empty Beat</span>
             </div>
           ))}
         </div>
@@ -468,7 +468,7 @@ export const BeatBuilderGame: React.FC<BeatBuilderGameProps> = ({
 
             <button
               onClick={() => setShowAllBlocks(prev => !prev)}
-              className="text-[11px] font-bold text-amber-400/90 hover:text-amber-300 underline underline-offset-4 ml-1 cursor-pointer"
+              className="text-[12px] font-bold text-amber-400/90 hover:text-amber-300 underline underline-offset-4 ml-1 cursor-pointer"
             >
               {showAllBlocks ? 'Level Mode' : 'Unlock All Blocks'}
             </button>
@@ -507,10 +507,10 @@ export const BeatBuilderGame: React.FC<BeatBuilderGameProps> = ({
                       : formatCountingSyllable(u, nextBeatNum <= 4 ? nextBeatNum : 1)}
                   </span>
                 )}
-                <span className="text-[10px] text-slate-400 text-center font-medium line-clamp-1 max-w-[84px]">
+                <span className="text-[12px] text-slate-400 text-center font-medium line-clamp-1 max-w-[84px]">
                   {u.name}
                 </span>
-                <span className="text-[9px] text-slate-500 font-mono mt-0.5">
+                <span className="text-[12px] text-slate-500 font-mono mt-0.5">
                   {u.durationBeats} {u.durationBeats === 1 ? 'beat' : 'beats'}
                 </span>
               </button>

@@ -320,7 +320,7 @@ export const SecretLightShowModal: React.FC<SecretLightShowModalProps> = ({
               <h2 className="text-lg sm:text-xl font-black bg-gradient-to-r from-amber-300 via-pink-400 to-cyan-300 bg-clip-text text-transparent">
                 Secret Light Show! 🚀
               </h2>
-              <span className="rounded-full bg-pink-500/20 px-2 py-0.5 text-[10px] font-black uppercase text-pink-300 border border-pink-500/30">
+              <span className="rounded-full bg-pink-500/20 px-2 py-0.5 text-[12px] font-black uppercase text-pink-300 border border-pink-500/30">
                 Eco Mode ⚡
               </span>
             </div>

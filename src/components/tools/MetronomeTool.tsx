@@ -475,7 +475,7 @@ export const MetronomeTool: React.FC = () => {
             <button
               type="button"
               onClick={() => setFlashIntensity((prev) => (prev === 'super' ? 'normal' : 'super'))}
-              className="px-2 py-1.5 rounded-xl text-[11px] font-bold text-amber-300 hover:bg-slate-800 transition-colors cursor-pointer"
+              className="px-2 py-1.5 rounded-xl text-[12px] font-bold text-amber-300 hover:bg-slate-800 transition-colors cursor-pointer"
               title="Toggle Flash Brightness"
             >
               {flashIntensity === 'super' ? '🌟 Super Bright' : '✨ Gentle'}
@@ -538,7 +538,7 @@ export const MetronomeTool: React.FC = () => {
             >
               <span>👆 TAP TEMPO</span>
               {tapMessage && (
-                <span className="px-1.5 py-0.5 rounded-md bg-white/20 text-[10px] font-mono">
+                <span className="px-1.5 py-0.5 rounded-md bg-white/20 text-[12px] font-mono">
                   {tapMessage}
                 </span>
               )}
@@ -564,7 +564,7 @@ export const MetronomeTool: React.FC = () => {
 
           {/* Smooth BPM Slider */}
           <div className="space-y-2 pt-2">
-            <div className="flex justify-between text-[11px] font-bold text-slate-400 px-1">
+            <div className="flex justify-between text-[12px] font-bold text-slate-400 px-1">
               <span>🐢 30 Slow</span>
               <span>120 Moderato</span>
               <span>🚀 250 Fast</span>
@@ -581,7 +581,7 @@ export const MetronomeTool: React.FC = () => {
 
           {/* Quick Animal Presets */}
           <div className="pt-2 border-t border-slate-800/80">
-            <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-2">
+            <div className="text-[12px] font-bold uppercase tracking-wider text-slate-400 mb-2">
               Animal Speed Presets:
             </div>
             <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
@@ -600,10 +600,10 @@ export const MetronomeTool: React.FC = () => {
                     }`}
                   >
                     <div className="text-xl">{animal.emoji}</div>
-                    <div className="text-[11px] font-bold truncate leading-tight mt-0.5">
+                    <div className="text-[12px] font-bold truncate leading-tight mt-0.5">
                       {animal.term}
                     </div>
-                    <div className="text-[9px] text-slate-400">{mid}</div>
+                    <div className="text-[12px] text-slate-400">{mid}</div>
                   </button>
                 );
               })}
@@ -668,7 +668,7 @@ export const MetronomeTool: React.FC = () => {
                 >
                   <span>{idx + 1}</span>
                   {isAccent && (
-                    <span className="absolute -top-2 text-[10px]">👑</span>
+                    <span className="absolute -top-2 text-[12px]">👑</span>
                   )}
                 </div>
               );
@@ -698,7 +698,7 @@ export const MetronomeTool: React.FC = () => {
                   }`}
                 >
                   <span className="text-base leading-none">{opt.icon}</span>
-                  <span className="text-[10px] opacity-80">{opt.label}</span>
+                  <span className="text-[12px] opacity-80">{opt.label}</span>
                 </button>
               ))}
             </div>
@@ -707,7 +707,7 @@ export const MetronomeTool: React.FC = () => {
           {/* Sound Selector & Volume */}
           <div className="grid grid-cols-2 gap-3 pt-1">
             <div className="space-y-1.5">
-              <label className="text-[11px] font-bold text-slate-400">Click Sound:</label>
+              <label className="text-[12px] font-bold text-slate-400">Click Sound:</label>
               <select
                 value={sound}
                 onChange={(e) => setSound(e.target.value as MetronomeSound)}
@@ -722,7 +722,7 @@ export const MetronomeTool: React.FC = () => {
             </div>
 
             <div className="space-y-1.5">
-              <div className="flex items-center justify-between text-[11px] font-bold text-slate-400">
+              <div className="flex items-center justify-between text-[12px] font-bold text-slate-400">
                 <span>Volume:</span>
                 <button
                   type="button"
@@ -779,7 +779,7 @@ export const MetronomeTool: React.FC = () => {
             <b>Teacher Tip:</b> Turn on <b>⚡ Flash Screen</b> to display beats visually for classroom band or recorder rehearsals!
           </span>
         </div>
-        <div className="text-[11px] font-mono text-slate-500">
+        <div className="text-[12px] font-mono text-slate-500">
           Microsecond-accurate Web Audio Lookahead Engine
         </div>
       </div>

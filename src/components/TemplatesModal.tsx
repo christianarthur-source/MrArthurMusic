@@ -70,13 +70,13 @@ export const TemplatesModal: React.FC<TemplatesModalProps> = ({
                         {item.name}
                       </h3>
                       {isChallenge && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-200 text-amber-800">
+                        <span className="text-[12px] font-bold px-2 py-0.5 rounded-full bg-amber-200 text-amber-800">
                           Solve & Play
                         </span>
                       )}
                     </div>
                     <p className="text-xs text-slate-600 mt-0.5">{item.description}</p>
-                    <div className="text-[11px] text-slate-400 mt-1">
+                    <div className="text-[12px] text-slate-400 mt-1">
                       {item.score.tracks.length} track(s) · {item.score.tempo} BPM · {item.score.timeSignature[0]}/{item.score.timeSignature[1]}
                     </div>
                   </div>

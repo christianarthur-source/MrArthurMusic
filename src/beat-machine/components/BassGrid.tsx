@@ -356,7 +356,7 @@ export const BassGrid: React.FC<BassGridProps> = ({
 
             {isInstrumentMenuOpen && (
               <div className="absolute top-11 left-0 z-40 w-52 rounded-2xl border-2 border-purple-500/80 bg-slate-900 p-1.5 shadow-2xl space-y-0.5">
-                <div className="px-2 py-1 text-[10px] font-black uppercase text-purple-400">
+                <div className="px-2 py-1 text-[12px] font-black uppercase text-purple-400">
                   Select Bass Instrument:
                 </div>
                 {BASS_INSTRUMENTS.map((inst) => {
@@ -404,7 +404,7 @@ export const BassGrid: React.FC<BassGridProps> = ({
 
             {isPresetMenuOpen && (
               <div className="absolute top-11 left-0 z-40 w-48 rounded-2xl border-2 border-amber-400/80 bg-slate-900 p-1.5 shadow-2xl space-y-0.5">
-                <div className="px-2 py-1 text-[10px] font-black uppercase text-amber-300">
+                <div className="px-2 py-1 text-[12px] font-black uppercase text-amber-300">
                   Choose Bassline:
                 </div>
                 {BASS_PRESETS.map((preset) => (
@@ -473,7 +473,7 @@ export const BassGrid: React.FC<BassGridProps> = ({
           {/* Quick jump to measures */}
           {totalMeasures > 1 && (
             <div className="flex items-center gap-1 rounded-xl bg-slate-900/80 p-1 border border-slate-700">
-              <span className="text-[10px] font-bold text-slate-400 px-1">Jump:</span>
+              <span className="text-[12px] font-bold text-slate-400 px-1">Jump:</span>
               {Array.from({ length: totalMeasures }).map((_, mIdx) => {
                 const isCurrentlyPlaying = isPlaying && Math.floor(currentStep / 16) === mIdx;
                 return (
@@ -604,7 +604,7 @@ export const BassGrid: React.FC<BassGridProps> = ({
               <span className="text-xs font-black uppercase tracking-wider text-slate-400">
                 Bass Notes ({bassTracks.length})
               </span>
-              <span className="text-[10px] text-purple-400 font-bold">Tap to test 🔊</span>
+              <span className="text-[12px] text-purple-400 font-bold">Tap to test 🔊</span>
             </div>
 
             <div className="flex items-center gap-3 pl-3">
@@ -616,14 +616,14 @@ export const BassGrid: React.FC<BassGridProps> = ({
                 >
                   <div className="flex items-center justify-between px-1">
                     <div className="flex items-center gap-1.5">
-                      <span className="flex h-5 items-center justify-center rounded-md bg-purple-500/20 px-2 text-[10px] sm:text-xs font-black text-purple-300 border border-purple-500/30">
+                      <span className="flex h-5 items-center justify-center rounded-md bg-purple-500/20 px-2 text-[12px] sm:text-xs font-black text-purple-300 border border-purple-500/30">
                         Measure {mIdx + 1}
                       </span>
                       {isPlaying && Math.floor(currentStep / totalStepsInMeasure) === mIdx && (
                         <span className="h-2 w-2 rounded-full bg-purple-400 animate-ping" />
                       )}
                     </div>
-                    <span className="text-[10px] font-bold text-slate-400">
+                    <span className="text-[12px] font-bold text-slate-400">
                       Steps {mIdx * totalStepsInMeasure + 1}–{(mIdx + 1) * totalStepsInMeasure}
                     </span>
                   </div>
@@ -648,7 +648,7 @@ export const BassGrid: React.FC<BassGridProps> = ({
                               : 'bg-slate-900/70 text-slate-400 font-bold border border-slate-800'
                           }`}
                         >
-                          <span className="text-[10px] sm:text-[11px] leading-none">
+                          <span className="text-[12px] sm:text-[12px] leading-none">
                             {isBeatStart ? `B${beatNum}` : `${(sIdx % beatDivider) + 1}`}
                           </span>
                         </div>
@@ -665,7 +665,7 @@ export const BassGrid: React.FC<BassGridProps> = ({
                   title={`Extend bassline further to the right (+ ${totalStepsInMeasure} steps)`}
                 >
                   <Plus className="h-4 w-4" />
-                  <span className="text-[10px]">+ Measure</span>
+                  <span className="text-[12px]">+ Measure</span>
                 </button>
               )}
             </div>
@@ -695,7 +695,7 @@ export const BassGrid: React.FC<BassGridProps> = ({
                       </span>
                       <div className="flex flex-col leading-tight">
                         <span className="text-xs font-black drop-shadow">{track.note.solfege}</span>
-                        <span className="text-[10px] text-white/80 font-bold">
+                        <span className="text-[12px] text-white/80 font-bold">
                           {Math.round(track.note.frequency)} Hz
                         </span>
                       </div>

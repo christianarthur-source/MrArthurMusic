@@ -378,7 +378,7 @@ export const TapGame: React.FC<TapGameProps> = ({
           <span className="font-display font-black text-xl text-white tracking-wide">
             TAP PAD
           </span>
-          <span className="text-[11px] text-amber-400 font-semibold uppercase tracking-wider">
+          <span className="text-[12px] text-amber-400 font-semibold uppercase tracking-wider">
             Spacebar / Touch
           </span>
         </button>
@@ -414,19 +414,19 @@ export const TapGame: React.FC<TapGameProps> = ({
             <span className="text-xs text-slate-400 uppercase font-semibold tracking-wider">Rhythm Precision Report</span>
             <div className="grid grid-cols-4 gap-1 my-3">
               <div className="p-1.5 bg-slate-950/60 rounded-xl border border-amber-500/20">
-                <span className="text-[10px] text-amber-400 block font-bold uppercase">Perfect</span>
+                <span className="text-[12px] text-amber-400 block font-bold uppercase">Perfect</span>
                 <span className="text-lg font-display font-black text-white">{hitsStats.perfect}</span>
               </div>
               <div className="p-1.5 bg-slate-950/60 rounded-xl border border-emerald-500/20">
-                <span className="text-[10px] text-emerald-400 block font-bold uppercase">Great</span>
+                <span className="text-[12px] text-emerald-400 block font-bold uppercase">Great</span>
                 <span className="text-lg font-display font-black text-white">{hitsStats.great}</span>
               </div>
               <div className="p-1.5 bg-slate-950/60 rounded-xl border border-amber-500/20">
-                <span className="text-[10px] text-amber-400 block font-bold uppercase">OK</span>
+                <span className="text-[12px] text-amber-400 block font-bold uppercase">OK</span>
                 <span className="text-lg font-display font-black text-white">{hitsStats.ok}</span>
               </div>
               <div className="p-1.5 bg-slate-950/60 rounded-xl border border-rose-500/20">
-                <span className="text-[10px] text-rose-400 block font-bold uppercase">Missed</span>
+                <span className="text-[12px] text-rose-400 block font-bold uppercase">Missed</span>
                 <span className="text-lg font-display font-black text-white">{hitsStats.missed + hitsStats.extraTaps}</span>
               </div>
             </div>

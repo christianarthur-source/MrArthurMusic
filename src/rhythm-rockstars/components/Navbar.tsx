@@ -67,7 +67,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
 
           <div className="flex flex-col justify-center">
-            <span className="text-[10px] sm:text-xs font-extrabold tracking-wider uppercase text-amber-300/95 font-['Fredoka',sans-serif] leading-tight">
+            <span className="text-[12px] sm:text-xs font-extrabold tracking-wider uppercase text-amber-300/95 font-['Fredoka',sans-serif] leading-tight">
               Mr. Arthur&apos;s
             </span>
             <span className="text-lg sm:text-2xl font-black tracking-wide bg-gradient-to-r from-amber-300 via-rose-300 via-sky-300 to-emerald-300 bg-clip-text text-transparent font-['Fredoka',sans-serif] leading-none">
@@ -85,7 +85,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             className="w-4 h-4 rounded-full opacity-0 hover:opacity-20 cursor-pointer inline-flex items-center justify-center transition-all ml-0.5"
             title={isSecretUnlocked ? 'Level 7 Secret Unlocked!' : '??? Secret Rockstar Door'}
           >
-            <span className="text-[10px]">⚡</span>
+            <span className="text-[12px]">⚡</span>
           </button>
         </div>
       </div>
@@ -195,7 +195,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span className="font-mono tabular-nums text-white font-black">
                 {(studentScore ?? 0).toLocaleString()}
               </span>
-              <span className="text-[10px] text-amber-400/80 uppercase font-sans font-semibold">
+              <span className="text-[12px] text-amber-400/80 uppercase font-sans font-semibold">
                 PTS
               </span>
             </div>

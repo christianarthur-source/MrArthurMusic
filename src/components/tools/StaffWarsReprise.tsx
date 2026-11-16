@@ -614,7 +614,7 @@ export const StaffWarsReprise: React.FC = () => {
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-xl font-black text-white">Staff Wars Reprise!</h3>
-              <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-cyan-400/20 text-cyan-300 border border-cyan-400/40">
+              <span className="text-[12px] uppercase font-mono px-2 py-0.5 rounded-full bg-cyan-400/20 text-cyan-300 border border-cyan-400/40">
                 Original &amp; Live Edition
               </span>
             </div>
@@ -775,7 +775,7 @@ export const StaffWarsReprise: React.FC = () => {
             {/* Live Mic Tuner Indicator */}
             {isMicListening && (
               <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1 text-slate-400 text-[11px]">
+                <div className="flex items-center gap-1 text-slate-400 text-[12px]">
                   <span>Volume:</span>
                   <div className="w-16 h-2 bg-slate-800 rounded-full overflow-hidden">
                     <div
@@ -866,7 +866,7 @@ export const StaffWarsReprise: React.FC = () => {
 
           {/* Score */}
           <div className="text-right">
-            <div className="text-[10px] text-slate-400 uppercase font-mono">Score</div>
+            <div className="text-[12px] text-slate-400 uppercase font-mono">Score</div>
             <div className="text-xl font-black text-amber-400 leading-none">{score}</div>
           </div>
         </div>
@@ -999,7 +999,7 @@ export const StaffWarsReprise: React.FC = () => {
                   {/* Review of Missed Notes */}
                   {missedNotes.length > 0 && (
                     <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 text-left">
-                      <div className="text-[11px] font-bold text-rose-300 mb-1">
+                      <div className="text-[12px] font-bold text-rose-300 mb-1">
                         Notes that slipped past:
                       </div>
                       <div className="flex flex-wrap gap-1.5">
@@ -1067,7 +1067,7 @@ export const StaffWarsReprise: React.FC = () => {
                 className="py-3 sm:py-3.5 rounded-2xl bg-gradient-to-b from-slate-800 to-slate-900 hover:from-cyan-500 hover:to-blue-600 active:from-cyan-400 active:to-blue-500 text-white font-black text-base sm:text-lg border border-slate-700 hover:border-cyan-300 transition-all cursor-pointer shadow-md disabled:opacity-40 disabled:cursor-not-allowed flex flex-col items-center justify-center leading-none"
               >
                 <span>{noteLetter}</span>
-                <span className="text-[9px] text-slate-400 font-mono mt-0.5 hidden sm:inline">
+                <span className="text-[12px] text-slate-400 font-mono mt-0.5 hidden sm:inline">
                   [{noteLetter}]
                 </span>
               </button>

@@ -48,7 +48,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-xl font-black text-white">Share Composition</h2>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+                <span className="px-2 py-0.5 rounded-full text-[12px] font-extrabold uppercase bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
                   <Sparkles className="w-2.5 h-2.5 text-emerald-400" />
                   {isShortLink ? 'Short Link' : 'Instant Link'}
                 </span>
@@ -75,7 +75,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                 <span>Public Shareable URL (No login required)</span>
               </div>
               {isShortLink && (
-                <span className="text-[11px] text-emerald-400 font-semibold">
+                <span className="text-[12px] text-emerald-400 font-semibold">
                   ✨ Compact &amp; Easy to Share
                 </span>
               )}
