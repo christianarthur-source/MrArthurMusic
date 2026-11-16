@@ -172,6 +172,11 @@ export interface Track {
 export interface InstrumentRef {
   /** Sampled instrument id from the instrument manifest, or "synth:<preset>". */
   id: string;
+  /**
+   * Samplers only: how loud (0..0.5, as a fraction of the recording's loudest point) the sound must get
+   * before it counts as started. Quiet noise before that is skipped. Default 0.04.
+   */
+  startLevel?: number;
 }
 
 export interface Marker {

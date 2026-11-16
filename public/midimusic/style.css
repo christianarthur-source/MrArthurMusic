@@ -81,6 +81,7 @@ input[type=range] { accent-color: var(--accent); height: 28px; margin: 0; }
 .card.sel .fav { color: rgba(0, 0, 0, .35); }
 .card.sel .fav.on { color: #14151d; }
 .card.song .nm { font-size: 12.5px; line-height: 1.15; white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.card .tick { flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%; background: #2fe06a; color: #0b2a16; font-weight: 900; font-size: 14px; display: grid; place-items: center; box-shadow: 0 0 0 2px rgba(0, 0, 0, .25); }
 .empty { grid-column: 1 / -1; color: var(--muted); padding: 10px; }
 @media (hover: hover) { .card:hover { border-color: var(--c, var(--accent)); } .tab:hover { border-color: var(--c, var(--accent)); } }
 

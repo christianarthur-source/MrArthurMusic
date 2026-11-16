@@ -1,4 +1,5 @@
 import { InstrumentManifest } from '../library/catalogTypes';
+import { StretchService } from '../dsp/stretchService';
 
 /**
  * Instruments for MIDI tracks.
@@ -20,13 +21,28 @@ export interface InstrumentDescriptor {
   range?: [number, number];
 }
 
+/** Per-track settings handed to every note (only samplers use them). */
+export interface NoteOptions {
+  /** See InstrumentRef.startLevel. */
+  startLevel?: number;
+}
+
 export interface PlayableInstrument {
   readonly id: string;
   readonly kind: 'melodic' | 'drumkit';
-  noteOn(ctx: BaseAudioContext, dest: AudioNode, pitch: number, velocity: number, when: number, offset?: number): Voice;
+  noteOn(ctx: BaseAudioContext, dest: AudioNode, pitch: number, velocity: number, when: number, offset?: number, opts?: NoteOptions): Voice;
   /** Seconds of release tail after noteOff. */
   readonly release: number;
+  /** Samplers only: get these keys ready at the recording's own speed (keys outside the always-ready range). */
+  want?(pitches: Iterable<number>): void;
+  /** Samplers only: resolves when every requested key has been prepared (or failed, and stays tape-style). */
+  settled?(): Promise<void>;
+  /** Samplers only: stop preparing keys and release them. */
+  close?(): void;
 }
+
+/** Shifts a sound by whole semitones WITHOUT changing its length (runs off the audio thread). */
+export type PitchShifter = (channels: Float32Array[], semitones: number, sampleRate: number, signal: AbortSignal) => Promise<Float32Array[]>;
 
 export const SYNTH_PRESETS: InstrumentDescriptor[] = [
   { id: 'synth:lead', name: 'Synth Lead', family: 'Synth', kind: 'melodic' },
@@ -117,11 +133,25 @@ class SampledInstrument implements PlayableInstrument {
   constructor(
     readonly id: string,
     readonly kind: 'melodic' | 'drumkit',
-    private samples: Map<number, AudioBuffer>,
+    protected samples: Map<number, AudioBuffer>,
   ) {
     this.notes = [...samples.keys()].sort((a, b) => a - b);
     this.release = kind === 'drumkit' ? 0 : 0.25;
   }
+
+  /** Add a sound that is ready to play exactly at `note` (used as soon as it exists). */
+  protected addSample(note: number, buf: AudioBuffer) {
+    this.samples.set(note, buf);
+    this.notes = [...this.samples.keys()].sort((a, b) => a - b);
+  }
+
+  /** Seconds of the sound to skip at the start of every note. */
+  protected startSkip(_opts?: NoteOptions): number {
+    return 0;
+  }
+
+  /** Called when a key had no sound of its own and a neighbour was repitched instead. */
+  protected onMiss(_pitch: number): void {}
 
   private nearest(pitch: number): number {
     let best = this.notes[0];
@@ -129,7 +159,7 @@ class SampledInstrument implements PlayableInstrument {
     return best;
   }
 
-  noteOn(ctx: BaseAudioContext, dest: AudioNode, pitch: number, velocity: number, when: number, offset = 0): Voice {
+  noteOn(ctx: BaseAudioContext, dest: AudioNode, pitch: number, velocity: number, when: number, offset = 0, opts?: NoteOptions): Voice {
     const silent: Voice = { stop() {} };
     let root: number;
     if (this.kind === 'drumkit') {
@@ -138,6 +168,7 @@ class SampledInstrument implements PlayableInstrument {
     } else {
       if (!this.notes.length) return silent;
       root = this.nearest(pitch);
+      if (root !== pitch) this.onMiss(pitch);
     }
     const buf = this.samples.get(root)!;
     const src = ctx.createBufferSource();
@@ -149,7 +180,7 @@ class SampledInstrument implements PlayableInstrument {
     amp.gain.setValueAtTime(0, when);
     amp.gain.linearRampToValueAtTime(g, when + 0.002);
     src.connect(amp).connect(dest);
-    src.start(when, Math.min(offset * rate, buf.duration - 0.001));
+    src.start(when, Math.min(this.startSkip(opts) + offset * rate, buf.duration - 0.001));
     src.onended = () => amp.disconnect();
     const kind = this.kind;
     const release = this.release;
@@ -175,6 +206,12 @@ export const SAMPLER_PREFIX = 'sampler:';
 /** The key on the keyboard that plays a sampler's sound at its recorded pitch (middle C). */
 export const SAMPLER_ROOT = 60;
 const SAMPLER_MAX_SEC = 8;
+/** Default "sound starts at" loudness (fraction of the recording's peak) and the slider's top end. */
+export const SAMPLER_START_DEFAULT = 0.04;
+export const SAMPLER_START_MAX = 0.4;
+/** The recording keeps everything louder than this before its start (so the slider can reach back to it). */
+const SAMPLER_LEAD_FLOOR = 0.004;
+const SAMPLER_PREROLL_SEC = 0.004;
 
 /**
  * Prepare a recording to be played as an instrument: cut the silence before and after it,
@@ -185,12 +222,15 @@ export function trimSample(ctx: BaseAudioContext, buf: AudioBuffer): AudioBuffer
   let peak = 0;
   for (const d of chans) for (let i = 0; i < d.length; i++) peak = Math.max(peak, Math.abs(d[i]));
   if (peak < 1e-4) return buf;
-  const thr = peak * 0.04;
+  // Keep nearly everything before the sound (the user's "sound starts at" slider decides where a note begins);
+  // the end is cut at the usual level.
+  const leadThr = peak * SAMPLER_LEAD_FLOOR;
+  const tailThr = peak * SAMPLER_START_DEFAULT;
   let first = buf.length;
   let last = 0;
   for (const d of chans) {
-    for (let i = 0; i < d.length; i++) if (Math.abs(d[i]) > thr) { first = Math.min(first, i); break; }
-    for (let i = d.length - 1; i >= 0; i--) if (Math.abs(d[i]) > thr) { last = Math.max(last, i); break; }
+    for (let i = 0; i < d.length; i++) if (Math.abs(d[i]) > leadThr) { first = Math.min(first, i); break; }
+    for (let i = d.length - 1; i >= 0; i--) if (Math.abs(d[i]) > tailThr) { last = Math.max(last, i); break; }
   }
   const sr = buf.sampleRate;
   const start = Math.max(0, first - Math.round(0.004 * sr));
@@ -206,6 +246,109 @@ export function trimSample(ctx: BaseAudioContext, buf: AudioBuffer): AudioBuffer
   return out;
 }
 
+/** Keys within this many semitones of middle C are prepared as soon as a sampler loads. */
+export const SAMPLER_SPAN = 12;
+/** Keys farther out (up to this far) are prepared the first time they are asked for. */
+export const SAMPLER_SPAN_FAR = 24;
+const SAMPLER_QUALITY = 'fast' as const;
+
+/**
+ * A recording played across the keyboard at ONE speed.
+ * Playing the recording faster for higher keys (and slower for lower ones) also makes it shorter / longer.
+ * Instead, a pitched copy of the same length is prepared for each key in the background and played as-is,
+ * so a note starts exactly as fast as any other instrument's (no work at note time).
+ * Until a key's copy is ready the nearest ready key is repitched the old way, so nothing ever waits or goes quiet.
+ * Voice character moves with pitch (higher = smaller, lower = bigger); only the speed stays put.
+ */
+class SamplerInstrument extends SampledInstrument {
+  private tail: Promise<void> = Promise.resolve();
+  private requested = new Set<number>();
+  private abort = new AbortController();
+  private warned = false;
+
+  constructor(
+    id: string,
+    private ctx: BaseAudioContext,
+    private base: AudioBuffer,
+    private shift: PitchShifter | null,
+  ) {
+    super(id, 'melodic', new Map([[SAMPLER_ROOT, base]]));
+    if (!shift) return;
+    for (let d = 1; d <= SAMPLER_SPAN; d++) {
+      this.queue(SAMPLER_ROOT + d);
+      this.queue(SAMPLER_ROOT - d);
+    }
+  }
+
+  settled(): Promise<void> {
+    return this.tail;
+  }
+
+  private peak = 0;
+  private skips = new Map<number, number>();
+
+  /** Seconds before the sound reaches `startLevel` of its peak (a few ms of lead-in kept). Same on every key. */
+  protected override startSkip(opts?: NoteOptions): number {
+    const level = Math.min(SAMPLER_START_MAX, Math.max(0, opts?.startLevel ?? SAMPLER_START_DEFAULT));
+    const key = Math.round(level * 1000);
+    const hit = this.skips.get(key);
+    if (hit !== undefined) return hit;
+    if (!this.peak) for (let c = 0; c < this.base.numberOfChannels; c++) for (const v of this.base.getChannelData(c)) this.peak = Math.max(this.peak, Math.abs(v));
+    const thr = this.peak * (key / 1000);
+    let first = this.base.length;
+    for (let c = 0; c < this.base.numberOfChannels; c++) {
+      const d = this.base.getChannelData(c);
+      for (let i = 0; i < first; i++) if (Math.abs(d[i]) > thr) { first = i; break; }
+    }
+    const sec = first >= this.base.length ? 0 : Math.max(0, first / this.base.sampleRate - SAMPLER_PREROLL_SEC);
+    this.skips.set(key, sec);
+    return sec;
+  }
+
+  close() {
+    this.abort.abort();
+  }
+
+  want(pitches: Iterable<number>) {
+    for (const p of pitches) this.queue(p);
+  }
+
+  protected override onMiss(pitch: number) {
+    this.queue(pitch);
+  }
+
+  private queue(pitch: number) {
+    const d = pitch - SAMPLER_ROOT;
+    if (!this.shift || d === 0 || Math.abs(d) > SAMPLER_SPAN_FAR || this.requested.has(pitch) || this.abort.signal.aborted) return;
+    this.requested.add(pitch);
+    this.tail = this.tail.then(() => this.make(pitch, d));
+  }
+
+  private async make(pitch: number, d: number) {
+    const signal = this.abort.signal;
+    if (signal.aborted || !this.shift) return;
+    // Within one octave shift the recording directly; farther keys shift the octave key again.
+    const edge = Math.sign(d) * SAMPLER_SPAN;
+    const from = Math.abs(d) <= SAMPLER_SPAN ? this.base : this.samples.get(SAMPLER_ROOT + edge);
+    const semitones = Math.abs(d) <= SAMPLER_SPAN ? d : d - edge;
+    if (!from) return; // the octave key failed to prepare; this key stays tape-style
+    try {
+      const channels = Array.from({ length: from.numberOfChannels }, (_, c) => from.getChannelData(c));
+      const out = await this.shift(channels, semitones, from.sampleRate, signal);
+      if (signal.aborted || !out.length) return;
+      const buf = this.ctx.createBuffer(out.length, out[0].length, from.sampleRate);
+      out.forEach((ch, c) => buf.copyToChannel(ch as Float32Array<ArrayBuffer>, c));
+      this.addSample(pitch, buf);
+    } catch (err) {
+      if (signal.aborted) return;
+      if (!this.warned) {
+        this.warned = true;
+        console.warn('[daw] could not keep the sampler at one speed on some keys; they play tape-style', err);
+      }
+    }
+  }
+}
+
 /** Loads the manifest and instruments on demand; decoded samples are shared. */
 export class InstrumentBank {
   private manifestPromise: Promise<InstrumentManifest | null> | null = null;
@@ -214,6 +357,9 @@ export class InstrumentBank {
   error: string | null = null;
   /** Supplies the audio for "sampler:" instruments (set by the engine). */
   sampleSource: ((assetKey: string) => Promise<AudioBuffer | undefined>) | null = null;
+  /** Keeps sampler speed constant across keys. Defaults to the stretch worker; null = classic tape-style repitch. */
+  shifter: PitchShifter | null | undefined = undefined;
+  private stretch: StretchService | null = null;
 
   constructor(
     private ctx: BaseAudioContext,
@@ -246,6 +392,22 @@ export class InstrumentBank {
     return this.manifestPromise;
   }
 
+  private pitchShifter(): PitchShifter | null {
+    if (this.shifter !== undefined) return this.shifter;
+    if (typeof Worker === 'undefined') return null;
+    return (channels, semitones, sampleRate, signal) => {
+      this.stretch ??= new StretchService();
+      return this.stretch.process(channels, { ratio: 1, semitones, quality: SAMPLER_QUALITY, sampleRate }, signal);
+    };
+  }
+
+  /** Stop background work and free the keys of every sampler. */
+  dispose() {
+    for (const inst of this.loaded.values()) inst.close?.();
+    this.stretch?.dispose();
+    this.stretch = null;
+  }
+
   get(id: string): PlayableInstrument | undefined {
     return this.loaded.get(id);
   }
@@ -270,7 +432,7 @@ export class InstrumentBank {
     if (id.startsWith(SAMPLER_PREFIX)) {
       const buf = await this.sampleSource?.(id.slice(SAMPLER_PREFIX.length)).catch(() => undefined);
       if (!buf) throw new Error('The sound for this sampler is not available on this computer.');
-      return new SampledInstrument(id, 'melodic', new Map([[SAMPLER_ROOT, trimSample(this.ctx, buf)]]));
+      return new SamplerInstrument(id, this.ctx, trimSample(this.ctx, buf), this.pitchShifter());
     }
     const m = await this.loadManifest();
     const def = m?.instruments.find((i) => i.id === id);

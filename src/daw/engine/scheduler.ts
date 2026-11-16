@@ -114,7 +114,7 @@ export class RegionScheduler {
       const strip = this.graph.strip(track.id);
       if (!strip) continue;
       if (r.kind === 'audio') this.scheduleAudio(project, r, from, to, map, includeOngoing, strip.input);
-      else this.scheduleMidi(r, track.instrument?.id ?? 'synth:lead', from, to, map, includeOngoing, strip.input);
+      else this.scheduleMidi(r, track.instrument?.id ?? 'synth:lead', track.instrument?.startLevel, from, to, map, includeOngoing, strip.input);
     }
   }
 
@@ -233,7 +233,7 @@ export class RegionScheduler {
     return out;
   }
 
-  private scheduleMidi(r: MidiRegion, instId: string, from: number, to: number, map: TimeMap, ongoing: boolean, dest: AudioNode) {
+  private scheduleMidi(r: MidiRegion, instId: string, startLevel: number | undefined, from: number, to: number, map: TimeMap, ongoing: boolean, dest: AudioNode) {
     const inst = this.instruments.get(instId);
     if (!inst) {
       this.pending.add(r.id);
@@ -254,7 +254,7 @@ export class RegionScheduler {
       } else if (s >= to) continue;
       const when = map.time(at);
       const off = map.time(e);
-      const v = inst.noteOn(this.ctx, dest, n.pitch, n.velocity, when, offset);
+      const v = inst.noteOn(this.ctx, dest, n.pitch, n.velocity, when, offset, { startLevel });
       v.stop(off);
       this.noteLead(when);
       this.add(r.id, { end: off + inst.release + 0.1, stop: (t) => v.stop(Math.min(t, off)) });
