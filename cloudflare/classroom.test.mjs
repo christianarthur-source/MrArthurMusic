@@ -220,6 +220,84 @@ r = await call({ action: 'teacher_leaderboard_remove', teacherPin: 'tpin1', game
 r = await call({ action: 'staff_wars_leaderboard', level: 1 });
 expect('Teacher removes a guest entry by name', !r[1].leaderboard.some((e) => !e.studentId && e.name === 'Test A.') && r[1].leaderboard.some((e) => e.name === 'Cameron K.'), r);
 
+// ---- PIN pause: 10 wrong guesses, then about a minute; per student / teacher, never permanent ----
+const realNow = Date.now;
+let clock = 0;
+Date.now = () => realNow() + clock;
+const callFrom = async (payload, ip) => {
+  const res = await handleClassroom(
+    new Request('https://x/api/classroom', { method: 'POST', body: JSON.stringify(payload), headers: ip ? { 'cf-connecting-ip': ip } : {} }),
+    env,
+  );
+  return [res.status, await res.json(), res];
+};
+T.students.push({ id: 'stu_c', first_name: 'Cy C.', pin: '2468', class_id: 'c1' });
+T.students.push({ id: 'stu_d', first_name: 'Dee D.', pin: '1357', class_id: 'c1' });
+const wrongC = () => call({ action: 'student_login', firstName: 'Cy C', pin: '0000', classId: 'c1' });
+for (let i = 0; i < 9; i++) await wrongC();
+r = await call({ action: 'student_login', firstName: 'Cy C', pin: '2468', classId: 'c1' });
+expect('9 wrong tries then the right PIN still signs in', r[0] === 200 && r[1].student.id === 'stu_c', r);
+for (let i = 0; i < 9; i++) await wrongC();
+r = await call({ action: 'student_login', firstName: 'Cy C', pin: '2468', classId: 'c1' });
+expect('a correct sign-in resets the count (9 more wrong tries are still fine)', r[0] === 200, r);
+let last;
+for (let i = 0; i < 10; i++) last = await wrongC();
+expect('the 10th wrong guess is still an ordinary "incorrect PIN"', last[0] === 401, last);
+r = await wrongC();
+expect('11th try is paused with a friendly message', r[0] === 429 && /wait a minute/i.test(r[1].error) && /ask your teacher/i.test(r[1].error) && r[1].retryAfterSeconds > 0 && r[1].retryAfterSeconds <= 60, r);
+r = await callFrom({ action: 'student_login', firstName: 'Cy C', pin: '2468', classId: 'c1' });
+expect('while paused the response carries Retry-After', r[0] === 429 && Number(r[2].headers.get('retry-after')) > 0, r);
+r = await call({ action: 'student_projects', studentId: 'stu_c', pin: '2468' });
+expect('a paused student cannot be probed through other student actions either', r[0] === 429, r);
+r = await call({ action: 'student_login', firstName: 'Dee D', pin: '1357', classId: 'c1' });
+expect("another student's sign-in is never affected by Cy's failures", r[0] === 200 && r[1].student.id === 'stu_d', r);
+r = await call({ action: 'student_login', firstName: 'test a', pin: '4321', classId: 'c1' });
+expect('and neither is the original test student', r[0] === 200, r);
+r = await wrongC();
+expect('more tries during the pause do not extend it', r[0] === 429 && r[1].retryAfterSeconds <= 60, r);
+clock += 61_000;
+r = await call({ action: 'student_login', firstName: 'Cy C', pin: '2468', classId: 'c1' });
+expect('the pause ends by itself after about a minute', r[0] === 200 && r[1].student.id === 'stu_c', r);
+expect('stored PIN is untouched by all of this', T.students.find((x) => x.id === 'stu_c').pin === '2468', T.students);
+for (let i = 0; i < 12; i++) await call({ action: 'student_projects', studentId: 'stu_d', pin: 'nope' });
+r = await call({ action: 'student_projects', studentId: 'stu_d', pin: '1357' });
+expect('wrong PINs on saved-song requests are paused too', r[0] === 429, r);
+clock += 61_000;
+r = await call({ action: 'student_projects', studentId: 'stu_d', pin: '1357' });
+expect('...and recover', r[0] === 200, r);
+
+// Teachers: a picked name is throttled on its own; the master account too
+const wrongT1 = () => call({ action: 'teacher_login', teacherPin: 'bad-pin', teacherId: 'teach_1' });
+for (let i = 0; i < 10; i++) await wrongT1();
+r = await call({ action: 'teacher_login', teacherPin: 'tpin1', teacherId: 'teach_1' });
+expect('teacher picked name is paused after 10 wrong PINs', r[0] === 429 && /wait a minute/i.test(r[1].error), r);
+r = await call({ action: 'teacher_login', teacherPin: 'M4ster!', teacherId: 'teach_master' });
+expect("another teacher's sign-in is unaffected", r[0] === 200 && r[1].isMasterAdmin, r);
+r = await call({ action: 'teacher_login', teacherPin: 'tpin1' });
+expect('a PIN-only request (no picked name) is not blocked by the pause on a name', r[0] === 200, r);
+clock += 61_000;
+r = await call({ action: 'teacher_login', teacherPin: 'tpin1', teacherId: 'teach_1' });
+expect('teacher pause ends after about a minute and teacher PIN still works', r[0] === 200 && r[1].currentTeacher.name === 'Ms T' && r[1].cloud === true, r);
+// a real PIN typed for the wrong name counts against that name
+for (let i = 0; i < 10; i++) await call({ action: 'teacher_login', teacherPin: 'tpin1', teacherId: 'teach_master' });
+r = await call({ action: 'teacher_login', teacherPin: 'M4ster!', teacherId: 'teach_master' });
+expect("another teacher's PIN typed under Mr. Arthur's name counts as a wrong guess", r[0] === 429, r);
+clock += 61_000;
+// guesses with no picked name: limited per network address, more generously
+for (let i = 0; i < 30; i++) await callFrom({ action: 'teacher_login', teacherPin: 'nope' + i }, '203.0.113.7');
+r = await callFrom({ action: 'teacher_login', teacherPin: 'tpin1' }, '203.0.113.7');
+expect('30 PIN-only wrong guesses from one address pause that address', r[0] === 429, r);
+r = await callFrom({ action: 'teacher_login', teacherPin: 'tpin1' }, '198.51.100.2');
+expect('...but not a different address', r[0] === 200, r);
+r = await callFrom({ action: 'teacher_save_student', teacherPin: 'tpin1', firstName: 'Eli E', pin: '777', classId: 'c1' }, '203.0.113.7');
+expect('teacher actions from the paused address wait too', r[0] === 429, r);
+clock += 61_000;
+r = await callFrom({ action: 'teacher_login', teacherPin: 'tpin1' }, '203.0.113.7');
+expect('and recover', r[0] === 200, r);
+r = await call({ action: 'teacher_update_settings', teacherPin: 'tpin1', allowStudentSelfCreate: true });
+expect('settings response says it is the cloud server (optional field)', r[0] === 200 && r[1].ok === true && r[1].cloud === true, r);
+Date.now = realNow;
+
 r = await call({ action: 'public_roster' }, {});
 expect('no secret key -> 503', r[0] === 503, r);
 r = await call({ action: 'nope' });

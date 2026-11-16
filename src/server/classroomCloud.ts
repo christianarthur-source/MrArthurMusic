@@ -19,6 +19,13 @@ import {
   rhythmMaxPoints,
   staffWarsMaxScore,
 } from './leaderboardRules';
+import {
+  PIN_MAX_FAILS,
+  PIN_MAX_FAILS_UNIDENTIFIED,
+  clearWrongPins,
+  pauseRemainingMs,
+  recordWrongPin,
+} from './pinThrottle';
 
 export interface ClassroomEnv {
   SUPABASE_SECRET_KEY?: string;
@@ -31,9 +38,14 @@ const DEFAULT_SCHOOL = 'Music Lab Elementary';
 
 /** An error whose message is safe and useful to show the student or teacher. */
 class UserError extends Error {
-  constructor(message: string, readonly status = 400) {
+  constructor(message: string, readonly status = 400, readonly retryAfterSeconds?: number) {
     super(message);
   }
+}
+
+/** Where a request came from, for the best-effort PIN pause (standard Workers header only). */
+interface RequestContext {
+  ip: string;
 }
 
 const json = (body: unknown, status = 200) =>
@@ -61,9 +73,18 @@ export async function handleClassroom(request: Request, env: ClassroomEnv): Prom
   }
 
   try {
-    return json(await runAction(payload, new Db(env.SUPABASE_SECRET_KEY), env));
+    const ctx: RequestContext = { ip: request.headers.get('cf-connecting-ip') || 'noip' };
+    return json(await runAction(payload, new Db(env.SUPABASE_SECRET_KEY), env, ctx), 200);
   } catch (err) {
-    if (err instanceof UserError) return json({ error: err.message }, err.status);
+    if (err instanceof UserError) {
+      if (err.retryAfterSeconds) {
+        // Optional extra fields: the page uses them to show a countdown. The error text is unchanged.
+        const res = json({ error: err.message, retryAfterSeconds: err.retryAfterSeconds }, err.status);
+        res.headers.set('Retry-After', String(err.retryAfterSeconds));
+        return res;
+      }
+      return json({ error: err.message }, err.status);
+    }
     console.error('classroom action failed', payload.action, err);
     return json({ error: 'The classroom server had a problem. Please try again.' }, 502);
   }
@@ -119,6 +140,29 @@ interface TeacherAuth {
 const MASTER_ACCOUNT_ID = 'teach_master';
 const isMasterAccountId = (id: string) => id === MASTER_ACCOUNT_ID || id === 'teacher_master';
 
+// ---------------------------------------------------------------------------
+// Best-effort pause after repeated wrong PINs (see pinThrottle.ts)
+
+const STUDENT_PAUSE_MESSAGE = 'Too many tries. Ask your teacher for your PIN, or wait a minute and try again.';
+const TEACHER_PAUSE_MESSAGE = 'Too many tries. Please wait a minute and try again.';
+
+/** Refuses the request while this account is paused. The pause never grows while someone keeps trying. */
+function assertNotPaused(key: string, message: string) {
+  const ms = pauseRemainingMs(key);
+  if (ms > 0) throw new UserError(message, 429, Math.max(1, Math.ceil(ms / 1000)));
+}
+
+const studentKey = (studentId: string) => `stu:${studentId}`;
+
+/**
+ * A teacher PIN guess is tied to the teacher who was picked in the sign-in list when there is one;
+ * otherwise (PIN-only requests) to the caller's network address, with a looser limit because a whole
+ * school can share one address.
+ */
+const teacherKey = (pickedId: string, ip: string) =>
+  pickedId ? `tch:${isMasterAccountId(pickedId) ? MASTER_ACCOUNT_ID : pickedId}` : `tip:${ip}`;
+const teacherMaxFails = (key: string) => (key.startsWith('tch:') ? PIN_MAX_FAILS : PIN_MAX_FAILS_UNIDENTIFIED);
+
 /** True when `pin` is a teacher's or the master PIN (used by other API routes such as /api/omr). */
 export async function isTeacherPin(env: ClassroomEnv, pin: string): Promise<boolean> {
   if (!env.SUPABASE_SECRET_KEY) {
@@ -126,16 +170,33 @@ export async function isTeacherPin(env: ClassroomEnv, pin: string): Promise<bool
     return master !== '' && pin.trim() === master;
   }
   try {
-    await requireTeacher(new Db(env.SUPABASE_SECRET_KEY), env, { teacherPin: pin });
+    await requireTeacher(new Db(env.SUPABASE_SECRET_KEY), env, { teacherPin: pin }, { ip: 'omr' });
     return true;
   } catch {
     return false;
   }
 }
 
-async function requireTeacher(db: Db, env: ClassroomEnv, payload: Record<string, any>): Promise<TeacherAuth> {
+async function requireTeacher(
+  db: Db,
+  env: ClassroomEnv,
+  payload: Record<string, any>,
+  ctx: RequestContext,
+  pickedId = '',
+): Promise<TeacherAuth> {
   const pin = String(payload.teacherPin ?? '').trim();
   if (!pin) throw new UserError('Teacher PIN required.', 401);
+  const key = teacherKey(pickedId, ctx.ip);
+  assertNotPaused(key, TEACHER_PAUSE_MESSAGE);
+  try {
+    return await checkTeacherPin(db, env, pin);
+  } catch (err) {
+    if (err instanceof UserError && err.status === 401) recordWrongPin(key, teacherMaxFails(key));
+    throw err;
+  }
+}
+
+async function checkTeacherPin(db: Db, env: ClassroomEnv, pin: string): Promise<TeacherAuth> {
   const master = String(env.MASTER_TEACHER_PIN ?? '').trim();
   if (master !== '' && pin === master) {
     const rows = (await db.fetch(`teachers?select=*&id=${eq(MASTER_ACCOUNT_ID)}`)) || [];
@@ -147,17 +208,21 @@ async function requireTeacher(db: Db, env: ClassroomEnv, payload: Record<string,
   return { isMaster: Boolean(teacher.is_master_admin), teacher };
 }
 
-async function requireMaster(db: Db, env: ClassroomEnv, payload: Record<string, any>, what: string) {
-  const auth = await requireTeacher(db, env, payload);
+async function requireMaster(db: Db, env: ClassroomEnv, payload: Record<string, any>, ctx: RequestContext, what: string) {
+  const auth = await requireTeacher(db, env, payload, ctx);
   if (!auth.isMaster) throw new UserError(`Only Master Admin can ${what}.`, 403);
   return auth;
 }
 
 async function requireStudent(db: Db, studentId: string, pin: string, message: string) {
   if (!studentId || !pin) throw new UserError(message, 401);
+  assertNotPaused(studentKey(studentId), STUDENT_PAUSE_MESSAGE);
   const rows = (await db.fetch(`students?select=*&id=${eq(studentId)}`)) || [];
   const student = rows[0];
-  if (!student || String(student.pin).trim() !== pin.trim()) throw new UserError(message, 401);
+  if (!student || String(student.pin).trim() !== pin.trim()) {
+    recordWrongPin(studentKey(studentId));
+    throw new UserError(message, 401);
+  }
   return student;
 }
 
@@ -242,7 +307,7 @@ async function findProjectByTitle(db: Db, studentId: string, title: string, appT
 // ---------------------------------------------------------------------------
 // Actions
 
-async function runAction(payload: Record<string, any>, db: Db, env: ClassroomEnv): Promise<any> {
+async function runAction(payload: Record<string, any>, db: Db, env: ClassroomEnv, ctx: RequestContext): Promise<any> {
   const action = String(payload.action || '');
 
   // 1. PUBLIC ROSTER (names and classes for the login picker; no PINs)
@@ -287,9 +352,12 @@ async function runAction(payload: Record<string, any>, db: Db, env: ClassroomEnv
     });
 
     if (found) {
+      assertNotPaused(studentKey(found.id), STUDENT_PAUSE_MESSAGE);
       if (String(found.pin).trim() !== pin) {
+        recordWrongPin(studentKey(found.id));
         throw new UserError('Incorrect PIN for ' + found.first_name + '. Please try again!', 401);
       }
+      clearWrongPins(studentKey(found.id));
       if ((classId && !found.class_id) || (grade && !found.grade) || (classGroup && !found.class_group)) {
         await db
           .fetch(`students?id=${eq(found.id)}`, {
@@ -384,7 +452,7 @@ async function runAction(payload: Record<string, any>, db: Db, env: ClassroomEnv
 
     let studentName = 'Student';
     if (payload.isTeacher) {
-      const auth = await requireTeacher(db, env, payload);
+      const auth = await requireTeacher(db, env, payload, ctx);
       const st = (await db.fetch(`students?select=first_name&id=${eq(studentId)}`)) || [];
       if (st[0]) studentName = st[0].first_name;
       else {
@@ -449,7 +517,7 @@ async function runAction(payload: Record<string, any>, db: Db, env: ClassroomEnv
     const projectId = String(payload.projectId || '');
     if (!projectId) throw new UserError('Project id is required.');
     if (payload.isTeacher) {
-      await requireTeacher(db, env, payload);
+      await requireTeacher(db, env, payload, ctx);
       await db.fetch(`projects?id=${eq(projectId)}`, { method: 'DELETE' });
     } else {
       const studentId = String(payload.studentId || '');
@@ -469,15 +537,19 @@ async function runAction(payload: Record<string, any>, db: Db, env: ClassroomEnv
 
   // 7. TEACHER PORTAL & OVERVIEW
   if (action === 'teacher_login' || action === 'teacher_overview') {
-    const auth = await requireTeacher(db, env, payload);
+    // when a name was picked first, the PIN has to be that teacher's own
+    const picked = String(payload.teacherId || '').trim();
+    const auth = await requireTeacher(db, env, payload, ctx, picked);
     const { isMaster, teacher } = auth;
     const teacherPin = String(payload.teacherPin).trim();
     const accountId = accountIdOf(auth, teacherPin, env);
-    // when a name was picked first, the PIN has to be that teacher's own
-    const picked = String(payload.teacherId || '').trim();
+    const pauseKey = teacherKey(picked, ctx.ip);
     if (picked && !(picked === accountId || (isMasterAccountId(picked) && isMasterAccountId(accountId)))) {
+      // A real teacher's PIN typed for someone else's name is still a wrong guess for that name.
+      recordWrongPin(pauseKey, teacherMaxFails(pauseKey));
       throw new UserError("That PIN doesn't match the teacher you picked.", 401);
     }
+    clearWrongPins(pauseKey);
     const [students, projects, classrooms, teachers, allowStudentSelfCreate, myClasses] = await Promise.all([
       db.fetch('students?select=*&order=first_name.asc'),
       db.fetch('projects?select=*&order=updated_at.desc'),
@@ -488,6 +560,8 @@ async function runAction(payload: Record<string, any>, db: Db, env: ClassroomEnv
     ]);
     return {
       ok: true,
+      // Tells the page it is talking to the real class server (some settings only work on the dev stand-in).
+      cloud: true,
       isMasterAdmin: isMaster,
       currentTeacher: teacher
         ? { ...teacherOut(teacher, true), pin: teacherPin, isMasterAdmin: isMaster }
@@ -513,7 +587,7 @@ async function runAction(payload: Record<string, any>, db: Db, env: ClassroomEnv
 
   // 7b. A TEACHER'S OWN CLASS LIST ("My Classes")
   if (action === 'teacher_set_my_classes') {
-    const auth = await requireTeacher(db, env, payload);
+    const auth = await requireTeacher(db, env, payload, ctx);
     const accountId = accountIdOf(auth, String(payload.teacherPin).trim(), env);
     const ids = Array.isArray(payload.classIds) ? [...new Set(payload.classIds.map((x: unknown) => String(x)).filter(Boolean))].slice(0, 200) : [];
     const map = await myClassesMap(db);
@@ -524,7 +598,7 @@ async function runAction(payload: Record<string, any>, db: Db, env: ClassroomEnv
 
   // 8. TEACHER ADD / SAVE STUDENT
   if (action === 'teacher_save_student') {
-    await requireTeacher(db, env, payload);
+    await requireTeacher(db, env, payload, ctx);
     const id = String(payload.id || '').trim();
     const firstName = String(payload.firstName || '').trim();
     const pin = String(payload.pin || '').trim();
@@ -549,7 +623,7 @@ async function runAction(payload: Record<string, any>, db: Db, env: ClassroomEnv
 
   // 9. TEACHER BULK ADD STUDENTS
   if (action === 'teacher_bulk_add') {
-    await requireTeacher(db, env, payload);
+    await requireTeacher(db, env, payload, ctx);
     const entries = Array.isArray(payload.entries) ? payload.entries.slice(0, 500) : [];
     const inserts = entries
       .filter((e: any) => String(e?.firstName || '').trim())
@@ -571,7 +645,7 @@ async function runAction(payload: Record<string, any>, db: Db, env: ClassroomEnv
 
   // 10. TEACHER DELETE STUDENT
   if (action === 'teacher_delete_student') {
-    await requireTeacher(db, env, payload);
+    await requireTeacher(db, env, payload, ctx);
     const studentId = String(payload.studentId || '');
     if (!studentId) throw new UserError('Student id is required.');
     await db.fetch(`students?id=${eq(studentId)}`, { method: 'DELETE' });
@@ -583,7 +657,7 @@ async function runAction(payload: Record<string, any>, db: Db, env: ClassroomEnv
 
   // 11. TEACHER SAVE CLASSROOM
   if (action === 'teacher_save_classroom') {
-    await requireTeacher(db, env, payload);
+    await requireTeacher(db, env, payload, ctx);
     const cls = payload.classroom || {};
     const name = String(cls.name || '').trim();
     const grade = String(cls.grade || '').trim();
@@ -604,7 +678,7 @@ async function runAction(payload: Record<string, any>, db: Db, env: ClassroomEnv
 
   // 12. TEACHER DELETE CLASSROOM
   if (action === 'teacher_delete_classroom') {
-    await requireTeacher(db, env, payload);
+    await requireTeacher(db, env, payload, ctx);
     const classroomId = String(payload.classroomId || '');
     if (!classroomId) throw new UserError('Classroom id is required.');
     await db.fetch(`classrooms?id=${eq(classroomId)}`, { method: 'DELETE' });
@@ -613,7 +687,7 @@ async function runAction(payload: Record<string, any>, db: Db, env: ClassroomEnv
 
   // 13. TEACHER RENAME PROJECT
   if (action === 'teacher_rename_project') {
-    await requireTeacher(db, env, payload);
+    await requireTeacher(db, env, payload, ctx);
     const projectId = String(payload.projectId || '');
     const newTitle = String(payload.newTitle || '').trim();
     if (!newTitle) throw new UserError('New title cannot be empty.');
@@ -627,16 +701,16 @@ async function runAction(payload: Record<string, any>, db: Db, env: ClassroomEnv
 
   // 14. TEACHER UPDATE SETTINGS
   if (action === 'teacher_update_settings') {
-    await requireTeacher(db, env, payload);
+    await requireTeacher(db, env, payload, ctx);
     if (payload.allowStudentSelfCreate !== undefined) {
       await db.upsert('classroom_config', [{ key: 'allowStudentSelfCreate', value: Boolean(payload.allowStudentSelfCreate) }]);
     }
-    return { ok: true };
+    return { ok: true, cloud: true };
   }
 
   // 15. MASTER: SAVE / UPDATE TEACHER ACCOUNT
   if (action === 'teacher_save_teacher') {
-    await requireMaster(db, env, payload, 'manage teacher accounts');
+    await requireMaster(db, env, payload, ctx, 'manage teacher accounts');
     const t = payload.teacher || {};
     const name = String(t.name || '').trim();
     const pin = String(t.pin || '').trim();
@@ -660,7 +734,7 @@ async function runAction(payload: Record<string, any>, db: Db, env: ClassroomEnv
 
   // 16. MASTER: DELETE TEACHER ACCOUNT
   if (action === 'teacher_delete_teacher') {
-    await requireMaster(db, env, payload, 'delete teacher accounts');
+    await requireMaster(db, env, payload, ctx, 'delete teacher accounts');
     const teacherId = String(payload.teacherId || '');
     if (!teacherId) throw new UserError('Teacher id is required.');
     if (isMasterAccountId(teacherId)) throw new UserError('The master admin account cannot be deleted.');
@@ -670,7 +744,7 @@ async function runAction(payload: Record<string, any>, db: Db, env: ClassroomEnv
 
   // 17. TEACHER ASSIGN PROJECT TO STUDENTS / CLASSROOM
   if (action === 'teacher_assign_project') {
-    const { isMaster, teacher } = await requireTeacher(db, env, payload);
+    const { isMaster, teacher } = await requireTeacher(db, env, payload, ctx);
     const teacherName = teacher?.name || (isMaster ? 'Mr. Arthur' : 'Teacher');
     const sourceProject = payload.sourceProject;
     const targetStudentIds: string[] = Array.isArray(payload.targetStudentIds) ? payload.targetStudentIds.map(String) : [];
@@ -868,7 +942,7 @@ async function runAction(payload: Record<string, any>, db: Db, env: ClassroomEnv
 
   // 20. TEACHER: REMOVE A LEADERBOARD ENTRY (any teacher)
   if (action === 'teacher_leaderboard_remove') {
-    await requireTeacher(db, env, payload);
+    await requireTeacher(db, env, payload, ctx);
     const game = String(payload.game || '');
     const studentId = String(payload.studentId || '').trim();
     const normName = normalizeStudentName(String(payload.name || ''));
