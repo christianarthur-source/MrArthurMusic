@@ -497,12 +497,12 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
     };
   }, [measureLayout, MEASURE_WIDTH, singleSystemHeight, totalSvgWidth, totalSvgHeight, viewLayout, isBigStaff]);
 
-  // Window-level mousemove and mouseup listeners while dragging a notehead so dragging
+  // Window-level pointermove and pointerup listeners while dragging a notehead so dragging
   // works smoothly even when moving above/below the staff or releasing outside the measure
   useEffect(() => {
     if (!draggingNote) return;
 
-    const handleWindowMouseMove = (e: MouseEvent) => {
+    const handleWindowMouseMove = (e: PointerEvent) => {
       const svgEl = document.getElementById('staff-composer-score-svg');
       if (!svgEl) return;
       const layout = measureLayout.get(draggingNote.measureIndex);
@@ -566,11 +566,17 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
       setDraggingNote(null);
     };
 
-    window.addEventListener('mousemove', handleWindowMouseMove);
-    window.addEventListener('mouseup', handleWindowMouseUp);
+    // The system took the touch away (palm, edge swipe, call): drop the drag without changing the note.
+    const handleWindowPointerCancel = () => setDraggingNote(null);
+
+    // Pointer Events cover mouse, pen and finger with the same code.
+    window.addEventListener('pointermove', handleWindowMouseMove);
+    window.addEventListener('pointerup', handleWindowMouseUp);
+    window.addEventListener('pointercancel', handleWindowPointerCancel);
     return () => {
-      window.removeEventListener('mousemove', handleWindowMouseMove);
-      window.removeEventListener('mouseup', handleWindowMouseUp);
+      window.removeEventListener('pointermove', handleWindowMouseMove);
+      window.removeEventListener('pointerup', handleWindowMouseUp);
+      window.removeEventListener('pointercancel', handleWindowPointerCancel);
     };
   }, [draggingNote, measureLayout, onNoteInsertOrUpdate, onPlayPreview, onTransposeMeasure, score.tracks, selection, totalSvgHeight]);
 
@@ -1923,7 +1929,7 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
                                               onBigStaffMeasureChange?.(measureIndex);
                                             }
                                           }}
-                                          onMouseDown={(e) => {
+                                          onPointerDown={(e) => {
                                             e.stopPropagation();
                                             const currentSelectedMeasures = getSelectedMeasureIndices(selection);
                                             const isParentMeasureSelected =
@@ -1945,7 +1951,7 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
                                             });
                                           }}
                                           className="cursor-grab active:cursor-grabbing group"
-                                          style={{ pointerEvents: 'all' }}
+                                          style={{ pointerEvents: 'all', touchAction: 'none' }}
                                         >
                                           {/* Generous invisible hit target so hollow Whole/Half notes & small noteheads are easy to grab */}
                                           <ellipse
