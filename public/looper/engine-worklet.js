@@ -21,6 +21,18 @@ const Q = 128;             // render quantum
 // the 12-step grid inside one beat: where each metronome "feel" puts its extra ticks (in twelfths of a beat)
 const FEELS = { beat: [0], eighth: [0, 6], swing: [0, 8], sixteenth: [0, 3, 6, 9], none: [] };
 
+// drum grooves: per beat of a 4-beat bar, a list of [position in twelfths of a beat, drum, loudness]
+const K = 0, SN = 1, HH = 2;
+const GROOVES = {
+  rock: [[[0, K, 1], [0, HH, .5], [6, HH, .3]], [[0, SN, 1], [0, HH, .5], [6, HH, .3]], [[0, K, 1], [0, HH, .5], [6, HH, .3], [6, K, .6]], [[0, SN, 1], [0, HH, .5], [6, HH, .3]]],
+  hiphop: [[[0, K, 1], [0, HH, .45], [6, HH, .25]], [[0, SN, 1], [0, HH, .45], [6, K, .8], [6, HH, .25]], [[0, HH, .45], [6, HH, .25], [6, K, .6]], [[0, SN, 1], [0, HH, .45], [6, HH, .25]]],
+  disco: [[[0, K, 1], [6, HH, .7]], [[0, K, 1], [0, SN, .9], [6, HH, .7]], [[0, K, 1], [6, HH, .7]], [[0, K, 1], [0, SN, .9], [6, HH, .7]]],
+  shuffle: [[[0, K, 1], [0, HH, .5], [8, HH, .3]], [[0, SN, 1], [0, HH, .5], [8, HH, .3]], [[0, K, 1], [0, HH, .5], [8, HH, .3]], [[0, SN, 1], [0, HH, .5], [8, HH, .3]]],
+};
+const GATE_LOOKAHEAD = 128;  // frames the cleaned mic is delayed so the gate can open BEFORE a note starts
+const AEC_TAPS = 256;
+const REF_MASK = (1 << 14) - 1;
+
 function posMod(a, n) { const r = a % n; return r < 0 ? r + n : r; }
 
 class LooperCore {
@@ -33,14 +45,25 @@ class LooperCore {
     this.M = 0;            // master length in frames (0 = not set yet)
     this.slots = [];
     for (let i = 0; i < MAX_SLOTS; i++) this.slots.push(this.newSlot());
+    this.mix = new Float32Array(MAX_SLOTS + 1).fill(0.768); this.mix[0] = 1;
     this.first = -1;       // slot that is recording the master (free length) right now
-    this.metro = { on: false, bpm: 100, beatFrames: Math.round(sr * 0.6), perBar: 4, sound: 'click', feel: 'beat', vol: 0.7, countIn: true, anchor: 0, nBeats: 0 };
+    this.metro = { groove: 'none', on: false, bpm: 100, beatFrames: Math.round(sr * 0.6), perBar: 4, sound: 'click', feel: 'beat', vol: 0.7, countIn: true, anchor: 0, nBeats: 0 };
     this.voices = [];
+    for (let i = 0; i < 12; i++) this.voices.push({ on: false, start: 0, kind: 0, amp: 0, freq: 0 });
     for (let i = 0; i < 12; i++) this.voices.push({ on: false, start: 0, kind: 0, amp: 0, freq: 0 });
     this.noise = 12345;
     this.cal = null;
     this.lastFrame = -1;
     this.glitches = 0;
+    // mic cleaning: 'off' | 'gentle' | 'strong'  (strong also cancels the speakers' own sound with an adaptive filter)
+    this.clean = 'off';
+    this.cleanIn = new Float32Array(Q);
+    this.ref = new Float32Array(REF_MASK + 1);
+    this.w = new Float32Array(AEC_TAPS);
+    this.gate = { env: 0, floor: 0.01, open: false, hold: 0, g: 0 };
+    this.dly = new Float32Array(GATE_LOOKAHEAD + Q);
+    this.dlyPos = 0;
+    this.pausedAt = -1;
     this.q = 0;
   }
 
@@ -73,6 +96,8 @@ class LooperCore {
       case 'clear': this.cmdClear(m.slot); break;
       case 'transport': this.cmdTransport(!!m.play, frame); break;
       case 'calibrate': this.cal = { buf: new Float32Array(m.buf), start: frame, n: 0, clicks: m.clicks }; break;
+      case 'clean': if (this.busy()) { this.post({ type: 'cleanNote', busy: true, mode: this.clean }); break; } this.clean = m.mode === 'strong' || m.mode === 'gentle' ? m.mode : 'off'; this.dly.fill(0); this.gate.g = 0; this.post({ type: 'cleanNote', mode: this.clean }); break;
+      case 'mix': if (m.slot >= 0 && m.slot < MAX_SLOTS) this.mix[1 + m.slot] = m.g; break;
       case 'snapshot': this.snapQ = []; for (let i = 0; i < MAX_SLOTS; i++) if (this.slots[i].base && this.slots[i].st >= 2) this.snapQ.push(i); if (!this.snapQ.length) this.post({ type: 'snapDone', n: 0 }); this.snapN = this.snapQ.length; break;
       case 'load': this.cmdLoad(m, frame); break;
       case 'ping': this.post({ type: 'pong', frame, t0: this.t0, M: this.M }); break;
@@ -87,6 +112,7 @@ class LooperCore {
     if (m.feel) mt.feel = m.feel;
     if (m.vol != null) mt.vol = m.vol;
     if (m.countIn != null) mt.countIn = !!m.countIn;
+    if (m.groove) mt.groove = GROOVES[m.groove] ? m.groove : 'none';
     if (m.on != null) mt.on = !!m.on;
     if (mt.on && !wasOn) mt.anchor = this.M ? this.t0 : frame;
     if (this.M) this.fitGrid();
@@ -107,6 +133,10 @@ class LooperCore {
   }
   gridBpm() { const mt = this.metro; return this.M && mt.nBeats ? 60 * mt.nBeats * this.sr / this.M : mt.bpm; }
 
+  // frames of delay the cleaning adds to the mic (all recordings are shifted back by this plus the measured latency)
+  effLatency() { return this.latency + (this.clean !== 'off' ? GATE_LOOKAHEAD : 0); }
+  busy() { if (this.first >= 0) return true; for (const s of this.slots) if (s.od || s.pend === 'od' || s.pend === 'rec' || (s.st === 1 && s.rec)) return true; return false; }
+
   cmdRecord(m, s, frame) {
     if (!s || s.st !== 0 || s.pend || !this.playing) { this.freeBuf(m.buf); this.emitSlot(m.slot, 'refused'); return; }
     const buf = new Float32Array(m.buf);
@@ -117,12 +147,12 @@ class LooperCore {
       if (mt.on && mt.countIn) { start = frame + bar; s.st = 4; }
       else s.st = 1;
       if (mt.on) mt.anchor = frame;
-      s.rec = { buf, start, n: 0, endLen: 0, first: true, L: this.latency };
+      s.rec = { buf, start, n: 0, endLen: 0, first: true, L: this.effLatency() };
       s.k = 1; this.first = m.slot; this.t0 = start;
       this.emitMaster();   // the page needs t0 now (to draw the count-in and the growing ring)
     } else if (this.M) {
       const k = m.k === 4 ? 4 : m.k === 2 ? 2 : 1;
-      if (buf.length < k * this.M + this.latency) { this.freeBuf(m.buf); this.emitSlot(m.slot, 'refused'); return; }
+      if (buf.length < k * this.M + this.effLatency()) { this.freeBuf(m.buf); this.emitSlot(m.slot, 'refused'); return; }
       s.k = k; s.pend = 'rec'; s.recBuf = buf;
     } else { this.freeBuf(m.buf); this.emitSlot(m.slot, 'refused'); return; }
     this.emitSlot(m.slot);
@@ -133,7 +163,7 @@ class LooperCore {
     if (s.st === 4) { this.abortFirst(m.slot); return; }          // still counting in
     if (s.st === 1 && s.rec && s.rec.first && !s.rec.endLen) {
       const mt = this.metro, r = s.rec, elapsed = frame - r.start;
-      const maxLen = r.buf.length - this.latency - Q;
+      const maxLen = r.buf.length - r.L - Q;
       let N;
       if (mt.on) {
         const bar = mt.beatFrames * mt.perBar;
@@ -224,6 +254,7 @@ class LooperCore {
     if (play === this.playing) return;
     this.playing = play;
     if (!play) {
+      this.pausedAt = frame;
       if (this.first >= 0) { const s = this.slots[this.first]; if (s.st === 1) this.cmdStopRec({ slot: this.first }, s, frame); else if (s.st === 4) this.abortFirst(this.first); }
       for (let i = 0; i < MAX_SLOTS; i++) {
         const s = this.slots[i];
@@ -235,8 +266,8 @@ class LooperCore {
         this.emitSlot(i);
       }
     } else {
-      if (this.M) { this.t0 = frame; this.metro.anchor = frame; }
-      this.metro.anchor = frame;
+      if (this.M && this.pausedAt >= 0) { const d = frame - this.pausedAt; this.t0 += d; this.metro.anchor += d; }   // pause: carry on exactly where we were, everything still locked
+      else this.metro.anchor = frame;
     }
     this.emitMaster();
   }
@@ -261,16 +292,19 @@ class LooperCore {
     const M = this.M, t0 = this.t0, L = this.latency;
     const met = outs[0];
 
+    const raw = input;
+    if (input && this.clean !== 'off' && !this.cal) input = this.cleanBlock(input);
+
     // input level (for the little mic meter)
     let peak = 0;
-    if (input) for (let i = 0; i < Q; i++) { const a = input[i] < 0 ? -input[i] : input[i]; if (a > peak) peak = a; }
+    if (raw) for (let i = 0; i < Q; i++) { const a = raw[i] < 0 ? -raw[i] : raw[i]; if (a > peak) peak = a; }
     this.peak = Math.max(this.peak || 0, peak);
     if ((++this.q & 7) === 0) { this.post({ type: 'level', peak: this.peak, glitches: this.glitches, frame }); this.peak = 0; }
 
     if (this.snapQ && this.snapQ.length) this.snapStep();
 
     // calibration: play clicks, record the room
-    if (this.cal) this.runCal(frame, input, met);
+    if (this.cal) this.runCal(frame, raw, met);
 
     // first master boundary inside this quantum (sample-exact)
     let bIdx = -1;
@@ -328,6 +362,50 @@ class LooperCore {
         }
       }
     }
+    // remember what we sent to the speakers (the "reference" the bleed canceller needs), scaled by each loop's volume
+    for (let i = 0; i < Q; i++) {
+      let r = met[i];
+      for (let o = 1; o < nOut; o++) r += outs[o][i] * this.mix[o];
+      this.ref[(frame + i) & REF_MASK] = r;
+    }
+  }
+
+  // ---- mic cleaning: bleed canceller (NLMS) then noise gate with look-ahead ----------------------------------
+  cleanBlock(inp) {
+    const out = this.cleanIn, f0 = this.lastFrame, strong = this.clean === 'strong', gt = this.gate, w = this.w, ref = this.ref;
+    const D = this.latency - (AEC_TAPS >> 1);
+    const useAec = strong && D >= Q + 8;
+    for (let n = 0; n < Q; n++) {
+      let e = inp[n];
+      if (useAec) {
+        const base = f0 + n - D;
+        let y = 0, pw = 1e-5;
+        for (let k = 0; k < AEC_TAPS; k++) { const u = ref[(base - k) & REF_MASK]; y += w[k] * u; pw += u * u; }
+        e = inp[n] - y;
+        if (pw > 2e-4) {
+          const g = 0.03 * e / pw;
+          for (let k = 0; k < AEC_TAPS; k++) w[k] += g * ref[(base - k) & REF_MASK];
+        }
+      }
+      // gate: follow the level, learn the room's noise floor, open only for sounds clearly above it
+      const a = e < 0 ? -e : e;
+      gt.env = a > gt.env ? a : gt.env * 0.9995;
+      gt.floor = gt.env < gt.floor ? gt.env : gt.floor * 1.000002;
+      if (gt.floor < 1e-4) gt.floor = 1e-4;
+      const ratio = strong ? 5 : 3, minT = strong ? 0.012 : 0.006, hold = this.sr * (strong ? 0.12 : 0.18);
+      const thr = Math.max(minT, gt.floor * ratio);
+      if (gt.env > thr) { gt.open = true; gt.hold = hold; }
+      else if (gt.open && gt.env < thr * 0.6 && --gt.hold <= 0) gt.open = false;
+      const target = gt.open ? 1 : (strong ? 0 : 0.12);
+      gt.g += (target - gt.g) * (target > gt.g ? 0.05 : 0.0015);      // ~0.5 ms to open, ~15 ms to close
+      // look-ahead: the gate listens to "now", the sound it passes is 128 frames old
+      const p = this.dlyPos;
+      this.dly[p] = e;
+      const dl = this.dly[(p + this.dly.length - GATE_LOOKAHEAD) % this.dly.length];
+      this.dlyPos = (p + 1) % this.dly.length;
+      out[n] = this.noGate ? e : dl * gt.g;
+    }
+    return out;
   }
 
   boundary(f) {
@@ -338,10 +416,10 @@ class LooperCore {
       if (act === 'rec') {
         const N = s.k * this.M;
         s.rel = posMod(f - this.t0, N);
-        s.rec = { buf: s.recBuf, start: f, n: 0, endLen: N, first: false, L: this.latency };
-        s.recBuf = null; s.len = N; s.off = this.latency; s.st = 1; s.pend = null;
+        s.rec = { buf: s.recBuf, start: f, n: 0, endLen: N, first: false, L: this.effLatency() };
+        s.recBuf = null; s.len = N; s.off = this.effLatency(); s.st = 1; s.pend = null;
       } else if (act === 'od') {
-        s.od = { layer: s.odBuf, start: f, end: -1 }; s.odBuf = null; s.pend = null;
+        s.od = { layer: s.odBuf, start: f, end: -1, L: this.effLatency() }; s.odBuf = null; s.pend = null;
       } else if (act === 'odEnd') {
         if (s.od) s.od.end = f; s.pend = null;
       } else if (act === 'play') { s.st = 2; s.pend = null; }
@@ -351,7 +429,7 @@ class LooperCore {
   }
 
   writeOverdub(si, s, f, x) {
-    const od = s.od, L = this.latency;
+    const od = s.od, L = od.L;
     const end = od.end >= 0 ? od.end + L : -1;
     if (end >= 0 && f >= end) {
       s.layers.push(od.layer); s.od = null; this.emitSlot(si); return;
@@ -377,6 +455,7 @@ class LooperCore {
     const counting = this.first >= 0 && this.slots[this.first].st === 4;
     if (!(mt.on || counting)) return;
     const offs = FEELS[mt.feel] || FEELS.beat;
+    const gv = GROOVES[mt.groove];
     let num, den, anchor = mt.anchor;
     if (this.M && mt.nBeats) { num = this.M; den = mt.nBeats; anchor = this.t0; }
     else { num = mt.beatFrames; den = 1; }
@@ -384,6 +463,14 @@ class LooperCore {
       const i0 = Math.floor(((frame - anchor) * den) / num) - 1;
       for (let i = Math.max(0, i0); i <= i0 + 2; i++) {
         const accent = (i % mt.perBar) === 0;
+        if (gv) {
+          const evs = gv[(i % mt.perBar) % 4];
+          for (let k = 0; k < evs.length; k++) {
+            const pos = anchor + Math.floor(((i * 12 + evs[k][0]) * num) / (den * 12));
+            if (pos >= frame && pos < frame + Q) this.drum(pos, evs[k][1], evs[k][2]);
+          }
+          continue;
+        }
         for (let k = 0; k < offs.length; k++) {
           const pos = anchor + Math.floor(((i * 12 + offs[k]) * num) / (den * 12));
           if (pos >= frame && pos < frame + Q) this.trigger(pos, accent && offs[k] === 0, offs[k] !== 0);
@@ -400,13 +487,24 @@ class LooperCore {
         if (age < 0) continue;
         const t = age / this.sr;
         let y = 0;
-        if (vo.kind === 0) { y = Math.sin(6.2831853 * vo.freq * t) * Math.exp(-t / 0.006); if (t > 0.06) { vo.on = false; break; } }                    // click
+        if (vo.kind >= 4) {
+          if (vo.kind === 4) { const ph = 6.2831853 * (52 * t + 3.2 * (1 - Math.exp(-t / 0.03))); y = Math.sin(ph) * Math.exp(-t / 0.13); if (t > 0.4) { vo.on = false; break; } }
+          else if (vo.kind === 5) { this.noise = (this.noise * 1664525 + 1013904223) >>> 0; y = ((this.noise / 4294967296) * 2 - 1) * 0.8 * Math.exp(-t / 0.07) + 0.5 * Math.sin(6.2831853 * 190 * t) * Math.exp(-t / 0.05); if (t > 0.3) { vo.on = false; break; } }
+          else { this.noise = (this.noise * 1664525 + 1013904223) >>> 0; y = ((this.noise / 4294967296) * 2 - 1) * 0.6 * Math.exp(-t / 0.018); if (t > 0.12) { vo.on = false; break; } }
+        } else if (vo.kind === 0) { y = Math.sin(6.2831853 * vo.freq * t) * Math.exp(-t / 0.006); if (t > 0.06) { vo.on = false; break; } }                    // click
         else if (vo.kind === 1) { y = (Math.sin(6.2831853 * vo.freq * t) + 0.6 * Math.sin(6.2831853 * vo.freq * 1.58 * t)) * Math.exp(-t / 0.018); if (t > 0.12) { vo.on = false; break; } } // wood
         else if (vo.kind === 2) { y = Math.sin(6.2831853 * vo.freq * t) * Math.exp(-t / 0.05); if (t > 0.3) { vo.on = false; break; } }               // beep
         else { this.noise = (this.noise * 1664525 + 1013904223) >>> 0; y = ((this.noise / 4294967296) * 2 - 1) * Math.exp(-t / 0.02); if (t > 0.12) { vo.on = false; break; } } // hat
         out[i] += y * vo.amp * vol;
       }
     }
+  }
+
+  drum(pos, which, amp) {
+    let vo = null;
+    for (let v = 0; v < this.voices.length; v++) if (!this.voices[v].on) { vo = this.voices[v]; break; }
+    if (!vo) return;
+    vo.on = true; vo.start = pos; vo.kind = 4 + which; vo.freq = 0; vo.amp = amp * (which === 0 ? 1.0 : which === 1 ? 0.8 : 0.5);
   }
 
   trigger(pos, accent, soft) {

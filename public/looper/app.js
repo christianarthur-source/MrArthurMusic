@@ -17,7 +17,7 @@
   const colorOf = (i) => COLORS[i % COLORS.length];
   const FX = {};                                   // per-slot effect {id, amt}
   const M = { t0: -1, M: 0, playing: true, bpm: 100, nBeats: 0 };
-  const metro = { on: false, bpm: 100, sound: 'click', feel: 'beat', countIn: true };
+  const metro = { groove: 'none', on: false, bpm: 100, sound: 'click', feel: 'beat', countIn: true };
   let glitches = 0, level = 0, latencySec = 0.04, pendingCal = null, outLat = 0;
   const chain = [];
   let room = null;
@@ -59,11 +59,11 @@
       if (!DEMO) {
         try {
           const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 1, latency: 0 } });
-          mic = ctx.createMediaStreamSource(stream); mic.connect(node); micOk = true;
+          mic = ctx.createMediaStreamSource(stream); const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 90; hp.Q.value = 0.7; mic.connect(hp); hp.connect(node); micOk = true;
         } catch (e) { status('The microphone is off, so you can’t record. Allow it in your browser and reload.', true); }
       }
-      $('splash').hidden = true;
-      post({ type: 'metro', on: false, bpm: metro.bpm, sound: metro.sound, feel: metro.feel, countIn: metro.countIn, perBar: 4 });
+      $('splash').hidden = true; maybeTour();
+      post({ type: 'metro', on: false, bpm: metro.bpm, sound: metro.sound, feel: metro.feel, countIn: metro.countIn, perBar: 4, groove: metro.groove });
       if (micOk) status(localStorage.getItem(LAT_KEY) ? '' : 'Tip: do the Sound check below once so layers line up.');
       ctx.onstatechange = () => { if (ctx.state !== 'running') ctx.resume().catch(() => {}); };
       document.addEventListener('visibilitychange', () => { if (!document.hidden && ctx.state !== 'running') ctx.resume().catch(() => {}); });
@@ -83,6 +83,13 @@
       case 'master': Object.assign(M, { t0: m.t0, M: m.M, playing: m.playing, bpm: m.bpm, nBeats: m.nBeats }); if (m.M && metro.on) $('bpmOut').textContent = Math.round(m.bpm); render(); break;
       case 'level': level = m.peak; glitches = m.glitches; break;
       case 'cal': finishCal(m); break;
+      case 'cleanNote': {
+        const box = $('cleanChips'); const ids = ['off', 'gentle', 'strong'];
+        box.querySelectorAll('.chip').forEach((c, i) => c.classList.toggle('on', ids[i] === m.mode));
+        metro.clean = m.mode;
+        $('cleanTxt').textContent = m.busy ? 'Finish recording first, then change this.' : ({ off: 'Off: the mic is recorded as it is.', gentle: 'Gentle: quiet background hiss is switched off between sounds.', strong: 'Strong: also removes the speaker sound from the mic. Works best after a Sound check.' })[m.mode];
+        break;
+      }
       case 'snap': if (snapWait) snapWait.snaps.push(m); break;
       case 'snapDone': if (snapWait) { const w = snapWait; snapWait = null; w.res(w.snaps); } break;
       case 'metro': break;
@@ -124,7 +131,9 @@
   const LABEL = {
     empty: ['⏺', 'Record'], count: ['…', 'Get ready'], rec: ['⏹', 'Done'], play: ['➕', 'Layer'], od: ['⏹', 'Done layer'], stopped: ['▶️', 'Play'],
   };
+  function toggleMaster() { if (!node || !M.M) return; post({ type: 'transport', play: !M.playing }); }
   function render() {
+    { const mb = $('masterBtn'); mb.disabled = !M.M; mb.firstElementChild.textContent = M.playing ? '⏸' : '▶️'; mb.lastElementChild.textContent = M.playing ? 'Pause' : 'Play'; mb.setAttribute('aria-label', M.playing ? 'Pause everything' : 'Play everything'); mb.classList.toggle('paused', !M.playing); }
     const name = stateName();
     $('stage').dataset.state = name;
     const lab = LABEL[name];
@@ -187,14 +196,15 @@
   }
   document.addEventListener('keydown', (e) => {
     if (!node || e.repeat || e.metaKey || e.ctrlKey || e.altKey || /^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)) return;
-    if (e.code === 'Space') { e.preventDefault(); bigAction2(); }
+    if (e.code === 'Space') { e.preventDefault(); toggleMaster(); }
+    else if (e.key === 'r' || e.key === 'R') bigAction2();
     else if (e.key === 'p' || e.key === 'P') { if (S.st === 2) node.port.postMessage({ type: 'stop', slot: sel }); else if (S.st === 3) node.port.postMessage({ type: 'play', slot: sel }); }
     else if (e.key === 'm' || e.key === 'M') node.port.postMessage({ type: 'mute', slot: sel, on: !S.muted });
     else if (e.key === 'u' || e.key === 'U') node.port.postMessage({ type: 'undo', slot: sel });
   });
 
   // volume and pan: smoothed so nothing clicks or zips
-  $('vol').addEventListener('input', () => { S.vol = +$('vol').value; if (chain[sel]) chain[sel].g.gain.setTargetAtTime((S.vol / 100) ** 2 * 1.2, ctx.currentTime, 0.02); });
+  $('vol').addEventListener('input', () => { S.vol = +$('vol').value; if (chain[sel]) { const g = (S.vol / 100) ** 2 * 1.2; chain[sel].g.gain.setTargetAtTime(g, ctx.currentTime, 0.02); post({ type: 'mix', slot: sel, g }); } });
   let panSet = null;
   (() => {
     const el = $('pan'), th = $('panThumb'), track = el.querySelector('.pantrack');
@@ -301,15 +311,22 @@
   // ---------- metronome ----------
   const SOUNDS = [['click', '🔘 Click'], ['wood', '🪵 Wood'], ['beep', '🔔 Beep'], ['hat', '🎩 Hat']];
   const FEELS = [['beat', 'Steady'], ['eighth', 'Double'], ['swing', 'Swing'], ['sixteenth', 'Fast']];
-  function chips(boxId, list, key) {
+  function chips(boxId, list, key, send) {
     const box = $(boxId);
     list.forEach(([id, label]) => {
       const b = document.createElement('button'); b.type = 'button'; b.className = 'chip' + (metro[key] === id ? ' on' : ''); b.textContent = label;
-      press(b, () => { metro[key] = id; box.querySelectorAll('.chip').forEach((c) => c.classList.toggle('on', c === b)); post({ type: 'metro', [key]: id }); });
+      press(b, () => { if (send) return send(id); metro[key] = id; box.querySelectorAll('.chip').forEach((c) => c.classList.toggle('on', c === b)); post({ type: 'metro', [key]: id }); });
       box.appendChild(b);
     });
   }
+  const GROOVES = [['none', '🚫 Click only'], ['rock', '🎸 Rock'], ['hiphop', '🎤 Hip-hop'], ['disco', '🪩 Disco'], ['shuffle', '🎷 Shuffle']];
+  chips('grooveChips', GROOVES, 'groove');
+  document.querySelectorAll('#grooveChips .chip').forEach((b) => b.addEventListener('pointerdown', () => setTimeout(() => $('clickOpts').classList.toggle('dim', metro.groove !== 'none'), 0)));
   chips('soundChips', SOUNDS, 'sound'); chips('feelChips', FEELS, 'feel');
+  // mic cleaning: Off / Gentle (noise gate) / Strong (also cancels the speakers' own sound)
+  const CLEAN = [['off', 'Off'], ['gentle', '🧹 Gentle'], ['strong', '🧽 Strong']];
+  metro.clean = 'off';
+  chips('cleanChips', CLEAN, 'clean', (id) => post({ type: 'clean', mode: id }));
   const setBpm = (v) => { if (M.M) return; metro.bpm = Math.max(50, Math.min(200, v)); $('bpmOut').textContent = metro.bpm; post({ type: 'metro', bpm: metro.bpm }); };
   press($('bpmDn'), () => setBpm(metro.bpm - 4)); press($('bpmUp'), () => setBpm(metro.bpm + 4));
   press($('metOn'), () => { metro.on = !metro.on; const b = $('metOn'); b.setAttribute('aria-pressed', String(metro.on)); b.textContent = metro.on ? 'On' : 'Off'; post({ type: 'metro', on: metro.on }); });
@@ -407,7 +424,7 @@
         node.port.postMessage({ type: 'load', M: d.M, loops: copies }, copies.map((c) => c.buf));
         for (const l of d.loops) {
           SL[l.slot].vol = l.vol == null ? 80 : l.vol; SL[l.slot].pan = l.pan || 0;
-          chain[l.slot].g.gain.setTargetAtTime(gainOf({ vol: SL[l.slot].vol }), ctx.currentTime, 0.02); chain[l.slot].p.pan.setTargetAtTime(SL[l.slot].pan, ctx.currentTime, 0.02);
+          chain[l.slot].g.gain.setTargetAtTime(gainOf({ vol: SL[l.slot].vol }), ctx.currentTime, 0.02); post({ type: 'mix', slot: l.slot, g: gainOf({ vol: SL[l.slot].vol }) }); chain[l.slot].p.pan.setTargetAtTime(SL[l.slot].pan, ctx.currentTime, 0.02);
           if (l.fx) { FX[l.slot] = l.fx; fxApply(l.slot); }
         }
         select(d.loops[0].slot); keep('Opened ✅ ' + d.loops.length + ' loops, saved ' + new Date(d.saved).toLocaleString());
@@ -439,6 +456,45 @@
     setTimeout(() => URL.revokeObjectURL(a.href), 10000);
     keep('Saved my-loop.wav (' + (T / sr).toFixed(1) + ' seconds, one time through).');
   });
+
+
+  // ---------- first-visit tour ----------
+  const TOUR_KEY = 'looper.tourDone.v1';
+  const TOUR = [
+    { at: '#bigBtn', title: 'Record a loop', text: 'Tap the big red button and make a sound: sing, clap, tap or play. Tap again to stop. Your loop plays over and over!' },
+    { at: '#bigBtn', title: 'Add layers', text: 'When it says Layer, tap it and play along. Each layer stacks on top. Made a mistake? Press Undo.' },
+    { at: '#grid', title: '24 loops', text: 'Pick another square for a new loop. Every loop stays in time with the first one.' },
+    { at: '#masterBtn', title: 'Pause everything', text: 'This pauses and plays all your loops together. The space bar does it too.' },
+    { at: '#fxChips', title: 'Sound changers', text: 'Give any loop Echo, a Big Room, an Underwater sound or a Crunchy edge.' },
+    { at: '#tools', title: 'Beats and clean sound', text: 'Add a drum beat to play along with, clean up the mic, do the Sound check, and save or download your song.' },
+  ];
+  const tour = { i: 0, on: false };
+  const tourEl = $('tour');
+  function startTour() { if (tour.on) return; $('tools').open = false; tour.i = 0; tour.on = true; tourEl.hidden = false; placeTour(); }
+  function endTour() { if (!tour.on) return; tour.on = false; tourEl.hidden = true; try { localStorage.setItem(TOUR_KEY, '1'); } catch (e) {} }
+  function placeTour() {
+    if (!tour.on) return;
+    const step = TOUR[tour.i], target = document.querySelector(step.at);
+    if (!target || !target.offsetParent) { if (tour.i < TOUR.length - 1) { tour.i++; return placeTour(); } return endTour(); }
+    $('tourStep').textContent = (tour.i + 1) + ' of ' + TOUR.length; $('tourTitle').textContent = step.title; $('tourText').textContent = step.text;
+    $('tourBack').hidden = tour.i === 0; $('tourNext').textContent = tour.i === TOUR.length - 1 ? 'Got it! ✓' : 'Next →';
+    target.scrollIntoView({ block: 'nearest' });
+    const r = target.getBoundingClientRect(), pad = 5, bubble = $('tourBubble');
+    $('tourSpot').style.cssText = 'left:' + (r.left - pad) + 'px;top:' + (r.top - pad) + 'px;width:' + (r.width + pad * 2) + 'px;height:' + (r.height + pad * 2) + 'px';
+    bubble.style.visibility = 'hidden';
+    const bw = bubble.offsetWidth, bh = bubble.offsetHeight, vw = innerWidth, vh = innerHeight;
+    let top = r.bottom + 14 + bh < vh ? r.bottom + 14 : r.top - 14 - bh;
+    if (top < 8) top = Math.max(8, Math.min(vh - bh - 8, r.top + 16));    // big target: sit inside it
+    const left = Math.max(10, Math.min(vw - bw - 10, r.left + r.width / 2 - bw / 2));
+    bubble.style.cssText = 'left:' + left + 'px;top:' + top + 'px;visibility:visible';
+  }
+  press($('tourNext'), () => { if (tour.i >= TOUR.length - 1) return endTour(); tour.i++; placeTour(); });
+  press($('tourBack'), () => { if (tour.i > 0) { tour.i--; placeTour(); } });
+  press($('tourSkip'), endTour);
+  press($('tourBtn'), () => { $('tools').open = false; startTour(); });
+  addEventListener('resize', placeTour);
+  addEventListener('keydown', (e) => { if (e.key === 'Escape') endTour(); }, true);
+  function maybeTour() { let done = false; try { done = !!localStorage.getItem(TOUR_KEY); } catch (e) {} if (!done) setTimeout(startTour, 700); }
 
   press($('startBtn'), start);
   window.__looper = DEMO ? { S, M, metro, get glitches() { return glitches; }, post, get node() { return node; }, get ctx() { return ctx; } } : undefined;

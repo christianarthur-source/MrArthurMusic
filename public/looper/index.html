@@ -20,6 +20,7 @@
   <header class="top">
     <h1 class="title">Loop<b>er</b></h1>
     <p class="lead" id="lead">Make a sound, loop it, layer it.</p>
+    <button type="button" class="master" id="masterBtn" disabled aria-label="Pause everything"><span>⏸</span><small>Pause</small></button>
     <details class="tools" id="tools"><summary class="chip">⚙️ Beat &amp; setup</summary><div class="toolsbody">
   <section class="panel" aria-labelledby="metH">
     <div class="phead"><h2 id="metH">🥁 Beat helper</h2>
@@ -27,9 +28,22 @@
     <div class="mrow">
       <div class="bpm"><button type="button" class="step" id="bpmDn" aria-label="Slower">−</button><output id="bpmOut">100</output><small>beats / min</small><button type="button" class="step" id="bpmUp" aria-label="Faster">+</button></div>
     </div>
-    <div class="chips" id="soundChips" role="group" aria-label="Sound"></div>
-    <div class="chips" id="feelChips" role="group" aria-label="Feel"></div>
+    <div class="chips" id="grooveChips" role="group" aria-label="Drum beat"></div>
+    <div id="clickOpts"><div class="chips" id="soundChips" role="group" aria-label="Click sound"></div>
+    <div class="chips" id="feelChips" role="group" aria-label="Feel"></div></div>
     <div class="chips"><button type="button" class="chip tog on" id="countIn" aria-pressed="true">1-2-3-4 count in</button></div>
+  </section>
+
+  <section class="panel">
+    <div class="phead"><h2>🎧 Clean mic</h2></div>
+    <div class="chips" id="cleanChips" role="group" aria-label="Clean mic" style="margin-top:0"></div>
+    <p class="hint" id="cleanTxt">Off: the mic is recorded as it is.</p>
+    <p class="hint"><b>Best of all: wear headphones</b> so the mic never hears the speakers.</p>
+  </section>
+
+  <section class="panel">
+    <div class="phead"><h2>👋 New here?</h2><button type="button" class="chip" id="tourBtn">Show me around</button></div>
+    <p class="hint">Space = play / pause everything. R = record or add a layer. M = mute. U = undo.</p>
   </section>
 
   <section class="panel">
@@ -68,6 +82,7 @@
       </button>
     </div>
     <div class="mic" aria-hidden="true"><i id="micBar"></i></div>
+    <p class="phones">🎧 Headphones help: no speaker noise on your recording!</p>
 
     <div class="row">
       <button type="button" class="rbtn" id="playBtn" disabled aria-label="Stop or play"><span id="playIco">⏹</span><small id="playTxt">Stop</small></button>
@@ -95,7 +110,15 @@
 
 <div class="splash" id="splash">
   <button type="button" class="startbtn" id="startBtn">🎙️<span>Tap to start</span></button>
-  <p id="splashMsg">Your browser will ask to use the microphone. Choose Allow.</p>
+  <p id="splashMsg">Your browser will ask to use the microphone. Choose Allow. 🎧 Headphones make your loops sound much cleaner!</p>
+</div>
+
+<div class="tour" id="tour" hidden>
+  <div class="tour-spot" id="tourSpot"></div>
+  <div class="tour-bubble" id="tourBubble" role="dialog" aria-live="polite">
+    <div class="tour-step" id="tourStep"></div><div class="tour-title" id="tourTitle"></div><div class="tour-text" id="tourText"></div>
+    <div class="tour-nav"><button type="button" class="chip" id="tourSkip">Skip</button><span class="tour-gap"></span><button type="button" class="chip" id="tourBack">← Back</button><button type="button" class="chip on" id="tourNext">Next →</button></div>
+  </div>
 </div>
 
 <div class="modal" id="modal" hidden role="dialog" aria-modal="true" aria-labelledby="modalQ">

@@ -161,3 +161,24 @@ input[type=range] { height: 38px; }
   .ringbox { width: min(30vh, 210px); }
 }
 @media (min-width: 760px) and (max-height: 700px) { .tile .tn { font-size: .9rem; } .lead { font-size: .9rem; } }
+
+.master { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 4px 16px; border-radius: 999px; border: 0; background: #22c55e; color: #052e16; font: 700 1.05rem var(--suite-font); cursor: pointer; box-shadow: 0 4px 0 #15803d; touch-action: manipulation; }
+.master small { font-size: 1rem; }
+.master span { font-size: 1.3rem; line-height: 1; }
+.master:active { transform: translateY(3px); box-shadow: 0 1px 0 #15803d; }
+.master.paused { background: var(--loop); box-shadow: 0 4px 0 #b45309; color: #1f1300; }
+.master:disabled { opacity: .35; box-shadow: none; cursor: default; }
+.phones { margin: -6px 0 6px; text-align: center; font-size: .8rem; color: var(--suite-muted); }
+#clickOpts.dim { opacity: .4; }
+/* first-visit tour (same idea as MIDI MUSIC) */
+.tour { position: fixed; inset: 0; z-index: 70; pointer-events: none; }
+.tour[hidden] { display: none; }
+.tour-spot { position: fixed; border-radius: 16px; border: 3px solid var(--loop); box-shadow: 0 0 0 9999px rgba(6, 7, 12, .66); transition: all .25s ease; }
+.tour-bubble { position: fixed; width: min(340px, calc(100vw - 20px)); pointer-events: auto; background: #fff; color: #1b1d2b; border-radius: 16px; padding: 14px 16px; box-shadow: 0 16px 44px rgba(0, 0, 0, .55); display: flex; flex-direction: column; gap: 6px; }
+.tour-step { font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #6b7090; }
+.tour-title { font-size: 20px; font-weight: 800; }
+.tour-text { font-size: 15px; line-height: 1.4; }
+.tour-nav { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+.tour-gap { flex: 1; }
+.tour-bubble .chip { min-height: 40px; background: #eceef7; color: #1b1d2b; border-color: #d4d7e6; padding: 4px 14px; }
+.tour-bubble .chip.on { background: var(--loop); color: #1f1300; border-color: var(--loop); }
