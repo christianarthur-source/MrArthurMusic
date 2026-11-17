@@ -112,6 +112,34 @@ interface BeamGroup {
 }
 
 // Helper to identify drum / percussion tracks
+/**
+ * Glissando line: a gentle wavy path from (x1, y1) to (x2, y2), drawn as a chain of quadratic curves.
+ * Very short glissandos fall back to a straight line so they stay readable.
+ */
+function wavyGlissPath(x1: number, y1: number, x2: number, y2: number): string {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const len = Math.hypot(dx, dy);
+  if (len < 18) return `M ${x1} ${y1} L ${x2} ${y2}`;
+  const ux = dx / len;
+  const uy = dy / len;
+  const nx = -uy;
+  const ny = ux;
+  const halfWaves = Math.max(2, Math.round(len / 5));
+  const step = len / halfWaves;
+  const amp = 3.2;
+  let d = `M ${x1.toFixed(1)} ${y1.toFixed(1)}`;
+  for (let i = 0; i < halfWaves; i++) {
+    const sign = i % 2 === 0 ? 1 : -1;
+    const mid = (i + 0.5) * step;
+    const end = (i + 1) * step;
+    const cx = x1 + ux * mid + nx * amp * sign;
+    const cy = y1 + uy * mid + ny * amp * sign;
+    d += ` Q ${cx.toFixed(1)} ${cy.toFixed(1)} ${(x1 + ux * end).toFixed(1)} ${(y1 + uy * end).toFixed(1)}`;
+  }
+  return d;
+}
+
 export function isDrumTrack(track: Track): boolean {
   if (
     track.instrumentId === 'drum_kit' ||
@@ -2086,6 +2114,59 @@ export const ScoreRenderer: React.FC<ScoreRendererProps> = ({
                                         strokeLinecap="round"
                                         className="pointer-events-none"
                                       />
+                                    );
+                                  })()}
+
+                                  {/* Glissando (Advanced mode tool): wavy line from this note to the next note */}
+                                  {item.isGliss && (() => {
+                                    const isLastInMeasure = itemIndex === measure.items.length - 1;
+                                    const nextLayout = isLastInMeasure ? measureLayout.get(measureIndex + 1) : layout;
+                                    const nextItem = isLastInMeasure
+                                      ? track.measures[measureIndex + 1]?.items[0]
+                                      : measure.items[itemIndex + 1];
+                                    if (!nextItem || nextItem.type !== 'note') return null;
+                                    const rawNext =
+                                      nextItem.pitches && nextItem.pitches.length > 0
+                                        ? nextItem.pitches
+                                        : nextItem.pitch
+                                        ? [nextItem.pitch]
+                                        : [];
+                                    if (rawNext.length === 0) return null;
+                                    const nextSorted = [...rawNext].sort(
+                                      (a, b) =>
+                                        a.octave * 7 + STEP_DIATONIC_OFFSET[a.step] -
+                                        (b.octave * 7 + STEP_DIATONIC_OFFSET[b.step])
+                                    );
+                                    // The next note sits on this system unless the line wraps to a new system
+                                    const sameSystem = Boolean(nextLayout && nextLayout.systemIndex === layout.systemIndex);
+                                    const nextX = !isLastInMeasure
+                                      ? layout.x + 35 + itemEndRatio * (MEASURE_WIDTH - 60)
+                                      : sameSystem && nextLayout
+                                      ? nextLayout.x + 35
+                                      : layout.x + MEASURE_WIDTH - 4;
+                                    const stroke = isSelected ? '#0284C7' : '#0F172A';
+                                    return (
+                                      <g className="pointer-events-none" data-gliss-for={item.id}>
+                                        {pitchInfos.map(({ p, idx, noteY }) => {
+                                          const target = nextSorted[Math.min(idx, nextSorted.length - 1)];
+                                          const targetY = trackTopY + getPitchY(target, track.clef);
+                                          const x1 = itemX + 11 + (item.isDotted ? 11 : 0);
+                                          const x2 = nextX - 12 - (sameSystem && target.accidental ? 15 : 0);
+                                          const y2 = sameSystem ? targetY : noteY + (targetY - noteY) * 0.5;
+                                          if (x2 - x1 < 6) return null;
+                                          return (
+                                            <path
+                                              key={`gl_${idx}_${p.step}${p.octave}`}
+                                              d={wavyGlissPath(x1, noteY, x2, y2)}
+                                              fill="none"
+                                              stroke={stroke}
+                                              strokeWidth={isSelected ? '1.9' : '1.5'}
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                            />
+                                          );
+                                        })}
+                                      </g>
                                     );
                                   })()}
 

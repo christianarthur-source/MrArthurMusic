@@ -32,6 +32,7 @@ export interface NoteItem {
   duration: NoteDuration;
   isDotted?: boolean;
   isTied?: boolean;
+  isGliss?: boolean; // Glissando: slide from this note to the next note (Advanced mode)
   isTriplet?: boolean;
   articulation?: ArticulationType;
   dynamic?: DynamicMarking;

@@ -1272,6 +1272,19 @@ export default function App() {
     }
   }, [isTied, selection, score, pushScoreState]);
 
+  // Toggle Glissando on the selected note (Advanced mode): slides from that note to the next note.
+  // Like Flat/Noteflight, it is applied to the first note of the slide rather than set as an input mode.
+  const handleToggleGliss = useCallback(() => {
+    if (!selection || selection.itemIndex < 0) return;
+    const nextScore: Score = JSON.parse(JSON.stringify(score));
+    const item =
+      nextScore.tracks[selection.trackIndex]?.measures[selection.measureIndex]?.items[selection.itemIndex];
+    if (!item || item.type !== 'note') return;
+    if (item.isGliss) delete item.isGliss;
+    else item.isGliss = true;
+    pushScoreState(nextScore);
+  }, [selection, score, pushScoreState]);
+
   // Change Accidental handler (updates currently selected note immediately + plays preview)
   const handleChangeAccidental = useCallback(
     (acc: AccidentalType) => {
@@ -1641,6 +1654,7 @@ export default function App() {
         item.pitch = undefined;
         item.pitches = undefined;
         item.isTied = false;
+        delete item.isGliss;
         const capacity = getMeasureCapacity(nextScore.timeSignature);
         measure.items = cleanMeasureRests(measure.items, capacity);
       }
@@ -2426,6 +2440,10 @@ export default function App() {
     selection && selection.itemIndex >= 0
       ? selectedMeasure?.items[selection.itemIndex]?.lyric || ''
       : '';
+  const selectedGlissItem =
+    selection && selection.itemIndex >= 0 ? selectedMeasure?.items[selection.itemIndex] : undefined;
+  const canToggleGliss = selectedGlissItem?.type === 'note';
+  const isSelectedGliss = Boolean(canToggleGliss && selectedGlissItem?.isGliss);
 
   if (isPrintView) {
     return (
@@ -3041,6 +3059,9 @@ export default function App() {
                 onRepeatWholeSong={handleRepeatWholeSong}
                 onClearAllRepeats={handleClearAllRepeats}
                 selectedNoteLyric={selectedNoteLyric}
+                isGliss={isSelectedGliss}
+                canToggleGliss={canToggleGliss}
+                onToggleGliss={handleToggleGliss}
                 onUpdateSelectedNoteLyric={handleUpdateSelectedNoteLyric}
                 onDeleteSelected={handleDeleteSelected}
                 selection={selection}

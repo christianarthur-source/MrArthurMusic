@@ -69,6 +69,9 @@ interface RhythmicPaletteProps {
   onRepeatWholeSong?: () => void;
   onClearAllRepeats?: () => void;
   selectedNoteLyric?: string;
+  isGliss?: boolean;
+  canToggleGliss?: boolean;
+  onToggleGliss?: () => void;
   onUpdateSelectedNoteLyric?: (lyric: string, advanceNext?: boolean) => void;
   onDeleteSelected: () => void;
   selection: SelectionState | null;
@@ -121,6 +124,9 @@ export const RhythmicPalette: React.FC<RhythmicPaletteProps> = ({
   onRepeatWholeSong,
   onClearAllRepeats,
   selectedNoteLyric = '',
+  isGliss = false,
+  canToggleGliss = false,
+  onToggleGliss,
   onUpdateSelectedNoteLyric,
   onDeleteSelected,
   selection,
@@ -548,6 +554,27 @@ export const RhythmicPalette: React.FC<RhythmicPaletteProps> = ({
                 >
                   ‿ Tie
                 </button>
+                {onToggleGliss && (
+                  <button
+                    onClick={onToggleGliss}
+                    disabled={!canToggleGliss}
+                    aria-pressed={isGliss}
+                    title={
+                      canToggleGliss
+                        ? 'Glissando: slide from this note to the next note'
+                        : 'Glissando: select a note first, then slide to the next note'
+                    }
+                    className={`px-2 py-1 rounded-lg text-xs font-bold transition-all ${
+                      isGliss
+                        ? 'bg-indigo-500 text-white cursor-pointer'
+                        : canToggleGliss
+                        ? 'text-slate-300 hover:bg-slate-700 cursor-pointer'
+                        : 'text-slate-500 opacity-60 cursor-not-allowed'
+                    }`}
+                  >
+                    ⟋ Gliss
+                  </button>
+                )}
                 <button
                   onClick={onToggleTriplet}
                   title="Triplet (3 in the time of 2)"

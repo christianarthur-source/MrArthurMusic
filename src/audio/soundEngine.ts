@@ -1,6 +1,7 @@
 import { InstrumentId, Pitch, Score, Track } from '../types/music';
 import { expandPlaybackMeasures, getItemDuration, getPitchFrequency } from '../utils/musicMath';
 import { DrumSound, DrumStepEvent, getDrumSoundForPitch } from '../data/drumGrooves';
+import { applyGlideToCents, applyGlideToRate, GlideCurve, planGlissando, sortedItemPitches } from './glissando';
 import {
   createConcertHallImpulse,
   DrumKitType,
@@ -1371,7 +1372,8 @@ class SoundEngine {
     volume: number = 0.7,
     pitch?: Pitch,
     targetCtx?: BaseAudioContext,
-    destinationNode?: AudioNode
+    destinationNode?: AudioNode,
+    glide?: GlideCurve
   ): { stop: () => void } {
     const ctx = targetCtx || this.ctx;
     if (!ctx) return { stop: () => {} };
@@ -1436,6 +1438,7 @@ class SoundEngine {
       const sampleSrc = ctx.createBufferSource();
       sampleSrc.buffer = acousticSample.buffer;
       sampleSrc.playbackRate.setValueAtTime(acousticSample.playbackRate, startTime);
+      if (glide) applyGlideToRate(sampleSrc.playbackRate, glide, acousticSample.playbackRate);
 
       // Velocity/tone shaping filter so soft dynamics sound mellow and loud dynamics sound bright
       const toneFilter = ctx.createBiquadFilter();
@@ -1510,7 +1513,8 @@ class SoundEngine {
           duration,
           instrumentId,
           synthBlendVolume,
-          masterGain
+          masterGain,
+          glide
         );
         activeNodes.push(bodyHandle);
       }
@@ -1537,7 +1541,8 @@ class SoundEngine {
       duration,
       instrumentId,
       normalizedVolume,
-      masterGain
+      masterGain,
+      glide
     );
     activeNodes.push(synthHandle);
 
@@ -1565,9 +1570,12 @@ class SoundEngine {
     duration: number,
     instrumentId: InstrumentId,
     volume: number,
-    destination: AudioNode
+    destination: AudioNode,
+    glide?: GlideCurve
   ): { stop: () => void } {
     const layerGain = ctx.createGain();
+    // Vibrato LFOs keep their own rate during a glissando; every sounding oscillator follows the glide.
+    const glideSkip = new Set<unknown>();
     layerGain.gain.setValueAtTime(0.0001, startTime);
     layerGain.connect(destination);
 
@@ -1585,6 +1593,7 @@ class SoundEngine {
 
         // Vibrato LFO
         const lfo = ctx.createOscillator();
+        glideSkip.add(lfo);
         const lfoGain = ctx.createGain();
         lfo.frequency.setValueAtTime(5.2, startTime);
         lfoGain.gain.setValueAtTime(instrumentId === 'recorder' ? freq * 0.004 : freq * 0.011, startTime);
@@ -1806,6 +1815,7 @@ class SoundEngine {
         osc.frequency.setValueAtTime(freq, startTime);
 
         const lfo = ctx.createOscillator();
+        glideSkip.add(lfo);
         const lfoGain = ctx.createGain();
         lfo.type = 'sine';
         const isTremolo = instrumentId === 'tremolo_strings';
@@ -2145,6 +2155,12 @@ class SoundEngine {
       }
     }
 
+    if (glide) {
+      nodes.forEach((n) => {
+        if (n instanceof OscillatorNode && !glideSkip.has(n)) applyGlideToCents(n.detune, glide);
+      });
+    }
+
     return {
       stop: () => {
         try {
@@ -2377,8 +2393,20 @@ class SoundEngine {
             }
           }
 
+          const gliss = planGlissando(
+            flatItems,
+            idx,
+            lookaheadIdx,
+            track.instrumentId,
+            score.keySignature,
+            tiedContinuationIndices
+          );
+          if (gliss.mode === 'slide') totalItemDurationSec += gliss.extraDurationSec;
+
           const itemPitches =
-            item.pitches && item.pitches.length > 0
+            gliss.mode === 'slide'
+              ? sortedItemPitches(item, score.keySignature)
+              : item.pitches && item.pitches.length > 0
               ? item.pitches
               : item.pitch
               ? [item.pitch]
@@ -2386,7 +2414,7 @@ class SoundEngine {
 
           const polyphonyScale = 1 / Math.sqrt(Math.max(1, itemPitches.length));
 
-          itemPitches.forEach((p) => {
+          itemPitches.forEach((p, voiceIdx) => {
             // Note: track.volume and activeTrackCountScale are applied by strip.faderGain so live fader changes work!
             let effectiveVolume = 0.96 * polyphonyScale;
             if (item.dynamic) {
@@ -2415,6 +2443,9 @@ class SoundEngine {
             } else if (item.articulation === 'fermata') {
               notePlayDuration = totalItemDurationSec * 1.4;
             }
+            if (gliss.mode === 'slide' && gliss.endTime !== null) {
+              notePlayDuration = Math.max(0.05, gliss.endTime - noteStartTime + 0.02);
+            }
 
             const soundNode = this.synthesizeInstrumentNote(
               getPitchFrequency(p, score.keySignature),
@@ -2424,12 +2455,30 @@ class SoundEngine {
               effectiveVolume,
               p,
               liveCtx,
-              strip.input
+              strip.input,
+              gliss.mode === 'slide' ? gliss.curves[voiceIdx] : undefined
             );
             if (soundNode) {
               this.scheduledSources.push(soundNode);
             }
           });
+
+          if (gliss.mode === 'run') {
+            const runVolume = 0.62 / Math.sqrt(Math.max(1, itemPitches.length));
+            gliss.notes.forEach((rn) => {
+              const runNode = this.synthesizeInstrumentNote(
+                getPitchFrequency(rn.pitch, score.keySignature),
+                rn.time,
+                rn.durationSec,
+                track.instrumentId,
+                runVolume,
+                rn.pitch,
+                liveCtx,
+                strip.input
+              );
+              if (runNode) this.scheduledSources.push(runNode);
+            });
+          }
         }
       });
     });
@@ -2662,8 +2711,20 @@ class SoundEngine {
             }
           }
 
+          const gliss = planGlissando(
+            flatItems,
+            idx,
+            lookaheadIdx,
+            track.instrumentId,
+            score.keySignature,
+            tiedContinuationIndices
+          );
+          if (gliss.mode === 'slide') totalItemDurationSec += gliss.extraDurationSec;
+
           const itemPitches =
-            item.pitches && item.pitches.length > 0
+            gliss.mode === 'slide'
+              ? sortedItemPitches(item, score.keySignature)
+              : item.pitches && item.pitches.length > 0
               ? item.pitches
               : item.pitch
               ? [item.pitch]
@@ -2671,7 +2732,7 @@ class SoundEngine {
 
           const polyphonyScale = 1 / Math.sqrt(Math.max(1, itemPitches.length));
 
-          itemPitches.forEach((p) => {
+          itemPitches.forEach((p, voiceIdx) => {
             let effectiveVolume = 0.96 * polyphonyScale;
             if (item.dynamic) {
               const dynamicScales: Record<string, number> = {
@@ -2694,6 +2755,9 @@ class SoundEngine {
               effectiveVolume *= 1.3;
               notePlayDuration = totalItemDurationSec * 0.6;
             } else if (item.articulation === 'fermata') notePlayDuration = totalItemDurationSec * 1.4;
+            if (gliss.mode === 'slide' && gliss.endTime !== null) {
+              notePlayDuration = Math.max(0.05, gliss.endTime - noteStartTime + 0.02);
+            }
 
             this.synthesizeInstrumentNote(
               getPitchFrequency(p, score.keySignature),
@@ -2703,9 +2767,26 @@ class SoundEngine {
               effectiveVolume,
               p,
               offlineCtx,
-              strip.input
+              strip.input,
+              gliss.mode === 'slide' ? gliss.curves[voiceIdx] : undefined
             );
           });
+
+          if (gliss.mode === 'run') {
+            const runVolume = 0.62 / Math.sqrt(Math.max(1, itemPitches.length));
+            gliss.notes.forEach((rn) => {
+              this.synthesizeInstrumentNote(
+                getPitchFrequency(rn.pitch, score.keySignature),
+                rn.time,
+                rn.durationSec,
+                track.instrumentId,
+                runVolume,
+                rn.pitch,
+                offlineCtx,
+                strip.input
+              );
+            });
+          }
         }
       });
     });
