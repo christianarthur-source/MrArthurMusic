@@ -144,7 +144,7 @@ interface ToolCardDef {
 
 /** The additional classroom tools: one grid of picture tiles (see LabToolArt.tsx), every tile the same size. */
 const TOOL_GROUPS: { heading: string; note: string; ids: string[] }[] = [
-  { heading: 'Make and play', note: 'Beats, songs and games', ids: ['beat-machine', 'typebeat', 'song-starter', 'staff-wars'] },
+  { heading: 'Make and play', note: 'Beats, songs and games', ids: ['beat-machine', 'looper', 'typebeat', 'song-starter', 'staff-wars'] },
   { heading: 'Practice', note: 'Ears, symbols and instruments', ids: ['solfege-trainer', 'music-symbol-match', 'dynamic-ears', 'instrument-zoo'] },
   { heading: 'Teacher helpers', note: 'Smartboard ready', ids: ['metronome', 'tempo-tapper', 'tuner'] },
 ];
@@ -152,6 +152,7 @@ const TOOL_ORDER = TOOL_GROUPS.flatMap((g) => g.ids);
 
 const TOOL_CARDS: Record<string, ToolCardDef> = {
   'beat-machine': { title: 'Beat Machine', accent: 'amber' },
+  looper: { title: 'Looper', accent: 'amber' },
   typebeat: { title: 'Type Beat', accent: 'rose' },
   'staff-wars': { title: 'Staff Wars', accent: 'sky' },
   'song-starter': { title: 'Song Starter', accent: 'orange' },

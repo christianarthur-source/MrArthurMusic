@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0b0f19">
+<title>Looper · Mr. Arthur's Music Lab</title>
+<meta name="description" content="Record a loop, then layer more sounds on top. Make music out of your own sounds.">
+<link rel="icon" type="image/png" sizes="32x32" href="/mr-arthur-favicon-32.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/fonts.css">
+<link rel="stylesheet" href="/suite/tokens.css">
+<link rel="stylesheet" href="/suite/suite-header.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<script src="/suite/suite-header.js" data-name="Looper" data-icon="🔁" data-help="Tap the big red button and make a sound. Tap again to stop and your loop plays forever. Tap + Layer to add more on top."></script>
+
+<main class="wrap">
+  <header class="top">
+    <h1 class="title">Loop<b>er</b></h1>
+    <p class="lead" id="lead">Make a sound, loop it, layer it.</p>
+    <details class="tools" id="tools"><summary class="chip">⚙️ Beat &amp; setup</summary><div class="toolsbody">
+  <section class="panel" aria-labelledby="metH">
+    <div class="phead"><h2 id="metH">🥁 Beat helper</h2>
+      <button type="button" class="chip tog" id="metOn" aria-pressed="false">Off</button></div>
+    <div class="mrow">
+      <div class="bpm"><button type="button" class="step" id="bpmDn" aria-label="Slower">−</button><output id="bpmOut">100</output><small>beats / min</small><button type="button" class="step" id="bpmUp" aria-label="Faster">+</button></div>
+    </div>
+    <div class="chips" id="soundChips" role="group" aria-label="Sound"></div>
+    <div class="chips" id="feelChips" role="group" aria-label="Feel"></div>
+    <div class="chips"><button type="button" class="chip tog on" id="countIn" aria-pressed="true">1-2-3-4 count in</button></div>
+  </section>
+
+  <section class="panel">
+    <div class="phead"><h2>🎯 Sound check</h2><button type="button" class="chip" id="calBtn">Start</button></div>
+    <p class="hint" id="calTxt">Do this once: it measures the delay of your device so your layers land right on the beat. Turn the volume up and hold the speaker near the mic.</p>
+  </section>
+
+    <section class="panel">
+      <div class="phead"><h2>💾 Keep your song</h2></div>
+      <div class="chips" style="margin-top:0"><button type="button" class="chip" id="saveBtn">Save</button><button type="button" class="chip" id="loadBtn">Open</button><button type="button" class="chip" id="wavBtn">⬇️ WAV file</button></div>
+      <p class="hint" id="keepTxt">Saves on this computer only. The WAV has your loops, volume, pan and mute (not the sound changers).</p>
+    </section>
+
+  <section class="panel test" id="testPanel" hidden>
+    <div class="phead"><h2>🧪 Sync test</h2><button type="button" class="chip" id="soakBtn">Run 10 min</button></div>
+    <p class="hint" id="soakOut">Records a loop from a test tone, adds layers, then watches the audio clock for 10 minutes. Reports skipped audio blocks (should be 0).</p>
+  </section>
+
+    </div></details>
+  </header>
+
+  <div class="layout">
+  <section class="grid" id="grid" aria-label="Your 24 loops"></section>
+
+  <section class="stage" id="stage" data-state="empty" aria-label="Loop">
+    <h2 class="slotname" id="slotName">Loop 1</h2>
+    <div class="ringbox">
+      <svg class="ring" viewBox="0 0 200 200" aria-hidden="true">
+        <circle class="track" cx="100" cy="100" r="88"/>
+        <circle class="prog" id="prog" cx="100" cy="100" r="88" transform="rotate(-90 100 100)"/>
+        <g id="head"><circle class="dot" cx="100" cy="12" r="7"/></g>
+      </svg>
+      <button type="button" class="big" id="bigBtn" aria-label="Record">
+        <span class="bigico" id="bigIco">⏺</span>
+        <span class="bigtxt" id="bigTxt">Record</span>
+      </button>
+    </div>
+    <div class="mic" aria-hidden="true"><i id="micBar"></i></div>
+
+    <div class="row">
+      <button type="button" class="rbtn" id="playBtn" disabled aria-label="Stop or play"><span id="playIco">⏹</span><small id="playTxt">Stop</small></button>
+      <button type="button" class="rbtn" id="muteBtn" disabled aria-pressed="false" aria-label="Mute"><span>🔊</span><small>Mute</small></button>
+      <button type="button" class="rbtn" id="undoBtn" disabled aria-label="Undo last layer"><span>↩️</span><small>Undo</small></button>
+      <button type="button" class="rbtn danger" id="clearBtn" disabled aria-label="Clear loop"><span>🗑️</span><small>Clear</small></button>
+    </div>
+
+    <div class="sizerow" id="sizeRow" hidden><span>How long?</span><div class="chips" id="sizeChips" role="group" aria-label="Loop length"></div></div>
+
+    <div class="mix">
+      <label class="sl" for="vol"><span class="ico">🔊</span>
+        <input type="range" id="vol" min="0" max="100" value="80" aria-label="Volume"></label>
+      <div class="pan" id="pan" role="slider" tabindex="0" aria-label="Left and right" aria-valuemin="-100" aria-valuemax="100" aria-valuenow="0">
+        <span class="lr">L</span><div class="pantrack"><div class="panthumb" id="panThumb"></div></div><span class="lr">R</span>
+      </div>
+    </div>
+    <div class="fx"><h3>✨ Sound changer</h3><div class="chips" id="fxChips" role="group" aria-label="Effect"></div>
+      <label class="sl" id="fxAmtRow" hidden><span class="ico">🎚️</span><input type="range" id="fxAmt" min="0" max="100" value="50" aria-label="How much"></label></div>
+    <p class="status" id="status" role="status" aria-live="polite"></p>
+  </section>
+
+  </div>
+</main>
+
+<div class="splash" id="splash">
+  <button type="button" class="startbtn" id="startBtn">🎙️<span>Tap to start</span></button>
+  <p id="splashMsg">Your browser will ask to use the microphone. Choose Allow.</p>
+</div>
+
+<div class="modal" id="modal" hidden role="dialog" aria-modal="true" aria-labelledby="modalQ">
+  <div class="card"><p id="modalQ">Erase this loop?</p>
+    <div class="mbtns"><button type="button" class="chip" id="mNo">Keep it</button><button type="button" class="chip bad" id="mYes">Erase</button></div></div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

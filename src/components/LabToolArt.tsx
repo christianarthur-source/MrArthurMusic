@@ -53,6 +53,17 @@ const BeatMachineArt = () => {
   );
 };
 
+/** Looper: a ring with a playhead dot and a big record button in the middle. */
+const LooperArt = () => (
+  <Svg>
+    <circle cx="60" cy="52" r="34" fill="none" stroke={P.slateLine} strokeWidth="8" />
+    <path d="M60 18 A34 34 0 1 1 28 64" fill="none" stroke={P.amber} strokeWidth="8" strokeLinecap="round" />
+    <circle cx="60" cy="18" r="6" fill="#fff" />
+    <circle cx="60" cy="52" r="17" fill={P.rose} />
+    <circle cx="60" cy="52" r="6" fill="#fff" opacity="0.85" />
+  </Svg>
+);
+
 /** Type Beat: a strip of coloured beat blocks above a few drum-coloured keys, one of them pressed. */
 const TypeBeatArt = () => {
   const blocks = [P.rose, P.amber, P.orange, P.amber, P.rose, P.sky];
@@ -295,6 +306,7 @@ const TunerArt = () => {
 
 export const LAB_TOOL_ART: Record<string, React.FC> = {
   'beat-machine': BeatMachineArt,
+  looper: LooperArt,
   typebeat: TypeBeatArt,
   'staff-wars': StaffWarsArt,
   'song-starter': SongStarterArt,
