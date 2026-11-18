@@ -1,4 +1,5 @@
-// Song library for the "Songs" guide. Every tune here is in the public domain.
+// Song library for the "Songs" guide. Public-domain tunes, plus short teacher-made riff arrangements
+// ("Riffs & Themes", each under 30 seconds, converted from Mr. Arthur's own MIDI files).
 // Notes are written as NAME+OCTAVE, optionally followed by /beats (1 beat when left out): "E4 D4 C4/2".
 // C4 is middle C. Use # for sharps and b for flats. Only the melody is stored (one note at a time).
 // R is a rest ("R/.5"): the guide skips it, Listen waits for it.
@@ -11,6 +12,7 @@ export const LEVELS = {
   piano: { name: 'Piano Pieces', em: '🎹', c: '#ff8fb1' },
   famous: { name: 'Heard It Online', em: '🔥', c: '#ff5d8f' },
   world: { name: 'Around the World', em: '🌏', c: '#6fe3c4' },
+  riffs: { name: 'Riffs & Themes', em: '🎬', c: '#b59cff' },
 };
 
 export const SONGS = [
@@ -117,6 +119,14 @@ export const SONGS = [
     notes: 'D4/2 D4 A4/2 A4 E4/1.5 F4/.5 E4 D4/3 R A4 C5/2 D5 C5/2 A4 B4 G4 A4/3 R D5/2 D5 D5/2 C5 A4 A4 G4 F4 E4 C4/2 D4/2 A4 G4/2 F4 E4 D4 C4 D4/3' },
   { id: 'weasel', level: 'folk', title: 'Pop Goes the Weasel', bpm: 104,
     notes: 'C4 C4/.5 D4 D4/.5 E4/.5 G4/.5 E4/.5 C4/1.5 C4 C4/.5 D4 D4/.5 E4/1.5 C4/1.5 C4 C4/.5 D4 D4/.5 E4/.5 G4/.5 E4/.5 C4/1.5 A4/1.5 D4 F4/.5 E4/1.5 C4/1.5' },
+
+  // ------------------------------------------------------------------ riffs & themes (from Mr. Arthur's MIDI files, Desktop/Midimusic songs)
+  { id: 'dust', level: 'riffs', title: 'Bites the Dust', bpm: 110,
+    notes: 'A3 A3 A3/2.5 A3/.5 A3/.5 C4/.5 A3/.5 D4/1.5 A3 A3 A3/2.5 A3/.5 A3/.5 C4/.5 A3/.5 D4/1.5 R/.25 E4/.25 E4/.25 D4/.5 C4/.5 A3/.5 E4/.25 E4/.25 D4/.5 C4/.5 A3/1 R/.25 E4/.5 E4/.5 E4/.5 E4/.25 D4/1.75 A3 A3 A3/2.5 A3/.5 A3/.5 C4/.5 A3/.5 D4/1.5' },
+  { id: 'myers', level: 'riffs', title: 'M. Myers', bpm: 120,
+    notes: 'E4/.5 A3/.5 A3/.5 E4/.5 A3/.5 A3/.5 E4/.5 A3/.5 F4/.5 A3/.5 E4/.5 A3/.5 A3/.5 E4/.5 A3/.5 A3/.5 E4/.5 A3/.5 F4/.5 A3/.5' },
+  { id: 'stranger', level: 'riffs', title: 'Stranger Things', bpm: 180,
+    notes: 'E3/.5 G3/.5 B3/.5 C4/.5 B3/.5 G3/.5 E3/.5 G3/.5 B3/.5 C4/.5 B3/.5 G3/.5 E3/.5 G3/.5 B3/.5 C4/.5 B3/.5 G3/.5 E3/.5 G3/.5 B3/.5 C4/.5 B3/.5 G3/.5 C3/.5 G3/.5 B3/.5 C4/.5 B3/.5 G3/.5 C3/.5 G3/.5 B3/.5 C4/.5 B3/.5 G3/.5 C3/.5 G3/.5 B3/.5 C4/.5 B3/.5 G3/.5 C3/.5 G3/.5 B3/.5 C4/.5 B3/.5 G3/.5 E3/.5 G3/.5 B3/.5 C4/.5 B3/.5 G3/.5 E3/.5 G3/.5 B3/.5 C4/.5 B3/.5 G3/.5 E3/4' },
 ];
 
 const STEP = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
