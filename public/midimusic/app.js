@@ -981,9 +981,7 @@ const DUET_NEED = 'Duet needs 2 MIDI keyboards plugged in. Plug in a second one!
 function updateDuetAvail() {
   const ready = duetReady();
   const btn = $('duetBtn');
-  btn.classList.toggle('locked', !ready);
-  btn.setAttribute('aria-disabled', String(!ready));
-  btn.title = ready ? 'Duet: two players, two keyboards, two sounds' : DUET_NEED;
+  btn.hidden = !ready; // Duet only shows up once two keyboards are plugged in
   if (!ready && duet.on) {
     if (chal && needsDuet(chal.def)) stopChallenge();
     setDuet(false);
@@ -1121,7 +1119,7 @@ const pick = (list, not) => {
 const starText = (n) => '★'.repeat(n) + '☆'.repeat(3 - n);
 
 function drawChallenges() {
-  gridEl.innerHTML = PATHS.map((path) => `<div class="pathhead" style="--c:${path.c}"><span>${path.em}</span>${path.name}${path.id === 'duet' ? `<span class="pathnote">${duetReady() ? '2 keyboards ✓' : '🔒 needs 2 MIDI keyboards'}</span>` : ''}</div>`
+  gridEl.innerHTML = PATHS.filter((path) => path.id !== 'duet' || duetReady()).map((path) => `<div class="pathhead" style="--c:${path.c}"><span>${path.em}</span>${path.name}${path.id === 'duet' ? '<span class="pathnote">2 keyboards ✓</span>' : ''}</div>`
     + CHALLENGES.filter((c) => c.path === path.id).map((c) => {
       const n = best[c.id] || 0;
       const locked = needsDuet(c) && !duetReady();
@@ -2337,6 +2335,7 @@ function placeTour() {
   const step = TOUR[tour.i];
   const target = document.querySelector(step.at);
   if (!target || !target.offsetParent && target.id !== 'kb') { // hidden on this screen size: skip it
+    if (tour.back && tour.i > 0) { tour.i--; return placeTour(); }
     if (tour.i < TOUR.length - 1) { tour.i++; return placeTour(); }
     return endTour();
   }
@@ -2368,8 +2367,8 @@ function placeTour() {
   bubble.classList.toggle('inside', r.height > vh * 0.4);
 }
 
-$('tourNext').addEventListener('click', () => { if (tour.i >= TOUR.length - 1) return endTour(); tour.i++; placeTour(); });
-$('tourBack').addEventListener('click', () => { if (tour.i > 0) { tour.i--; placeTour(); } });
+$('tourNext').addEventListener('click', () => { if (tour.i >= TOUR.length - 1) return endTour(); tour.i++; tour.back = false; placeTour(); });
+$('tourBack').addEventListener('click', () => { if (tour.i > 0) { tour.i--; tour.back = true; placeTour(); } });
 $('tourSkip').addEventListener('click', endTour);
 window.addEventListener('keydown', (e) => { if (e.key === 'Escape') { endTour(); setHelp(false); } }, true);
 function maybeStartTour() {
