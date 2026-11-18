@@ -131,7 +131,7 @@ export const SONGS = [
     notes: 'G4 E4 D4 B3 G4 E4 D4 B3 D4 E4/2 F#4 G4/3' },
   { id: 'starwars', level: 'riffs', title: 'Star Wars', bpm: 104,
     notes: 'G3/2 D4/2 C4/.33 B3/.33 A3/.34 G4/2 D4/1 C4/.33 B3/.33 A3/.34 G4/2 D4/1 C4/.33 B3/.33 C4/.34 A3/3' },
-  { id: 'badguy', level: 'riffs', title: 'bad guy', bpm: 135,
+  { id: 'badguy', level: 'riffs', title: 'Bad Guy', bpm: 135,
     notes: 'G3/1.5 G3/.5 Bb3/.5 G3 G3 G3 G3/.5 Bb3/.5 G3/.5 F3 G3/1.5 G3/.5 Bb3/.5 G3 G3 G3 G3/.5 Bb3/.5 G3/.5 F3 C4/1.5 C4/.5 Eb4/.5 C4 C4 C4 C4/.5 Eb4/.5 C4/.5 Bb3 A3/1.5 A3/.5 D4/.5 A3 A3' },
 ];
 
