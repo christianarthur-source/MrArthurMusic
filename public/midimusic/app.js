@@ -3,6 +3,7 @@
 // so notes go straight from the MIDI/pointer/key event to the audio thread with no scheduling delay.
 import { WorkletSynthesizer } from './vendor/spessasynth.js';
 import { SONGS, LEVELS, parseNotes } from './songs.js';
+import { CHALLENGES, PATHS, pcOf, chordOf } from './challenges.js';
 
 // The SoundFont is shared with the rest of the site (same origin, cached by the browser for 30 days).
 const SF_PARTS = ['/audio/soundfont/MuseScore_General.sf3.partaa', '/audio/soundfont/MuseScore_General.sf3.partab'];
@@ -66,6 +67,10 @@ class Engine {
     this.want = { prog: 0, drum: false, sample: null };
     this.reverb = 45;
     this.sustain = false;
+    // Duet: Player 2 has its own instrument on its own channel (1 for melodic sounds, 10 for a drum kit).
+    // Its sound is installed as a separate bank shifted to bank 1, so it never collides with Player 1's.
+    this.p2 = { prog: 0, drum: false, ready: false, sustain: false };
+    this.queued = [null, null]; // [Player 1's next instrument, Player 2's next instrument]
     this.voices = new Map(); // starter-synth voices, used only until the SoundFont has loaded
     this.held = new Set();
   }
@@ -111,8 +116,24 @@ class Engine {
     const job = this.building;
     this.building = null;
     job?.resolve(false);
-    this.queued?.resolve(false);
-    this.queued = null;
+    for (const q of this.queued) q?.resolve(false);
+    this.queued = [null, null];
+  }
+
+  /** The synth channel a player's notes go to. Player 2 uses Player 1's channel until its own sound is ready. */
+  chOf(p) {
+    if (p !== 1 || !this.p2.ready) return this.ch;
+    return this.p2.drum ? 10 : 1;
+  }
+
+  /** Chooses Player 2's instrument (duet). */
+  setP2Instrument(prog, drum) {
+    if (!this.worker) return Promise.resolve(false);
+    return new Promise((resolve) => {
+      this.queued[1]?.resolve(false);
+      this.queued[1] = { slot: 1, prog, drum, sample: null, resolve };
+      this.pump();
+    });
   }
 
   /** Chooses the instrument. The previous one keeps playing until the new one is decoded and ready. */
@@ -121,16 +142,18 @@ class Engine {
     this.want = { prog, drum, sample };
     if (!this.worker) return Promise.resolve(false);
     return new Promise((resolve) => {
-      this.queued?.resolve(false); // a newer choice replaces one that has not started decoding yet
-      this.queued = { prog, drum, sample, resolve };
+      this.queued[0]?.resolve(false); // a newer choice replaces one that has not started decoding yet
+      this.queued[0] = { slot: 0, prog, drum, sample, resolve };
       this.pump();
     });
   }
 
   pump() {
-    if (this.building || !this.queued) return;
-    this.building = this.queued;
-    this.queued = null;
+    if (this.building) return;
+    const slot = this.queued[0] ? 0 : this.queued[1] ? 1 : -1;
+    if (slot < 0) return;
+    this.building = this.queued[slot];
+    this.queued[slot] = null;
     const job = this.building;
     if (job.sample) {
       const smp = job.sample;
@@ -150,7 +173,9 @@ class Engine {
     let ok = false;
     try {
       if (m.type !== 'built') throw new Error(m.message);
-      if (!this.queued) { // skip installing a sound the student has already moved on from
+      if (job.slot === 1) {
+        if (!this.queued[1]) ok = await this.installP2(m.buffer, job);
+      } else if (!this.queued[0]) { // skip installing a sound the student has already moved on from
         const synth = this.synth ?? this.pendingSynth;
         await synth.soundBankManager.addSoundBank(m.buffer, 'inst');
         await synth.isReady;
@@ -186,7 +211,7 @@ class Engine {
 
   async applyFull() {
     const m = this.fullWaiting;
-    if (!m || this.building || this.queued) return;
+    if (!m || this.building || this.queued[0]) return;
     if (m.token !== this.installedToken || !this.synth) { this.fullWaiting = null; return; } // the student moved on
     this.fullWaiting = null;
     try {
@@ -199,19 +224,48 @@ class Engine {
     }
   }
 
-  noteOn(note, vel) {
+  /** Installs Player 2's sound (duet) next to Player 1's. */
+  async installP2(buffer, job) {
+    const synth = this.synth ?? this.pendingSynth;
+    if (!synth) return false;
+    const old = this.p2.ready ? this.chOf(1) : -1;
+    // melodic sounds sit in bank 1 so they never replace Player 1's; drum kits are found on their own drum channel
+    await synth.soundBankManager.addSoundBank(buffer, 'inst2', job.drum ? 0 : 1);
+    await synth.isReady;
+    if (old >= 0) for (const c of [1, 10]) if (c !== (job.drum ? 10 : 1)) synth.controllerChange(c, 123, 0);
+    this.p2 = { prog: job.prog, drum: job.drum, ready: true, sustain: this.p2.sustain };
+    const ch = this.chOf(1);
+    if (job.drum && !this.drum10) {
+      try { synth.midiChannels[10].setDrums(true); this.drum10 = true; } catch (err) { console.warn('No second drum channel', err); }
+    }
+    if (!job.drum) synth.controllerChange(ch, 0, 1); // bank select: Player 2's bank
+    synth.programChange(ch, job.prog);
+    synth.controllerChange(ch, 91, this.reverb);
+    synth.controllerChange(ch, 93, 0);
+    synth.controllerChange(ch, 1, 0);
+    synth.controllerChange(ch, 64, this.p2.sustain ? 127 : 0);
+    return true;
+  }
+
+  noteOn(note, vel, p = 0) {
     if (note < 0 || note > 127) return;
-    if (this.synth) this.synth.noteOn(this.ch, note, vel);
+    if (this.synth) this.synth.noteOn(this.chOf(p), note, vel);
     else this.starterOn(note, vel);
   }
 
-  noteOff(note) {
+  noteOff(note, p = 0) {
     if (note < 0 || note > 127) return;
-    if (this.synth) this.synth.noteOff(this.ch, note);
+    if (this.synth) this.synth.noteOff(this.chOf(p), note);
     else this.starterOff(note, false);
   }
 
-  setSustain(on) {
+  setSustain(on, p = 0) {
+    if (p === 1) {
+      this.p2.sustain = on;
+      if (this.synth && this.p2.ready) this.synth.controllerChange(this.chOf(1), 64, on ? 127 : 0);
+      else if (!this.p2.ready) this.setSustain(on || this.sustain, 0);
+      return;
+    }
     this.sustain = on;
     if (this.synth) this.synth.controllerChange(this.ch, 64, on ? 127 : 0);
     else if (!on) for (const n of [...this.voices.keys()]) if (!this.held.has(n)) this.starterOff(n, true);
@@ -224,19 +278,20 @@ class Engine {
     this.synth.noteOff(9, note, { time: time + 0.12 });
   }
 
-  cc(controller, value) { this.synth?.controllerChange(this.ch, controller, value); }
-  bend(value14) { this.synth?.pitchWheel(this.ch, value14); }
-  pressure(value) { this.synth?.channelPressure(this.ch, value); }
+  cc(controller, value, p = 0) { this.synth?.controllerChange(this.chOf(p), controller, value); }
+  bend(value14, p = 0) { this.synth?.pitchWheel(this.chOf(p), value14); }
+  pressure(value, p = 0) { this.synth?.channelPressure(this.chOf(p), value); }
   setReverb(value) {
     this.reverb = value;
     this.synth?.controllerChange(this.ch, 91, value);
+    if (this.p2.ready) this.synth?.controllerChange(this.chOf(1), 91, value);
   }
   /** The "Reset the sound" button: like pressing Panic on a hardware keyboard. */
   reset() {
     const synth = this.synth;
     if (synth) {
       synth.stopAll(true); // cut every voice, even ones still ringing out
-      for (const ch of new Set([this.ch, 0, 9])) {
+      for (const ch of new Set([this.ch, 0, 9, 1, 10])) {
         synth.controllerChange(ch, 123, 0); // all notes off
         synth.controllerChange(ch, 120, 0); // all sound off
         synth.controllerChange(ch, 121, 0); // reset controllers (pedal, bend, mod, pressure)
@@ -249,8 +304,16 @@ class Engine {
       if (this.ch !== 9) synth.programChange(9, 0);
       synth.controllerChange(this.ch, 91, this.reverb);
       synth.controllerChange(this.ch, 93, 0);
+      if (this.p2.ready) {
+        const c2 = this.chOf(1);
+        if (!this.p2.drum) synth.controllerChange(c2, 0, 1);
+        synth.programChange(c2, this.p2.prog);
+        synth.controllerChange(c2, 91, this.reverb);
+        synth.controllerChange(c2, 93, 0);
+      }
     }
     this.sustain = false;
+    this.p2.sustain = false;
     this.held.clear();
     for (const n of [...this.voices.keys()]) this.starterOff(n, true);
   }
@@ -346,28 +409,48 @@ const state = {
   showKeys: saved.showKeys ?? !matchMedia('(pointer: coarse)').matches, // which computer key plays each note
   menuOpen: false, // is the drop-down under the menu row showing?
   song: null, // { def, notes, i, demo } while a song guide is running
-  latch: false, spaceDown: false, pedalDown: false,
+  latch: false, spaceDown: false, pedal: [false, false], // a MIDI sustain pedal is held, per player
 };
 
 // ---------------------------------------------------------------- playing notes
 // Each input (a finger, a computer key, a MIDI key) is a "source". The sounding note is remembered per
 // source so changing the transpose while holding a key still releases the right note.
-const sources = new Map(); // sourceId -> { key, note }
-const keyCount = new Map(); // on-screen key -> how many sources hold it
-const noteCount = new Map(); // sounding note -> how many sources hold it
+const sources = new Map(); // sourceId -> { key, note, p }
+const keyCount = new Map(); // player * 128 + on-screen key -> how many sources hold it
+const noteCount = new Map(); // player * 128 + sounding note -> how many sources hold it
 const keyEls = new Map(); // note -> element
+const KEY_ON = ['on', 'on2']; // Player 1's and Player 2's lit-key class
+
+// ---- Duet: two players, each with their own keyboard, sound and color
+// Every input (one MIDI keyboard, the computer keys, the screen) belongs to one player.
+const duet = {
+  on: false,
+  assign: new Map(), // input ('m:<id>', 'k', 'p') -> 0 | 1
+  claim: 0, // 1 or 2 while "press a key to pick your keyboard" waits for that player
+  inst2: null, // Player 2's instrument (set after the instrument list is built)
+  oct: [0, 0], // octave shift per player, for MIDI keyboards
+  pickFor: 0, // which player the instrument menu is choosing for
+};
+const inputOf = (src) => (src.startsWith('m:') ? src.slice(0, src.indexOf(':', 2)) : src.startsWith('k:') ? 'k' : src.startsWith('p:') ? 'p' : null);
+function playerOf(src) {
+  if (!duet.on) return 0;
+  const input = inputOf(src);
+  return input ? duet.assign.get(input) ?? 0 : 0;
+}
 
 function press(src, key, vel) {
   if (sources.has(src)) release(src);
+  const p = src === 'demo' ? (chal?.demoP ?? 0) : src === 'demo2' ? 1 : playerOf(src);
   const note = key + state.transpose;
-  if (sampler.pickRoot && src !== 'demo') return setSampleRoot(note); // "Move it": this key is the sound's new home
-  engine.noteOn(note, vel); // sound first, pixels second
-  sources.set(src, { key, note });
-  noteCount.set(note, (noteCount.get(note) || 0) + 1);
-  const c = (keyCount.get(key) || 0) + 1;
-  keyCount.set(key, c);
-  if (c === 1) keyEls.get(key)?.classList.add('on');
-  if (state.song && src !== 'demo') songHit(key);
+  if (sampler.pickRoot && !src.startsWith('demo')) return setSampleRoot(note); // "Move it": this key is the sound's new home
+  engine.noteOn(note, vel, p); // sound first, pixels second
+  sources.set(src, { key, note, p });
+  noteCount.set(p * 128 + note, (noteCount.get(p * 128 + note) || 0) + 1);
+  const c = (keyCount.get(p * 128 + key) || 0) + 1;
+  keyCount.set(p * 128 + key, c);
+  if (c === 1) keyEls.get(key)?.classList.add(KEY_ON[p]);
+  if (state.song && !src.startsWith('demo')) songHit(key);
+  if (chal && !src.startsWith('demo')) chalHit(key, p, src);
   queuePlaying();
 }
 
@@ -375,10 +458,12 @@ function release(src) {
   const s = sources.get(src);
   if (!s) return;
   sources.delete(src);
-  const n = (noteCount.get(s.note) || 1) - 1;
-  if (n <= 0) { noteCount.delete(s.note); engine.noteOff(s.note); } else noteCount.set(s.note, n);
-  const c = (keyCount.get(s.key) || 1) - 1;
-  if (c <= 0) { keyCount.delete(s.key); keyEls.get(s.key)?.classList.remove('on'); } else keyCount.set(s.key, c);
+  const nk = s.p * 128 + s.note;
+  const n = (noteCount.get(nk) || 1) - 1;
+  if (n <= 0) { noteCount.delete(nk); engine.noteOff(s.note, s.p); } else noteCount.set(nk, n);
+  const kk = s.p * 128 + s.key;
+  const c = (keyCount.get(kk) || 1) - 1;
+  if (c <= 0) { keyCount.delete(kk); keyEls.get(s.key)?.classList.remove(KEY_ON[s.p]); } else keyCount.set(kk, c);
   queuePlaying();
 }
 
@@ -409,7 +494,7 @@ function drawPlaying() {
   playingQueued = false;
   const el = $('playing');
   if (state.song) return drawSongStatus(el);
-  const notes = [...noteCount.keys()].sort((a, b) => a - b);
+  const notes = [...new Set([...noteCount.keys()].map((k) => k % 128))].sort((a, b) => a - b);
   if (!notes.length) {
     el.innerHTML = '<span class="playing-hint">Play something! 🎶</span>';
     return;
@@ -420,8 +505,10 @@ function drawPlaying() {
 
 // ---------------------------------------------------------------- sustain / transpose / octave
 function updateSustain() {
-  const on = state.latch || state.spaceDown || state.pedalDown;
+  const on = state.latch || state.spaceDown || state.pedal[0];
   if (on !== engine.sustain) engine.setSustain(on);
+  const on2 = state.latch || state.spaceDown || state.pedal[1];
+  if (on2 !== engine.p2.sustain) engine.setSustain(on2, 1);
   $('susBtn').setAttribute('aria-pressed', String(on));
 }
 
@@ -482,7 +569,7 @@ function buildKeyboard() {
   for (let n = first; n <= last; n++) {
     const el = document.createElement('div');
     const black = isBlack(n);
-    el.className = 'key ' + (black ? 'b' : 'w') + (n === 60 ? ' mid' : '') + (keyCount.has(n) ? ' on' : '');
+    el.className = 'key ' + (black ? 'b' : 'w') + (n === 60 ? ' mid' : '') + (keyCount.has(n) ? ' on' : '') + (keyCount.has(128 + n) ? ' on2' : '');
     el.dataset.n = n;
     if (black) {
       const bw = 0.62 / whites;
@@ -503,6 +590,7 @@ function buildKeyboard() {
   $('octVal').textContent = `${noteName(first)}–${noteName(last)}`;
   $('sizeVal').textContent = state.octaves;
   showGuide(false);
+  if (chal) chalGlow();
 }
 
 // Pointer events: every finger is tracked separately (multitouch), and sliding across keys plays them.
@@ -519,6 +607,7 @@ kb.addEventListener('pointerdown', (e) => {
   unlockAudio();
   try { kb.setPointerCapture(e.pointerId); } catch { /* fine without capture */ }
   const k = keyAt(e.clientX, e.clientY);
+  if (k && duet.on) claimInput('p');
   if (k) press('p:' + e.pointerId, k.n, k.vel);
 });
 kb.addEventListener('pointermove', (e) => {
@@ -544,6 +633,7 @@ window.addEventListener('keydown', (e) => {
     e.preventDefault();
     if (e.repeat) return;
     unlockAudio();
+    if (duet.on) claimInput('k');
     press('k:' + e.code, typingBase() + i, 100);
     return;
   }
@@ -597,20 +687,31 @@ function onMidiMessage(e) {
   const d = e.data;
   if (!d || d.length < 2) return;
   const cmd = d[0] & 0xf0;
-  const src = 'm:' + (d[0] & 0x0f) + ':' + d[1];
-  if (cmd === 0x90 && d[2] > 0) { press(src, d[1], d[2]); if (!state.song) follow(d[1]); } // the view stays put during a song
-  else if (cmd === 0x80 || cmd === 0x90) release(src);
+  const input = 'm:' + (e.target?.id ?? e.currentTarget?.id ?? '?');
+  if (cmd === 0x90 && d[2] > 0 && duet.on) claimInput(input);
+  const p = duet.on ? duet.assign.get(input) ?? 0 : 0;
+  // the source names the keyboard too, so two keyboards playing the same key never cut each other off
+  const src = input + ':' + (d[0] & 0x0f) + ':' + d[1];
+  if (cmd === 0x90 && d[2] > 0) {
+    const key = d[1] + (duet.on ? 12 * duet.oct[p] : 0);
+    press(src, key, d[2]);
+    if (!state.song && !chal) follow(key); // the view stays put during a song or a challenge
+  } else if (cmd === 0x80 || cmd === 0x90) release(src);
   else if (cmd === 0xb0) {
-    if (d[1] === 64) { state.pedalDown = d[2] >= 64; updateSustain(); }
-    else if (d[1] === 1) { engine.cc(1, d[2]); showMod(d[2] / 127); }
-    else if (d[1] === 123 || d[1] === 120) { releaseAll('m:'); }
+    if (d[1] === 64) { state.pedal[p] = d[2] >= 64; updateSustain(); }
+    else if (d[1] === 1) { engine.cc(1, d[2], p); if (p === 0) showMod(d[2] / 127); }
+    else if (d[1] === 123 || d[1] === 120) { releaseAll(input + ':'); }
     // every other knob and slider is ignored on purpose: a bumped knob must never silence a student's keyboard
   } else if (cmd === 0xe0) {
     const v = (d[2] << 7) | d[1];
-    engine.bend(v);
-    showBend((v - 8192) / 8192);
-  } else if (cmd === 0xd0) engine.pressure(d[1]);
-  else if (cmd === 0xc0) { const inst = byId('m' + d[1]); if (inst) selectInstrument(inst, true); }
+    engine.bend(v, p);
+    if (p === 0) showBend((v - 8192) / 8192);
+  } else if (cmd === 0xd0) engine.pressure(d[1], p);
+  else if (cmd === 0xc0) {
+    const inst = byId('m' + d[1]);
+    if (inst && p === 1) setP2Instrument(inst, true);
+    else if (inst) selectInstrument(inst, true);
+  }
   else return;
   if (helpOpen() && !helpHeard) { helpHeard = true; drawHelpMidi(); }
   if (!hitTimer) {
@@ -632,17 +733,36 @@ function midiName(input) {
   return name.replace(/^DONNER\b/, 'Donner');
 }
 
+let midiIds = new Set(); // the keyboards (MIDI inputs) plugged in right now
+const midiInputs = new Map(); // id -> friendly name, numbered when two keyboards have the same name
 function refreshMidi() {
   if (!midiAccess) return;
   const names = [];
+  const ids = new Set();
+  const count = new Map();
+  midiInputs.clear();
   for (const input of midiAccess.inputs.values()) {
     if (input.state === 'disconnected') continue;
     input.onmidimessage = onMidiMessage; // assigning again is harmless, and it opens a newly plugged-in device
     // Chromebooks list a built-in "Midi Through" port that is not a keyboard
     if (/midi through|^through/i.test(input.name || '')) continue;
     const name = midiName(input);
+    ids.add(input.id);
+    const k = (count.get(name) || 0) + 1;
+    count.set(name, k);
+    midiInputs.set(input.id, k > 1 ? `${name} (${k})` : name);
     if (!names.includes(name)) names.push(name); // some keyboards show up as two ports
   }
+  // a keyboard that was unplugged: let go of its notes and its pedal
+  for (const id of midiIds) {
+    if (ids.has(id)) continue;
+    releaseAll('m:' + id + ':');
+    const p = duet.assign.get('m:' + id);
+    if (p != null) { state.pedal[p] = false; duet.assign.delete('m:' + id); }
+  }
+  if (!ids.size) state.pedal = [false, false];
+  updateSustain();
+  midiIds = ids;
   midiList = names;
   midiBlocked = false;
   const was = midiBtn.dataset.names || '';
@@ -650,13 +770,19 @@ function refreshMidi() {
   midiBtn.dataset.names = now;
   midiBtn.classList.toggle('on', names.length > 0);
   midiBtn.classList.remove('ask');
-  $('midiText').textContent = names.length ? names[0] + (names.length > 1 ? ` +${names.length - 1}` : '') : 'Plug in a MIDI keyboard';
-  midiBtn.title = names.length ? 'Connected: ' + names.join(', ') : 'No MIDI keyboard found yet. Plug one in with USB — it connects by itself.';
+  const two = ids.size > 1 && names.length === 1; // two keyboards of the same kind
+  $('midiText').textContent = names.length ? names[0] + (two ? ' ×' + ids.size : names.length > 1 ? ` +${names.length - 1}` : '') : 'Plug in a MIDI keyboard';
+  midiBtn.title = names.length ? 'Connected: ' + [...midiInputs.values()].join(', ') : 'No MIDI keyboard found yet. Plug one in with USB — it connects by itself.';
   if (helpOpen()) drawHelpMidi();
-  if (now !== was) {
-    if (!names.length && was) { releaseAll('m:'); state.pedalDown = false; updateSustain(); toast('MIDI keyboard unplugged'); }
-    else if (names.length && midiBtn.dataset.ready) toast('🎹 ' + names[names.length - 1] + ' connected!');
+  updateDuetAvail();
+  if (duet.on) drawDuet();
+  if (now !== was || ids.size !== Number(midiBtn.dataset.count || 0)) {
+    if (!names.length && was) toast('MIDI keyboard unplugged');
+    else if (ids.size > Number(midiBtn.dataset.count || 0) && midiBtn.dataset.ready) {
+      toast(ids.size > 1 && !duet.on ? '🎹 Two keyboards! Press 👥 Duet to give each player their own sound.' : '🎹 ' + names[names.length - 1] + ' connected!');
+    }
   }
+  midiBtn.dataset.count = ids.size;
   midiBtn.dataset.ready = '1';
 }
 
@@ -700,7 +826,7 @@ const searchEl = $('search');
 /** Opens or closes the drop-down under the menu row. */
 function setMenu(open) {
   state.menuOpen = open;
-  if (!open) cancelCapture();
+  if (!open) { cancelCapture(); duet.pickFor = 0; }
   gridEl.classList.toggle('open', open);
   drawTabs();
   if (open) { drawGrid(); gridEl.scrollTop = 0; }
@@ -711,7 +837,7 @@ function drawTabs() {
   // the instrument families are small chips on the left…
   tabsEl.innerHTML = '<span class="tabs-label">Instruments</span>' + CATEGORIES.map((c) => `<button class="tab" role="tab" data-tab="${c.id}" style="--c:${c.c}" aria-selected="${on(c.id)}" aria-haspopup="true"><span class="tab-em">${c.em}</span>${c.name}</button>`).join('');
   // …and the things to do sit apart on the right, under the search box
-  const acts = [{ id: 'songs', em: '🎵', name: 'Songs', c: '#39e36b' }, { id: 'groove', em: '🥁', name: 'Grooves', c: '#ff7a59' }, { id: 'sampler', em: '🎙️', name: 'Sampler', c: '#ff4d6d' }, { id: 'fav', em: '⭐', name: 'Favorites', c: '#ffb020' }];
+  const acts = [{ id: 'songs', em: '🎵', name: 'Songs', c: '#39e36b' }, { id: 'chal', em: '🏆', name: 'Challenges', c: '#ffd447' }, { id: 'groove', em: '🥁', name: 'Grooves', c: '#ff7a59' }, { id: 'sampler', em: '🎙️', name: 'Sampler', c: '#ff4d6d' }, { id: 'fav', em: '⭐', name: 'Favorites', c: '#ffb020' }];
   actsEl.innerHTML = acts.map((t) => `<button class="tab act" role="tab" data-tab="${t.id}" style="--c:${t.c}" aria-selected="${on(t.id)}" aria-haspopup="true" title="${t.name}"><span class="tab-em">${t.em}</span><span class="tab-nm">${t.name}</span><span class="caret">▾</span></button>`).join('');
 }
 
@@ -719,6 +845,7 @@ function drawGrid() {
   const q = searchEl.value.trim().toLowerCase();
   const samplerView = !q && state.tab === 'sampler';
   gridEl.classList.toggle('panel', samplerView);
+  gridEl.classList.toggle('chalgrid', !q && state.tab === 'chal');
   if (samplerView) return drawSampler();
   cancelCapture();
   if (!q && state.tab === 'songs') {
@@ -726,6 +853,7 @@ function drawGrid() {
     return;
   }
   if (!q && state.tab === 'groove') return drawGrooves();
+  if (!q && state.tab === 'chal') return drawChallenges();
   let list;
   if (q) list = INSTRUMENTS.filter((i) => i.name.toLowerCase().includes(q) || i.cat.name.toLowerCase().includes(q));
   else if (state.tab === 'fav') list = INSTRUMENTS.filter((i) => state.favs.has(i.id));
@@ -734,13 +862,15 @@ function drawGrid() {
     gridEl.innerHTML = `<div class="empty">${q ? 'No sounds match that. Try another word!' : 'Tap the ☆ on any sound to keep it here.'}</div>`;
     return;
   }
-  gridEl.innerHTML = list.map((i) => `<button class="card${i === state.inst ? ' sel' : ''}" data-id="${i.id}" style="--c:${i.cat.c}"><span class="em">${i.drum ? '🥁' : i.cat.em}</span><span class="nm">${i.name}</span><span class="fav${state.favs.has(i.id) ? ' on' : ''}" data-fav="${i.id}" role="button" aria-label="Favorite">${state.favs.has(i.id) ? '★' : '☆'}</span></button>`).join('');
+  const cur = duet.pickFor === 1 ? duet.inst2 : state.inst;
+  gridEl.innerHTML = (duet.pickFor === 1 ? '<div class="picking">🟠 Choosing a sound for <b>Player 2</b></div>' : '') + list.map((i) => `<button class="card${i === cur ? ' sel' : ''}" data-id="${i.id}" style="--c:${i.cat.c}"><span class="em">${i.drum ? '🥁' : i.cat.em}</span><span class="nm">${i.name}</span><span class="fav${state.favs.has(i.id) ? ' on' : ''}" data-fav="${i.id}" role="button" aria-label="Favorite">${state.favs.has(i.id) ? '★' : '☆'}</span></button>`).join('');
 }
 
 function selectInstrument(inst, quiet) {
   if (inst.drum !== state.inst.drum) releaseAll();
   state.inst = inst;
   $('curName').textContent = inst.name;
+  if (duet.on) drawDuet();
   $('curIcon').textContent = inst.drum ? '🥁' : inst.cat.em;
   $('current').classList.add('busy');
   document.documentElement.style.setProperty('--kc', inst.cat.c);
@@ -784,8 +914,12 @@ gridEl.addEventListener('click', (e) => {
   if (tempoStep) return setTempo(groove.bpm + Number(tempoStep.dataset.tempo));
   if (card?.dataset.groove) return toggleGroove(GROOVES.find((g) => g.id === card.dataset.groove));
   if (card?.dataset.song) { setMenu(false); return startSong(SONGS.find((sg) => sg.id === card.dataset.song)); }
+  const link = e.target.closest('[data-link]');
+  if (link) return copyChallengeLink(link.dataset.link);
+  if (card?.dataset.chal) { setMenu(false); return startChallenge(CHALLENGES.find((c) => c.id === card.dataset.chal)); }
   const inst = card && byId(card.dataset.id);
-  if (inst) { searchEl.value = ''; setMenu(false); selectInstrument(inst); }
+  if (inst && duet.pickFor === 1) { searchEl.value = ''; setMenu(false); setP2Instrument(inst); }
+  else if (inst) { searchEl.value = ''; setMenu(false); selectInstrument(inst); }
 });
 searchEl.addEventListener('input', () => setMenu(searchEl.value.trim() !== ''));
 searchEl.addEventListener('focus', () => { if (searchEl.value.trim()) setMenu(true); });
@@ -815,7 +949,7 @@ $('octUp').addEventListener('click', () => setStart(state.start + 12));
 $('trDown').addEventListener('click', () => setTranspose(state.transpose - 1));
 $('trUp').addEventListener('click', () => setTranspose(state.transpose + 1));
 $('trVal').addEventListener('dblclick', () => setTranspose(0));
-$('susBtn').addEventListener('click', () => { state.latch = !(state.latch || state.spaceDown || state.pedalDown); state.spaceDown = false; updateSustain(); });
+$('susBtn').addEventListener('click', () => { state.latch = !(state.latch || state.spaceDown || state.pedal[0]); state.spaceDown = false; updateSustain(); });
 function setOctaves(n) {
   state.want = Math.max(1, Math.min(7, n));
   if (state.song) state.beforeSong = null; // the student chose a size during a song: keep it afterwards
@@ -833,6 +967,679 @@ function drawLabelButtons() {
 $('namesBtn').addEventListener('click', () => { state.showNotes = !state.showNotes; save({ showNotes: state.showNotes }); drawLabelButtons(); buildKeyboard(); });
 $('keysBtn').addEventListener('click', () => { state.showKeys = !state.showKeys; save({ showKeys: state.showKeys }); drawLabelButtons(); buildKeyboard(); });
 
+// ---------------------------------------------------------------- duet
+// Two players, two keyboards (or one keyboard plus the computer keys / screen). Each player has their
+// own sound, octave and color. A keyboard joins the first player who doesn't have one yet the first time
+// a key is pressed on it, so a silent second port of a single keyboard never "steals" a player.
+const P_NAMES = ['Player 1', 'Player 2'];
+// Duet needs two MIDI keyboards plugged in. (Some keyboards show up as two ports, which also counts as two;
+// the players are still sorted out by which keyboard actually plays.)
+let fakeKeyboards = 0; // ?debug only: pretend keyboards are plugged in
+const duetReady = () => midiIds.size + fakeKeyboards >= 2;
+const needsDuet = (def) => def.path === 'duet';
+const DUET_NEED = 'Duet needs 2 MIDI keyboards plugged in. Plug in a second one!';
+function updateDuetAvail() {
+  const ready = duetReady();
+  const btn = $('duetBtn');
+  btn.classList.toggle('locked', !ready);
+  btn.setAttribute('aria-disabled', String(!ready));
+  btn.title = ready ? 'Duet: two players, two keyboards, two sounds' : DUET_NEED;
+  if (!ready && duet.on) {
+    if (chal && needsDuet(chal.def)) stopChallenge();
+    setDuet(false);
+    toast('👥 Duet ended: only one keyboard is plugged in now.');
+  }
+  if (state.tab === 'chal' && state.menuOpen) drawGrid();
+}
+function autoAssign() {
+  duet.assign.clear();
+  duet.assign.set('p', 0); // the screen and the computer keys stay with Player 1
+  duet.assign.set('k', 0);
+}
+
+function claimInput(input) {
+  if (duet.claim) {
+    const p = duet.claim - 1;
+    if (p === 1 && duet.assign.get(input) === 0 && duet.claimed === input) return; // Player 1's keyboard again: still waiting for Player 2
+    for (const [k, v] of duet.assign) if (v === p && k !== input && k.startsWith('m:') === input.startsWith('m:')) duet.assign.delete(k);
+    duet.assign.set(input, p);
+    duet.claimed = input;
+    if (p === 0) duet.claim = 2;
+    else { duet.claim = 0; toast('👥 Ready! Player 1 and Player 2 are set.'); }
+    drawDuet();
+    return;
+  }
+  if (duet.assign.has(input) || !input.startsWith('m:')) return;
+  const has = (p) => [...duet.assign].some(([k, v]) => v === p && k.startsWith('m:'));
+  const p = !has(0) ? 0 : !has(1) ? 1 : 0;
+  duet.assign.set(input, p);
+  drawDuet();
+}
+
+function setDuet(on) {
+  if (on === duet.on) return;
+  if (on && !duetReady()) { toast(DUET_NEED); return; }
+  releaseAll();
+  duet.on = on;
+  duet.claim = 0;
+  if (on) {
+    autoAssign();
+    if (!engine.p2.ready || engine.p2.prog !== duet.inst2.prog || engine.p2.drum !== duet.inst2.drum) setP2Instrument(duet.inst2, true);
+    if (state.want < 3) { state.beforeDuet = state.want; setOctaves(3); }
+    toast('👥 Duet! Each keyboard gets its own sound. Press ✋ to choose who is who.');
+  } else if (state.beforeDuet) { setOctaves(state.beforeDuet); state.beforeDuet = 0; }
+  state.pedal = [false, false];
+  updateSustain();
+  $('app').classList.toggle('duet', on);
+  $('duetBtn').setAttribute('aria-pressed', String(on));
+  $('duetBar').hidden = !on;
+  drawDuet();
+}
+
+function setP2Instrument(inst, quiet) {
+  if (inst.sample) return toast('The Sampler sound is for Player 1. Player 2 can pick any other sound.');
+  releaseAll(); // notes held with the old sound would hang
+  duet.inst2 = inst;
+  save({ inst2: inst.id });
+  drawDuet();
+  engine.setP2Instrument(inst.prog, inst.drum).then((ready) => {
+    if (!ready || duet.inst2 !== inst || quiet) return;
+    const n = inst.drum ? 38 : inst.cat.id === 'bass' ? 36 : 60;
+    engine.noteOn(n, 90, 1);
+    setTimeout(() => engine.noteOff(n, 1), 350);
+  });
+}
+
+function inputLabel(input) {
+  if (input === 'k') return '⌨️ Computer keys';
+  if (input === 'p') return '👆 Screen';
+  return '🎹 ' + (midiInputs.get(input.slice(2)) ?? 'MIDI keyboard');
+}
+
+function drawDuet() {
+  if (!duet.on) return;
+  const bar = $('duetBar');
+  const inst = [state.inst, duet.inst2];
+  bar.innerHTML = [0, 1].map((p) => {
+    const inputs = [...duet.assign].filter(([k, v]) => v === p && midiIds.has(k.slice(2)) || v === p && !k.startsWith('m:')).map(([k]) => k)
+      .sort((a, b) => (b.startsWith('m:') - a.startsWith('m:')));
+    const waiting = duet.claim === p + 1;
+    const where = waiting ? `<span class="waiting">✋ Press any key on your keyboard…</span>` : inputs.map((k) => `<span class="inp">${escapeHtml(inputLabel(k))}</span>`).join('');
+    return `<div class="player p${p + 1}${waiting ? ' claiming' : ''}">
+      <span class="pname">${P_NAMES[p]}</span>
+      <button class="pinst" data-duet="pick${p}" type="button" title="Choose ${P_NAMES[p]}’s sound"><span>${inst[p].drum ? '🥁' : inst[p].cat.em}</span><b>${escapeHtml(inst[p].name)}</b><span class="caret">▾</span></button>
+      <span class="poct" title="Moves this player’s MIDI keyboard up or down"><button class="step" data-duet="down${p}" type="button" aria-label="${P_NAMES[p]} octave down">−</button><span class="ctl-val narrow">${duet.oct[p] > 0 ? '+' : ''}${duet.oct[p]}</span><button class="step" data-duet="up${p}" type="button" aria-label="${P_NAMES[p]} octave up">+</button></span>
+      <span class="pinputs">${where}</span>
+    </div>`;
+  }).join('<div class="duetmid"><button class="toggle small" data-duet="claim" type="button" title="Each player presses a key to pick their keyboard">✋ Who’s who?</button><button class="toggle small" data-duet="swap" type="button" title="Swap the players’ keyboards">⇄ Swap</button></div>');
+}
+
+$('duetBtn').addEventListener('click', () => { unlockAudio(); setDuet(!duet.on); });
+$('duetBar').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-duet]');
+  if (!b) return;
+  unlockAudio();
+  const act = b.dataset.duet;
+  const p = Number(act.slice(-1));
+  if (act === 'claim') { duet.claim = 1; duet.claimed = null; drawDuet(); toast('✋ Player 1: press a key on your keyboard. Then Player 2 does the same.'); return; }
+  if (act === 'swap') {
+    for (const [k, v] of duet.assign) duet.assign.set(k, 1 - v);
+    releaseAll();
+    state.pedal = [state.pedal[1], state.pedal[0]];
+    updateSustain();
+    return drawDuet();
+  }
+  if (act.startsWith('pick')) {
+    const cur = p === 1 ? duet.inst2 : state.inst;
+    searchEl.value = '';
+    state.tab = cur.cat.id === 'sampler' ? 'piano' : cur.cat.id;
+    setMenu(true);
+    duet.pickFor = p;
+    drawGrid();
+    return;
+  }
+  if (act.startsWith('up') || act.startsWith('down')) {
+    releaseAll('m:');
+    duet.oct[p] = Math.max(-3, Math.min(3, duet.oct[p] + (act.startsWith('up') ? 1 : -1)));
+    return drawDuet();
+  }
+});
+
+// ---------------------------------------------------------------- challenges
+// Short scored tasks (see challenges.js). Notes count in any octave. Stars are kept on this device only.
+const STARS_KEY = 'midimusic.stars';
+const best = (() => {
+  try { return JSON.parse(localStorage.getItem(STARS_KEY) || '{}') || {}; } catch { return {}; }
+})();
+let chal = null; // the running challenge
+const pcName = (pc) => ['C', 'C♯', 'D', 'E♭', 'E', 'F', 'F♯', 'G', 'A♭', 'A', 'B♭', 'B'][pc];
+const pcOfKey = (k) => ((k % 12) + 12) % 12;
+const pick = (list, not) => {
+  const pool = list.length > 1 ? list.filter((x) => x !== not) : list;
+  return pool[Math.floor(Math.random() * pool.length)];
+};
+const starText = (n) => '★'.repeat(n) + '☆'.repeat(3 - n);
+
+function drawChallenges() {
+  gridEl.innerHTML = PATHS.map((path) => `<div class="pathhead" style="--c:${path.c}"><span>${path.em}</span>${path.name}${path.id === 'duet' ? `<span class="pathnote">${duetReady() ? '2 keyboards ✓' : '🔒 needs 2 MIDI keyboards'}</span>` : ''}</div>`
+    + CHALLENGES.filter((c) => c.path === path.id).map((c) => {
+      const n = best[c.id] || 0;
+      const locked = needsDuet(c) && !duetReady();
+      return `<button class="card chal${chal?.def === c ? ' sel' : ''}${locked ? ' locked' : ''}" data-chal="${c.id}" style="--c:${path.c}" title="${escapeHtml(locked ? DUET_NEED : c.how)}"><span class="em">${c.em}</span><span class="nm"><span class="t">${c.title}</span><span class="stars${n ? ' got' : ''}" aria-label="${n} stars">${starText(n)}</span></span><span class="fav" data-link="${c.id}" role="button" title="Copy a link to this challenge (for teachers)" aria-label="Copy link">🔗</span></button>`;
+    }).join('')).join('');
+}
+
+function copyChallengeLink(id) {
+  const url = location.origin + location.pathname + '?challenge=' + id;
+  const done = () => toast('🔗 Link copied! Post it for your class: ' + url);
+  if (navigator.clipboard?.writeText) navigator.clipboard.writeText(url).then(done, () => toast(url));
+  else toast(url);
+}
+
+function startChallenge(def) {
+  if (!def) return;
+  unlockAudio();
+  if (chal) stopChallenge(true);
+  if (state.song) stopSong();
+  if (needsDuet(def) && !duetReady()) { toast(DUET_NEED); return; }
+  if (needsDuet(def) && !duet.on) setDuet(true);
+  if (needsDuet(def) && def.type !== 'partner') { // melodies and harmonies need pitched sounds, not a drum kit
+    if (state.inst.drum) selectInstrument(byId('m0'), true);
+    if (duet.inst2.drum) setP2Instrument(byId('m12'), true);
+  }
+  chal = { def, round: 0, rounds: 0, step: 0, mistakes: 0, tries: 0, timers: [], phase: 'play', demoP: 0 };
+  const t = def.type;
+  if (t === 'name') { chal.rounds = def.rounds; chal.pool = def.pool.map(pcOf); chal.target = pick(chal.pool); }
+  else if (t === 'seq') { chal.notes = parseNotes(def.notes); chal.rounds = chal.notes.length; }
+  else if (t === 'chord') {
+    const names = def.chords ?? Array.from({ length: def.rounds }).reduce((acc) => [...acc, pick(def.pool, acc[acc.length - 1])], []);
+    chal.list = names.map(chordOf);
+    chal.rounds = chal.list.length;
+  } else if (t === 'echo') { chal.pool = parseNotes(def.pool); chal.rounds = def.lengths.length; newEcho(); }
+  else if (t === 'improv') {
+    chal.rounds = def.seconds;
+    chal.allowed = new Set(def.allowed.map(pcOf));
+    chal.count = 0;
+    chal.good = 0;
+    chal.left = def.seconds;
+    chal.phase = 'ready'; // the clock starts with the first note
+  } else if (t === 'partner') { chal.rounds = def.rounds; chal.leader = 0; chal.phase = 'lead'; chal.pattern = []; }
+  else if (t === 'ostinato') {
+    chal.riff = parseNotes(def.riff);
+    chal.allowed = new Set(def.allowed.map(pcOf));
+    chal.half = 0; chal.passes = 0; chal.count = 0; chal.good = 0;
+    chal.rounds = 2;
+    chal.phase = 'learn';
+  } else if (t === 'parts') {
+    const part = (txt) => txt.trim().split(/\s+/).map((tok) => (tok === '-' ? null : parseNotes(tok)[0]));
+    const a = part(def.a);
+    const b = part(def.b);
+    chal.steps = a.map((x, i) => ({ a: x, b: b[i] }));
+    chal.half = 0;
+    chal.rounds = chal.steps.length * (def.swap ? 2 : 1);
+    resetGot();
+    chal.phase = 'listen'; // both parts play first (below)
+  }
+  if (!state.beforeChal) state.beforeChal = { want: state.want, start: state.start };
+  state.want = Math.max(state.want, 3);
+  buildKeyboard();
+  setStart(48);
+  kb.classList.toggle('nonames', !!def.hideNames);
+  startChalGroove();
+  $('chalBar').hidden = false;
+  if (t === 'parts') chal.timers.push(setTimeout(() => chal?.def === def && playParts(), 400)); // hear both parts first
+  chalGlow();
+  drawChal();
+  queuePlaying();
+  if (state.tab === 'chal' && state.menuOpen) drawGrid();
+}
+
+function startChalGroove() {
+  const def = chal?.def;
+  if (!def?.groove) return;
+  const g = GROOVES.find((x) => x.id === def.groove);
+  if (!g || groove.style === g || !engine.synth) return;
+  toggleGroove(g);
+  if (def.bpm) setTempo(def.bpm);
+  chal.startedGroove = true;
+}
+
+/** quiet: switching straight to another challenge (keep the view as it is) */
+function stopChallenge(quiet) {
+  if (!chal) return;
+  for (const t of chal.timers) clearTimeout(t);
+  clearInterval(chal.clock);
+  release('demo');
+  if (chal.startedGroove && groove.style) toggleGroove(null);
+  chal = null;
+  $('chalBar').hidden = true;
+  $('chalDone').hidden = true;
+  kb.classList.remove('nonames');
+  for (const el of kb.querySelectorAll('.guide, .solo, .g1, .g2')) el.classList.remove('guide', 'solo', 'g1', 'g2');
+  release('demo2');
+  if (!quiet && state.beforeChal) {
+    state.want = state.beforeChal.want;
+    const start = state.beforeChal.start;
+    state.beforeChal = null;
+    buildKeyboard();
+    setStart(start);
+  }
+  queuePlaying();
+  if (state.tab === 'chal' && state.menuOpen) drawGrid();
+}
+
+/** Lights the keys a challenge wants (when it gives that help). */
+function chalGlow() {
+  for (const el of kb.querySelectorAll('.guide, .solo, .g1, .g2')) el.classList.remove('guide', 'solo', 'g1', 'g2');
+  if (!chal || chal.phase === 'done') return;
+  const def = chal.def;
+  const light = (n, cls = 'guide') => keyEls.get(n)?.classList.add(cls);
+  const base = state.start + (state.octaves >= 3 ? 12 : 0); // chords sit in the middle octave of the view
+  if (def.type === 'seq' && def.glow && chal.step < chal.notes.length) {
+    const n = chal.notes[chal.step].n;
+    if (!keyEls.has(n)) follow(n);
+    light(n);
+  } else if (def.type === 'chord' && def.glow && chal.round < chal.rounds) {
+    const c = chal.list[chal.round];
+    const root = base + c.root;
+    for (const pc of c.pcs) light(root + ((pc - c.root + 12) % 12));
+  }
+  if (def.type === 'improv' && def.glow) for (const [n] of keyEls) if (chal.allowed.has(pcOfKey(n))) light(n);
+  if (def.type === 'ostinato') {
+    const rp = riffPlayer();
+    light(chal.riff[chal.step].n, 'g' + (rp + 1));
+    if (chal.phase === 'jam') {
+      kb.style.setProperty('--solo', `var(--p${2 - rp})`);
+      const top = Math.max(...chal.riff.map((x) => x.n));
+      for (const [n] of keyEls) if (chal.allowed.has(pcOfKey(n)) && n > top) light(n, 'solo');
+    }
+  }
+  if (def.type === 'parts' && chal.phase !== 'listen') {
+    for (const p of [0, 1]) {
+      const t = partTarget(p);
+      if (t && !chal.got[p]) light(t.n, 'g' + (p + 1));
+    }
+  }
+  if (def.soloKeys) {
+    const solo = new Set(def.soloKeys.map(pcOf));
+    kb.style.setProperty('--solo', 'var(--p2)');
+    for (const [n] of keyEls) if (solo.has(pcOfKey(n)) && n >= base + 12) light(n, 'solo');
+  }
+}
+
+function flashKey(key, cls) {
+  const el = keyEls.get(key);
+  if (!el) return;
+  el.classList.remove('hit', 'miss');
+  void el.offsetWidth; // restart the animation
+  el.classList.add(cls);
+  setTimeout(() => el.classList.remove(cls), 380);
+}
+
+function miss(key) {
+  chal.mistakes++;
+  flashKey(key, 'miss');
+  drawChal();
+}
+
+/** Plays notes for the student to listen to (Echo Me, or a partner's pattern). */
+function playPattern(notes, p, done, after = 'play') {
+  chal.phase = 'listen';
+  chal.demoP = p;
+  drawChal();
+  let t = 350;
+  for (const n of notes) {
+    chal.timers.push(setTimeout(() => press('demo', n, 96), t));
+    chal.timers.push(setTimeout(() => release('demo'), t + 380));
+    t += 520;
+  }
+  chal.timers.push(setTimeout(() => {
+    if (!chal) return;
+    chal.phase = after;
+    if (after === 'play') chal.step = 0;
+    done?.();
+    chalGlow();
+    drawChal();
+  }, t));
+}
+
+// ---- Ostinato + Solo: the riff player learns the riff (it must be played through learnTimes times),
+// then a timed jam: the riff keeps going while the partner solos on the glowing keys. Then they switch.
+const riffPlayer = () => chal.half;
+function ostinatoHit(key, p, pc) {
+  const rp = riffPlayer();
+  if (p === rp) {
+    if (pc !== pcOfKey(chal.riff[chal.step].n)) return miss(key);
+    flashKey(key, 'hit');
+    chal.step = (chal.step + 1) % chal.riff.length;
+    if (chal.step === 0 && chal.phase === 'learn' && ++chal.passes >= (chal.def.learnTimes || 2)) startJam();
+    chalGlow();
+    return;
+  }
+  if (chal.phase !== 'jam') return; // the soloist warms up while the riff is learned
+  chal.count++;
+  if (chal.allowed.has(pc)) { chal.good++; flashKey(key, 'hit'); } else flashKey(key, 'miss');
+}
+
+function startJam() {
+  chal.phase = 'jam';
+  chal.left = chal.def.seconds;
+  toast(`🎸 ${P_NAMES[1 - riffPlayer()]}, take a solo! ${P_NAMES[riffPlayer()]}, keep the riff going!`);
+  clearInterval(chal.clock);
+  chal.clock = setInterval(() => {
+    if (!chal) return;
+    chal.left--;
+    if (chal.left > 0) return drawChal();
+    clearInterval(chal.clock);
+    chal.round++;
+    if (chal.half === 1) return finishChallenge();
+    chal.half = 1;
+    chal.phase = 'learn';
+    chal.passes = 0;
+    chal.step = 0;
+    toast('🔁 Switch! Player 2 learns the riff, Player 1 gets the solo.');
+    chalGlow();
+    drawChal();
+  }, 1000);
+}
+
+// ---- Parts: melody + harmony (or question + answer). Each step waits until both players played their note.
+const partOwner = (p) => ((p === 0) === (chal.half === 0) ? 'a' : 'b');
+const partTarget = (p) => chal.steps[chal.step]?.[partOwner(p)] ?? null;
+function resetGot() { chal.got = [0, 1].map((p) => !partTarget(p)); }
+
+function partsHit(key, p, pc) {
+  const t = partTarget(p);
+  if (!t || chal.got[p]) return; // not this player's turn: no penalty
+  if (pc !== pcOfKey(t.n)) return miss(key);
+  flashKey(key, 'hit');
+  chal.got[p] = true;
+  if (chal.got[0] && chal.got[1]) {
+    chal.step++;
+    chal.round++;
+    if (chal.step >= chal.steps.length) {
+      if (!chal.def.swap || chal.half === 1) return finishChallenge();
+      chal.half = 1;
+      chal.step = 0;
+      toast('🔁 Switch parts! Now Player 1 plays the ' + chal.def.names[1].toLowerCase() + '.');
+    }
+    resetGot();
+  }
+  chalGlow();
+}
+
+/** Plays both parts together (each in its player's sound), from the top. */
+function playParts() {
+  if (!chal) return;
+  const back = chal.phase;
+  chal.phase = 'listen';
+  chalGlow();
+  drawChal();
+  const beat = 60000 / (chal.def.bpm || 100);
+  let t = 200;
+  for (const st of chal.steps) {
+    let d = 0;
+    for (const p of [0, 1]) {
+      const n = st[partOwner(p)];
+      if (!n) continue;
+      const src = p === 0 ? 'demo' : 'demo2';
+      chal.timers.push(setTimeout(() => press(src, n.n, 90), t));
+      chal.timers.push(setTimeout(() => release(src), t + n.d * beat * 0.85));
+      d = Math.max(d, n.d);
+    }
+    t += (d || 1) * beat;
+  }
+  chal.demoP = 0;
+  chal.timers.push(setTimeout(() => { if (!chal) return; chal.phase = back === 'listen' ? 'play' : back; chalGlow(); drawChal(); }, t + 150));
+}
+
+function newEcho() {
+  const len = chal.def.lengths[chal.round];
+  const pool = chal.pool.map((x) => x.n);
+  const notes = [pool[0]]; // every tune starts on the first note (C), so the ear has a home
+  while (notes.length < len) notes.push(pick(pool, notes[notes.length - 1]));
+  chal.pattern = notes;
+  chal.tries = 0;
+  playPattern(notes, 0);
+}
+
+function chalHit(key, p) {
+  const def = chal.def;
+  const pc = pcOfKey(key);
+  if (chal.phase === 'done' || chal.phase === 'listen') return;
+  switch (def.type) {
+    case 'name':
+      if (pc !== chal.target) return miss(key);
+      flashKey(key, 'hit');
+      chal.round++;
+      if (chal.round >= chal.rounds) return finishChallenge();
+      chal.target = pick(chal.pool, chal.target);
+      break;
+    case 'seq':
+      if (pc !== pcOfKey(chal.notes[chal.step].n)) return miss(key);
+      flashKey(key, 'hit');
+      chal.step++;
+      chal.round = chal.step;
+      if (chal.step >= chal.notes.length) return finishChallenge();
+      chalGlow();
+      break;
+    case 'chord': {
+      if (def.duet && p !== 0) return; // Player 2 is the soloist: anything goes
+      const c = chal.list[chal.round];
+      if (!c.pcs.includes(pc)) return miss(key);
+      const held = new Set([...sources].filter(([src, x]) => !src.startsWith('demo') && (!def.duet || x.p === 0)).map(([, x]) => pcOfKey(x.key)));
+      if (!c.pcs.every((x) => held.has(x)) || [...held].some((x) => !c.pcs.includes(x))) break;
+      for (const [, x] of sources) if (c.pcs.includes(pcOfKey(x.key))) flashKey(x.key, 'hit');
+      chal.round++;
+      if (chal.round >= chal.rounds) return finishChallenge();
+      chalGlow();
+      break;
+    }
+    case 'echo':
+      if (pc !== pcOfKey(chal.pattern[chal.step])) {
+        miss(key);
+        chal.tries++;
+        if (chal.tries >= 3) { toast('That one was tricky! Here comes a new one.'); return nextEcho(); }
+        chal.phase = 'listen';
+        chal.timers.push(setTimeout(() => chal && playPattern(chal.pattern, 0), 700));
+        break;
+      }
+      flashKey(key, 'hit');
+      chal.step++;
+      if (chal.step >= chal.pattern.length) { chal.phase = 'listen'; chal.timers.push(setTimeout(nextEcho, 650)); }
+      break;
+    case 'improv':
+      if (chal.phase === 'ready') {
+        chal.phase = 'play';
+        chal.clock = setInterval(() => {
+          if (!chal) return;
+          chal.left--;
+          chal.round = def.seconds - chal.left;
+          if (chal.left <= 0) { clearInterval(chal.clock); finishChallenge(); } else drawChal();
+        }, 1000);
+      }
+      chal.count++;
+      if (chal.allowed.has(pc)) { chal.good++; flashKey(key, 'hit'); } else miss(key);
+      break;
+    case 'partner': partnerHit(key, p, pc); break;
+    case 'ostinato': ostinatoHit(key, p, pc); break;
+    case 'parts': partsHit(key, p, pc); break;
+  }
+  drawChal();
+}
+
+function nextEcho() {
+  if (!chal) return;
+  chal.round++;
+  if (chal.round >= chal.rounds) return finishChallenge();
+  newEcho();
+}
+
+// "Copy your partner": the leader plays 3–6 notes; 1.5 s of quiet (or 6 notes) locks them in; the other player copies.
+function partnerHit(key, p, pc) {
+  if (chal.phase === 'lead') {
+    if (p !== chal.leader) return;
+    chal.pattern.push(key);
+    clearTimeout(chal.lock);
+    const lock = () => {
+      if (!chal || chal.phase !== 'lead') return;
+      if (chal.pattern.length < 3) { toast('Play at least 3 notes!'); chal.pattern = []; return drawChal(); }
+      chal.phase = 'play';
+      chal.step = 0;
+      chal.tries = 0;
+      drawChal();
+    };
+    if (chal.pattern.length >= 6) chal.lock = setTimeout(lock, 350);
+    else chal.lock = setTimeout(lock, 1500);
+    chal.timers.push(chal.lock);
+    return;
+  }
+  if (p === chal.leader) return; // the leader waits while the partner copies
+  if (pc !== pcOfKey(chal.pattern[chal.step])) {
+    miss(key);
+    chal.tries++;
+    chal.step = 0;
+    if (chal.tries >= 3) { toast('Tricky one! Switch leaders.'); return nextPartner(false); }
+    return;
+  }
+  flashKey(key, 'hit');
+  chal.step++;
+  if (chal.step >= chal.pattern.length) nextPartner(true);
+}
+
+function nextPartner(ok) {
+  if (ok) chal.points = (chal.points || 0) + 1;
+  chal.round++;
+  if (chal.round >= chal.rounds) return finishChallenge();
+  chal.leader = 1 - chal.leader;
+  chal.phase = 'lead';
+  chal.pattern = [];
+  chal.step = 0;
+  drawChal();
+}
+
+function finishChallenge() {
+  const def = chal.def;
+  chal.phase = 'done';
+  clearInterval(chal.clock);
+  let n;
+  if (def.type === 'improv') {
+    const ratio = chal.count ? chal.good / chal.count : 0;
+    n = chal.count >= 12 && ratio >= 0.9 ? 3 : chal.count >= 6 && ratio >= 0.7 ? 2 : 1;
+  } else if (def.type === 'ostinato') {
+    const ratio = chal.count ? chal.good / chal.count : 0;
+    n = chal.mistakes <= 2 && chal.count >= 16 && ratio >= 0.85 ? 3 : chal.mistakes <= 6 && chal.count >= 8 && ratio >= 0.6 ? 2 : 1;
+  } else if (def.type === 'partner') {
+    const pts = chal.points || 0;
+    n = pts >= chal.rounds ? 3 : pts >= Math.ceil(chal.rounds * 0.6) ? 2 : 1;
+  } else {
+    const [a, b] = def.stars ?? (def.type === 'seq' ? [0, 3] : [1, 4]);
+    n = chal.mistakes <= a ? 3 : chal.mistakes <= b ? 2 : 1;
+  }
+  chal.stars = n;
+  const better = n > (best[def.id] || 0);
+  if (better) {
+    best[def.id] = n;
+    try { localStorage.setItem(STARS_KEY, JSON.stringify(best)); } catch { /* storage blocked: stars last until reload */ }
+  }
+  if (chal.startedGroove && groove.style) { toggleGroove(null); chal.startedGroove = false; }
+  chalGlow();
+  drawChal();
+  const path = PATHS.find((x) => x.id === def.path);
+  const detail = def.type === 'improv' ? `${chal.count} notes, ${chal.good} on the right keys`
+    : def.type === 'partner' ? `${chal.points || 0} of ${chal.rounds} copied`
+    : def.type === 'ostinato' ? `${chal.mistakes} riff slip${chal.mistakes === 1 ? '' : 's'}, ${chal.good} of ${chal.count} solo notes on the glowing keys`
+    : `${chal.mistakes} mistake${chal.mistakes === 1 ? '' : 's'}`;
+  $('chalDoneStars').textContent = starText(n);
+  $('chalDoneTitle').textContent = def.em + ' ' + def.title;
+  $('chalDoneInfo').textContent = `${path.name} · ${detail}${better && n > 1 ? ' · New best!' : ''}`;
+  $('chalDoneDate').textContent = new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+  const next = CHALLENGES[CHALLENGES.indexOf(def) + 1];
+  $('chalNext').hidden = !next;
+  $('chalNext').textContent = next ? `Next: ${next.title} ▶` : '';
+  setTimeout(() => { if (chal?.phase === 'done') $('chalDone').hidden = false; }, 450);
+}
+
+function dots(done, total) {
+  return '<span class="dots">' + Array.from({ length: total }, (_, i) => `<i class="${i < done ? 'on' : ''}"></i>`).join('') + '</span>';
+}
+const who = (p) => `<span class="who p${p + 1}">${P_NAMES[p]}</span>`;
+
+function drawChal() {
+  if (!chal) return;
+  const { def } = chal;
+  let prompt = '';
+  let prog = `${Math.min(chal.round, chal.rounds)}/${chal.rounds}`;
+  switch (def.type) {
+    case 'name': prompt = `Find <b class="big">${pcName(chal.target)}</b>`; break;
+    case 'seq': {
+      const nx = chal.notes[chal.step];
+      prompt = !nx ? '🎉' : def.hideNames ? 'Keep going! ' + dots(chal.step, chal.notes.length) : `Next: <b class="big">${nx.label}</b>`;
+      break;
+    }
+    case 'chord': {
+      const c = chal.list[chal.round];
+      const nx = chal.list[chal.round + 1];
+      prompt = c ? `${def.duet ? who(0) + ' ' : ''}Play <b class="big">${c.name}</b>${nx ? `<span class="then">then ${nx.name}</span>` : ''}${def.duet ? ` ${who(1)} solo!` : ''}` : '🎉';
+      break;
+    }
+    case 'echo':
+      prompt = chal.phase === 'listen' ? '👂 Listen…' : `Your turn! ${dots(chal.step, chal.pattern.length)}`;
+      break;
+    case 'improv':
+      prog = chal.phase === 'ready' ? `${def.seconds} s` : `⏱ ${chal.left} s`;
+      prompt = chal.phase === 'ready' ? 'Play your first note to start the clock!' : `🎵 ${chal.count} notes`;
+      break;
+    case 'ostinato': {
+      const rp = riffPlayer();
+      const riff = '<span class="riff">' + chal.riff.map((x, i) => `<i class="${i === chal.step ? 'now p' + (rp + 1) : ''}">${x.label}</i>`).join('') + '</span>';
+      prompt = chal.phase === 'jam' ? `${who(rp)} keep it going ${riff} ${who(1 - rp)} solo!`
+        : `${who(rp)} learn the riff ${riff} <span class="then">${chal.passes}/${def.learnTimes || 2} times</span>`;
+      prog = chal.phase === 'jam' ? `⏱ ${chal.left} s` : `Part ${chal.half + 1}/2`;
+      break;
+    }
+    case 'parts': {
+      if (chal.phase === 'listen') { prompt = '👂 Listen to both parts…'; break; }
+      prompt = [0, 1].map((p) => {
+        const t = partTarget(p);
+        return `${who(p)} <span class="partname">${def.names[partOwner(p) === 'a' ? 0 : 1]}</span> ${t ? `<b class="big pc${p + 1}${chal.got[p] ? ' got' : ''}">${chal.got[p] ? '✓' : t.label}</b>` : '<span class="then">wait…</span>'}`;
+      }).join('<span class="plus">+</span>');
+      prog = `${Math.min(chal.round, chal.rounds)}/${chal.rounds}`;
+      break;
+    }
+    case 'partner':
+      prompt = chal.phase === 'lead' ? `${who(chal.leader)} make up 3–6 notes${chal.pattern.length ? ' ' + dots(chal.pattern.length, Math.max(3, chal.pattern.length)) : ''}`
+        : chal.phase === 'listen' ? '👂 Listen…' : `${who(1 - chal.leader)} copy it! ${dots(chal.step, chal.pattern.length)}`;
+      prog = `${Math.min(chal.round + 1, chal.rounds)}/${chal.rounds} · ✅ ${chal.points || 0}`;
+      break;
+  }
+  if (chal.phase === 'done') prompt = `🎉 Done! <b class="big stars">${starText(chal.stars)}</b>`;
+  const replay = (def.type === 'echo' || def.type === 'partner' && chal.phase === 'play' || def.type === 'parts' && chal.phase === 'play' || def.type === 'ostinato' && chal.phase === 'learn') && chal.phase !== 'done';
+  const path = PATHS.find((x) => x.id === def.path);
+  $('chalBar').style.setProperty('--c', path.c);
+  $('chalBar').innerHTML = `<span class="ch-em">${def.em}</span>
+    <div class="ch-text"><b>${def.title}</b><span>${def.how}</span></div>
+    <div class="ch-prompt">${prompt}</div>
+    <div class="ch-score"><span>${prog}</span>${def.type === 'partner' ? '' : `<span class="ch-miss" title="Mistakes">❌ ${chal.mistakes}</span>`}</div>
+    <div class="ch-btns">${replay ? '<button class="toggle small" data-ch="hear" type="button" title="Hear it again">🔊 Again</button>' : ''}<button class="toggle small" data-ch="restart" type="button" title="Start over" aria-label="Start over">↺</button><button class="toggle small" data-ch="close" type="button" title="Close the challenge" aria-label="Close the challenge">✕</button></div>`;
+}
+
+$('chalBar').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-ch]');
+  if (!b || !chal) return;
+  unlockAudio();
+  if (b.dataset.ch === 'close') return stopChallenge();
+  if (b.dataset.ch === 'restart') return startChallenge(chal.def);
+  if (b.dataset.ch === 'hear' && chal.def.type === 'parts') return playParts();
+  if (b.dataset.ch === 'hear' && chal.def.type === 'ostinato') return playPattern([...chal.riff, ...chal.riff].map((x) => x.n), riffPlayer(), null, 'learn');
+  if (b.dataset.ch === 'hear' && chal.phase === 'play') {
+    playPattern(chal.pattern, chal.def.type === 'partner' ? chal.leader : 0); // then the student starts the tune from the top
+  }
+});
+$('chalAgain').addEventListener('click', () => { const def = chal?.def; $('chalDone').hidden = true; if (def) startChallenge(def); });
+$('chalNext').addEventListener('click', () => { const def = chal?.def; $('chalDone').hidden = true; if (def) startChallenge(CHALLENGES[CHALLENGES.indexOf(def) + 1]); });
+$('chalClose').addEventListener('click', () => { $('chalDone').hidden = true; stopChallenge(); });
+
 // ---------------------------------------------------------------- song guide
 // The next key of the tune blinks until the student plays it (in any octave, so a 25-key controller
 // always works). "Listen" plays the tune for them first.
@@ -845,9 +1652,10 @@ function stopDemo() {
 }
 
 function startSong(def) {
+  if (chal) stopChallenge();
   stopDemo();
   const notes = parseNotes(def.notes);
-  state.song = { def, notes, i: 0, demo: false };
+  state.song = { def, notes, all: parseNotes(def.notes, true), i: 0, demo: false };
   // Songs use one steady three-octave view (C3–C6 when the tune fits there), so the keyboard does not
   // jump around while the student is following the glowing keys.
   if (!state.beforeSong) state.beforeSong = { want: state.want, start: state.start };
@@ -947,7 +1755,8 @@ function listenToSong() {
   queuePlaying();
   const beat = 60000 / sg.def.bpm;
   let t = 250;
-  for (const note of sg.notes) {
+  for (const note of sg.all) {
+    if (note.rest) { t += note.d * beat; continue; }
     demoTimers.push(setTimeout(() => { follow(note.n); press('demo', note.n, 92); }, t));
     demoTimers.push(setTimeout(() => release('demo'), t + note.d * beat * 0.88));
     t += note.d * beat;
@@ -1447,7 +2256,7 @@ function drawHelpMidi() {
   } else if (!midiAccess) {
     html = `<div class="help-h">🎹 MIDI keyboards</div><div class="help-msg">I haven’t looked for a keyboard yet. Plug it in, then press the button. If Chrome asks, choose <b>Allow</b>.</div>${again}`;
   } else if (midiList.length) {
-    html = `<div class="help-h">🎹 MIDI keyboards</div><div class="help-good">✅ I can see: <b>${midiList.map(escapeHtml).join(', ')}</b></div>
+    html = `<div class="help-h">🎹 MIDI keyboards</div><div class="help-good">✅ I can see: <b>${[...midiInputs.values()].map(escapeHtml).join(', ')}</b></div>
       <div class="help-msg">${helpHeard ? '🎉 I heard a key! Everything is working.' : 'Press a key on it now — I’ll tell you when I hear it.'}</div>
       ${helpHeard ? '' : `<ol class="help-steps"><li>If keys make no sound, tap the screen once, then check the volume.</li><li>Still quiet? Try <b>Reset the sound</b> below.</li></ol>`}${again}`;
   } else {
@@ -1476,7 +2285,8 @@ helpPanel.addEventListener('click', async (e) => {
 });
 $('helpReset').addEventListener('click', () => {
   releaseAll();
-  state.latch = state.spaceDown = state.pedalDown = false;
+  state.latch = state.spaceDown = false;
+  state.pedal = [false, false];
   stopDemo();
   engine.reset();
   updateSustain();
@@ -1496,7 +2306,8 @@ window.addEventListener('resize', () => { setHelp(false); placeTour(); });
 const TOUR = [
   { at: '#kb', title: 'Play the piano!', text: 'Tap the keys, or press the letters on your computer keyboard. Plug in a MIDI keyboard to play it too.' },
   { at: '#tabs', title: 'Pick an instrument', text: 'Tap a family like Pianos or Guitars, then choose a sound. Over 130 to try!' },
-  { at: '#acts', title: 'More fun', text: '🎵 Songs show which key to press next. 🥁 Grooves play a beat. 🎙️ Sampler turns your voice into an instrument.' },
+  { at: '#acts', title: 'More fun', text: '🎵 Songs show which key to press next. 🏆 Challenges earn you stars. 🥁 Grooves play a beat. 🎙️ Sampler turns your voice into an instrument.' },
+  { at: '#duetBtn', title: 'Play with a partner', text: 'Two keyboards? Press 👥 Duet and each player gets their own sound and color.' },
   { at: '#recBtn', title: 'Record yourself', text: 'Press Record, play, then press it again. You can save your song as an MP3.' },
   { at: '#midiBtn', title: 'MIDI keyboard', text: 'Plug in a USB keyboard and it connects by itself. This shows its name.' },
   { at: '#helpBtn', title: 'Stuck? Press Help', text: 'Fix a stuck note, check your keyboard, or see this tour again any time.' },
@@ -1578,12 +2389,25 @@ function toast(msg) {
 // ---------------------------------------------------------------- start-up
 // Browsers only let sound start after a tap or key press. MIDI notes do not count, so one tap is needed.
 const startEl = $('start');
+// A teacher's link can open the page straight into a challenge, a song, or duet mode:
+//   ?challenge=scale-c   ?song=ode   ?duet
+const linkParams = new URLSearchParams(location.search);
+let fromLink = {
+  chal: CHALLENGES.find((c) => c.id === linkParams.get('challenge')),
+  song: SONGS.find((sg) => sg.id === linkParams.get('song')),
+  duet: linkParams.has('duet'),
+};
 function unlockAudio() {
   if (engine.ctx.state !== 'running') engine.ctx.resume();
   if (!startEl.hidden) {
     startEl.hidden = true;
     if (!midiAccess) connectMidi(false); // ask for MIDI now that the student has tapped
-    maybeStartTour();
+    const link = fromLink;
+    fromLink = {};
+    if (link.duet) setDuet(true);
+    if (link.chal) startChallenge(link.chal);
+    else if (link.song) startSong(link.song);
+    if (!link.chal && !link.song) maybeStartTour(); // the tour would cover what the teacher sent them to
   }
 }
 $('startBtn').addEventListener('click', unlockAudio);
@@ -1621,8 +2445,10 @@ function addDrumKits(list) {
   }
   if (!cat.drums.length) cat.drums = [[0, 'Drum Kit']];
   const keep = state.inst.id;
+  const keep2 = duet.inst2?.id;
   buildInstruments();
   state.inst = byId(keep) ?? byId('m0');
+  duet.inst2 = byId(keep2) ?? byId('m12');
 }
 
 async function loadSounds() {
@@ -1635,6 +2461,8 @@ async function loadSounds() {
     });
     addDrumKits(kits);
     $('current').classList.remove('busy');
+    startChalGroove(); // a challenge from a link may have started before the drums were ready
+    if (duet.on) setP2Instrument(duet.inst2, true);
     drawGrid();
     pill.hidden = true;
   } catch (err) {
@@ -1645,6 +2473,7 @@ async function loadSounds() {
   }
 }
 
+duet.inst2 = byId(saved.inst2) ?? byId('m12'); // Player 2 starts on the marimba: easy to tell apart from the piano
 setTranspose(0);
 drawTabs();
 selectInstrument(state.inst, true);
@@ -1652,7 +2481,11 @@ drawGrid();
 drawLabelButtons();
 buildKeyboard();
 new ResizeObserver(() => { if (fitOctaves() !== state.octaves) buildKeyboard(); else setKeyWidth(); }).observe(kb);
+updateDuetAvail();
 initMidi();
 loadSounds();
 if (engine.ctx.state === 'running') unlockAudio();
-if (location.search.includes('debug')) window.__mm = { engine, state, sources }; // for testing from the console
+if (location.search.includes('debug')) {
+  window.__mm = { engine, state, sources, duet, onMidiMessage, get chal() { return chal; } };
+  window.__mm.fakeKeyboards = (n) => { fakeKeyboards = n; updateDuetAvail(); }; // test duet without hardware
+} // for testing from the console

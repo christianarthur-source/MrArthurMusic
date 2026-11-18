@@ -58,8 +58,12 @@
       <button class="toggle small" id="songStopBtn" type="button" title="Close the song" aria-label="Close the song">✕</button>
     </div>
     <button class="toggle small groovestop" id="grooveStopBtn" type="button" hidden></button>
+    <button class="toggle duetbtn" id="duetBtn" type="button" aria-pressed="false" title="Duet: two players, two keyboards, two sounds">👥 Duet</button>
     <button class="toggle" id="toolsBtn" type="button" aria-expanded="false" title="Labels, keyboard size, transpose and reverb">🛠️ Tools ▾</button>
   </section>
+
+  <section class="duetbar" id="duetBar" hidden aria-label="Duet players"></section>
+  <section class="chalbar" id="chalBar" hidden aria-label="Challenge" aria-live="polite"></section>
 
   <section class="stage">
     <div class="wheels" id="wheels">
@@ -119,6 +123,20 @@
     <div class="rec-actions">
       <button class="toggle recsave" id="recSave" type="button">💾 Save to this device</button>
       <button class="toggle" id="recClose" type="button">Close</button>
+    </div>
+  </div>
+</div>
+<div class="overlay" id="chalDone" hidden>
+  <div class="reccard chaldone" role="dialog" aria-label="Challenge finished">
+    <span class="done-stars" id="chalDoneStars"></span>
+    <span class="rec-title" id="chalDoneTitle"></span>
+    <span class="rec-info" id="chalDoneInfo"></span>
+    <span class="done-date" id="chalDoneDate"></span>
+    <span class="done-tip">Show your teacher! 📸</span>
+    <div class="rec-actions">
+      <button class="toggle recsave" id="chalNext" type="button"></button>
+      <button class="toggle" id="chalAgain" type="button">↺ Try again</button>
+      <button class="toggle" id="chalClose" type="button">Close</button>
     </div>
   </div>
 </div>
