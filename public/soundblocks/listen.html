@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Sound Blocks · Listening page</title>
+<link rel="stylesheet" href="/fonts.css">
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'Fredoka', system-ui, sans-serif; background: #0b0f19; color: #f1f5f9; }
+  main { max-width: 980px; margin: 0 auto; padding: 16px 14px 90px; }
+  h1 { margin: 6px 0 2px; font-size: 1.7rem; }
+  p.lead { margin: 0 0 12px; color: #94a3b8; }
+  .tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .tabs button { border: 2px solid #334155; background: #0f172a; color: inherit; border-radius: 12px; padding: 6px 10px; font: inherit; cursor: pointer; }
+  .tabs button[aria-pressed="true"] { background: #fbbf24; color: #0f172a; border-color: #fbbf24; font-weight: 600; }
+  .tabs .dn { font-size: .7rem; opacity: .8; margin-left: 4px; }
+  .bar { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px; margin: 0 -4px 10px; background: #111827; border: 1px solid #334155; border-radius: 14px; }
+  .bar b { margin-right: auto; }
+  button.btn { border: 0; border-radius: 10px; padding: 8px 12px; font: inherit; font-weight: 600; cursor: pointer; background: #e2e8f0; color: #0f172a; }
+  button.btn.go { background: #4ade80; } button.btn.stop { background: #fb7185; } button.btn.warn { background: #fde68a; }
+  .row { display: grid; grid-template-columns: 34px 1fr auto auto auto auto; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 12px; background: #0f172a; border: 1px solid #1e293b; margin-bottom: 6px; }
+  .row.bad { border-color: #ef4444; background: #2a1215; }
+  .row.good { border-color: #22c55e; }
+  .sw { width: 28px; height: 28px; border-radius: 8px; }
+  .nm b { font-weight: 600; } .nm small { display: block; color: #94a3b8; font-size: .75rem; }
+  .tag { font-size: .68rem; padding: 2px 6px; border-radius: 8px; background: #1e293b; color: #cbd5e1; margin-left: 6px; }
+  .tag.x { background: #3b2f10; color: #fcd34d; }
+  .rb { border: 2px solid #334155; background: #0b1220; color: inherit; border-radius: 10px; width: 40px; height: 36px; font-size: 1.1rem; cursor: pointer; }
+  .rb[aria-pressed="true"] { background: #fbbf24; color: #0f172a; border-color: #fbbf24; }
+  .rb.no[aria-pressed="true"] { background: #ef4444; color: #fff; border-color: #ef4444; }
+  .rb.ok[aria-pressed="true"] { background: #22c55e; color: #052e16; border-color: #22c55e; }
+  .mix { width: 62px; }
+  textarea { width: 100%; height: 130px; background: #0b1220; color: #e2e8f0; border: 1px solid #334155; border-radius: 10px; padding: 8px; font: 13px ui-monospace, Menlo, monospace; }
+  .note { color: #94a3b8; font-size: .85rem; }
+  @media (max-width: 600px) { .row { grid-template-columns: 28px 1fr auto auto auto; } .row .mixcell { grid-column: 2 / 6; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>🎧 Sound Blocks listening page</h1>
+  <p class="lead">Hear every loop, mix several together (they all start in time), and mark 👎 any that sound wrong. Then copy the list and send it to Claude. Nothing here is sent anywhere; your marks stay in this browser.</p>
+  <div class="tabs" id="tabs"></div>
+  <div class="bar" id="bar">
+    <b id="wname"></b>
+    <button class="btn" id="kitBtn" title="Switch on the loops that came with this world's kit">Kit only</button>
+    <button class="btn go" id="mixPlay">▶ Play mix</button>
+    <button class="btn stop" id="mixStop">⏹ Stop</button>
+    <button class="btn" id="mixClear">Clear mix</button>
+  </div>
+  <div id="rows"></div>
+  <h2 style="margin-top:22px;font-size:1.1rem">Your list to send</h2>
+  <p class="note">👎 = swap this loop out. 👍 = keep. Copy this and paste it to Claude.</p>
+  <textarea id="out" readonly></textarea>
+  <p><button class="btn warn" id="copy">Copy list</button> <button class="btn" id="reset">Forget all my marks</button></p>
+</main>
+<script type="module" src="listen.js"></script>
+</body>
+</html>

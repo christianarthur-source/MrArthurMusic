@@ -197,7 +197,7 @@ export class Engine {
   hasClip(id) { return this.mics.has(id); }
 
   // ---- previews: one at a time ----
-  async preview(id) {
+  async preview(id, full = false) {
     const buf = await this.load(id) || this.buffers.get(id);
     if (!buf) return false;
     this.stopPreview();
@@ -208,7 +208,7 @@ export class Engine {
     src.buffer = buf;
     src.connect(gain).connect(this.master);
     const now = ctx.currentTime;
-    const len = Math.min(buf.duration, (info && info.max) || 6);
+    const len = full ? buf.duration : Math.min(buf.duration, (info && info.max) || 6);
     gain.gain.setValueAtTime(0, now);
     gain.gain.linearRampToValueAtTime(1, now + FADE);
     gain.gain.setValueAtTime(1, now + len - 0.05);
