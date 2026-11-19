@@ -1,72 +1,17 @@
-// For Educators: unlocks curriculum.enc.json with the teacher PIN, then shows it as a small hash-routed site.
+// For Educators: loads curriculum.json and shows it as a small hash-routed site (open to everyone, read-only).
 // Routes: #/  #/lessons?band=&skill=&tool=&q=  #/lesson/<id>  #/standards?grade=  #/tools  #/tool/<id>
 //         #/sequence?band=  #/resources  #/resource/<id>
-const PIN_KEY = 'mrarthur.educators.pin';
 const app = document.getElementById('app');
-let C = null; // the curriculum once unlocked
+let C = null; // the curriculum once loaded
 
-// ---------- storage (may be blocked) ----------
-const store = {
-  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
-  set(k, v) { try { localStorage.setItem(k, v); } catch { /* fine */ } },
-  del(k) { try { localStorage.removeItem(k); } catch { /* fine */ } },
-};
-
-// ---------- unlocking ----------
-const b64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
-
-async function unlock(pin) {
-  const res = await fetch('curriculum.enc.json', { cache: 'no-cache' });
-  if (!res.ok) throw new Error('load');
-  const box = await res.json();
-  const subtle = crypto.subtle;
-  const base = await subtle.importKey('raw', new TextEncoder().encode(pin), 'PBKDF2', false, ['deriveKey']);
-  const key = await subtle.deriveKey(
-    { name: 'PBKDF2', hash: 'SHA-256', salt: b64(box.salt), iterations: box.iterations },
-    base, { name: 'AES-GCM', length: 256 }, false, ['decrypt'],
-  );
-  let plain;
+async function load() {
   try {
-    plain = await subtle.decrypt({ name: 'AES-GCM', iv: b64(box.iv) }, key, b64(box.data));
+    const res = await fetch('curriculum.json', { cache: 'no-cache' });
+    if (!res.ok) throw new Error(String(res.status));
+    C = await res.json();
+    start();
   } catch {
-    throw new Error('pin');
-  }
-  const stream = new Blob([plain]).stream().pipeThrough(new DecompressionStream('gzip'));
-  return JSON.parse(await new Response(stream).text());
-}
-
-function setupGate() {
-  const form = document.getElementById('gateForm');
-  const input = document.getElementById('pin');
-  const msg = document.getElementById('gateMsg');
-  const btn = document.getElementById('gateBtn');
-  const remember = document.getElementById('remember');
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const pin = input.value.trim();
-    if (!pin) return;
-    btn.disabled = true;
-    msg.className = 'gate-msg ok';
-    msg.textContent = 'Opening…';
-    try {
-      C = await unlock(pin);
-      if (remember.checked) store.set(PIN_KEY, pin); else store.del(PIN_KEY);
-      start();
-    } catch (err) {
-      msg.className = 'gate-msg';
-      msg.textContent = err.message === 'pin' ? 'That PIN didn’t work. Check it and try again.' : 'Couldn’t load the curriculum. Check your connection and try again.';
-      input.select();
-    } finally {
-      btn.disabled = false;
-    }
-  });
-  const saved = store.get(PIN_KEY);
-  if (saved) {
-    msg.className = 'gate-msg ok';
-    msg.textContent = 'Opening…';
-    unlock(saved).then((d) => { C = d; start(); }).catch(() => { store.del(PIN_KEY); msg.textContent = ''; input.focus(); });
-  } else {
-    input.focus();
+    app.innerHTML = '<p class="loading">Couldn’t load the curriculum. Check your connection and reload the page.</p>';
   }
 }
 
@@ -107,7 +52,7 @@ function blocks(arr) {
 // ---------- lookups ----------
 const tool = (id) => C.tools.find((t) => t.id === id);
 const lesson = (id) => C.lessons.find((l) => l.id === id);
-const skillChip = (k) => { const s = C.skills[k]; return s ? `<span class="chip sk" style="--c:${s.color}">${esc(s.icon)} ${esc(s.name)}</span>` : ''; };
+const skillChip = (k) => { const s = C.skills[k]; return s ? `<span class="chip sk" style="--c:${s.color}">${esc(s.name)}</span>` : ''; };
 const bandChip = (b) => `<span class="chip band">${esc(b)}</span>`;
 const gradesOf = (band) => C.bands[band] || [];
 const ORDER = ['K', '1', '2', '3', '4', '5', '6'];
@@ -249,8 +194,8 @@ function viewLesson(id) {
   <div class="lesson-head">
     <div><h1>${esc(l.title)}</h1><div class="chips">${bandChip('Grades ' + l.grades)}${skillChip(l.skill)}${(l.skills || []).map(skillChip).join('')}</div></div>
     <div class="actions no-print">
-      ${tools.map((t) => `<a class="btn" href="${esc(toolHref(t))}" target="_blank" rel="noopener">${esc(t.emoji)} Open ${esc(t.name)} ↗</a>`).join('')}
-      <button class="btn ghost" type="button" onclick="window.print()">🖨 Print</button>
+      ${tools.map((t) => `<a class="btn" href="${esc(toolHref(t))}" target="_blank" rel="noopener">Open ${esc(t.name)} ↗</a>`).join('')}
+      <button class="btn ghost" type="button" onclick="window.print()">Print</button>
     </div>
   </div>
   <p class="lead" style="margin-top:12px">${fmt(l.summary)}</p>
@@ -315,7 +260,7 @@ function viewStandards(q) {
           ? `${fmt(s.text)}<br><span class="muted"><strong>NY:</strong> ${fmt(s.nyText)}</span>`
           : fmt(s.text || s.nyText);
         return `<div class="std-row"><div><code>${esc(s.code)}</code> ${fw}</div><div>${txt}</div>
-          <div class="uses">${ls.length ? `<div class="chips">${ts.map((id) => { const t = tool(id); return `<a class="chip" href="#/tool/${esc(id)}">${esc(t.emoji)} ${esc(t.name)}</a>`; }).join('')}</div>
+          <div class="uses">${ls.length ? `<div class="chips">${ts.map((id) => { const t = tool(id); return `<a class="chip" href="#/tool/${esc(id)}">${esc(t.name)}</a>`; }).join('')}</div>
           <p class="muted" style="margin:6px 0 0">Lessons: ${ls.map((l) => `<a href="#/lesson/${esc(l.id)}">${esc(l.title)}</a>`).join(' · ')}</p>` : '<span class="muted">Not targeted by a lesson in this band yet; see the tips in the Resources section.</span>'}</div></div>`;
       }).join('')}</section>`;
   }).join('');
@@ -325,7 +270,7 @@ function viewStandards(q) {
     C.tools.map((t) => {
       const ls = C.lessons.filter((l) => l.band === band && l.tools.includes(t.id));
       if (!ls.length) return '';
-      return `<tr><td><a href="#/tool/${esc(t.id)}">${esc(t.emoji)} ${esc(t.name)}</a></td>${C.anchors.map((a) => {
+      return `<tr><td><a href="#/tool/${esc(t.id)}">${esc(t.name)}</a></td>${C.anchors.map((a) => {
         const n = ls.filter((l) => l.standards.some((sid) => anchorOf(sid)?.n === a.n)).length;
         return `<td>${n ? `<span class="dot" title="${n} lesson(s)">${n}</span>` : ''}</td>`;
       }).join('')}</tr>`;
@@ -335,7 +280,7 @@ function viewStandards(q) {
   <h1>Standards map</h1>
   <p class="lead">Every National Core Arts Standard and New York State performance indicator for general music, grade by grade, with the Music Lab tools and lessons that teach it.</p>
   <div class="filters no-print"><div class="seg" role="group" aria-label="Grade">${grades.map((g) => `<button type="button" data-grade="${g}" aria-pressed="${g === grade}">${g === 'K' ? 'K' : 'Gr ' + g}</button>`).join('')}</div>
-  <button class="btn ghost small" type="button" onclick="window.print()">🖨 Print grade ${esc(grade)}</button></div>
+  <button class="btn ghost small" type="button" onclick="window.print()">Print grade ${esc(grade)}</button></div>
   <div class="note">${fmt(C.nyNotes)}</div>
   <h2>Crosswalk: tools × anchor standards (grades ${esc(band)})</h2>
   <p class="muted">Numbers = lessons in the ${esc(band)} band that use the tool and address that anchor. 1-3 Creating · 4-6 Performing · 7-9 Responding · 10-11 Connecting.</p>
@@ -367,7 +312,7 @@ function viewTool(id) {
   const ls = C.lessons.filter((l) => l.tools.includes(id));
   const sids = [...new Set(ls.flatMap((l) => l.standards))].sort();
   return `<div class="crumbs"><a href="#/tools">Tools</a> › ${esc(t.name)}</div>
-  <div class="lesson-head"><div><h1>${esc(t.emoji)} ${esc(t.name)}</h1><div class="chips">${t.bands.map(bandChip).join('')}${t.skills.map(skillChip).join('')}</div></div>
+  <div class="lesson-head"><div><h1>${esc(t.name)}</h1><div class="chips">${t.bands.map(bandChip).join('')}${t.skills.map(skillChip).join('')}</div></div>
   <div class="actions"><a class="btn" href="${esc(t.url)}" target="_blank" rel="noopener">Open ${esc(t.name)} ↗</a></div></div>
   <p class="lead" style="margin-top:12px">${fmt(t.summary)}</p>
   <div class="cols">
@@ -382,11 +327,11 @@ function viewSequence(q) {
   const band = q.get('band') || 'K-3';
   const units = C.units.filter((u) => u.band === band);
   return `<h1>Scope &amp; sequence</h1>
-  <p class="lead">A suggested year for grades ${esc(band)}: units in teaching order, each building on the last. Weeks assume one 40-minute music class a week; with two a week, spend the extra time on the repertoire, singing and instrument work listed in each unit.</p>
+  <p class="lead">Units for grades ${esc(band)} in a suggested teaching order, each building on the last. Pace them to fit your own calendar; the “Also in this unit” lists give singing, instrument and listening work to fill out each one.</p>
   <div class="filters no-print"><div class="seg" role="group" aria-label="Grade band">${['K-3', '4-6'].map((b) => `<button type="button" data-seqband="${b}" aria-pressed="${b === band}">Grades ${b}</button>`).join('')}</div>
-  <button class="btn ghost small" type="button" onclick="window.print()">🖨 Print</button></div>
+  <button class="btn ghost small" type="button" onclick="window.print()">Print</button></div>
   ${units.map((u, i) => `<section class="panel unit" style="--c:${C.skills[u.skill]?.color || '#fbbf24'}">
-    <div class="lesson-head"><h2 style="margin:0">Unit ${i + 1}: ${esc(u.title)}</h2><span class="chip">${esc(u.when)}</span></div>
+    <div class="lesson-head"><h2 style="margin:0">Unit ${i + 1}: ${esc(u.title)}</h2></div>
     <p style="margin-top:8px">${fmt(u.big)}</p>
     <div class="cols">
       <div><h4>Lessons in order</h4><ol>${u.lessons.map((id) => { const l = lesson(id); return `<li><a href="#/lesson/${esc(id)}">${esc(l.title)}</a> <span class="muted">(Gr ${esc(l.grades)}, ${esc(tool(l.tools[0]).name)})</span></li>`; }).join('')}</ol></div>
@@ -414,7 +359,7 @@ function viewResource(id) {
   if (!r) return `<h1>Not found</h1>`;
   return `<div class="crumbs no-print"><a href="#/resources">Resources</a> › ${esc(r.title)}</div>
   <div class="print-only"><strong>Mr. Arthur's Music Lab</strong> · mrarthurmusic.com</div>
-  <div class="lesson-head"><h1>${esc(r.icon || '')} ${esc(r.title)}</h1><div class="actions no-print"><button class="btn ghost" type="button" onclick="window.print()">🖨 Print</button></div></div>
+  <div class="lesson-head"><h1>${esc(r.title)}</h1><div class="actions no-print"><button class="btn ghost" type="button" onclick="window.print()">Print</button></div></div>
   <p class="lead">${fmt(r.summary)}</p>
   <div class="panel">${blocks(r.body)}</div>`;
 }
@@ -447,13 +392,12 @@ function render(keepFocus = false) {
   const active = '#/' + (page === 'lesson' ? 'lessons' : page === 'tool' ? 'tools' : page === 'resource' ? 'resources' : page || '');
   const focused = keepFocus ? document.activeElement?.name : null;
   app.innerHTML = `
-    <div class="topbar no-print"><a class="brand" href="#/">🍎 Music Lab <b>Curriculum</b></a>
-      <button class="btn ghost small" type="button" id="lockBtn" title="Forget the PIN on this device">🔒 Lock</button></div>
+    <div class="topbar no-print"><a class="brand" href="#/">Music Lab <b>Curriculum</b> <span>for educators</span></a>
+</div>
     <nav class="nav no-print" aria-label="Curriculum sections">${NAV.map(([href, label]) => `<a href="${href}"${href === active || (href === '#/' && active === '#/') ? ' aria-current="page"' : ''}>${esc(label)}</a>`).join('')}</nav>
     <div id="view">${html}</div>
-    <p class="footer-note">Built for Mr. Arthur's Music Lab (mrarthurmusic.com) · curriculum version ${esc(C.builtAt)} · Please share the PIN only with educators.</p>`;
+    <p class="footer-note">Built for Mr. Arthur's Music Lab (mrarthurmusic.com) · curriculum version ${esc(C.builtAt)}</p>`;
   document.title = `${title ? title + ' · ' : ''}For Educators · Mr. Arthur's Music Lab`;
-  document.getElementById('lockBtn').addEventListener('click', () => { store.del(PIN_KEY); location.hash = ''; location.reload(); });
   bindLessonFilters();
   bindStandards();
   bindSequence();
@@ -471,4 +415,4 @@ function start() {
   app.focus({ preventScroll: true });
 }
 
-setupGate();
+load();

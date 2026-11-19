@@ -3,9 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#0b0f19">
 <title>For Educators · Mr. Arthur's Music Lab</title>
-<meta name="description" content="K-6 music curriculum for Mr. Arthur's Music Lab: lessons, rubrics and a National Core Arts / NYS music standards map for every tool. Teacher PIN required.">
+<meta name="description" content="K-6 music curriculum for Mr. Arthur's Music Lab: lessons, rubrics and a National Core Arts / NYS music standards map for every tool.">
 <link rel="icon" type="image/png" sizes="32x32" href="/mr-arthur-favicon-32.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="stylesheet" href="/fonts.css">
@@ -14,27 +15,11 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<script src="/suite/suite-header.js" data-name="For Educators" data-icon="🍎" data-help="Lessons, rubrics and the standards map for every Music Lab tool. Enter the teacher PIN to open it. Use the Print button on any lesson for a clean paper copy."></script>
+<script src="/suite/suite-header.js" data-name="For Educators" data-icon="🍎" data-help="Lessons, rubrics and the standards map for every Music Lab tool. Use the Print button on any lesson for a clean paper copy."></script>
 
 <main id="app" class="wrap" tabindex="-1">
-  <section class="gate" id="gate" aria-labelledby="gateTitle">
-    <div class="gate-card">
-      <div class="gate-icon" aria-hidden="true">🍎</div>
-      <h1 id="gateTitle">For Educators</h1>
-      <p class="lead">A K-6 music curriculum built around the Music Lab tools: lessons with goals, steps, assessments and rubrics, a scope and sequence, and every National Core Arts and New York State music standard matched to the tools that teach it.</p>
-      <form id="gateForm" autocomplete="off">
-        <label for="pin">Teacher PIN</label>
-        <div class="pin-row">
-          <input id="pin" name="pin" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="12" autocomplete="off" required aria-describedby="gateMsg">
-          <button class="btn" type="submit" id="gateBtn">Open</button>
-        </div>
-        <label class="remember"><input type="checkbox" id="remember" checked> Remember on this device</label>
-        <p id="gateMsg" class="gate-msg" role="status" aria-live="polite"></p>
-      </form>
-      <p class="hint">Don't have the PIN? Ask Mr. Arthur. Students: head back to the <a href="/">Music Lab</a>.</p>
-    </div>
-  </section>
-  <noscript><p class="gate-msg">This page needs JavaScript turned on.</p></noscript>
+  <p class="loading">Loading the curriculum…</p>
+  <noscript><p class="loading">This page needs JavaScript turned on.</p></noscript>
 </main>
 
 <script type="module" src="app.js"></script>
