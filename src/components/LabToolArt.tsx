@@ -94,6 +94,39 @@ const TypeBeatArt = () => {
   );
 };
 
+/** Sound Blocks: three stripes of chunky candy-coloured blocks, one with a happy face, and a playhead sweeping across. */
+const SoundBlocksArt = () => {
+  const rows: [number, number, string][][] = [
+    [[10, 40, P.amber], [56, 24, P.rose], [84, 26, P.sky]],
+    [[10, 26, P.emerald], [40, 44, P.violet], [88, 22, P.orange]],
+    [[10, 30, P.rose], [46, 26, P.amber], [76, 34, P.emerald]],
+  ];
+  return (
+    <Svg>
+      {rows.map((row, r) => (
+        <g key={r}>
+          <rect x="5" y={12 + r * 32} width="110" height="28" rx="9" fill={P.slateMid} />
+          {row.map(([x, w, c], i) => (
+            <g key={i}>
+              <rect x={x} y={15 + r * 32 + 3} width={w} height="22" rx="7" fill="#0b1220" opacity="0.55" />
+              <rect x={x} y={15 + r * 32} width={w} height="22" rx="7" fill={c} />
+              <rect x={x + 4} y={18 + r * 32} width={Math.max(w - 8, 4)} height="4" rx="2" fill="#fff" opacity="0.4" />
+              <path d={`M${x + 6} ${33 + r * 32} h${Math.max(w - 12, 2)}`} stroke="#fff" strokeOpacity="0.45" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="3 4" />
+            </g>
+          ))}
+        </g>
+      ))}
+      {/* the happy block */}
+      <circle cx="56" cy="57" r="2.6" fill={P.slate} />
+      <circle cx="70" cy="57" r="2.6" fill={P.slate} />
+      <path d="M55 61 Q63 69 71 61" fill="none" stroke={P.slate} strokeWidth="2.6" strokeLinecap="round" />
+      {/* playhead */}
+      <rect x="48" y="6" width="5" height="108" rx="2.5" fill="#fff" opacity="0.92" />
+      <rect x="45" y="6" width="11" height="108" rx="5.5" fill="#fff" opacity="0.18" />
+    </Svg>
+  );
+};
+
 /** Staff Wars: a spaceship firing a laser at an enemy note. */
 const StaffWarsArt = () => (
   <Svg>
@@ -306,6 +339,7 @@ const TunerArt = () => {
 
 export const LAB_TOOL_ART: Record<string, React.FC> = {
   'beat-machine': BeatMachineArt,
+  soundblocks: SoundBlocksArt,
   looper: LooperArt,
   typebeat: TypeBeatArt,
   'staff-wars': StaffWarsArt,

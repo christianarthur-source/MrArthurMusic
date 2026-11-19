@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0f19">
+<title>Sound Blocks · Mr. Arthur's Music Lab</title>
+<meta name="description" content="Drag colourful sound blocks to make a song. Pick a picture world, press play, and share your song.">
+<link rel="icon" type="image/png" sizes="32x32" href="/mr-arthur-favicon-32.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="stylesheet" href="/fonts.css">
+<link rel="stylesheet" href="/suite/tokens.css">
+<link rel="stylesheet" href="/suite/suite-header.css">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<script src="/suite/suite-header.js" data-name="Sound Blocks" data-icon="🧱" data-help="Pick a picture world. Tap a block to hear it, then drag it onto the stripes. Press the big play button. Drag a block to the trash to take it away."></script>
+
+<main class="app" id="app">
+
+  <!-- 1. pick a world -->
+  <section id="home" class="home" aria-labelledby="homeTitle">
+    <h1 id="homeTitle" class="home-title"><span>Sound</span> <span>Blocks</span></h1>
+    <div class="worlds" id="worlds"></div>
+  </section>
+
+  <!-- 2. the studio -->
+  <section id="studio" class="studio" hidden aria-label="Song">
+    <div class="bar">
+      <button type="button" class="tool home-btn" id="homeBtn" aria-label="Back to the worlds"><span aria-hidden="true">🏠</span></button>
+      <div class="world-chip" id="worldChip" aria-hidden="true"></div>
+      <div class="remix" id="remix" hidden aria-label="Someone shared this song. Change it to make your own!"><span aria-hidden="true">🎁</span><span aria-hidden="true">✏️</span></div>
+      <div class="spacer"></div>
+      <button type="button" class="tool" id="undoBtn" aria-label="Undo" disabled><span aria-hidden="true">↶</span></button>
+      <button type="button" class="tool play" id="playBtn" aria-label="Play" aria-pressed="false"><span aria-hidden="true" id="playIco">▶</span></button>
+      <button type="button" class="tool share" id="shareBtn" aria-label="Share my song"><span aria-hidden="true">🔗</span></button>
+      <button type="button" class="tool" id="clearBtn" aria-label="Start over"><span aria-hidden="true">🧹</span></button>
+    </div>
+
+    <div class="board" id="board">
+      <div class="ruler" id="ruler" aria-hidden="true"></div>
+      <div class="lanes" id="lanes"></div>
+      <div class="playhead" id="playhead" aria-hidden="true"></div>
+    </div>
+
+    <div class="tray" id="tray">
+      <div class="tray-row loops" id="trayLoops" role="group" aria-label="Music blocks"></div>
+      <div class="tray-row funs" id="trayFun" role="group" aria-label="Fun sounds"></div>
+      <div class="trash" id="trash" aria-label="Trash. Drag a block here to take it away."><span aria-hidden="true">🗑️</span></div>
+    </div>
+  </section>
+</main>
+
+<!-- share -->
+<dialog class="dlg" id="shareDlg" aria-label="Share my song">
+  <div class="dlg-body">
+    <div class="share-spin" id="shareSpin" aria-hidden="true">⏳</div>
+    <div class="share-ready" id="shareReady" hidden>
+      <div class="qr" id="qr" aria-hidden="true"></div>
+      <input type="text" id="shareUrl" class="share-url" readonly aria-label="Link to my song" spellcheck="false">
+      <div class="dlg-actions">
+        <button type="button" class="big copy" id="copyBtn" aria-label="Copy the link"><span aria-hidden="true" id="copyIco">📋</span></button>
+        <button type="button" class="big close" id="shareClose" aria-label="Close"><span aria-hidden="true">✖️</span></button>
+      </div>
+    </div>
+  </div>
+</dialog>
+
+<!-- start over? -->
+<dialog class="dlg" id="clearDlg" aria-label="Start over? This takes away all the blocks.">
+  <div class="dlg-body">
+    <div class="ask" aria-hidden="true">🧹 ❓</div>
+    <div class="dlg-actions">
+      <button type="button" class="big yes" id="clearYes" aria-label="Yes, start over"><span aria-hidden="true">✔️</span></button>
+      <button type="button" class="big no" id="clearNo" aria-label="No, keep my song"><span aria-hidden="true">✖️</span></button>
+    </div>
+  </div>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="qrcode.js"></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>

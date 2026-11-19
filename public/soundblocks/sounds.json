@@ -1,0 +1,723 @@
+{
+ "v": 1,
+ "generated": "2026-11-19",
+ "license": "All sounds CC0 (cc0-studio and freesound-cc0 packs)",
+ "worlds": [
+  {
+   "id": "playground",
+   "name": "Playground",
+   "pic": "🛝",
+   "bg": [
+    "#fde68a",
+    "#fb923c"
+   ],
+   "bpm": 116,
+   "bars": 4,
+   "loops": [
+    {
+     "id": "playground-xylo",
+     "label": "xylophone",
+     "pic": "🎶",
+     "color": "#facc15",
+     "file": "/daw-library/audio/cc0-studio.kids-playground-a-c-xylophone-tune.af195927.mp3",
+     "preview": "/daw-library/preview/cc0-studio.kids-playground-a-c-xylophone-tune.4d5a03f7.mp3",
+     "frames": 364966,
+     "delay": 1105,
+     "sr": 44100,
+     "sec": 8.276
+    },
+    {
+     "id": "playground-marimba",
+     "label": "marimba",
+     "pic": "🪘",
+     "color": "#22c55e",
+     "file": "/daw-library/audio/cc0-studio.kids-playground-a-c-marimba-bounce.be5df948.mp3",
+     "preview": "/daw-library/preview/cc0-studio.kids-playground-a-c-marimba-bounce.7744fbe1.mp3",
+     "frames": 364966,
+     "delay": 1105,
+     "sr": 44100,
+     "sec": 8.276
+    },
+    {
+     "id": "playground-glock",
+     "label": "glockenspiel",
+     "pic": "✨",
+     "color": "#ec4899",
+     "file": "/daw-library/audio/cc0-studio.kids-playground-a-c-glockenspiel-sparkle.405ba411.mp3",
+     "preview": "/daw-library/preview/cc0-studio.kids-playground-a-c-glockenspiel-sparkle.1d86902c.mp3",
+     "frames": 364966,
+     "delay": 1105,
+     "sr": 44100,
+     "sec": 8.276
+    },
+    {
+     "id": "playground-bass",
+     "label": "bass",
+     "pic": "🎻",
+     "color": "#8b5cf6",
+     "file": "/daw-library/audio/cc0-studio.kids-playground-a-c-pizzicato-bass.ff13a268.mp3",
+     "preview": "/daw-library/preview/cc0-studio.kids-playground-a-c-pizzicato-bass.d1fef048.mp3",
+     "frames": 364966,
+     "delay": 1105,
+     "sr": 44100,
+     "sec": 8.276
+    },
+    {
+     "id": "playground-drums",
+     "label": "drums",
+     "pic": "🥁",
+     "color": "#ef4444",
+     "file": "/daw-library/audio/cc0-studio.kids-playground-playground-percussion.d39b0657.mp3",
+     "preview": "/daw-library/preview/cc0-studio.kids-playground-playground-percussion.c5008825.mp3",
+     "frames": 364966,
+     "delay": 1105,
+     "sr": 44100,
+     "sec": 8.276
+    }
+   ]
+  },
+  {
+   "id": "parade",
+   "name": "Parade",
+   "pic": "🎺",
+   "bg": [
+    "#bae6fd",
+    "#2563eb"
+   ],
+   "bpm": 116,
+   "bars": 4,
+   "loops": [
+    {
+     "id": "parade-trumpet",
+     "label": "trumpet",
+     "pic": "🎺",
+     "color": "#fb923c",
+     "file": "/daw-library/audio/cc0-studio.marching-band-b-c-trumpet-tune.9ff2cbcf.mp3",
+     "preview": "/daw-library/preview/cc0-studio.marching-band-b-c-trumpet-tune.c2e3c168.mp3",
+     "frames": 364966,
+     "delay": 1105,
+     "sr": 44100,
+     "sec": 8.276
+    },
+    {
+     "id": "parade-piccolo",
+     "label": "piccolo",
+     "pic": "🎵",
+     "color": "#facc15",
+     "file": "/daw-library/audio/cc0-studio.marching-band-b-c-piccolo-countermelody.b4280ab0.mp3",
+     "preview": "/daw-library/preview/cc0-studio.marching-band-b-c-piccolo-countermelody.c0596558.mp3",
+     "frames": 364966,
+     "delay": 1105,
+     "sr": 44100,
+     "sec": 8.276
+    },
+    {
+     "id": "parade-trombone",
+     "label": "trombone",
+     "pic": "📯",
+     "color": "#22c55e",
+     "file": "/daw-library/audio/cc0-studio.marching-band-b-c-trombone-chords.01422c23.mp3",
+     "preview": "/daw-library/preview/cc0-studio.marching-band-b-c-trombone-chords.b9e8a92d.mp3",
+     "frames": 364966,
+     "delay": 1105,
+     "sr": 44100,
+     "sec": 8.276
+    },
+    {
+     "id": "parade-tuba",
+     "label": "tuba",
+     "pic": "🐘",
+     "color": "#8b5cf6",
+     "file": "/daw-library/audio/cc0-studio.marching-band-b-c-tuba-oom-pah.204966f9.mp3",
+     "preview": "/daw-library/preview/cc0-studio.marching-band-b-c-tuba-oom-pah.303da88a.mp3",
+     "frames": 364966,
+     "delay": 1105,
+     "sr": 44100,
+     "sec": 8.276
+    },
+    {
+     "id": "parade-drums",
+     "label": "drums",
+     "pic": "🥁",
+     "color": "#ef4444",
+     "file": "/daw-library/audio/cc0-studio.marching-band-marching-drums.a1b317b7.mp3",
+     "preview": "/daw-library/preview/cc0-studio.marching-band-marching-drums.46dfd8b3.mp3",
+     "frames": 364966,
+     "delay": 1105,
+     "sr": 44100,
+     "sec": 8.276
+    }
+   ]
+  },
+  {
+   "id": "sunny",
+   "name": "Sunny Day",
+   "pic": "☀️",
+   "bg": [
+    "#fef08a",
+    "#38bdf8"
+   ],
+   "bpm": 110,
+   "bars": 4,
+   "loops": [
+    {
+     "id": "sunny-glock",
+     "label": "glockenspiel",
+     "pic": "✨",
+     "color": "#ec4899",
+     "file": "/daw-library/audio/cc0-studio.sunny-pop-a-c-glockenspiel-melody.cb52eca7.mp3",
+     "preview": "/daw-library/preview/cc0-studio.sunny-pop-a-c-glockenspiel-melody.1e46f709.mp3",
+     "frames": 384873,
+     "delay": 1105,
+     "sr": 44100,
+     "sec": 8.727
+    },
+    {
+     "id": "sunny-piano",
+     "label": "piano",
+     "pic": "🎹",
+     "color": "#22c55e",
+     "file": "/daw-library/audio/cc0-studio.sunny-pop-a-c-piano-chords.5773e3ac.mp3",
+     "preview": "/daw-library/preview/cc0-studio.sunny-pop-a-c-piano-chords.ac3e9719.mp3",
+     "frames": 384873,
+     "delay": 1105,
+     "sr": 44100,
+     "sec": 8.727
+    },
+    {
+     "id": "sunny-pluck",
+     "label": "plucked strings",
+     "pic": "🎻",
+     "color": "#facc15",
+     "file": "/daw-library/audio/cc0-studio.sunny-pop-a-c-pizzicato-pluck.f42e7dc5.mp3",
+     "preview": "/daw-library/preview/cc0-studio.sunny-pop-a-c-pizzicato-pluck.e55f131c.mp3",
+     "frames": 384873,
+     "delay": 1105,
+     "sr": 44100,
+     "sec": 8.727
+    },
+    {
+     "id": "sunny-strings",
+     "label": "strings",
+     "pic": "🌈",
+     "color": "#38bdf8",
+     "file": "/daw-library/audio/cc0-studio.sunny-pop-a-c-string-pad.1ffc55cc.mp3",
+     "preview": "/daw-library/preview/cc0-studio.sunny-pop-a-c-string-pad.657e0a80.mp3",
+     "frames": 384873,
+     "delay": 1105,
+     "sr": 44100,
+     "sec": 8.727
+    },
+    {
+     "id": "sunny-bass",
+     "label": "bass",
+     "pic": "🎸",
+     "color": "#8b5cf6",
+     "file": "/daw-library/audio/cc0-studio.sunny-pop-a-c-upright-bass.4918ad5b.mp3",
+     "preview": "/daw-library/preview/cc0-studio.sunny-pop-a-c-upright-bass.57198997.mp3",
+     "frames": 384873,
+     "delay": 1105,
+     "sr": 44100,
+     "sec": 8.727
+    },
+    {
+     "id": "sunny-claps",
+     "label": "claps",
+     "pic": "👏",
+     "color": "#f97316",
+     "file": "/daw-library/audio/cc0-studio.sunny-pop-pop-claps-shaker.1de0c4fd.mp3",
+     "preview": "/daw-library/preview/cc0-studio.sunny-pop-pop-claps-shaker.e239b229.mp3",
+     "frames": 384873,
+     "delay": 1105,
+     "sr": 44100,
+     "sec": 8.727
+    },
+    {
+     "id": "sunny-drums",
+     "label": "drums",
+     "pic": "🥁",
+     "color": "#ef4444",
+     "file": "/daw-library/audio/cc0-studio.sunny-pop-pop-drums.920c34d7.mp3",
+     "preview": "/daw-library/preview/cc0-studio.sunny-pop-pop-drums.a6f5f9cd.mp3",
+     "frames": 384873,
+     "delay": 1105,
+     "sr": 44100,
+     "sec": 8.727
+    }
+   ]
+  },
+  {
+   "id": "jungle",
+   "name": "Jungle",
+   "pic": "🦁",
+   "bg": [
+    "#86efac",
+    "#16a34a"
+   ],
+   "bpm": 112,
+   "bars": 4,
+   "loops": [
+    {
+     "id": "jungle-balafon",
+     "label": "balafon",
+     "pic": "🪵",
+     "color": "#22c55e",
+     "file": "/daw-library/audio/cc0-studio.afro-groove-a-c-balafon-pattern.5e4d8427.mp3",
+     "preview": "/daw-library/preview/cc0-studio.afro-groove-a-c-balafon-pattern.b3b40763.mp3",
+     "frames": 378000,
+     "delay": 1105,
+     "sr": 44100,
+     "sec": 8.571
+    },
+    {
+     "id": "jungle-kalimba",
+     "label": "kalimba",
+     "pic": "🎶",
+     "color": "#ec4899",
+     "file": "/daw-library/audio/cc0-studio.afro-groove-a-c-kalimba-interlock.14999a0f.mp3",
+     "preview": "/daw-library/preview/cc0-studio.afro-groove-a-c-kalimba-interlock.be8cd0c9.mp3",
+     "frames": 378000,
+     "delay": 1105,
+     "sr": 44100,
+     "sec": 8.571
+    },
+    {
+     "id": "jungle-marimba",
+     "label": "marimba",
+     "pic": "🐒",
+     "color": "#8b5cf6",
+     "file": "/daw-library/audio/cc0-studio.afro-groove-a-c-marimba-bass.3d361c5c.mp3",
+     "preview": "/daw-library/preview/cc0-studio.afro-groove-a-c-marimba-bass.f1eb8267.mp3",
+     "frames": 378000,
+     "delay": 1105,
+     "sr": 44100,
+     "sec": 8.571
+    },
+    {
+     "id": "jungle-sax",
+     "label": "saxophone",
+     "pic": "🎷",
+     "color": "#facc15",
+     "file": "/daw-library/audio/cc0-studio.afro-groove-a-c-sax-melody.6a675c20.mp3",
+     "preview": "/daw-library/preview/cc0-studio.afro-groove-a-c-sax-melody.a3a5e0b3.mp3",
+     "frames": 378000,
+     "delay": 1105,
+     "sr": 44100,
+     "sec": 8.571
+    },
+    {
+     "id": "jungle-perc",
+     "label": "percussion",
+     "pic": "🪘",
+     "color": "#f97316",
+     "file": "/daw-library/audio/cc0-studio.afro-groove-afro-percussion.5168babd.mp3",
+     "preview": "/daw-library/preview/cc0-studio.afro-groove-afro-percussion.a94aba0d.mp3",
+     "frames": 378000,
+     "delay": 1105,
+     "sr": 44100,
+     "sec": 8.571
+    },
+    {
+     "id": "jungle-drums",
+     "label": "drums",
+     "pic": "🥁",
+     "color": "#ef4444",
+     "file": "/daw-library/audio/cc0-studio.afro-groove-djembe-style-drums.8f06c32b.mp3",
+     "preview": "/daw-library/preview/cc0-studio.afro-groove-djembe-style-drums.92dd9d98.mp3",
+     "frames": 378000,
+     "delay": 1105,
+     "sr": 44100,
+     "sec": 8.571
+    }
+   ]
+  },
+  {
+   "id": "dreamy",
+   "name": "Dreamy Sky",
+   "pic": "☁️",
+   "bg": [
+    "#c4b5fd",
+    "#6366f1"
+   ],
+   "bpm": 70,
+   "bars": 4,
+   "loops": [
+    {
+     "id": "dreamy-harp",
+     "label": "harp",
+     "pic": "🌊",
+     "color": "#22c55e",
+     "file": "/daw-library/audio/cc0-studio.ambient-dreams-b-c-harp-waves.d5bd5ea1.mp3",
+     "preview": "/daw-library/preview/cc0-studio.ambient-dreams-b-c-harp-waves.96113bb5.mp3",
+     "frames": 604800,
+     "delay": 1105,
+     "sr": 44100,
+     "sec": 13.714
+    },
+    {
+     "id": "dreamy-ocarina",
+     "label": "ocarina",
+     "pic": "🪈",
+     "color": "#facc15",
+     "file": "/daw-library/audio/cc0-studio.ambient-dreams-b-c-ocarina-air.50ea0a71.mp3",
+     "preview": "/daw-library/preview/cc0-studio.ambient-dreams-b-c-ocarina-air.af8fe411.mp3",
+     "frames": 604800,
+     "delay": 1105,
+     "sr": 44100,
+     "sec": 13.714
+    },
+    {
+     "id": "dreamy-organ",
+     "label": "organ",
+     "pic": "🌙",
+     "color": "#38bdf8",
+     "file": "/daw-library/audio/cc0-studio.ambient-dreams-b-c-organ-drone.e19be8ec.mp3",
+     "preview": "/daw-library/preview/cc0-studio.ambient-dreams-b-c-organ-drone.91bbeac0.mp3",
+     "frames": 604800,
+     "delay": 1105,
+     "sr": 44100,
+     "sec": 13.714
+    },
+    {
+     "id": "dreamy-bells",
+     "label": "bells",
+     "pic": "🔔",
+     "color": "#ec4899",
+     "file": "/daw-library/audio/cc0-studio.ambient-dreams-b-c-tubular-bells.709d0785.mp3",
+     "preview": "/daw-library/preview/cc0-studio.ambient-dreams-b-c-tubular-bells.8edf38e9.mp3",
+     "frames": 604800,
+     "delay": 1105,
+     "sr": 44100,
+     "sec": 13.714
+    },
+    {
+     "id": "dreamy-vibes",
+     "label": "vibraphone",
+     "pic": "⭐",
+     "color": "#14b8a6",
+     "file": "/daw-library/audio/cc0-studio.ambient-dreams-b-c-vibes-shimmer.e116b6b6.mp3",
+     "preview": "/daw-library/preview/cc0-studio.ambient-dreams-b-c-vibes-shimmer.dbd5cf89.mp3",
+     "frames": 604800,
+     "delay": 1105,
+     "sr": 44100,
+     "sec": 13.714
+    }
+   ]
+  },
+  {
+   "id": "spooky",
+   "name": "Spooky",
+   "pic": "👻",
+   "bg": [
+    "#a78bfa",
+    "#1e1b4b"
+   ],
+   "bpm": 70,
+   "bars": 4,
+   "loops": [
+    {
+     "id": "spooky-clarinet",
+     "label": "clarinet",
+     "pic": "🦇",
+     "color": "#facc15",
+     "file": "/daw-library/audio/cc0-studio.mystery-suspense-b-am-clarinet-whisper.fd44b628.mp3",
+     "preview": "/daw-library/preview/cc0-studio.mystery-suspense-b-am-clarinet-whisper.3fec7224.mp3",
+     "frames": 604800,
+     "delay": 1105,
+     "sr": 44100,
+     "sec": 13.714
+    },
+    {
+     "id": "spooky-glock",
+     "label": "glockenspiel",
+     "pic": "🕸️",
+     "color": "#ec4899",
+     "file": "/daw-library/audio/cc0-studio.mystery-suspense-b-am-glock-sparkles.48a99968.mp3",
+     "preview": "/daw-library/preview/cc0-studio.mystery-suspense-b-am-glock-sparkles.d2415925.mp3",
+     "frames": 604800,
+     "delay": 1105,
+     "sr": 44100,
+     "sec": 13.714
+    },
+    {
+     "id": "spooky-strings",
+     "label": "strings",
+     "pic": "🧛",
+     "color": "#38bdf8",
+     "file": "/daw-library/audio/cc0-studio.mystery-suspense-b-am-low-strings.770594d8.mp3",
+     "preview": "/daw-library/preview/cc0-studio.mystery-suspense-b-am-low-strings.fbc2edba.mp3",
+     "frames": 604800,
+     "delay": 1105,
+     "sr": 44100,
+     "sec": 13.714
+    },
+    {
+     "id": "spooky-pizz",
+     "label": "plucked cellos",
+     "pic": "🐾",
+     "color": "#8b5cf6",
+     "file": "/daw-library/audio/cc0-studio.mystery-suspense-b-am-pizzicato-creep.c2bfb8a4.mp3",
+     "preview": "/daw-library/preview/cc0-studio.mystery-suspense-b-am-pizzicato-creep.c4c235ac.mp3",
+     "frames": 604800,
+     "delay": 1105,
+     "sr": 44100,
+     "sec": 13.714
+    },
+    {
+     "id": "spooky-hits",
+     "label": "spooky hits",
+     "pic": "🥁",
+     "color": "#ef4444",
+     "file": "/daw-library/audio/cc0-studio.mystery-suspense-suspense-hits.e87ddb09.mp3",
+     "preview": "/daw-library/preview/cc0-studio.mystery-suspense-suspense-hits.39bfb14e.mp3",
+     "frames": 604800,
+     "delay": 1105,
+     "sr": 44100,
+     "sec": 13.714
+    }
+   ]
+  }
+ ],
+ "fun": [
+  {
+   "id": "fun-bikebell",
+   "label": "bike bell",
+   "pic": "🚲",
+   "max": 1.68,
+   "file": "/daw-library/audio/freesound-cc0.fs441102.02f5097f.mp3",
+   "preview": "/daw-library/preview/freesound-cc0.fs441102.8c0b36e3.mp3",
+   "frames": 74111,
+   "delay": 1105,
+   "sr": 44100,
+   "sec": 1.681
+  },
+  {
+   "id": "fun-bell",
+   "label": "bell",
+   "pic": "🔔",
+   "max": 2.5,
+   "file": "/daw-library/audio/freesound-cc0.fs431320.f4405b7f.mp3",
+   "preview": "/daw-library/preview/freesound-cc0.fs431320.6937ce9c.mp3",
+   "frames": 119683,
+   "delay": 1105,
+   "sr": 44100,
+   "sec": 2.714
+  },
+  {
+   "id": "fun-carhorn",
+   "label": "car horn",
+   "pic": "🚗",
+   "max": 2,
+   "file": "/daw-library/audio/freesound-cc0.fs235363.0fa49896.mp3",
+   "preview": "/daw-library/preview/freesound-cc0.fs235363.70e418f9.mp3",
+   "frames": 383853,
+   "delay": 1105,
+   "sr": 44100,
+   "sec": 8.704
+  },
+  {
+   "id": "fun-heli",
+   "label": "helicopter",
+   "pic": "🚁",
+   "max": 3,
+   "file": "/daw-library/audio/freesound-cc0.fs413655.73214d90.mp3",
+   "preview": "/daw-library/preview/freesound-cc0.fs413655.77a2359a.mp3",
+   "frames": 413139,
+   "delay": 1105,
+   "sr": 44100,
+   "sec": 9.368
+  },
+  {
+   "id": "fun-whistle",
+   "label": "slide whistle",
+   "pic": "🪈",
+   "max": 3,
+   "file": "/daw-library/audio/freesound-cc0.fs517634.9d3dd49d.mp3",
+   "preview": "/daw-library/preview/freesound-cc0.fs517634.011c1326.mp3",
+   "frames": 561105,
+   "delay": 1105,
+   "sr": 44100,
+   "sec": 12.723
+  },
+  {
+   "id": "fun-boing",
+   "label": "boing",
+   "pic": "🦘",
+   "max": 3,
+   "file": "/daw-library/audio/freesound-cc0.fs527779.93a8e6ac.mp3",
+   "preview": "/daw-library/preview/freesound-cc0.fs527779.5146d12b.mp3",
+   "frames": 168721,
+   "delay": 1105,
+   "sr": 44100,
+   "sec": 3.826
+  },
+  {
+   "id": "fun-spring",
+   "label": "spring",
+   "pic": "🌀",
+   "max": 3,
+   "file": "/daw-library/audio/freesound-cc0.fs109435.5dd9762e.mp3",
+   "preview": "/daw-library/preview/freesound-cc0.fs109435.16dcbebf.mp3",
+   "frames": 599705,
+   "delay": 1105,
+   "sr": 44100,
+   "sec": 13.599
+  },
+  {
+   "id": "fun-jump",
+   "label": "jump",
+   "pic": "🐸",
+   "max": 1,
+   "file": "/daw-library/audio/freesound-cc0.fs663831.04b6e96d.mp3",
+   "preview": "/daw-library/preview/freesound-cc0.fs663831.84b4a14f.mp3",
+   "frames": 45905,
+   "delay": 1105,
+   "sr": 44100,
+   "sec": 1.041
+  },
+  {
+   "id": "fun-clown",
+   "label": "clown horn",
+   "pic": "🤡",
+   "max": 0.47,
+   "file": "/daw-library/audio/freesound-cc0.fs564696.a56ba582.mp3",
+   "preview": "/daw-library/preview/freesound-cc0.fs564696.9f41bb23.mp3",
+   "frames": 20540,
+   "delay": 1105,
+   "sr": 44100,
+   "sec": 0.466
+  },
+  {
+   "id": "fun-honk",
+   "label": "honk",
+   "pic": "📯",
+   "max": 0.35,
+   "file": "/daw-library/audio/freesound-cc0.fs564695.39691ea8.mp3",
+   "preview": "/daw-library/preview/freesound-cc0.fs564695.be280b99.mp3",
+   "frames": 15645,
+   "delay": 1105,
+   "sr": 44100,
+   "sec": 0.355
+  },
+  {
+   "id": "fun-chimes",
+   "label": "wind chimes",
+   "pic": "🎐",
+   "max": 2,
+   "file": "/daw-library/audio/freesound-cc0.fs398492.9c5151a3.mp3",
+   "preview": "/daw-library/preview/freesound-cc0.fs398492.ba6112a9.mp3",
+   "frames": 89587,
+   "delay": 1105,
+   "sr": 44100,
+   "sec": 2.031
+  },
+  {
+   "id": "fun-levelup",
+   "label": "level up",
+   "pic": "🎮",
+   "max": 1.45,
+   "file": "/daw-library/audio/freesound-cc0.fs644409.6592075f.mp3",
+   "preview": "/daw-library/preview/freesound-cc0.fs644409.dd7956dd.mp3",
+   "frames": 63908,
+   "delay": 1105,
+   "sr": 44100,
+   "sec": 1.449
+  },
+  {
+   "id": "fun-badoink",
+   "label": "badoink",
+   "pic": "💥",
+   "max": 0.64,
+   "file": "/daw-library/audio/freesound-cc0.fs565800.d91eccc8.mp3",
+   "preview": "/daw-library/preview/freesound-cc0.fs565800.83e98db4.mp3",
+   "frames": 28343,
+   "delay": 1105,
+   "sr": 44100,
+   "sec": 0.643
+  },
+  {
+   "id": "fun-vibraslap",
+   "label": "rattle",
+   "pic": "🦴",
+   "max": 3,
+   "file": "/daw-library/audio/freesound-cc0.fs444351.1c84e231.mp3",
+   "preview": "/daw-library/preview/freesound-cc0.fs444351.95ce0ca4.mp3",
+   "frames": 162351,
+   "delay": 1105,
+   "sr": 44100,
+   "sec": 3.681
+  },
+  {
+   "id": "fun-dizzy",
+   "label": "dizzy",
+   "pic": "😵",
+   "max": 1.6,
+   "file": "/daw-library/audio/freesound-cc0.fs455266.068eb34b.mp3",
+   "preview": "/daw-library/preview/freesound-cc0.fs455266.f559f486.mp3",
+   "frames": 70348,
+   "delay": 1105,
+   "sr": 44100,
+   "sec": 1.595
+  },
+  {
+   "id": "fun-ambulance",
+   "label": "siren",
+   "pic": "🚑",
+   "max": 3,
+   "file": "/daw-library/audio/freesound-cc0.fs462390.d8c04858.mp3",
+   "preview": "/daw-library/preview/freesound-cc0.fs462390.aeec4065.mp3",
+   "frames": 330014,
+   "delay": 1105,
+   "sr": 44100,
+   "sec": 7.483
+  },
+  {
+   "id": "fun-rising",
+   "label": "rising whistle",
+   "pic": "🚀",
+   "max": 3.5,
+   "file": "/daw-library/audio/freesound-cc0.fs869126.2b5bcb37.mp3",
+   "preview": "/daw-library/preview/freesound-cc0.fs869126.8118c125.mp3",
+   "frames": 158797,
+   "delay": 1105,
+   "sr": 44100,
+   "sec": 3.601
+  },
+  {
+   "id": "fun-moto",
+   "label": "motorbike",
+   "pic": "🏍️",
+   "max": 3,
+   "file": "/daw-library/audio/freesound-cc0.fs462407.9a169701.mp3",
+   "preview": "/daw-library/preview/freesound-cc0.fs462407.bc07fdfd.mp3",
+   "frames": 469688,
+   "delay": 1105,
+   "sr": 44100,
+   "sec": 10.651
+  },
+  {
+   "id": "fun-bellring",
+   "label": "ding",
+   "pic": "🛎️",
+   "max": 0.89,
+   "file": "/daw-library/audio/freesound-cc0.fs168709.0ebe049f.mp3",
+   "preview": "/daw-library/preview/freesound-cc0.fs168709.fb997f12.mp3",
+   "frames": 39225,
+   "delay": 1105,
+   "sr": 44100,
+   "sec": 0.889
+  },
+  {
+   "id": "fun-bocina",
+   "label": "horn",
+   "pic": "🎺",
+   "max": 2,
+   "file": "/daw-library/audio/freesound-cc0.fs515282.1e825e7c.mp3",
+   "preview": "/daw-library/preview/freesound-cc0.fs515282.27a502f0.mp3",
+   "frames": 185915,
+   "delay": 1105,
+   "sr": 44100,
+   "sec": 4.216
+  }
+ ]
+}

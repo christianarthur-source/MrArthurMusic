@@ -31,6 +31,7 @@ export const LAB_ENTRIES: readonly LabEntry[] = [
   { id: 'midimusic', title: 'MIDI MUSIC', emoji: '🎹', group: 'create', grades: 'all', to: { path: '/midimusic/' } },
   { id: 'chromeextra', title: 'Chrome Music Lab EXTRA', emoji: '🧪', group: 'create', grades: 'all', to: { path: '/chromeextra/' } },
   { id: 'looper', title: 'Looper', emoji: '🔁', group: 'create', grades: 'all', to: { path: '/looper/' } },
+  { id: 'soundblocks', title: 'Sound Blocks', emoji: '🧱', group: 'create', grades: ['K-2', '3-5'], to: { path: '/soundblocks/' } },
   { id: 'typebeat', title: 'Type Beat', emoji: '⌨️', group: 'create', grades: 'all', to: { path: '/typebeat/' } },
   { id: 'staff-wars', title: 'Staff Wars', emoji: '🚀', group: 'play', grades: ['3-5', '6-8'], to: { app: 'staff-wars' } },
   { id: 'rhythm-rockstars', title: 'Rhythm Rock Stars', emoji: '🎸', group: 'play', grades: 'all', to: { app: 'rhythm-rockstars' } },
