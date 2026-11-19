@@ -108,6 +108,27 @@ export class Engine {
     ramp(n.dryC.gain, 1 - a(fx.crunch) * 0.55);
   }
 
+  // ---- volume: one gain per track (and one for the fun row), after the sounds and before the effects ----
+  trackGain(track) {
+    if (!this.trackGains) this.trackGains = new Map();
+    let g = this.trackGains.get(track);
+    if (!g) {
+      g = this.ctx.createGain();
+      g.gain.value = this.volToGain(this.vols ? this.vols[track] : 80);
+      g.connect(this.bus);
+      this.trackGains.set(track, g);
+    }
+    return g;
+  }
+  volToGain(v) { return Math.max(0, Math.min(1.25, (v ?? 80) / 80)); }
+  /** vol = the song's volumes (0-100 per track, then the fun row). */
+  setVols(vol) {
+    this.vols = vol;
+    if (!this.ctx || !this.trackGains) return;
+    const t = this.ctx.currentTime;
+    for (const [track, g] of this.trackGains) { try { g.gain.setTargetAtTime(this.volToGain(vol[track]), t, 0.03); } catch { g.gain.value = this.volToGain(vol[track]); } }
+  }
+
   // ---- loading ----
   soundInfo(id) {
     if (isMic(id)) return this.mics.get(id);
@@ -244,6 +265,7 @@ export class Engine {
 
   setSong(song) {
     this.song = song;
+    this.setVols(song.vol);
     if (this.playing) this.sync();
   }
 
@@ -252,6 +274,7 @@ export class Engine {
     this.unlock();
     this.stopPreview();
     this.song = song;
+    this.setVols(song.vol);
     if (this.playing) return;
     this.playing = true;
     const offset = startSlot * slotSeconds(this.world);
@@ -337,7 +360,7 @@ export class Engine {
     const src = ctx.createBufferSource();
     const gain = ctx.createGain();
     src.buffer = buf;
-    src.connect(gain).connect(this.bus);
+    src.connect(gain).connect(this.trackGain(ev.track));
     const when = Math.max(ctx.currentTime, this.t0 + abs + offset);
     const len = ev.dur - offset;
     if (len <= 0.02) return;

@@ -1,7 +1,7 @@
 // Sound Blocks: the screen. Pick a world, drag blocks onto stripes, add effects, record your own voice, share a short link.
 import {
-  LANES, MIN_SLOTS, MAX_SLOTS, FUN_SPAN, FX_NAMES, emptySong, isEmpty, hasFx, isMic, micIdsIn, lastSlotEmpty,
-  placeLoop, moveLoop, removeLoop, placeFun, moveFun, removeFun, addSlot, removeSlot, setFx, clearFx,
+  LANES, MIN_LANES, MAX_LANES, FUN_TRACK, MIN_SLOTS, MAX_SLOTS, FUN_SPAN, FX_NAMES, emptySong, isEmpty, hasFx, isMic, micIdsIn, lastSlotEmpty, lastLaneEmpty,
+  placeLoop, moveLoop, removeLoop, placeFun, moveFun, removeFun, addSlot, removeSlot, addLane, removeLane, setVol, setFx, clearFx,
   toPayload, fromPayload, cleanSong, slotSeconds, eventsFor,
 } from './song.js';
 import { Engine } from './engine.js';
@@ -96,6 +96,8 @@ let held = null; // { kind, id } picked up from the tray, waiting to be put on a
 let remix = false; // opened from a shared link and not changed yet
 let saveTimer = 0;
 let recording = false;
+let cursor = 0; // the measure where play starts (click a measure's top bar to move it)
+let geo = { left: 0, width: 1 }; // where the measure cells are inside the track, for drawing the playhead
 
 const loopInfo = (id) => world.loops.find((l) => l.id === id);
 const funInfo = (id) => catalog.fun.find((f) => f.id === id);
@@ -161,6 +163,7 @@ function openWorld(id, startSong, fromLink) {
   song = cleanSong(startSong, catalog, micIds());
   history = [];
   held = null;
+  cursor = 0;
   remix = fromLink;
   $('home').hidden = true;
   $('studio').hidden = false;
@@ -178,8 +181,10 @@ function openWorld(id, startSong, fromLink) {
   buildTray();
   renderSong();
   syncFxUi();
+  syncVolUi();
   updateUndo();
   engine.song = song;
+  engine.setVols(song.vol);
   if (engine.ctx) engine.setFx(song.fx, world.bpm);
   engine.loadWorld(world).then(refreshTray);
   engine.loadFunInBackground().then(refreshTray);
@@ -202,36 +207,75 @@ function goHome() {
 
 function buildBoard() {
   const slots = song.slots;
+  const lanesN = song.lanes;
   $('board').dataset.slots = String(slots);
+  $('board').dataset.lanes = String(lanesN);
   $('track').style.setProperty('--slots', slots);
+  $('track').style.setProperty('--lanes', lanesN);
   const ruler = $('ruler');
   ruler.textContent = '';
-  for (let i = 0; i < slots; i++) { const b = document.createElement('i'); b.textContent = String(i + 1); ruler.append(b); }
+  const sp = document.createElement('span');
+  sp.className = 'vspace';
+  const rc = document.createElement('div');
+  rc.className = 'rcells';
+  for (let i = 0; i < slots; i++) {
+    const b = document.createElement('i');
+    b.dataset.i = String(i);
+    b.setAttribute('role', 'button');
+    b.tabIndex = 0;
+    b.setAttribute('aria-label', `Start from measure ${i + 1}`);
+    rc.append(b);
+  }
+  ruler.append(sp, rc);
   const lanes = $('lanes');
   lanes.textContent = '';
-  for (let lane = 0; lane < LANES; lane++) {
+  const mkLane = (cls, track, cellsFn) => {
     const row = document.createElement('div');
-    row.className = 'lane';
-    for (let slot = 0; slot < slots; slot++) row.append(makeCell({ k: 'loop', lane, slot }));
+    row.className = cls;
+    const vol = document.createElement('div');
+    vol.className = 'vol';
+    const ic = document.createElement('span');
+    ic.setAttribute('aria-hidden', 'true');
+    ic.textContent = '🔊';
+    const r = document.createElement('input');
+    r.type = 'range';
+    r.min = '0';
+    r.max = '100';
+    r.value = String(song.vol[track]);
+    r.dataset.track = String(track);
+    r.setAttribute('aria-label', track === FUN_TRACK ? 'Volume of the fun sounds' : `Volume of track ${track + 1}`);
+    vol.append(ic, r);
+    const cells = document.createElement('div');
+    cells.className = 'cells';
+    cellsFn(cells);
+    row.append(vol, cells);
     lanes.append(row);
+  };
+  for (let lane = 0; lane < lanesN; lane++) {
+    mkLane('lane', lane, (cells) => { for (let slot = 0; slot < slots; slot++) cells.append(makeCell({ k: 'loop', lane, slot })); });
   }
-  const fun = document.createElement('div');
-  fun.className = 'lane fun';
-  for (let slot = 0; slot < slots; slot++) {
-    const g = document.createElement('div');
-    g.className = 'fgroup';
-    for (let h = 0; h < FUN_SPAN; h++) g.append(makeCell({ k: 'fun', pos: slot * FUN_SPAN + h }));
-    fun.append(g);
-  }
-  lanes.append(fun);
+  mkLane('lane fun', FUN_TRACK, (cells) => {
+    for (let slot = 0; slot < slots; slot++) {
+      const g = document.createElement('div');
+      g.className = 'fgroup';
+      for (let h = 0; h < FUN_SPAN; h++) g.append(makeCell({ k: 'fun', pos: slot * FUN_SPAN + h }));
+      cells.append(g);
+    }
+  });
   updateAddButtons();
+  measure();
+  placePlayhead();
 }
 
 function updateAddButtons() {
   $('addBtn').disabled = song.slots >= MAX_SLOTS;
   $('addBtn').setAttribute('aria-label', song.slots >= MAX_SLOTS ? 'The song is as long as it can be' : `Add a measure. ${song.slots} of ${MAX_SLOTS}`);
   $('subBtn').disabled = song.slots <= MIN_SLOTS || !lastSlotEmpty(song);
-  $('addcol').title = `${song.slots} of ${MAX_SLOTS} measures`;
+  $('addTrackBtn').disabled = song.lanes >= MAX_LANES;
+  $('addTrackBtn').setAttribute('aria-label', song.lanes >= MAX_LANES ? 'The most tracks are in use' : `Add a track. ${song.lanes} of ${MAX_LANES}`);
+  $('subTrackBtn').hidden = song.lanes <= MIN_LANES;
+  $('subTrackBtn').disabled = !lastLaneEmpty(song);
+  $('subTrackBtn').title = lastLaneEmpty(song) ? '' : 'Empty the last track first';
 }
 
 function makeCell(d) {
@@ -277,11 +321,7 @@ function blockEl(kind, id, extra = {}) {
   e.textContent = i.pic;
   b.append(e);
   if (kind !== 'fun' && kind !== 'rec') b.append(waveEl(i.peaks));
-  const lb = document.createElement('span');
-  lb.className = 'lb';
-  lb.setAttribute('aria-hidden', 'true');
-  lb.textContent = i.label;
-  b.append(lb);
+  b.title = i.label; // a hover tip only: the blocks carry no printed words
   return b;
 }
 
@@ -293,7 +333,7 @@ function cellLabel(cell, id) {
 }
 
 function renderSong() {
-  if ($('board').dataset.slots !== String(song.slots)) buildBoard();
+  if ($('board').dataset.slots !== String(song.slots) || $('board').dataset.lanes !== String(song.lanes)) buildBoard();
   for (const cell of $('lanes').querySelectorAll('.cell')) {
     const k = cell.dataset.k;
     const id = k === 'loop' ? song.grid[+cell.dataset.lane][+cell.dataset.slot] : song.fun[+cell.dataset.pos];
@@ -397,6 +437,8 @@ function undo() {
   song = history.pop();
   afterChange();
   syncFxUi();
+  syncVolUi();
+  engine.setVols(song.vol);
   if (engine.ctx) engine.setFx(song.fx, world.bpm);
 }
 
@@ -630,16 +672,41 @@ $('addBtn').addEventListener('click', () => {
   commit(addSlot(song));
   const sc = $('scroller');
   requestAnimationFrame(() => { sc.scrollTo({ left: sc.scrollWidth, behavior: 'smooth' }); });
-  if (song.slots >= MAX_SLOTS) toast('That is the longest song!');
+  if (song.slots >= MAX_SLOTS) toast('🏁');
 });
-$('subBtn').addEventListener('click', () => { if (!recording) commit(removeSlot(song)); });
+$('subBtn').addEventListener('click', () => { if (!recording) { commit(removeSlot(song)); placePlayhead(); } });
 
 // ------------------------------------------------------------------ playing, waveforms, playhead
 
 let raf = 0;
+/** Where the cells sit inside the track (the volume column is to their left), so the playhead lines up with the measures. */
+function measure() {
+  const cells = $('lanes').querySelector('.lane .cells');
+  if (cells) geo = { left: cells.offsetLeft, width: Math.max(1, cells.clientWidth) };
+}
+new ResizeObserver(() => { measure(); placePlayhead(); }).observe($('track'));
+const pxFor = (slotPos) => geo.left + (slotPos / song.slots) * geo.width;
+/** When stopped the playhead rests at the start point; the ruler shows which measure that is. */
+function placePlayhead() {
+  if (!song || engine.playing) return;
+  cursor = Math.max(0, Math.min(song.slots - 1, cursor));
+  $('playhead').style.transform = `translateX(${pxFor(cursor)}px)`;
+  const beads = $('ruler').querySelectorAll('i');
+  beads.forEach((b, i) => { b.classList.toggle('cur', i === cursor); b.classList.remove('on'); });
+}
+/** Click a measure's top bar: the play position jumps there (and keeps playing from there if the song is playing). */
+function setCursor(slot) {
+  if (recording) return;
+  cursor = Math.max(0, Math.min(song.slots - 1, slot));
+  if (engine.playing) { stopPlaying(); startPlaying(); } else placePlayhead();
+}
+$('ruler').addEventListener('click', (e) => { const b = e.target.closest('i[data-i]'); if (b) setCursor(+b.dataset.i); });
+$('ruler').addEventListener('keydown', (e) => { const b = e.target.closest('i[data-i]'); if (b && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); setCursor(+b.dataset.i); } });
+$('startBtn').addEventListener('click', () => { if (recording) return; $('scroller').scrollTo({ left: 0, behavior: 'smooth' }); setCursor(0); });
+
 function startPlaying() {
   if (recording) return;
-  engine.play(song);
+  engine.play(song, cursor);
   engine.setFx(song.fx, world.bpm);
   $('playBtn').setAttribute('aria-pressed', 'true');
   $('playBtn').setAttribute('aria-label', 'Stop');
@@ -656,6 +723,7 @@ function stopPlaying() {
   $('playTx').textContent = 'Play';
   $('studio').classList.remove('playing');
   clearActive();
+  placePlayhead();
 }
 function clearActive() {
   for (const b of document.querySelectorAll('.block.on')) b.classList.remove('on');
@@ -690,12 +758,11 @@ function frame() {
     const slotLen = slotSeconds(world);
     const slots = song.slots;
     const slot = Math.min(slots - 1, Math.floor(p.t / slotLen));
-    const track = $('track');
-    const px = (p.t / slotLen) * (track.clientWidth / slots);
+    const px = pxFor(p.t / slotLen);
     $('playhead').style.transform = `translateX(${px}px)`;
     const sc = $('scroller');
-    if (px > sc.scrollLeft + sc.clientWidth - 90 || px < sc.scrollLeft) sc.scrollLeft = Math.max(0, px - 90);
-    const beads = $('ruler').children;
+    if (px > sc.scrollLeft + sc.clientWidth - 90 || px < sc.scrollLeft + 80) sc.scrollLeft = Math.max(0, px - 140);
+    const beads = $('ruler').querySelectorAll('i');
     for (let i = 0; i < beads.length; i++) beads[i].classList.toggle('on', i === slot);
     for (const cell of $('lanes').querySelectorAll('.cell.full')) {
       const b = cell.firstElementChild;
@@ -719,6 +786,29 @@ engine.onPreviewEnd = () => { startWaveLoop(); };
 $('playBtn').addEventListener('click', () => { if (engine.playing) stopPlaying(); else startPlaying(); });
 $('undoBtn').addEventListener('click', undo);
 $('homeBtn').addEventListener('click', () => { if (!recording) goHome(); });
+
+// ------------------------------------------------------------------ tracks and volume
+
+function syncVolUi() {
+  for (const r of document.querySelectorAll('input[data-track]')) r.value = String(song.vol[+r.dataset.track]);
+}
+$('lanes').addEventListener('input', (e) => {
+  const r = e.target.closest && e.target.closest('input[data-track]');
+  if (!r) return;
+  song = setVol(song, +r.dataset.track, r.value);
+  engine.unlock();
+  engine.song = song;
+  engine.setVols(song.vol);
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(save, 400);
+});
+$('addTrackBtn').addEventListener('click', () => {
+  if (recording) return;
+  commit(addLane(song));
+  const sc = $('scroller');
+  requestAnimationFrame(() => { sc.scrollTo({ top: sc.scrollHeight, behavior: 'smooth' }); });
+});
+$('subTrackBtn').addEventListener('click', () => { if (!recording) commit(removeLane(song)); });
 
 // ------------------------------------------------------------------ effects
 
@@ -760,7 +850,7 @@ $('fxReset').addEventListener('click', () => {
 
 $('clearBtn').addEventListener('click', () => { if (recording) return; if (isEmpty(song) && !hasFx(song)) { wiggle($('tray')); return; } $('clearDlg').showModal(); });
 $('clearNo').addEventListener('click', () => $('clearDlg').close());
-$('clearYes').addEventListener('click', () => { $('clearDlg').close(); stopPlaying(); const s = emptySong(world.id); commit(s); syncFxUi(); if (engine.ctx) engine.setFx(song.fx, world.bpm); });
+$('clearYes').addEventListener('click', () => { $('clearDlg').close(); stopPlaying(); const s = emptySong(world.id); commit(s); syncFxUi(); syncVolUi(); engine.setVols(song.vol); if (engine.ctx) engine.setFx(song.fx, world.bpm); });
 
 // ------------------------------------------------------------------ recording your own voice
 
@@ -830,7 +920,7 @@ async function startRecording(lane, slot) {
     session.close();
     rec.session = null;
     hideRec();
-    if (err.code !== 'cancelled') toast('Something went wrong. Try again.');
+    if (err.code !== 'cancelled') toast('⚠️');
     return;
   }
   if (engine.playing) { engine.stop(); engine.song = song; }
@@ -846,7 +936,7 @@ async function startRecording(lane, slot) {
   commit(placeLoop(song, lane, slot, id));
   engine.preview(id);
   startWaveLoop();
-  toast(loud < 0.02 ? 'That was very quiet. Try again closer to the mic.' : 'Nice! Your voice is in the song.');
+  toast(loud < 0.02 ? '🤫🎤' : '🎉🎤');
 }
 function cancelRecording() {
   rec.cancelled = true;
@@ -879,7 +969,7 @@ function showShare(result) {
 $('shareBtn').addEventListener('click', async () => {
   if (recording) return;
   const shareable = song.grid.flat().some((id) => id && !isMic(id)) || song.fun.some(Boolean);
-  if (!shareable) { wiggle($('tray')); $('shareBtn').animate([{ transform: 'rotate(-12deg)' }, { transform: 'rotate(12deg)' }, { transform: 'none' }], 300); if (!isEmpty(song)) toast('Add some music blocks to share. Recordings stay on this computer.'); return; }
+  if (!shareable) { wiggle($('tray')); $('shareBtn').animate([{ transform: 'rotate(-12deg)' }, { transform: 'rotate(12deg)' }, { transform: 'none' }], 300); if (!isEmpty(song)) toast('🧱❓'); return; }
   if (sharing) return;
   stopPlaying();
   const key = JSON.stringify(toPayload(song));
@@ -925,7 +1015,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) { sav
 if (hasLinkInLocation()) {
   const s = await readLinkFromLocation(catalog);
   if (s) openWorld(s.world, s, true);
-  else { renderHome(); toast('That song could not be opened.'); try { window.history.replaceState(null, '', location.pathname); } catch { /* ignore */ } }
+  else { renderHome(); toast('😕'); try { window.history.replaceState(null, '', location.pathname); } catch { /* ignore */ } }
 } else {
   renderHome();
 }

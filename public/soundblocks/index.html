@@ -30,8 +30,11 @@
     <div class="bar">
       <button type="button" class="tool" id="homeBtn" aria-label="Back to the worlds"><span class="ic" aria-hidden="true">🏠</span><span class="tx" aria-hidden="true">Worlds</span></button>
       <div class="world-chip" id="worldChip"><span class="wp" id="worldPic" aria-hidden="true"></span><span class="wt"><b id="worldName"></b><small id="worldInfo"></small></span></div>
+      <button type="button" class="tool addtrack" id="addTrackBtn" aria-label="Add a track"><span class="ic" aria-hidden="true">➕</span><span class="tx" aria-hidden="true">Add a track</span></button>
+      <button type="button" class="tool minus" id="subTrackBtn" aria-label="Take away the last track" hidden><span class="ic" aria-hidden="true">➖</span></button>
       <div class="remix" id="remix" hidden><span aria-hidden="true">🎁</span> Remix it!</div>
       <div class="spacer"></div>
+      <button type="button" class="tool" id="startBtn" aria-label="Back to the start"><span class="ic" aria-hidden="true">⏮</span><span class="tx" aria-hidden="true">Start</span></button>
       <button type="button" class="tool" id="undoBtn" aria-label="Undo" disabled><span class="ic" aria-hidden="true">↶</span><span class="tx" aria-hidden="true">Undo</span></button>
       <button type="button" class="tool play" id="playBtn" aria-label="Play" aria-pressed="false"><span class="ic" aria-hidden="true" id="playIco">▶</span><span class="tx" aria-hidden="true" id="playTx">Play</span></button>
       <div class="fxwrap">
@@ -56,7 +59,7 @@
           <div class="playhead" id="playhead" aria-hidden="true"></div>
         </div>
         <div class="addcol" id="addcol">
-          <button type="button" class="add" id="addBtn" aria-label="Add a measure"><span class="ic" aria-hidden="true">➕</span><span class="tx" aria-hidden="true">Measure</span></button>
+          <button type="button" class="add" id="addBtn" aria-label="Add a measure"><span class="ic" aria-hidden="true">➕</span></button>
           <button type="button" class="sub" id="subBtn" aria-label="Take away the last measure"><span aria-hidden="true">➖</span></button>
         </div>
       </div>
@@ -65,11 +68,11 @@
       <div class="rec" id="rec" hidden role="dialog" aria-modal="true" aria-label="Record your voice">
         <div class="rec-card">
           <div class="rec-big" id="recBig" aria-live="assertive">🎤</div>
-          <div class="rec-sub" id="recSub"></div>
+          <div class="rec-sub sr" id="recSub"></div>
           <div class="rec-bar" id="recBar" hidden><i id="recProg"></i></div>
           <div class="rec-meter" id="recMeterBox" hidden aria-hidden="true"><i id="recMeter"></i></div>
-          <label class="rec-hear" id="recHearBox"><input type="checkbox" id="recHear"> <span>🎧 Hear the song while I record</span></label>
-          <p class="rec-note" id="recNote">Use headphones so the mic only hears you. Your recording stays on this computer.</p>
+          <label class="rec-hear" id="recHearBox" title="Hear the song while I record (use headphones)"><input type="checkbox" id="recHear" aria-label="Hear the song while I record. Use headphones."> <span aria-hidden="true">🎧</span></label>
+          <p class="rec-note sr" id="recNote">Use headphones so the mic only hears you. Your recording stays on this computer.</p>
           <button type="button" class="big no" id="recCancel" aria-label="Cancel recording"><span aria-hidden="true">✖️</span></button>
         </div>
       </div>
@@ -90,7 +93,7 @@
     <div class="share-ready" id="shareReady" hidden>
       <div class="qr" id="qr" aria-hidden="true"></div>
       <input type="text" id="shareUrl" class="share-url" readonly aria-label="Link to my song" spellcheck="false">
-      <p class="share-note" id="shareNote" hidden>🎤 Your recordings stay on this computer, so friends will not hear them.</p>
+      <p class="share-note" id="shareNote" hidden title="Your recordings stay on this computer, so friends will not hear them."><span aria-hidden="true">🎤🔒💻</span><span class="sr">Your recordings stay on this computer, so friends will not hear them.</span></p>
       <div class="dlg-actions">
         <button type="button" class="big copy" id="copyBtn" aria-label="Copy the link"><span aria-hidden="true" id="copyIco">📋</span></button>
         <button type="button" class="big close" id="shareClose" aria-label="Close"><span aria-hidden="true">✖️</span></button>
@@ -102,7 +105,7 @@
 <!-- start over? -->
 <dialog class="dlg" id="clearDlg" aria-label="Start over? This takes away all the blocks.">
   <div class="dlg-body">
-    <div class="ask" aria-hidden="true">🧹 Start over?</div>
+    <div class="ask" aria-hidden="true">🧹❓</div>
     <div class="dlg-actions">
       <button type="button" class="big yes" id="clearYes" aria-label="Yes, start over"><span aria-hidden="true">✔️</span></button>
       <button type="button" class="big no" id="clearNo" aria-label="No, keep my song"><span aria-hidden="true">✖️</span></button>
