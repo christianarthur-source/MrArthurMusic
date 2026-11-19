@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Sparkles, Play, ArrowRight, ShieldCheck, UserCheck } from 'lucide-react';
+import { Sparkles, Play, ArrowRight, ShieldCheck, UserCheck, GraduationCap } from 'lucide-react';
 import { StudentSession } from '../utils/classroomApi';
 import { LazyClassroomToolBoxModal } from './tools/LazyClassroomToolBoxModal';
 import type { ToolId } from './tools/ClassroomToolBoxModal';
@@ -608,6 +608,14 @@ export const MusicLabLanding: React.FC<MusicLabLandingProps> = ({
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
               <span>NY Ed Law § 2-d &amp; Parents&apos; Bill of Rights</span>
             </button>
+
+            <a
+              href="/educators/"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 text-sky-300 hover:text-sky-200 border border-sky-500/30 font-semibold transition-all shadow-xs"
+            >
+              <GraduationCap className="w-3.5 h-3.5 text-sky-400" />
+              <span>For Educators: Curriculum &amp; Standards</span>
+            </a>
 
             <a
               href="/Dentichorus/index.html"
