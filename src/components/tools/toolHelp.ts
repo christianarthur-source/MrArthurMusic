@@ -46,13 +46,6 @@ export const TOOL_HELP: Record<ToolId, ToolHelp> = {
       'Start the 60-second Quiet Challenge to see if the class can stay quiet.',
     ],
   },
-  'song-starter': {
-    steps: [
-      'Pick a beat, then drag sound blocks onto the lanes to build your song.',
-      'Press Play Song to hear it.',
-      'Use the Remove button on a block to take it out, or Clear All to start again.',
-    ],
-  },
   'music-symbol-match': {
     steps: [
       'Memory mode: flip two cards to find a symbol and its name.',

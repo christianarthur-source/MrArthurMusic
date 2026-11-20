@@ -112,19 +112,20 @@ const DAW_ART = (
   </div>
 );
 
-const GEMS_ART = (
-  <div className="relative h-full flex items-center justify-around">
-    <div className="absolute inset-x-0 top-5 h-0.5 bg-slate-700" />
-    <div className="absolute inset-x-0 top-9 h-0.5 bg-slate-700" />
-    <div className="absolute inset-x-0 top-[3.25rem] h-0.5 bg-slate-700" />
+const LOOP_ART = (
+  <div className="relative h-full flex flex-col justify-center gap-1.5">
     {[
-      ['bg-rose-500 text-white', '♩'],
-      ['bg-amber-400 text-slate-950', '♫'],
-      ['bg-emerald-400 text-slate-950', '♩'],
-      ['bg-sky-400 text-slate-950', '⚡'],
-    ].map(([c, g], i) => (
-      <div key={i} className={`w-7 h-7 rounded-full font-black text-xs flex items-center justify-center z-10 ${c}`}>{g}</div>
+      ['bg-amber-400', [70, 35, 85, 50, 70, 35, 85, 50]],
+      ['bg-rose-400', [40, 80, 40, 80, 40, 80, 40, 80]],
+      ['bg-sky-400', [55, 30, 65, 90, 55, 30, 65, 90]],
+    ].map(([c, hs], row) => (
+      <div key={row} className="flex items-center gap-0.5 h-4 rounded bg-slate-900 px-1">
+        {(hs as number[]).map((h, i) => (
+          <div key={i} className={`flex-1 rounded-sm ${c as string}`} style={{ height: `${h}%` }} />
+        ))}
+      </div>
     ))}
+    <div className="absolute inset-y-0 left-[50%] w-0.5 bg-white/90 rounded-full" />
   </div>
 );
 
@@ -133,7 +134,7 @@ const FEATURED: { id: string; f: Feature }[] = [
   { id: 'midimusic', f: { emoji: '🎹', title: 'MIDI MUSIC', badge: 'Keyboard', blurb: 'Plug in a MIDI keyboard and play 140+ instruments, learn songs and jam with a beat.', cta: 'Open MIDI MUSIC', accent: 'amber', art: KEYBOARD_ART } },
   { id: 'chromeextra', f: { emoji: '🧪', title: 'Chrome Music Lab EXTRA', badge: 'Experiments', blurb: 'Song Maker, Kandinsky, Shared Piano and Rhythm, with custom colour themes.', cta: 'Open Music Lab EXTRA', accent: 'sky', art: BARS_ART } },
   { id: 'daw', f: { emoji: '🎚️', title: 'Studio DAW', badge: 'Studio', blurb: 'Mix loops, record microphone vocals and make full songs.', cta: 'Launch Studio DAW', accent: 'indigo', art: DAW_ART } },
-  { id: 'rhythm-rockstars', f: { emoji: '🎸', title: 'Rhythm Rock Stars', badge: 'Rhythm game', blurb: 'Tap along to drum beats, decode rock rhythms and beat 6 stages!', cta: 'Play Rhythm Rock Stars', accent: 'rose', art: GEMS_ART } },
+  { id: 'looper', f: { emoji: '🔁', title: 'Looper', badge: 'Loop station', blurb: 'Record your voice or instrument in loops, stack up to 24 layers and add a beat.', cta: 'Open Looper', accent: 'rose', art: LOOP_ART } },
 ];
 
 interface ToolCardDef {
@@ -144,7 +145,7 @@ interface ToolCardDef {
 
 /** The additional classroom tools: one grid of picture tiles (see LabToolArt.tsx), every tile the same size. */
 const TOOL_GROUPS: { heading: string; note: string; ids: string[] }[] = [
-  { heading: 'Make and play', note: 'Beats, songs and games', ids: ['soundblocks', 'beat-machine', 'looper', 'typebeat', 'song-starter', 'staff-wars'] },
+  { heading: 'Make and play', note: 'Beats, songs and games', ids: ['soundblocks', 'beat-machine', 'rhythm-rockstars', 'typebeat', 'staff-wars'] },
   { heading: 'Practice', note: 'Ears, symbols and instruments', ids: ['solfege-trainer', 'music-symbol-match', 'dynamic-ears', 'instrument-zoo'] },
   { heading: 'Teacher helpers', note: 'Smartboard ready', ids: ['metronome', 'tempo-tapper', 'tuner'] },
 ];
@@ -153,10 +154,9 @@ const TOOL_ORDER = TOOL_GROUPS.flatMap((g) => g.ids);
 const TOOL_CARDS: Record<string, ToolCardDef> = {
   'beat-machine': { title: 'Beat Machine', accent: 'amber' },
   soundblocks: { title: 'Sound Blocks', accent: 'emerald' },
-  looper: { title: 'Looper', accent: 'amber' },
+  'rhythm-rockstars': { title: 'Rhythm Rock Stars', accent: 'orange' },
   typebeat: { title: 'Type Beat', accent: 'rose' },
   'staff-wars': { title: 'Staff Wars', accent: 'sky' },
-  'song-starter': { title: 'Song Starter', accent: 'orange' },
   'solfege-trainer': { title: 'Do-Re-Mi Trainer', accent: 'rose' },
   'music-symbol-match': { title: 'Symbol Match', accent: 'violet' },
   'dynamic-ears': { title: 'Dynamic Ears', accent: 'emerald' },

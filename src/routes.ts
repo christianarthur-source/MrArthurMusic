@@ -27,7 +27,6 @@ export const TOOL_ROUTES = [
   { id: 'solfege-trainer', title: 'Do-Re-Mi Trainer' },
   { id: 'instrument-zoo', title: 'Instrument Zoo' },
   { id: 'dynamic-ears', title: 'Dynamic Ears' },
-  { id: 'song-starter', title: 'Song Starter' },
   { id: 'music-symbol-match', title: 'Symbol Match' },
   { id: 'tuner', title: 'Instrument Tuner' },
 ] as const satisfies readonly { id: ToolId; title: string }[];

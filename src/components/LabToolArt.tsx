@@ -154,22 +154,24 @@ const StaffWarsArt = () => (
   </Svg>
 );
 
-/** Song Starter: stacked sound blocks with a note on top. */
-const SongStarterArt = () => (
+/** Rhythm Rock Stars: a guitar with note gems falling down three lanes onto a strike line. */
+const RhythmRockStarsArt = () => (
   <Svg>
-    <rect x="20" y="82" width="80" height="26" rx="8" fill={P.sky} />
-    <rect x="20" y="82" width="80" height="8" rx="4" fill="#fff" opacity="0.25" />
-    <rect x="30" y="54" width="60" height="26" rx="8" fill={P.emerald} />
-    <rect x="30" y="54" width="60" height="8" rx="4" fill="#fff" opacity="0.25" />
-    <rect x="40" y="26" width="40" height="26" rx="8" fill={P.rose} />
-    <rect x="40" y="26" width="40" height="8" rx="4" fill="#fff" opacity="0.25" />
-    {/* studs */}
-    {[34, 46, 58, 70].map((x) => <circle key={x} cx={x + 6} cy="95" r="3" fill="#fff" opacity="0.45" />)}
-    {[44, 58, 72].map((x) => <circle key={x} cx={x + 3} cy="67" r="3" fill="#fff" opacity="0.45" />)}
-    {/* note */}
-    <ellipse cx="54" cy="19" rx="8" ry="6" transform="rotate(-20 54 19)" fill={P.amber} />
-    <rect x="59" y="0" width="3.5" height="19" rx="1.75" fill={P.amber} />
-    <path d="M62 1 C 70 3 74 8 72 14 C 70 9 66 8 62 8 Z" fill={P.amber} />
+    {[30, 60, 90].map((x) => <rect key={x} x={x - 1.5} y="8" width="3" height="78" rx="1.5" fill={P.slateLine} />)}
+    <rect x="14" y="74" width="92" height="5" rx="2.5" fill={P.white} opacity="0.85" />
+    <circle cx="30" cy="76" r="11" fill={P.rose} />
+    <circle cx="30" cy="76" r="4" fill="#fff" opacity="0.8" />
+    <circle cx="60" cy="40" r="10" fill={P.amber} />
+    <circle cx="90" cy="20" r="10" fill={P.sky} />
+    <circle cx="90" cy="56" r="10" fill={P.emerald} />
+    {/* guitar */}
+    <g transform="rotate(-35 64 100)">
+      <ellipse cx="50" cy="102" rx="15" ry="12" fill={P.violet} />
+      <ellipse cx="62" cy="102" rx="10" ry="9" fill={P.violet} />
+      <circle cx="52" cy="102" r="4" fill={P.slate} />
+      <rect x="68" y="99.5" width="40" height="5" rx="2" fill={P.amberDeep} />
+      <rect x="106" y="97" width="10" height="10" rx="2.5" fill={P.amberDeep} />
+    </g>
   </Svg>
 );
 
@@ -343,7 +345,7 @@ export const LAB_TOOL_ART: Record<string, React.FC> = {
   looper: LooperArt,
   typebeat: TypeBeatArt,
   'staff-wars': StaffWarsArt,
-  'song-starter': SongStarterArt,
+  'rhythm-rockstars': RhythmRockStarsArt,
   'solfege-trainer': SolfegeArt,
   'music-symbol-match': SymbolMatchArt,
   'dynamic-ears': DynamicEarsArt,

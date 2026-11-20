@@ -27,7 +27,6 @@ export const LAB_ENTRIES: readonly LabEntry[] = [
   { id: 'staff-composer', title: 'Staff Composer', emoji: '🎼', group: 'create', grades: 'all', to: { app: 'staff-composer' } },
   { id: 'beat-machine', title: 'Beat Machine', emoji: '🥁', group: 'create', grades: 'all', to: { app: 'beat-machine' } },
   { id: 'daw', title: 'Studio DAW', emoji: '🎚️', group: 'create', grades: ['3-5', '6-8'], to: { app: 'daw' } },
-  { id: 'song-starter', title: 'Song Starter', emoji: '🎶', group: 'create', grades: ['K-2'], to: { app: 'song-starter' } },
   { id: 'midimusic', title: 'MIDI MUSIC', emoji: '🎹', group: 'create', grades: 'all', to: { path: '/midimusic/' } },
   { id: 'chromeextra', title: 'Chrome Music Lab EXTRA', emoji: '🧪', group: 'create', grades: 'all', to: { path: '/chromeextra/' } },
   { id: 'looper', title: 'Looper', emoji: '🔁', group: 'create', grades: 'all', to: { path: '/looper/' } },

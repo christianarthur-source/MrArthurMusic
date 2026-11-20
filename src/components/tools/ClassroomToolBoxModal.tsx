@@ -7,7 +7,6 @@ import { InstrumentZoo } from './InstrumentZoo';
 import { DynamicEars } from './DynamicEars';
 import { MusicTuner } from './MusicTuner';
 import { MusicSymbolMatch } from './MusicSymbolMatch';
-import { SongStarter } from './SongStarter';
 import { useDialogBehavior } from '../Modal';
 import { shouldIgnoreShortcut } from '../../utils/keyGuard';
 import { readUrlParam, urlForRoute } from '../../routes';
@@ -20,7 +19,6 @@ export type ToolId =
   | 'solfege-trainer'
   | 'instrument-zoo'
   | 'dynamic-ears'
-  | 'song-starter'
   | 'music-symbol-match'
   | 'tuner';
 
@@ -81,14 +79,6 @@ const TOOL_TABS: ToolTabMeta[] = [
     subtitle: 'Sound Meter & Dynamics',
     accentColor: 'from-emerald-400 to-teal-500',
     badgeBg: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
-  },
-  {
-    id: 'song-starter',
-    title: 'Song Starter',
-    emoji: '🎶',
-    subtitle: 'K-2nd Song Box',
-    accentColor: 'from-amber-400 to-pink-500',
-    badgeBg: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
   },
   {
     id: 'music-symbol-match',
@@ -355,7 +345,6 @@ export const ClassroomToolBoxModal: React.FC<ClassroomToolBoxModalProps> = ({
           {activeTool === 'solfege-trainer' && <SolfegeTrainer />}
           {activeTool === 'instrument-zoo' && <InstrumentZoo />}
           {activeTool === 'dynamic-ears' && <DynamicEars />}
-          {activeTool === 'song-starter' && <SongStarter />}
           {activeTool === 'music-symbol-match' && <MusicSymbolMatch />}
           {activeTool === 'tuner' && <MusicTuner />}
         </div>
